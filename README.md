@@ -2,9 +2,9 @@
 
 noteprep.app
 
-面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
+面向独立私人 STEM(首个学科:中学数学)辅导老师的备课自动化:**选择**课程体系/级别/课程/主题与时长、难度,几分钟内得到一套排版专业的课包(Tutor Lesson Notes、Student Practice Worksheet、Solutions/Answer Key);预览、用预设快速调整,再导出 PDF。LaTeX 完全在幕后,老师不需要写或编辑 LaTeX。方向详见 [docs/product-vision.md](docs/product-vision.md)。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T8 全部完成;验收见下)
+## 当前状态:Phase 1 已完成并合并;Phase 2 进行中(P2-T1、P2-T2 完成);产品方向已调整,重构里程碑待启动
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
@@ -60,6 +60,10 @@ pnpm supabase:stop
 
 `.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
 
+## 产品方向调整(2026-10-19)
+
+产品改为**选择优先、课程感知、预览 + 调整**,取代原先的"输入需求 → 编辑器"。已批准的决定:MVP 目标课程是 **Ontario Grade 9 数学**,但**真实课程数据集是之后的独立里程碑**(CM,届时一并决定课程文本授权);**不向用户提供 `.tex`**(只导出 PDF);调整计费采用"确定性调整免费、含模型的调整消耗每课包调整额度"。文档与 `CLAUDE.md` 已按此对账。里程碑 **M1(课程域模型 + 示例数据集)尚未开始,等待启动批准**。详见 [docs/refactor-plan.md](docs/refactor-plan.md)。**已建成的是基础设施**(认证、额度/任务、worker、数学内核与题目生成器、选择→状态→历史的 UI 骨架);**尚无**课程数据、真实 LLM、LaTeX 渲染与沙箱、PDF 预览/导出、调整。
+
 ## Phase 2 进度
 
 - **P2-T1 数学内核(完成)**:`src/lib/math`——BigInt 精确有理数(无浮点;拒绝小数/科学计数法/越界数字)、一元一次方程独立求解(唯一解/无解/恒等式)、逐步等价检查(声明的操作作用于上一步必须得到所写的结果,乘除零被拒,解集不得改变)、代入原方程、答案册核对、最终形式检查;状态 `verified/failed/unverified` **只由确定性检查产生**:任何失败→failed,必需检查未运行(例如没有步骤)→unverified;LLM 复审或随机抽样只能作为补充证据,**不能**让任何题变成 verified,发现疑点会把 verified 降为 unverified;报告绑定内容哈希,内容变化后旧结论视为 unverified。整课校验还检查题号唯一、答案册与练习一一对应、无孤立答案。
@@ -72,6 +76,10 @@ pnpm supabase:stop
 
 | 文档 | 内容 |
 |---|---|
+| [docs/product-vision.md](docs/product-vision.md) | **新方向**:选择优先、课程感知、三份文档、预览 + 调整、输入模式路线图、完成的定义 |
+| [docs/refactor-audit.md](docs/refactor-audit.md) | 对仓库的审计:子系统分类(KEEP/MODIFY/DEPRECATE…)、错位、与既有文档/CLAUDE.md 的冲突、课程来源核实结果 |
+| [docs/curriculum-architecture.md](docs/curriculum-architecture.md) | 课程域模型(含"概念"层)、数据集管线、数据驱动的级联选择、可追溯性与降级 |
+| [docs/refactor-plan.md](docs/refactor-plan.md) | 生成契约 v2、课包内容模型、预设调整、前端信息架构、里程碑 M0–M7 + CM、风险、估算、待决事项 |
 | [docs/product.md](docs/product.md) | 用户问题、MVP/非目标、端到端流程、3 次免费与订阅的精确语义、验收场景、成功指标定义 |
 | [docs/architecture.md](docs/architecture.md) | 系统图、数据模型与约束、额度/任务事务伪代码、内容 schema 示例、数学验证、Stripe 权益、LaTeX 沙箱与部署 |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Phase 1–4 依赖顺序、任务、验收证据、退出条件、风险 |
@@ -117,4 +125,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。Phase 1 的全部任务已完成。下一阶段是 **Phase 2**(第一条真正可用的路径:数学内核、内容 schema、渲染、隔离编译、真实 LLM、编辑与下载),第一个任务是 **P2-T1 数学内核与人工核对的 fixtures**;沙箱 spike(P2-T6)需要一台 Linux 机器(见 docs/staging-setup.md §5)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已完成并合并;P2-T1(数学内核)与 P2-T2(题目生成器)已完成。**下一步是重构里程碑 M1(课程域模型 + 示例数据集),尚未开始,等待你的启动批准**;原 Phase 2 的其余任务已被 [docs/refactor-plan.md](docs/refactor-plan.md) 的里程碑取代(对照表见 [docs/implementation-plan.md](docs/implementation-plan.md) §3)。真实课程数据与授权是之后的独立里程碑(CM)。沙箱 spike 需要一台 Linux 主机(见 [docs/staging-setup.md](docs/staging-setup.md) §5),可以提前准备。
