@@ -1,0 +1,67 @@
+name: Load curriculum dataset
+
+# Manual only, like the database migrations: curriculum data is never loaded on push, on pull requests,
+# or at Web startup. It uses the same protected `staging` / `production` environments and the same
+# owner-role connection string (the runtime roles cannot write curriculum tables).
+#
+# SAMPLE datasets are invented and are only ever loaded into staging: the --allow-sample flag is passed
+# for the staging environment alone, so the loader itself refuses a sample dataset for production.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      dataset:
+        description: Dataset directory (add real datasets here as they are reviewed and committed)
+        type: choice
+        options: [data/curricula/sample-math/sample-1]
+        required: true
+      action:
+        description: "validate = check the files only (touches nothing); load = write them to the database"
+        type: choice
+        options: [validate, load]
+        default: validate
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curriculum-load-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: ${{ inputs.action }} ${{ inputs.dataset }} (${{ inputs.environment }})
+    if: github.ref == 'refs/heads/main' # only reviewed, merged datasets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    env:
+      MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+      # Passed through the environment, never interpolated into the shell command.
+      DATASET_DIR: ${{ inputs.dataset }}
+      TARGET_ENV: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate every dataset
+        run: pnpm curriculum:validate
+      - name: Load the dataset
+        if: inputs.action == 'load'
+        run: |
+          if [ "$TARGET_ENV" = "staging" ]; then
+            pnpm curriculum:load "$DATASET_DIR" --allow-sample
+          else
+            pnpm curriculum:load "$DATASET_DIR"
+          fi
