@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, inject } from "vitest";
 import { StaleOrCanceled } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS } from "@/lib/domain/generation";
-import { makeAuthedCtx } from "@/lib/server/auth/context";
+import { makeAuthedCtx as makeCtx } from "@/lib/server/auth/context";
 import { createDb } from "@/lib/server/db";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { CompileError, SKELETON_MARKER, SkeletonCompiler } from "@/lib/latex/compiler";
@@ -16,6 +16,16 @@ import { runOnce } from "../../worker/loop";
 import { processJob } from "../../worker/runner";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pools } from "./helpers";
+
+// The database is shared by every test file, and other files corrupt a bucket's counters on purpose (to test the
+// constraints and the drift view). Drift is therefore checked only for the accounts THIS file created.
+const ownedHere = new Set<string>();
+const makeAuthedCtx = (id: string) => {
+  ownedHere.add(id);
+  return makeCtx(id);
+};
+const driftHere = async (db: { query: (sql: string, params: unknown[]) => Promise<{ rows: unknown[] }> }) =>
+  (await db.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = ANY($1::uuid[])`, [[...ownedHere]])).rows;
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
@@ -88,7 +98,7 @@ async function reservationState(jobId: string) {
   return rows[0] as { state: string; settle_reason: string | null };
 }
 async function noDrift() {
-  expect((await workerPg.query(`SELECT * FROM usage_bucket_drift`)).rows).toEqual([]);
+  expect(await driftHere(workerPg)).toEqual([]);
 }
 /** Runs the worker until it reports the job as finished or nothing more is runnable. */
 async function drain(d: PipelineDeps, workerId = "w", maxRounds = 20) {
@@ -353,14 +363,21 @@ describe("sweeper", () => {
   it("leaves healthy work alone and reports counter drift instead of repairing it", async () => {
     const healthy = await newJob();
     await worker.jobs.claimNext("w", 30_000);
+    // The sweeper reports drift across the whole database, where other test files corrupt counters on purpose:
+    // look only at this account's bucket.
+    const bucketId = (await admin.query(`SELECT id FROM usage_bucket WHERE owner_id = $1`, [healthy.ctx.userId])).rows[0].id as string;
     const quiet = await worker.jobs.sweep();
     expect(await jobRow(healthy.jobId)).toMatchObject({ state: "running" });
-    expect(quiet.drift).toEqual([]);
+    expect(quiet.drift).not.toContain(bucketId);
 
     await admin.query(`UPDATE usage_bucket SET reserved = reserved + 1 WHERE owner_id = $1`, [healthy.ctx.userId]); // simulated bug
-    const noisy = await worker.jobs.sweep();
-    expect(noisy.drift).toHaveLength(1);
-    await admin.query(`UPDATE usage_bucket SET reserved = reserved - 1 WHERE owner_id = $1`, [healthy.ctx.userId]);
+    try {
+      const noisy = await worker.jobs.sweep();
+      expect(noisy.drift).toContain(bucketId);
+      expect(await bucketOf(healthy.ctx.userId)).toEqual({ used: 0, reserved: 2 }); // reported, not repaired
+    } finally {
+      await admin.query(`UPDATE usage_bucket SET reserved = reserved - 1 WHERE owner_id = $1`, [healthy.ctx.userId]);
+    }
   });
 });
 

@@ -233,8 +233,15 @@ describe("allowance buckets and reservations", () => {
     expect(consistent.rows).toEqual([]);
 
     await admin.query(`UPDATE usage_bucket SET reserved = 0 WHERE id = $1`, [bucket]); // simulate a bug
-    const drifted = await worker.query(`SELECT * FROM usage_bucket_drift WHERE bucket_id = $1`, [bucket]);
-    expect(drifted.rows).toHaveLength(1);
+    try {
+      const drifted = await worker.query(`SELECT * FROM usage_bucket_drift WHERE bucket_id = $1`, [bucket]);
+      expect(drifted.rows).toHaveLength(1);
+    } finally {
+      // The database is shared by every test file, and other files assert that the whole drift view is empty:
+      // put the counter back so this deliberate corruption cannot leak into them.
+      await admin.query(`UPDATE usage_bucket SET reserved = 1 WHERE id = $1`, [bucket]);
+    }
+    expect((await worker.query(`SELECT * FROM usage_bucket_drift WHERE bucket_id = $1`, [bucket])).rows).toEqual([]);
   });
 });
 
