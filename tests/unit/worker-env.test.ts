@@ -17,8 +17,27 @@ describe("worker configuration", () => {
   it("refuses the fake compiler in production", () => {
     expect(() => workerEnv({ ...base, NODE_ENV: "production" })).toThrow(/must not be set in production/);
   });
-  it("refuses to start without an explicit fake compiler until a real one exists", () => {
-    expect(() => workerEnv({ WORKER_DATABASE_URL: base.WORKER_DATABASE_URL })).toThrow(/no real compiler/);
+  it("refuses to start without choosing a compiler: the placeholder one must be requested explicitly", () => {
+    expect(() => workerEnv({ WORKER_DATABASE_URL: base.WORKER_DATABASE_URL })).toThrow(/COMPILER=docker, or ALLOW_FAKE_COMPILER=1/);
+  });
+  it("accepts the real compiler without the fake-compiler flag and passes only the Docker client's variables on", () => {
+    const config = workerEnv({ WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, COMPILER: "docker", PATH: "/bin", DOCKER_HOST: "unix:///x.sock", LLM_API_KEY: "secret", HOME: "/h" });
+    expect(config).toMatchObject({ COMPILER: "docker", LATEX_IMAGE: "noteprep-latex:dev", LATEX_WALL_CLOCK_SECONDS: 90 });
+    expect(config.dockerClientEnv).toEqual({ PATH: "/bin", DOCKER_HOST: "unix:///x.sock", HOME: "/h" });
+    expect(JSON.stringify(config.dockerClientEnv)).not.toContain("secret");
+  });
+  it("in production requires the real compiler and an image pinned by digest", () => {
+    const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production" };
+    expect(() => workerEnv({ ...prod, ALLOW_FAKE_COMPILER: "1" })).toThrow();
+    expect(() => workerEnv({ ...prod, COMPILER: "skeleton" })).toThrow();
+    expect(() => workerEnv({ ...prod, COMPILER: "docker" })).toThrow(/pinned by digest/);
+    expect(() => workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: "noteprep-latex:latest" })).toThrow(/pinned by digest/);
+    const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
+    expect(workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: digest }).LATEX_IMAGE).toBe(digest);
+  });
+  it("rejects an unknown compiler and out-of-range limits", () => {
+    expect(() => workerEnv({ ...base, COMPILER: "latex" })).toThrow();
+    expect(() => workerEnv({ ...base, COMPILER: "docker", LATEX_WALL_CLOCK_SECONDS: "1" })).toThrow();
   });
   it("rejects a missing or malformed database URL and out-of-range timings", () => {
     expect(() => workerEnv({ ALLOW_FAKE_COMPILER: "1" })).toThrow();

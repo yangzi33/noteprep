@@ -6,8 +6,13 @@ const WorkerEnv = z
     WORKER_DATABASE_URL: z.url(),
     WORKER_ID: z.string().min(1).max(64).optional(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    /** Phase 1 only: there is no real compiler yet, so the skeleton compiler must be requested explicitly. */
+    /** "docker" compiles in the sandbox image (needs Docker); "skeleton" writes clearly labelled placeholder files for local runs. */
+    COMPILER: z.enum(["skeleton", "docker"]).default("skeleton"),
+    /** The skeleton compiler is a development stand-in and must be requested explicitly. */
     ALLOW_FAKE_COMPILER: z.enum(["0", "1"]).default("0"),
+    /** The compilation image. Production must pin a digest (name@sha256:...). */
+    LATEX_IMAGE: z.string().min(1).max(300).default("noteprep-latex:dev"),
+    LATEX_WALL_CLOCK_SECONDS: z.coerce.number().int().min(5).max(600).default(90),
     POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
     LEASE_SECONDS: z.coerce.number().int().min(5).max(300).default(30),
     SWEEP_INTERVAL_SECONDS: z.coerce.number().int().min(1).max(600).default(15),
@@ -33,11 +38,14 @@ const WorkerEnv = z
       const missing = (["LLM_API_KEY", "LLM_MODEL", "LLM_PRICE_INPUT_MICROS_PER_MTOK", "LLM_PRICE_OUTPUT_MICROS_PER_MTOK"] as const).filter((k) => env[k] === undefined);
       if (missing.length > 0) ctx.addIssue({ code: "custom", message: `LLM_PROVIDER=anthropic also needs: ${missing.join(", ")}` });
     }
-    if (env.ALLOW_FAKE_COMPILER !== "1") {
-      ctx.addIssue({
-        code: "custom",
-        message: "no real compiler is available yet (Phase 2); set ALLOW_FAKE_COMPILER=1 for local skeleton runs",
-      });
+    if (env.COMPILER === "skeleton" && env.ALLOW_FAKE_COMPILER !== "1") {
+      ctx.addIssue({ code: "custom", message: 'set COMPILER=docker, or ALLOW_FAKE_COMPILER=1 for local placeholder runs' });
+    }
+    if (env.NODE_ENV === "production" && env.COMPILER === "skeleton") {
+      ctx.addIssue({ code: "custom", message: "COMPILER must be docker in production" });
+    }
+    if (env.NODE_ENV === "production" && env.COMPILER === "docker" && !/@sha256:[0-9a-f]{64}$/.test(env.LATEX_IMAGE)) {
+      ctx.addIssue({ code: "custom", message: "LATEX_IMAGE must be pinned by digest (name@sha256:...) in production" });
     }
   });
 

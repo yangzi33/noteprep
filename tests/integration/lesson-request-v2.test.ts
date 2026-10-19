@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from "vitest";
@@ -12,7 +12,11 @@ import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
-import { SkeletonCompiler } from "@/lib/latex/compiler";
+import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, SKELETON_MARKER, type DocumentCompiler } from "@/lib/latex/compiler";
+import { renderDocument } from "@/lib/latex/render";
+import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
+import { ManifestIncomplete } from "@/lib/domain/errors";
+import { artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
 import { FAKE_PROSE, FakeLlmProvider, type FakeStep } from "@/lib/llm/fake";
 import type { LlmProvider, StructuredRequest, StructuredResult } from "@/lib/llm/types";
 import { FsObjectStore } from "@/lib/storage/store";
@@ -50,7 +54,7 @@ let deps: PipelineDeps;
 beforeAll(async () => {
   await loadDataset(ownerDb, SAMPLE, { allowSample: true });
   storeDir = await mkdtemp(path.join(os.tmpdir(), "noteprep-v2-"));
-  deps = { jobs: worker.jobs, settlement: worker.settlement, llm: new FakeLlmProvider(), compiler: new SkeletonCompiler(), store: new FsObjectStore(storeDir), leaseMs: 30_000 };
+  deps = { jobs: worker.jobs, settlement: worker.settlement, llm: new FakeLlmProvider(), compiler: new SkeletonCompiler(), documentCompiler: new SkeletonDocumentCompiler(), store: new FsObjectStore(storeDir), leaseMs: 30_000 };
   await admin.query(
     `UPDATE generation_job SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
             error_code = 'test_cleanup', finished_at = now() WHERE state IN ('queued', 'running')`,
@@ -341,6 +345,134 @@ describe("curriculum lessons with model-written wording", () => {
     expect(row).toMatchObject({ state: "failed", error_code: "budget_exceeded", calls_used: 1 });
     expect(rev).toBeUndefined();
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+  });
+});
+
+/** Creates a curriculum lesson, runs the worker until the job settles, and returns what was stored. */
+async function packWith(over: Partial<PipelineDeps>, requestOver: Record<string, unknown> = {}) {
+  const ctx = await account();
+  const { job } = await web.generation.createGeneration(ctx, request(requestOver), key());
+  const d: PipelineDeps = { ...deps, ...over };
+  for (let i = 0; i < 12 && !["succeeded", "failed", "canceled"].includes((await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state); i++) {
+    if ((await runOnce(d, "w-pack")) === null) await new Promise((r) => setTimeout(r, 15));
+  }
+  const row = (await admin.query(`SELECT state, error_code, attempt FROM generation_job WHERE id = $1`, [job.id])).rows[0] as { state: string; error_code: string | null; attempt: number };
+  const rev = (await admin.query(`SELECT r.id AS revision_id, r.lesson_id, r.template_version, r.artifact_manifest, r.content FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+  return { ctx, jobId: job.id, row, rev };
+}
+const read = async (p: string) => new Uint8Array(await readFile(path.join(storeDir, p)));
+const listed = async (prefix: string) => readdir(path.join(storeDir, prefix), { recursive: true }).catch(() => [] as string[]);
+
+describe("the three-document pack", () => {
+  it("renders, compiles, stores both the PDF and the source of every document, and publishes a version 2 manifest", async () => {
+    const { ctx, row, rev } = await packWith({});
+    expect(row).toMatchObject({ state: "succeeded", error_code: null });
+    expect(rev.template_version).toBe("classic/1");
+    const manifest = rev.artifact_manifest;
+    expect(manifest).toMatchObject({ manifestVersion: 2, templateVersion: "classic/1" });
+    expect(manifest.documents.map((d: { document: string }) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
+    for (const d of manifest.documents) {
+      expect(d.pdf.path).toBe(`${ctx.userId}/${rev.lesson_id}/${rev.revision_id}/${d.pdf.path.split("/")[3]}/${d.document}.pdf`);
+      expect(d.tex.path.endsWith(`/${d.document}.tex`)).toBe(true);
+      const pdf = await read(d.pdf.path);
+      const tex = await read(d.tex.path);
+      expect(sha256Of(pdf)).toBe(d.pdf.sha256);
+      expect(sha256Of(tex)).toBe(d.tex.sha256);
+      expect(pdf.byteLength).toBe(d.pdf.bytes);
+      expect(d.pdf.pages).toBe(1);
+      expect(Buffer.from(pdf).toString().startsWith(SKELETON_MARKER)).toBe(true); // the placeholder compiler, labelled as such
+      // the stored source is exactly what the renderer makes of THIS revision's package
+      expect(Buffer.from(tex).toString()).toBe(renderDocument(rev.content, d.document).tex);
+    }
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("a pack of fewer documents stores only those, and still counts as one generation", async () => {
+    const { ctx, row, rev } = await packWith({}, { documents: ["worksheet", "solutions"] });
+    expect(row.state).toBe("succeeded");
+    expect(rev.artifact_manifest.documents.map((d: { document: string }) => d.document)).toEqual(["worksheet", "solutions"]);
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("a compile failure fails the whole pack: nothing is published, nothing is stored, the allowance comes back", async () => {
+    const { ctx, jobId, row, rev } = await packWith({ documentCompiler: new SkeletonDocumentCompiler([new CompileError("compile_failed", false, "x")]) });
+    expect(row).toMatchObject({ state: "failed", error_code: "compile_failed" });
+    expect(rev).toBeUndefined();
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    expect((await admin.query(`SELECT state FROM usage_reservation WHERE job_id = $1`, [jobId])).rows[0].state).toBe("released");
+    const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [jobId])).rows[0].lesson_id;
+    expect(await listed(`${ctx.userId}/${lessonId}/`)).toEqual([]); // compile happens before anything is written
+  });
+
+  it("an unavailable sandbox is retried, then the pack succeeds and is counted once", async () => {
+    const { ctx, row } = await packWith({ documentCompiler: new SkeletonDocumentCompiler([new CompileError("sandbox_unavailable", true), "ok"]) });
+    expect(row).toMatchObject({ state: "succeeded", attempt: 2 });
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("a compiler that returns the wrong set of documents is a failure, not a partial pack", async () => {
+    const short: DocumentCompiler = {
+      id: "short",
+      async compile(r) {
+        return r.documents.slice(1).map((d) => ({ id: d.id, pdf: new Uint8Array([1]), pages: 1 }));
+      },
+    };
+    const { ctx, row, rev } = await packWith({ documentCompiler: short });
+    expect(row).toMatchObject({ state: "failed", error_code: "compile_failed" });
+    expect(rev).toBeUndefined();
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+  });
+
+  it("a storage failure fails the job and releases the allowance", async () => {
+    const failing: ObjectStore = {
+      put: async () => {
+        throw new StorageError(false);
+      },
+      stat: async () => null,
+      deletePrefix: async () => {},
+    };
+    const { ctx, row, rev } = await packWith({ store: failing });
+    expect(row).toMatchObject({ state: "failed", error_code: "storage_failed" });
+    expect(rev).toBeUndefined();
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+  });
+
+  it("settlement itself refuses a manifest that is not exactly the requested pack, and nothing is consumed", async () => {
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, request(), key());
+    const claimed = (await worker.jobs.claimNext("w-settle", 60_000))!;
+    expect(claimed.id).toBe(job.id);
+    const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [job.id])).rows[0].lesson_id as string;
+    const revisionId = randomUUID();
+    const attemptId = randomUUID();
+    const scope = { ownerId: ctx.userId, lessonId, revisionId, attemptId };
+    const file = (document: "notes" | "worksheet" | "solutions", format: "pdf" | "tex") => ({ path: artifactPathV2(scope, document, format), sha256: "a".repeat(64), bytes: 10 });
+    const doc = (document: "notes" | "worksheet" | "solutions") => ({ document, pdf: { ...file(document, "pdf"), pages: 1 }, tex: file(document, "tex") });
+    const full: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion: "classic/1", documents: [doc("notes"), doc("worksheet"), doc("solutions")] };
+    const revision = { schemaVersion: 2, content: { x: 1 }, contentHash: `sha256:${"b".repeat(64)}`, validationReport: { overall: "verified" }, validationStatus: "verified" as const, templateVersion: "classic/1", validatorVersion: "t" };
+    const base = { jobId: job.id, fencingToken: claimed.fencingToken, attemptId, revisionId, revision };
+    const wrong = [
+      { manifest: { ...full, documents: full.documents.slice(0, 2) }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // one missing
+      { manifest: full, requestedDocuments: ["notes", "worksheet"] as const }, // one extra
+      { manifest: full, requestedDocuments: undefined }, // no statement of what was requested
+      { manifest: { ...full, documents: [doc("notes"), doc("worksheet"), { ...doc("solutions"), pdf: { ...file("solutions", "pdf"), path: `${ctx.userId}/${lessonId}/${revisionId}/${randomUUID()}/solutions.pdf`, pages: 1 } }] }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // another attempt's file
+    ];
+    for (const w of wrong) await expect(worker.settlement.commitSuccess({ ...base, manifest: w.manifest, requestedDocuments: w.requestedDocuments })).rejects.toBeInstanceOf(ManifestIncomplete);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 }); // nothing consumed, nothing released
+    expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
+    await expect(worker.settlement.commitSuccess({ ...base, manifest: full, requestedDocuments: ["notes", "worksheet", "solutions"] })).resolves.toMatchObject({ replayed: false });
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("legacy quick-form lessons are refused when the compiler is real, and curriculum lessons are not", async () => {
+    const legacyReq = { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives: ["Solve ax + b = c"], durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" };
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, legacyReq, key());
+    const d: PipelineDeps = { ...deps, legacyEnabled: false };
+    for (let i = 0; i < 6 && (await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state !== "failed"; i++) await runOnce(d, "w-legacy-off");
+    expect((await admin.query(`SELECT state, error_code FROM generation_job WHERE id = $1`, [job.id])).rows[0]).toMatchObject({ state: "failed", error_code: "legacy_unsupported" });
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    expect((await packWith({ legacyEnabled: false })).row.state).toBe("succeeded");
   });
 });
 

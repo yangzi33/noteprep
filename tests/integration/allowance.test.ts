@@ -374,9 +374,10 @@ describe("settlement", () => {
     const { job } = await web.generation.createGeneration(ctx, input(), key());
     const token = await claim(job.id);
     const good = await commitInput(job.id, token);
+    const legacy = good.manifest as ManifestEntry[]; // the legacy four-file list
 
-    await expect(settle.commitSuccess({ ...good, manifest: good.manifest.slice(0, 3) })).rejects.toBeInstanceOf(ManifestIncomplete);
-    const noStudentPdf = good.manifest.filter((m) => !(m.edition === "student" && m.format === "pdf"));
+    await expect(settle.commitSuccess({ ...good, manifest: legacy.slice(0, 3) })).rejects.toBeInstanceOf(ManifestIncomplete);
+    const noStudentPdf = legacy.filter((m) => !(m.edition === "student" && m.format === "pdf"));
     await expect(settle.commitSuccess({ ...good, manifest: noStudentPdf })).rejects.toBeInstanceOf(ManifestIncomplete);
     await expect(
       settle.commitSuccess({ ...good, revision: { ...good.revision, validationStatus: "unverified" } }),

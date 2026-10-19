@@ -194,3 +194,18 @@ M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到
 | 旧表单 | 旧的 `/lessons/new`(请求 v1)用的占位提示只适合假提供方;用真实模型时它的每次调用都失败(`llm_invalid_output`),所以真实提供方下 v1 改为直接使用教师输入的目标、不调用模型(`legacyProse`)。M7 会删除旧表单 |
 | 真实评估 | 已用真实服务评估(见 decisions.md §8.1):请求/响应形状与官方文档一致,结构化输出可用;评估暴露了长度上限过紧(400→600)与一条误报规则(单独的 `prompt`)并已修复。`thinking`/`effort` 参数仍未设置(使用模型默认),输出 token 约为稿子长度的 2.5 倍,说明思考占了大头;成本成为问题时再按模型关闭或降低 |
 
+## 16. M4 实现记录(2026-10-19)
+
+| 项 | 实现 / 与设计的差异 |
+|---|---|
+| 编译器接口 | 新增 `DocumentCompiler`(三份文档,要么全成功要么全失败);旧的两版 `Compiler` 只留给占位的 v1 作业。`SkeletonDocumentCompiler` 是本地/CI 的占位实现,生产被 worker 配置拒绝 |
+| 模板 | `classic/1`:Letter、11pt、`lmodern` + T1、`amsmath`、`geometry`、`fancyhdr`;**不加载** `hyperref`、`enumitem`、`lastpage` 等;PDF 对象压缩关闭(`\pdfobjcompresslevel=0`) |
+| 文字字符集 | 拉丁字母(含带音符)与常见标点;其他字符(表情、其他文字)打印为 `?`;这是**对非拉丁语言的限制**,与 D-39(只做英文)一致,将来加语言需要换字体与转义表 |
+| 活动内容 | 比设计里"沙箱内检查"更靠外一层:宿主在容器之外检查 PDF(对象流 + 危险字典名扫描,先剔除二进制流以免误报);**不解析 PDF 结构** |
+| TeX 配置 | `shell_escape=f`、`openout_any=p`、`openin_any=p` 经 Debian 的 `texmf.d` + `update-texmf` 生效(第一版直接写 `web2c/texmf-local.cnf` 没有被读取,是真实镜像上的测试发现的);**仍不把它们当安全边界**,边界是容器 |
+| `p` 模式的效果 | 实测:`\openout` 即使写 `out/` 子目录也被拒绝,所以恶意 TeX 连往输出目录塞额外文件都做不到;宿主的文件白名单是第二层 |
+| 可复现 | `SOURCE_DATE_EPOCH` + `FORCE_SOURCE_DATE=1`,同一源码两次编译的 PDF 逐字节相同(有测试) |
+| 版面发现 | 练习与其书写空间用 `samepage` 仍会被拆页(实际编译并看图才发现),改为 `minipage` |
+| 镜像 | 基础镜像摘要固定;TeX 包版本在 `packages.lock`(不含 `libc6`/`perl-base`,避免例行安全更新让 CI 无故变红);**生产镜像必须用摘要引用**(worker 配置强制) |
+| 尚未做 | gVisor/Firecracker 的评估与目标主机验证(D-03/D-20);孤儿对象清理(P3);把 `CompileError.detail` 写进作业记录;视觉回归(版面度量)——目前只验证页数与文字;真实课程数据下的字体/符号覆盖 |
+
