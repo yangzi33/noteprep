@@ -155,6 +155,47 @@
 - Phase 4: privacy/security verification, observability, cost/rate limits, recovery rehearsals, staging end-to-end checks, and release instructions. Expand question types after acceptance.
 - Never defer basic authorization, atomic allowance handling, math validation, or sandbox isolation until after launch. Later phases extend coverage; they do not introduce these boundaries for the first time.
 
+## Development Workflow — Evaluator–Optimizer
+
+- Follow the **Superpowers** skill workflow for planning, implementation, debugging, and verification. Invoke relevant skills before starting work.
+- Use an **Evaluator–Optimizer loop** for non-trivial development tasks:
+  1. **Implementer** implements the task following the approved plan.
+  2. **Evaluator** independently reviews correctness, architecture, edge cases, and requirement coverage.
+  3. **Validator** runs relevant tests, linting, and build checks.
+  4. **Optimizer** (Implementer) addresses confirmed issues and resubmits for evaluation.
+- Repeat until all quality gates pass, with a **maximum of 3 evaluation cycles**.
+- Use independent Subagents for evaluation and validation whenever practical.
+- Never skip verification, weaken tests to force a pass, or claim success with unresolved critical issues.
+- For trivial changes, skip the full loop but still perform appropriate verification.
+- Preserve Superpowers' existing skill instructions; this workflow complements rather than replaces them.
+
+## Adaptive Agent & Model Routing
+
+Use Superpowers skills and the Evaluator–Optimizer workflow for non-trivial tasks. Dynamically select appropriate Subagents and model tiers based on task complexity, risk, and cost efficiency:
+
+- **Haiku:** Routine, deterministic, low-complexity tasks.
+- **Sonnet:** Default for implementation, debugging, and standard reviews.
+- **Opus:** Complex architecture, difficult reasoning, critical debugging, and high-risk evaluations.
+
+Prefer the least expensive model capable of reliably completing the task. Escalate when necessary. Preserve independent evaluation and deterministic verification. Do not over-engineer trivial tasks.
+
+Project agents live in `.claude/agents/` (loaded when a session starts; restart or reload to pick up changes). Defaults are guidelines; the orchestrator overrides the model per delegation with the Agent tool's `model` parameter and always sets it explicitly:
+
+| Task | Agent | Default model |
+|---|---|---|
+| Complex planning, architecture | `planner` | Opus (override) |
+| Standard planning | `planner` | Sonnet |
+| Feature work, fixes, tests, refactors | `implementer` | Sonnet |
+| Trivial mechanical edits | `implementer` | Haiku (override) |
+| Hard or repeatedly failing debugging | `implementer` | Opus (override) |
+| Routine review | `evaluator` | Sonnet |
+| Security, concurrency, billing or architectural review | `evaluator` | Opus (override) |
+| Lint, typecheck, test and build runs | `validator` | Haiku |
+
+- `planner`, `evaluator` and `validator` are read-only (no Edit/Write); only `implementer` changes files, and the evaluator must not be the agent that wrote the code under review.
+- Escalate one tier after a failed round, with a changed approach; never retry the same prompt on the same model. Never lower the model of a security, billing, concurrency or sandbox review to save cost.
+- If the installed Claude Code does not list a project agent, use a built-in agent type with an explicit `model` and the role's instructions; the rules above still apply.
+
 ## Official Documentation References
 
 - [Claude Code project instructions](https://code.claude.com/docs/en/memory); [Next.js data security](https://nextjs.org/docs/app/guides/data-security).
