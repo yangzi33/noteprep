@@ -7,8 +7,11 @@ import type { CurriculumContext } from "@/lib/curriculum/context";
  */
 const MATH_OR_MARKUP = /[\d=$\\<>{}^_~|]|https?:|www\./i;
 const CLAIM_WORDS = /\b(align(ed|s|ment)?|curricul\w*|syllabus|standards?|expectations?)\b/i;
-/** Text that talks about the instructions or the model instead of the lesson (a symptom of injected instructions). */
-const META_TEXT = /\b(ignore|disregard|forget)\b.{0,40}\b(previous|prior|above|earlier|instructions?)\b|system prompt|as an? (ai|language model)|language model|\bjson\b|\bprompt\b/i;
+/**
+ * Text that talks about the instructions or the model instead of the lesson (a symptom of injected instructions).
+ * A bare "prompt" is NOT in the list: tutors prompt learners all the time (a real answer was wrongly rejected for it).
+ */
+const META_TEXT = /\b(ignore|disregard|forget)\b.{0,40}\b(previous|prior|above|earlier|instructions?)\b|system prompt|as an? (ai|language model)|language model|\bjson\b/i;
 /** Letters, marks, plain spaces and ordinary punctuation. Anything else (markdown, brackets, emoji, controls) is rejected. */
 const ALLOWED_CHARS = /^[\p{L}\p{M}\p{Zs}.,;:'"()!?\-–—]+$/u;
 

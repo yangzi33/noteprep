@@ -6,7 +6,9 @@ import { checkText, curriculumNames } from "./prose-rules";
 export const PROSE_PROMPT_VERSION = "prose/1";
 export const PROSE_SCHEMA_VERSION = 1;
 
-const Sentence = z.string().min(20).max(400);
+// The prompt asks for at most 400 characters, but a model does not count them (the eval saw 408 and 411). The hard cap
+// is the package's own per-paragraph limit, so anything accepted here is also accepted by the package schema.
+const Sentence = z.string().min(20).max(600);
 /**
  * The wording a model may write. Every field is plain words: the numbers, equations and answers come from
  * code, and the curriculum statement comes from the dataset. Bounds are enforced here (the provider schema
@@ -75,6 +77,21 @@ export function buildProseInput(context: CurriculumContext, request: LessonReque
     lessonMinutes: request.durationMinutes,
     ...(problems.length > 0 ? { fixThese: [...new Set(problems)] } : {}),
   };
+}
+
+/**
+ * What was wrong with an answer that did not parse, as codes that name the field and the problem but never contain
+ * the text (for example `TOO_LONG:explanation`), so the repair request can say something the model can act on.
+ */
+export function shapeProblems(error: z.ZodError): string[] {
+  const codes = error.issues.slice(0, 6).map((issue) => {
+    const field = String(issue.path[0] ?? "answer");
+    if (issue.code === "too_big") return `${issue.origin === "array" ? "TOO_MANY" : "TOO_LONG"}:${field}`;
+    if (issue.code === "too_small") return `${issue.origin === "array" ? "TOO_FEW" : "TOO_SHORT"}:${field}`;
+    if (issue.code === "unrecognized_keys") return "UNKNOWN_FIELD";
+    return `INVALID:${field}`;
+  });
+  return [...new Set(codes)];
 }
 
 /** Rule codes the draft breaks; empty means it may be used. */

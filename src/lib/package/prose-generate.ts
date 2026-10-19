@@ -1,7 +1,7 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import type { LlmProvider, Usage } from "@/lib/llm/types";
-import { buildProseInput, checkProseDraft, ProseDraft, PROSE_PROMPT_VERSION, PROSE_RESPONSE_SCHEMA, PROSE_SCHEMA_VERSION, PROSE_SYSTEM_PROMPT } from "./prose";
+import { buildProseInput, checkProseDraft, ProseDraft, PROSE_PROMPT_VERSION, PROSE_RESPONSE_SCHEMA, PROSE_SCHEMA_VERSION, PROSE_SYSTEM_PROMPT, shapeProblems } from "./prose";
 
 /** The provider failed in a way that should fail (or retry) the whole job, as opposed to unusable output. */
 export class ProseProviderError extends Error {
@@ -66,7 +66,7 @@ export async function generateProse(args: GenerateProseArgs): Promise<ProseResul
     model = result.model;
     const parsed = ProseDraft.safeParse(result.value);
     if (!parsed.success) {
-      problems = ["WRONG_SHAPE_OR_LENGTH"];
+      problems = shapeProblems(parsed.error);
       continue;
     }
     const broken = checkProseDraft(parsed.data, args.context);
