@@ -43,6 +43,7 @@ pnpm test:supabase         # 真实 Auth + Data API 的边界测试
 pnpm test:e2e              # Playwright:构建并启动应用(3100 端口),测试内启动真实 worker;需先 supabase:start,并已 `pnpm exec playwright install chromium`
 pnpm worker:dev           # 单独的进程;读取 .env 里的 WORKER_DATABASE_URL,产物写到 .data/objects
 pnpm dev                   # http://127.0.0.1:3000 ;注册邮件在 http://127.0.0.1:54324 (Mailpit)
+# WSL2 + Windows 浏览器:`pnpm dev` 绑定 127.0.0.1(IPv4 回环)。默认的 IPv6 通配监听在 Windows 上打不开 http://127.0.0.1:3000(而 localhost 能打开),已用 PowerShell 实测;不要改成 0.0.0.0(会暴露到局域网)。
 pnpm supabase:stop
 ```
 
