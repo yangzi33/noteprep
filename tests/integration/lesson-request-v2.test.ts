@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { verifyContextHash } from "@/lib/curriculum/context";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
@@ -18,6 +18,13 @@ import { FsObjectStore } from "@/lib/storage/store";
 import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pgErrorCode, pools } from "./helpers";
+
+const flags = vi.hoisted(() => ({ forceInvalid: false }));
+// Lets one test make the (real) package validator report a failure, to prove the job then fails and releases its allowance.
+vi.mock("@/lib/package/validate", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/package/validate")>();
+  return { ...real, validatePackage: (pkg: unknown) => (flags.forceInvalid ? { ...real.validatePackage(pkg), overall: "failed" as const } : real.validatePackage(pkg)) };
+});
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
@@ -169,22 +176,61 @@ describe("creating a curriculum lesson", () => {
   });
 });
 
+async function runToEnd(jobId: string) {
+  for (let i = 0; i < 10 && !["succeeded", "failed", "canceled"].includes((await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [jobId])).rows[0].state); i++) {
+    await runOnce(deps, "w-v2");
+  }
+  return (await admin.query(`SELECT state, error_code, calls_used FROM generation_job WHERE id = $1`, [jobId])).rows[0] as { state: string; error_code: string | null; calls_used: number };
+}
+
 describe("running a curriculum lesson", () => {
-  it("completes through the same pipeline and settles once, keeping the snapshot in the revision", async () => {
+  it("builds a verified lesson package with no model call, and settles once", async () => {
     const ctx = await account();
     const { job } = await web.generation.createGeneration(ctx, request(), key());
-    for (let i = 0; i < 10 && (await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state !== "succeeded"; i++) {
-      await runOnce(deps, "w-v2");
-    }
-    const row = (await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0];
-    expect(row.state).toBe("succeeded");
+    expect(await runToEnd(job.id)).toMatchObject({ state: "succeeded", calls_used: 0 });
     expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
-    const rev = (await admin.query(`SELECT content FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
-    expect(rev.content.context.contextHash).toMatch(/^sha256:/);
-    expect(verifyContextHash(rev.content.context)).toBe(true);
-    expect(rev.content.spec).toMatchObject({ topic: "Sample topic: Unknown on both sides", difficulty: "mixed" });
-    // scoped to this account: the database is shared, and another test file creates a drifted bucket on purpose
+    const rev = (await admin.query(`SELECT r.* FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+    expect(rev).toMatchObject({ schema_version: 2, validation_status: "verified", status: "finalized" });
+    expect(rev.validator_version).toMatch(/^package\/1\+/);
+    const pkg = rev.content;
+    expect(pkg.schemaVersion).toBe("lesson-package/1");
+    expect(pkg.sections.map((s: { kind: string }) => s.kind)).toContain("solutions");
+    expect(verifyContextHash(pkg.context)).toBe(true); // the snapshot travels with the content
+    expect(rev.validation_report).toMatchObject({ overall: "verified", math: { overall: "verified" }, prose: { overall: "pass" }, structure: { overall: "pass" } });
+    expect(rev.generation_meta).toMatchObject({ llm: false, contextHash: pkg.context.contextHash });
     expect((await workerPg.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = $1`, [ctx.userId])).rows).toEqual([]);
+  });
+
+  it("the same lesson always builds the same package, so a retried attempt cannot change the content", async () => {
+    const { buildPackage } = await import("@/lib/package/build");
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, request(), key());
+    await runToEnd(job.id);
+    const row = (await admin.query(`SELECT l.id AS lesson_id, l.input_spec, r.content FROM lesson l JOIN lesson_revision r ON r.lesson_id = l.id JOIN generation_job j ON j.lesson_id = l.id WHERE j.id = $1`, [job.id])).rows[0];
+    const rebuilt = buildPackage({ request: row.input_spec.request, context: row.input_spec.context, seed: row.lesson_id });
+    expect(JSON.parse(JSON.stringify(rebuilt))).toEqual(row.content);
+  });
+
+  it("a package that does not validate fails the job, publishes nothing, and returns the allowance", async () => {
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, request(), key());
+    flags.forceInvalid = true;
+    try {
+      expect(await runToEnd(job.id)).toMatchObject({ state: "failed", error_code: "validation_failed" });
+    } finally {
+      flags.forceInvalid = false;
+    }
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    expect((await admin.query(`SELECT state FROM usage_reservation WHERE job_id = $1`, [job.id])).rows[0].state).toBe("released");
+    expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0].n).toBe(0);
+  });
+
+  it("still takes the legacy path for a v1 request: model prose, skeleton content, one call", async () => {
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives: ["Solve ax + b = c"], durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" }, key());
+    expect(await runToEnd(job.id)).toMatchObject({ state: "succeeded", calls_used: 1 });
+    const rev = (await admin.query(`SELECT schema_version, content FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+    expect(rev).toMatchObject({ schema_version: 1, content: { skeleton: true } });
   });
 });
 

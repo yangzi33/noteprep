@@ -19,6 +19,7 @@ export interface PipelineInput {
   durationMinutes: number;
   /** Present for v2 jobs only. */
   context?: CurriculumContext;
+  request?: LessonRequestV2;
 }
 
 export function normalizeJobInput(raw: unknown): PipelineInput {
@@ -32,6 +33,7 @@ export function normalizeJobInput(raw: unknown): PipelineInput {
       difficulty: request.difficulty,
       durationMinutes: request.durationMinutes,
       context,
+      request,
     };
   }
   const v1 = GenerateInput.parse(raw);
