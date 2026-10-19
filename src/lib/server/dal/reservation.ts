@@ -16,3 +16,25 @@ export async function releaseReservation(tx: Tx, jobId: string, reason: string):
   await tx.$executeRaw`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = ${row.bucket_id}::uuid`;
   return true;
 }
+
+export type TerminalOutcome = "failed" | "canceled";
+
+/**
+ * Ends a job that the caller has ALREADY LOCKED (SELECT ... FOR UPDATE in the same transaction):
+ * releases its reservation (once) and records the terminal state. Used by every path that gives up
+ * on a job, so allowance is never held by a finished job.
+ */
+export async function finishLockedJob(tx: Tx, jobId: string, outcome: TerminalOutcome, errorCode: string): Promise<void> {
+  await releaseReservation(tx, jobId, outcome === "canceled" ? "canceled" : `failed:${errorCode}`);
+  await tx.generationJob.update({
+    where: { id: jobId },
+    data: {
+      state: outcome,
+      stage: null,
+      errorCode,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      finishedAt: new Date(),
+    },
+  });
+}

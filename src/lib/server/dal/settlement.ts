@@ -8,7 +8,7 @@ import {
 } from "@/lib/domain/errors";
 import { assertManifestComplete, type ManifestEntry } from "@/lib/domain/manifest";
 import type { Db } from "../db";
-import { releaseReservation } from "./reservation";
+import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
 export interface RevisionDraft {
@@ -148,18 +148,7 @@ export function createSettlementDal(db: Db) {
       await inTransaction(db, async (tx) => {
         const job = await lockJob(tx, input.jobId);
         if (job.state !== "running" || job.fencing_token !== input.fencingToken) throw new StaleOrCanceled();
-        await releaseReservation(tx, input.jobId, input.outcome === "canceled" ? "canceled" : `failed:${input.errorCode}`);
-        await tx.generationJob.update({
-          where: { id: input.jobId },
-          data: {
-            state: input.outcome,
-            stage: null,
-            errorCode: input.errorCode,
-            leaseOwner: null,
-            leaseExpiresAt: null,
-            finishedAt: new Date(),
-          },
-        });
+        await finishLockedJob(tx, input.jobId, input.outcome, input.errorCode);
       });
     },
   };

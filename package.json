@@ -36,6 +36,7 @@
     "prisma": "7.10.1",
     "supabase": "2.121.0",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "5.0.5"
   },
@@ -57,6 +58,7 @@
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "db:dev-roles": "bash scripts/dev-roles.sh",
-    "test:supabase": "vitest run --config vitest.supabase.config.mts"
+    "test:supabase": "vitest run --config vitest.supabase.config.mts",
+    "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts"
   }
 }
