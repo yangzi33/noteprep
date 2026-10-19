@@ -9,7 +9,7 @@ export default async function AccountPage() {
       <h1 className="text-2xl font-semibold">Account</h1>
       <p className="mt-2">Signed in as {email}.</p>
       <form className="mt-6">
-        <Button type="submit" variant="outline" formAction={signOut} formMethod="post">
+        <Button type="submit" variant="outline" formAction={signOut}>
           Sign out
         </Button>
       </form>

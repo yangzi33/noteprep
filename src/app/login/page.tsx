@@ -37,10 +37,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           />
         </label>
         <div className="flex gap-2">
-          <Button type="submit" formAction={signIn} formMethod="post">
+          <Button type="submit" formAction={signIn}>
             Sign in
           </Button>
-          <Button type="submit" variant="outline" formAction={signUp} formMethod="post">
+          <Button type="submit" variant="outline" formAction={signUp}>
             Create account
           </Button>
         </div>

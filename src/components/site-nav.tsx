@@ -18,7 +18,7 @@ export async function SiteNav() {
             <Link href="/lessons">History</Link>
             <span className="ml-auto text-muted-foreground">{user.email}</span>
             <form>
-              <Button type="submit" variant="outline" size="sm" formAction={signOut} formMethod="post">
+              <Button type="submit" variant="outline" size="sm" formAction={signOut}>
                 Sign out
               </Button>
             </form>
