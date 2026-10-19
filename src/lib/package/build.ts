@@ -1,0 +1,290 @@
+import type { CurriculumContext } from "@/lib/curriculum/context";
+import { DomainError } from "@/lib/domain/errors";
+import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
+import { GENERATOR_VERSION, generateExerciseSet, generateLinearQuestion, type GeneratedQuestion } from "@/lib/math/generator";
+import { sectionContentHash, sectionInputsHash } from "./hash";
+import {
+  PACKAGE_SCHEMA_VERSION,
+  DOCUMENT_SECTION_KINDS,
+  SECTION_KINDS,
+  type LessonPackage,
+  type Section,
+  type SectionKind,
+} from "./schema";
+
+/** The one concept the engine can generate for today (docs/curriculum-architecture.md section 3). */
+export const LINEAR_CONCEPT_ID = "linear-equations-one-variable";
+
+export class PackageBuildError extends DomainError {
+  constructor(message: string) {
+    super("PACKAGE_BUILD_FAILED", message);
+  }
+}
+
+export interface BuildInput {
+  request: LessonRequestV2;
+  context: CurriculumContext;
+  /** Same seed, same request and context: byte-identical package. The pipeline uses the lesson id. */
+  seed: string;
+}
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+/** Minutes per section; always sums to the requested duration. */
+export function planOutline(totalMinutes: number) {
+  const explanation = Math.round(totalMinutes * 0.15);
+  const examples = Math.round(totalMinutes * 0.25);
+  const review = Math.round(totalMinutes * 0.1);
+  const exercises = totalMinutes - explanation - examples - review;
+  const exerciseCount = clamp(Math.floor(exercises / 5), 3, 12);
+  const exampleCount = clamp(Math.floor(totalMinutes / 30), 1, 3);
+  return { explanation, examples, review, exercises, exerciseCount, exampleCount };
+}
+
+const fingerprint = (q: GeneratedQuestion) => JSON.stringify(q.problem.equation);
+
+/** Examples and exercises never repeat an equation; the draw is deterministic and bounded. */
+function drawQuestions(seed: string, difficulty: "basic" | "mixed" | "challenge", exampleCount: number, exerciseCount: number, withDegenerateExample: boolean) {
+  const exampleLevel = difficulty === "basic" ? "basic" : "mixed";
+  const examples = generateExerciseSet({ jobSeed: `${seed}:examples`, count: exampleCount, difficulty: exampleLevel, idPrefix: "we" });
+  if (withDegenerateExample) {
+    examples.push(generateLinearQuestion({ id: `we-${examples.length + 1}`, difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: `${seed}:we-degenerate` }));
+  }
+  const taken = new Set(examples.map(fingerprint));
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const exercises = generateExerciseSet({ jobSeed: `${seed}:exercises:${attempt}`, count: exerciseCount, difficulty, idPrefix: "ex" });
+    if (exercises.every((q) => !taken.has(fingerprint(q)))) return { examples, exercises };
+  }
+  throw new PackageBuildError("could not draw exercises that differ from the worked examples");
+}
+
+type Draft = { kind: SectionKind; title: string; blocks: Section["blocks"]; method: "deterministic"; minutes: number; params: Record<string, unknown> };
+
+/** Edges: `from` is upstream of `to`. Solutions are a pure function of the exercises, so they always travel together. */
+const EDGES = [
+  { from: "objectives", to: "explanation", kind: "references" },
+  { from: "objectives", to: "exercises", kind: "references" },
+  { from: "explanation", to: "worked_examples", kind: "references" },
+  { from: "exercises", to: "solutions", kind: "derives" },
+] as const satisfies readonly { from: SectionKind; to: SectionKind; kind: "derives" | "references" }[];
+
+export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
+
+export function buildPackage({ request, context, seed }: BuildInput): LessonPackage {
+  const concept = context.concepts.find((c) => c.id === LINEAR_CONCEPT_ID);
+  if (!concept) throw new PackageBuildError("the selected topic has no concept the engine can generate");
+  if (!concept.capability.difficulties.includes(request.difficulty)) throw new PackageBuildError("the engine does not support this difficulty for the selected concept");
+
+  const plan = planOutline(request.durationMinutes);
+  const wantDegenerate = request.difficulty !== "basic" && concept.capability.outcomes.includes("no_solution");
+  const { examples, exercises } = drawQuestions(seed, request.difficulty, plan.exampleCount, plan.exerciseCount, wantDegenerate);
+
+  const drafts: Draft[] = [
+    {
+      kind: "objectives",
+      title: "Learning objectives",
+      blocks: [
+        { type: "paragraph", text: "By the end of this lesson the learner should be able to work towards the following objectives." },
+        { type: "list", items: context.objectives.map((o) => o.label) },
+      ],
+      method: "deterministic",
+      minutes: 0,
+      params: {},
+    },
+    {
+      kind: "prerequisites",
+      title: "Prerequisites",
+      blocks:
+        context.prerequisites.length === 0
+          ? [{ type: "paragraph", text: "No earlier topics are listed as prerequisites for this topic in the selected dataset." }]
+          : [
+              { type: "paragraph", text: "Check that the learner is comfortable with the following earlier topics before starting." },
+              { type: "list", items: context.prerequisites.map((p) => p.title) },
+            ],
+      method: "deterministic",
+      minutes: 0,
+      params: {},
+    },
+    {
+      kind: "explanation",
+      title: "Key ideas",
+      blocks: [
+        { type: "paragraph", text: "An equation says that two expressions have the same value. Solving it means finding the value of the unknown that makes the statement true." },
+        { type: "paragraph", text: "Whatever is done to one side of an equation must also be done to the other side, so that the two sides stay equal." },
+        { type: "list", items: ["Undo addition and subtraction first, using the opposite operation on both sides.", "Then undo multiplication or division, again on both sides.", "When the unknown appears on both sides, collect the unknown terms on one side first.", "Always check the answer by substituting it back into the original equation."] },
+      ],
+      method: "deterministic",
+      minutes: plan.explanation,
+      params: {},
+    },
+    {
+      kind: "derivation",
+      title: "Why the method works",
+      blocks: [
+        {
+          type: "step_list",
+          steps: [
+            "Start from an equation that is true for some value of the unknown.",
+            "Applying the same operation to both sides keeps the two sides equal, so the new equation has the same solution.",
+            "Each operation is chosen to remove one term or factor next to the unknown.",
+            "Repeat until the unknown stands alone; the other side then shows its value.",
+          ],
+        },
+      ],
+      method: "deterministic",
+      minutes: 0,
+      params: {},
+    },
+    {
+      kind: "worked_examples",
+      title: "Worked examples",
+      blocks: [
+        { type: "paragraph", text: "Work through each example with the learner, asking them to name the next step before it is shown." },
+        ...examples.map((q) => ({ type: "worked_example" as const, questionId: q.id, problem: q.problem, solution: q.solution, steps: q.steps })),
+        ...(wantDegenerate ? [{ type: "note" as const, text: "The last example has no solution. Discuss why the unknown disappears and what that tells us." }] : []),
+      ],
+      method: "deterministic",
+      minutes: plan.examples,
+      params: { seed, exampleCount: examples.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+    },
+    {
+      kind: "teaching_sequence",
+      title: "Teaching sequence",
+      blocks: [
+        { type: "list", items: ["Recall earlier work and state the goal of the lesson.", "Introduce the key ideas and the method.", "Work through the examples together.", "Let the learner attempt the exercises, giving help only when asked.", "Review mistakes and summarize."] },
+        {
+          type: "timing",
+          items: [
+            { label: "Key ideas", minutes: Math.max(1, plan.explanation) },
+            { label: "Worked examples", minutes: Math.max(1, plan.examples) },
+            { label: "Exercises", minutes: Math.max(1, plan.exercises) },
+            { label: "Review", minutes: Math.max(1, plan.review) },
+          ],
+        },
+      ],
+      method: "deterministic",
+      minutes: plan.review,
+      params: {},
+    },
+    {
+      kind: "common_mistakes",
+      title: "Common mistakes",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            "Changing only one side of the equation.",
+            "Forgetting that a negative sign belongs to the term that follows it.",
+            "Adding when the opposite operation is needed.",
+            "Dividing only part of one side by the coefficient.",
+            "Skipping the check by substitution.",
+          ],
+        },
+      ],
+      method: "deterministic",
+      minutes: 0,
+      params: {},
+    },
+    {
+      kind: "exercises",
+      title: "Practice exercises",
+      blocks: [
+        { type: "paragraph", text: "Solve each equation. Show every step in the space provided." },
+        ...exercises.flatMap((q) => [
+          { type: "question" as const, questionId: q.id, problem: q.problem },
+          { type: "writing_space" as const, lines: 4 },
+        ]),
+      ],
+      method: "deterministic",
+      minutes: plan.exercises,
+      params: { seed, exerciseCount: exercises.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+    },
+    {
+      kind: "solutions",
+      title: "Solutions",
+      blocks: [
+        { type: "paragraph", text: "Worked solutions for every exercise, in the same order." },
+        ...exercises.map((q) => ({ type: "solution" as const, questionId: q.id, solution: q.solution, steps: q.steps })),
+      ],
+      method: "deterministic",
+      minutes: 0,
+      params: { seed, exerciseCount: exercises.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+    },
+    {
+      kind: "alignment",
+      title: "Curriculum information",
+      blocks: [
+        {
+          type: "alignment",
+          claim: context.alignmentClaimsAllowed ? "aligned" : "none",
+          curriculumName: context.curriculum.name,
+          versionLabel: context.curriculum.version.label,
+          datasetKind: context.curriculum.version.kind,
+          objectives: context.objectives.map((o) => ({ id: o.id, officialCode: o.officialCode, label: o.label, coverage: o.coverage, note: o.note })),
+        },
+      ],
+      method: "deterministic",
+      minutes: 0,
+      params: {},
+    },
+  ];
+
+  // Hashes in dependency order: a section's inputsHash includes the contentHash of its upstream sections.
+  const sections: Section[] = [];
+  const contentHashes = new Map<SectionKind, string>();
+  for (const draft of drafts) {
+    const upstream = EDGES.filter((e) => e.to === draft.kind).map((e) => {
+      const hash = contentHashes.get(e.from);
+      if (!hash) throw new PackageBuildError(`section order is wrong: ${e.from} must be built before ${draft.kind}`);
+      return hash;
+    });
+    const withoutHashes = { kind: draft.kind, title: draft.title, blocks: draft.blocks } as Pick<Section, "kind" | "title" | "blocks">;
+    const contentHash = sectionContentHash(withoutHashes);
+    contentHashes.set(draft.kind, contentHash);
+    sections.push({
+      ...withoutHashes,
+      id: sectionId(draft.kind),
+      provenance: { method: draft.method, ...(draft.params.seed ? { seed: String(draft.params.seed), generatorVersion: GENERATOR_VERSION } : {}) },
+      inputsHash: sectionInputsHash({ kind: draft.kind, params: { ...draft.params, contextHash: context.contextHash, minutes: draft.minutes }, upstreamContentHashes: upstream }),
+      contentHash,
+    } as Section);
+  }
+
+  const objectiveIds = context.objectives.map((o) => o.id);
+  return {
+    schemaVersion: PACKAGE_SCHEMA_VERSION,
+    request,
+    context,
+    seed,
+    outline: {
+      totalMinutes: request.durationMinutes,
+      sections: drafts.map((d) => ({ id: sectionId(d.kind), kind: d.kind, minutes: d.minutes, objectiveIds })),
+    },
+    sections,
+    documents: request.documents.map((id) => ({
+      id,
+      sectionIds: DOCUMENT_SECTION_KINDS[id].map((kind) => sectionId(kind)),
+      templateId: request.templateId,
+    })),
+    deps: EDGES.map((e) => ({ from: sectionId(e.from), to: sectionId(e.to), kind: e.kind })),
+  };
+}
+
+/** Every section a change to `id` forces to be regenerated: the transitive closure of the edges, excluding `id` itself. */
+export function dependentsOf(pkg: Pick<LessonPackage, "deps">, id: string): string[] {
+  const out = new Set<string>();
+  const queue = [id];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const edge of pkg.deps) {
+      if (edge.from === current && !out.has(edge.to)) {
+        out.add(edge.to);
+        queue.push(edge.to);
+      }
+    }
+  }
+  out.delete(id);
+  return [...out].sort();
+}
+
+export { SECTION_KINDS };

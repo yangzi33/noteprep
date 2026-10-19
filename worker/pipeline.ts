@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { DomainError } from "@/lib/domain/errors";
+import { canonicalJson } from "@/lib/domain/hash";
 import { normalizeJobInput } from "@/lib/domain/job-input";
 import { artifactPath, EDITIONS, FORMATS, type ManifestEntry } from "@/lib/domain/manifest";
 import type { ClaimedJob, JobsDal } from "@/lib/server/dal/jobs";
@@ -8,6 +10,9 @@ import { CompileError, type Compiler } from "@/lib/latex/compiler";
 import { renderSkeletonSource } from "@/lib/latex/skeleton";
 import type { LlmProvider } from "@/lib/llm/types";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
+import { buildPackage } from "@/lib/package/build";
+import { PACKAGE_REVISION_SCHEMA_VERSION } from "@/lib/package/schema";
+import { PACKAGE_VALIDATOR_VERSION, validatePackage } from "@/lib/package/validate";
 
 /** A failure the pipeline understands. `retryable` decides requeue (with backoff) versus fail. */
 export class PipelineError extends Error {
@@ -66,47 +71,69 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
   // --- generating ---------------------------------------------------------------------------
   await checkpoint("generating");
   const spec = normalizeJobInput(await jobs.getInput(job.id, job.fencingToken)); // v1 or v2 request, same pipeline
-  const result = await llm.generateStructured({
-    requestId: randomUUID(),
-    jobId: job.id,
-    task: "lesson_prose",
-    schemaVersion: 1,
-    system: "skeleton",
-    // Only what this lesson needs. For a curriculum lesson that includes the chosen objectives and the concept
-    // the engine will use, so the model writes about the selected topic rather than inventing one.
-    input: {
-      topic: spec.topic,
-      level: spec.level,
-      objectives: spec.objectives,
-      difficulty: spec.difficulty,
-      ...(spec.context
-        ? { conceptIds: spec.context.concepts.map((c) => c.id), contextHash: spec.context.contextHash, prerequisites: spec.context.prerequisites.map((p) => p.title) }
-        : {}),
-    },
-    limits: { timeoutMs: 30_000, maxOutputTokens: 2_000, maxCostMicros: 100_000 },
-    signal,
-  });
-  const usage = result.usage;
-  if (usage) {
-    const { exceeded } = await jobs.chargeUsage(job.id, job.fencingToken, {
-      calls: 1,
-      tokens: usage.inputTokens + usage.outputTokens,
-      costMicros: usage.costMicros,
-    });
-    if (exceeded) throw new PipelineError("budget_exceeded", false);
-  }
-  if (!result.ok) throw new PipelineError(`llm_${result.error.type}`, result.error.retryable);
+  // A curriculum (v2) lesson is built by code from the curriculum context: exercises, answers and worked steps
+  // come from the verified generator and the wording is templated, so no model call is needed yet (M3b adds
+  // model-written prose). Legacy (v1) lessons keep the Phase 1 path (fake model prose, skeleton content).
+  let objectives: string[];
+  let content: unknown;
+  let validation: { report: unknown; status: "verified" | "failed" | "unverified"; validatorVersion: string };
+  let revisionSchemaVersion: number;
+  let meta: Record<string, unknown>;
 
-  // --- validating ---------------------------------------------------------------------------
-  await checkpoint("validating");
-  const prose = SkeletonProse.safeParse(result.value);
-  if (!prose.success) throw new PipelineError("invalid_output", false);
-  const content = {
-    skeleton: true,
-    spec: { topic: spec.topic, level: spec.level, difficulty: spec.difficulty, durationMinutes: spec.durationMinutes },
-    objectives: prose.data.objectives,
-    ...(spec.context ? { context: spec.context } : {}), // the immutable snapshot the lesson was generated from
-  };
+  if (spec.request && spec.context) {
+    let pkg;
+    try {
+      pkg = buildPackage({ request: spec.request, context: spec.context, seed: job.lessonId });
+    } catch (error) {
+      if (error instanceof DomainError) throw new PipelineError("package_build_failed", false);
+      throw error;
+    }
+    // --- validating -------------------------------------------------------------------------
+    await checkpoint("validating");
+    const report = validatePackage(pkg);
+    // Anything but a fully verified package is not a complete generation: the job fails and the reservation is released.
+    if (report.overall !== "verified") throw new PipelineError("validation_failed", false);
+    objectives = spec.objectives;
+    content = pkg;
+    validation = { report, status: report.overall, validatorVersion: PACKAGE_VALIDATOR_VERSION };
+    revisionSchemaVersion = PACKAGE_REVISION_SCHEMA_VERSION;
+    meta = { package: pkg.schemaVersion, llm: false, compiler: compiler.id, contextHash: spec.context.contextHash };
+  } else {
+    const result = await llm.generateStructured({
+      requestId: randomUUID(),
+      jobId: job.id,
+      task: "lesson_prose",
+      schemaVersion: 1,
+      system: "skeleton",
+      input: { topic: spec.topic, level: spec.level, objectives: spec.objectives, difficulty: spec.difficulty },
+      limits: { timeoutMs: 30_000, maxOutputTokens: 2_000, maxCostMicros: 100_000 },
+      signal,
+    });
+    const usage = result.usage;
+    if (usage) {
+      const { exceeded } = await jobs.chargeUsage(job.id, job.fencingToken, {
+        calls: 1,
+        tokens: usage.inputTokens + usage.outputTokens,
+        costMicros: usage.costMicros,
+      });
+      if (exceeded) throw new PipelineError("budget_exceeded", false);
+    }
+    if (!result.ok) throw new PipelineError(`llm_${result.error.type}`, result.error.retryable);
+
+    // --- validating -------------------------------------------------------------------------
+    await checkpoint("validating");
+    const prose = SkeletonProse.safeParse(result.value);
+    if (!prose.success) throw new PipelineError("invalid_output", false);
+    objectives = prose.data.objectives;
+    content = {
+      skeleton: true,
+      spec: { topic: spec.topic, level: spec.level, difficulty: spec.difficulty, durationMinutes: spec.durationMinutes },
+      objectives,
+    };
+    validation = { report: { overall: "verified", skeleton: true }, status: "verified", validatorVersion: "skeleton/0" };
+    revisionSchemaVersion = 1;
+    meta = { skeleton: true, provider: llm.id, compiler: compiler.id };
+  }
 
   // --- compiling ----------------------------------------------------------------------------
   await checkpoint("compiling");
@@ -114,8 +141,8 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
   try {
     compiled = await compiler.compile({
       sources: {
-        student: renderSkeletonSource("student", spec, prose.data.objectives),
-        teacher: renderSkeletonSource("teacher", spec, prose.data.objectives),
+        student: renderSkeletonSource("student", spec, objectives),
+        teacher: renderSkeletonSource("teacher", spec, objectives),
       },
       signal,
     });
@@ -130,8 +157,8 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
   const attemptId = randomUUID(); // objects live under this attempt only; losers become orphans, never published
   const scope = { ownerId: job.ownerId, lessonId: job.lessonId, revisionId, attemptId };
   const sources = {
-    student: { tex: new TextEncoder().encode(renderSkeletonSource("student", spec, prose.data.objectives)), pdf: compiled.student },
-    teacher: { tex: new TextEncoder().encode(renderSkeletonSource("teacher", spec, prose.data.objectives)), pdf: compiled.teacher },
+    student: { tex: new TextEncoder().encode(renderSkeletonSource("student", spec, objectives)), pdf: compiled.student },
+    teacher: { tex: new TextEncoder().encode(renderSkeletonSource("teacher", spec, objectives)), pdf: compiled.teacher },
   };
   const manifest: ManifestEntry[] = [];
   try {
@@ -158,14 +185,14 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     attemptId,
     revisionId,
     revision: {
-      schemaVersion: 1,
+      schemaVersion: revisionSchemaVersion,
       content,
-      contentHash: `sha256:${sha256Of(new TextEncoder().encode(JSON.stringify(content)))}`,
-      validationReport: { overall: "verified", skeleton: true },
-      validationStatus: "verified",
+      contentHash: `sha256:${sha256Of(new TextEncoder().encode(canonicalJson(content)))}`,
+      validationReport: validation.report,
+      validationStatus: validation.status,
       templateVersion: "skeleton/0",
-      validatorVersion: "skeleton/0",
-      generationMeta: { skeleton: true, provider: llm.id, compiler: compiler.id },
+      validatorVersion: validation.validatorVersion,
+      generationMeta: meta,
     },
     manifest,
   });

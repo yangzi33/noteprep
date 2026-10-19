@@ -169,3 +169,16 @@ M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到
 | 示例数据 | 页面强制显示"示例数据"横幅;`CURRICULUM_ALLOW_SAMPLE=1` 才能看到;**生产默认看不到任何课程** |
 | 尚未做 | 向托管 staging 库加载示例数据的审批工作流(目前只有本地/CI 通过 `pnpm curriculum:load` 加载);因此 staging 上的 `/prepare` 在加载之前会显示"暂无课程";输出文档子集目前只是占位(M4 才有真实文档);D-35 的"想要此主题"记录未做 |
 
+## 14. M3a 实现记录(2026-10-19)
+
+| 项 | 实现 / 与设计的差异 |
+|---|---|
+| 块与节 | 块类型:paragraph、note、list、step_list、timing、writing_space、question、worked_example、solution、alignment。**每种节只允许所需的块**(用判别联合表达),因此练习卷在类型上不含答案。设计里的"math(questionId 引用)"实现为携带已验证题目数据的 `question`/`worked_example`/`solution` 块 |
+| 时间 | 单独的 `timing` 块(数字放在结构里,文字块不含数字)。分配:讲解 15%、例题 25%、复习 10%、练习为余数;练习 3–12 道(每道约 5 分钟),例题 1–3 道(+1 道无解例题) |
+| 依赖 | `from` 是上游:objectives→explanation、objectives→exercises、explanation→worked_examples、exercises→solutions(derives)。`dependentsOf` 是传递闭包,供 M5 使用 |
+| 哈希 | `contentHash` = 规范 JSON(kind、title、blocks);`inputsHash` = 种类、参数(含 `contextHash`、本节分钟数)与上游 `contentHash`。验证器重算 `contentHash`;`inputsHash` 暂只校验格式 |
+| 种子 | 用 lesson id:同一课的重试内容不变;重新生成整包是新 lesson ⇒ 新种子 |
+| 作业失败 | 验证不是 `verified` ⇒ `validation_failed`,不重试(确定性构建,重试无意义),释放额度。v2 不调用模型,所以无需 LLM 预算,但仍受任务期限与速率限制约束 |
+| 修订 | `schema_version = 2`;v1 的 `content_hash` 现在用规范 JSON 计算(只影响新写入的修订;旧修订的哈希是历史值,不再重算) |
+| 尚未做 | 真实渲染(M4);LLM 叙述与更丰富的讲解(M3b);调整(M5) |
+
