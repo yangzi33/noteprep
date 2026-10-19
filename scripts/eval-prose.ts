@@ -4,14 +4,18 @@ import { withContextHash } from "../src/lib/curriculum/context";
 import type { LessonRequestV2 } from "../src/lib/domain/lesson-request";
 import { createLlmProvider } from "../src/lib/llm/factory";
 import { LINEAR_CONCEPT_ID } from "../src/lib/package/build";
+import type { LlmProvider } from "../src/lib/llm/types";
+import { ProseDraft } from "../src/lib/package/prose";
 import { generateProse } from "../src/lib/package/prose-generate";
+import { checkText, curriculumNames } from "../src/lib/package/prose-rules";
 
 // Manual quality and cost evaluation of the lesson-wording prompt against a REAL provider. It is never run by CI
 // or by `pnpm test`: it spends money. Usage:
 //   LLM_PROVIDER=anthropic LLM_API_KEY=... LLM_MODEL=... LLM_PRICE_INPUT_MICROS_PER_MTOK=... \
 //   LLM_PRICE_OUTPUT_MICROS_PER_MTOK=... pnpm eval:prose --runs 6 --confirm-cost [--show]
 // It prints aggregate numbers (attempts, fallbacks, rule codes, tokens, cost, latency). Add --show to print the
-// first accepted draft for a human spot check; nothing is written to disk.
+// first accepted draft for a human spot check; --diagnose prints which sentence broke which rule when wording is
+// rejected (the content is fictional lesson wording, not user data); nothing is written to disk.
 const Env = z.object({
   LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
   LLM_API_KEY: z.string().optional(),
@@ -38,7 +42,17 @@ async function main() {
     console.error("this calls a real provider and costs money; add --confirm-cost to proceed");
     process.exit(2);
   }
-  const llm = createLlmProvider(env);
+  const real = createLlmProvider(env);
+  // Remembers every parsed answer so --diagnose can show what was rejected and why.
+  const answers: unknown[] = [];
+  const llm: LlmProvider = {
+    id: real.id,
+    async generateStructured(request) {
+      const result = await real.generateStructured(request);
+      if (result.ok) answers.push(result.value);
+      return result;
+    },
+  };
 
   // A fictional context: nothing here is real curriculum text or user data.
   const capability = CAPABILITIES[LINEAR_CONCEPT_ID]!;
@@ -76,6 +90,7 @@ async function main() {
       locale: "en",
     };
     const started = Date.now();
+    const firstAnswer = answers.length;
     try {
       const result = await generateProse({
         llm,
@@ -91,6 +106,28 @@ async function main() {
         },
       });
       stats.ms.push(Date.now() - started);
+      if (arg("--diagnose")) {
+        // Every answer of this run except the one that was accepted: what broke which rule, sentence by sentence.
+        const mine = answers.slice(firstAnswer);
+        const rejected = result.draft ? mine.slice(0, -1) : mine;
+        const names = curriculumNames(context);
+        for (const answer of rejected) {
+          const draft = ProseDraft.safeParse(answer);
+          if (!draft.success) {
+            const issue = draft.error.issues[0];
+            let at: unknown = answer;
+            for (const key of issue?.path ?? []) at = (at as Record<PropertyKey, unknown> | undefined)?.[key];
+            const length = typeof at === "string" ? `${at.length} characters` : Array.isArray(at) ? `${at.length} entries` : typeof at;
+            console.log(`run ${i}: wrong shape at ${issue?.path.join(".") ?? "?"}: ${issue?.code ?? "?"} (${length})`);
+            continue;
+          }
+          const d = draft.data;
+          for (const sentence of [...d.explanation, ...d.derivation, d.exampleIntro, ...d.teachingSequence, ...d.commonMistakes]) {
+            const codes = checkText(sentence, names);
+            if (codes.length > 0) console.log(`run ${i}: [${codes.join(",")}] ${sentence}`);
+          }
+        }
+      }
       if (result.draft) {
         stats.accepted++;
         if (result.attempts === 1) stats.firstTry++;

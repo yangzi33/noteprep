@@ -14,12 +14,22 @@ import {
 } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS, type GenerationLimits } from "@/lib/domain/generation";
 import { EDITIONS, FORMATS, artifactPath, type ManifestEntry } from "@/lib/domain/manifest";
-import { makeAuthedCtx } from "@/lib/server/auth/context";
+import { makeAuthedCtx as makeCtx } from "@/lib/server/auth/context";
 import { createDb } from "@/lib/server/db";
 import { createWebDal, createWorkerDal, type CommitSuccessInput } from "@/lib/server/dal";
 import { isRetryableDbError } from "@/lib/server/dal/tx";
 import { inject } from "vitest";
 import { pools } from "./helpers";
+
+// The database is shared by every test file, and other files corrupt a bucket's counters on purpose (to test the
+// constraints and the drift view). Drift is therefore checked only for the accounts THIS file created.
+const ownedHere = new Set<string>();
+const makeAuthedCtx = (id: string) => {
+  ownedHere.add(id);
+  return makeCtx(id);
+};
+const driftHere = async (db: { query: (sql: string, params: unknown[]) => Promise<{ rows: unknown[] }> }) =>
+  (await db.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = ANY($1::uuid[])`, [[...ownedHere]])).rows;
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
@@ -72,8 +82,7 @@ async function bucketOf(ownerId: string, kind = "trial") {
 }
 
 async function expectNoDrift() {
-  const { rows } = await workerPg.query(`SELECT * FROM usage_bucket_drift`);
-  expect(rows).toEqual([]);
+  expect(await driftHere(workerPg)).toEqual([]);
 }
 
 /** Simulates the claim step (implemented in P1-T6) so settlement can be tested on its own. */
