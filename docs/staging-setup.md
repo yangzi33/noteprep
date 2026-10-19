@@ -9,9 +9,9 @@
 2. **Auth**:开启邮箱确认;关闭匿名登录;在 Authentication → URL Configuration 把 **Site URL** 设为 staging 域名(目前 `https://noteprep.app`),并把 `<域名>/auth/callback` 加入 Redirect URLs。**必须在第一次注册之前完成**:否则确认邮件会回退到默认的 `http://localhost:3000`。
 3. **Data API**:迁移后确认 `anon`/`authenticated` 对 public 表没有权限(可跑 `information_schema.role_table_grants` 查询,期望 0 行)。若不使用 Data API 可在设置里关闭。
 4. **迁移**:通过 GitHub Actions 的 `Database migrations` 工作流(手动触发、`staging` 环境、需审批)执行 `prisma migrate deploy`。先选 action **status**:有未应用迁移时它会显示为红色(`prisma migrate status` 在有待应用迁移时退出码为 1,这是预期的信息而不是故障);再选 action **deploy** 才会真正执行 "Apply migrations" 步骤(默认值是 status,容易忽略)。`MIGRATION_DATABASE_URL` 用 **会话池**(端口 5432,用户 `postgres.<project-ref>`);直连是 IPv6,GitHub 托管 runner 可能连不上(未验证)。**不要**用 Supabase 的 GitHub 集成/Branching 管理迁移(它读取 `supabase/migrations`,本项目的迁移在 `prisma/migrations`)。
-5. **加载示例课程数据(仅 staging,M2 起需要才能看到 `/prepare` 的内容)**:先在 Vercel 的 staging 环境变量里设置 `CURRICULUM_ALLOW_SAMPLE=1` 并重新部署;然后运行 GitHub Actions 的 `Load curriculum dataset` 工作流(手动触发、受同一组环境审批保护),选 environment **staging**、dataset `sample-math/sample-1`,先用默认的 **validate**(只检查文件,不碰数据库),再选 **load**。它用与迁移相同的 `MIGRATION_DATABASE_URL`(所有者连接),幂等:重复运行显示 `unchanged`。**示例数据只会被加载到 staging**:工作流只在 staging 传 `--allow-sample`,生产环境即使选了示例数据集也会被加载器拒绝(`KIND_NOT_ALLOWED`)。生产环境**不要**设置 `CURRICULUM_ALLOW_SAMPLE`。
 5. **运行时登录用户**:**迁移完成之后**,在该项目的 SQL Editor 里执行 `docs/database-roles.md` 里的 `CREATE ROLE web_login …`(`IN ROLE app_runtime` 依赖迁移创建的组角色),密码来自你的密钥管理(建议 `openssl rand -hex 24`,避免 URL 转义),不进仓库。随后用 database-roles.md 里的查询确认 `web_login` 属于 `app_runtime`;若不是,执行 `GRANT app_runtime TO web_login;`。
-6. **连接串**(Supabase 连接页取值,逐项核对 Prisma 7 与池化的组合):
+6. **加载示例课程数据(仅 staging,M2 起需要才能看到 `/prepare` 的内容)**:先在 Vercel 的 staging 环境变量里设置 `CURRICULUM_ALLOW_SAMPLE=1` 并重新部署;然后运行 GitHub Actions 的 `Load curriculum dataset` 工作流(手动触发、受同一组环境审批保护),选 environment **staging**、dataset `sample-math/sample-1`,先用默认的 **validate**(只检查文件,不碰数据库),再选 **load**。它用与迁移相同的 `MIGRATION_DATABASE_URL`(所有者连接),幂等:重复运行显示 `unchanged`。**示例数据只会被加载到 staging**:工作流只在 staging 传 `--allow-sample`,生产环境即使选了示例数据集也会被加载器拒绝(`KIND_NOT_ALLOWED`)。生产环境**不要**设置 `CURRICULUM_ALLOW_SAMPLE`。
+7. **连接串**(Supabase 连接页取值,逐项核对 Prisma 7 与池化的组合):
    - Web(Vercel):事务池(端口 6543,`pgbouncer=true`),用户 `web_login.<project-ref>`(池化连接的用户名要带项目 ref)。
    - Worker:会话池或直连,用户 `worker_login`。
    - 迁移:直连/会话池,所有者角色。
