@@ -183,7 +183,8 @@ describe("running a curriculum lesson", () => {
     expect(rev.content.context.contextHash).toMatch(/^sha256:/);
     expect(verifyContextHash(rev.content.context)).toBe(true);
     expect(rev.content.spec).toMatchObject({ topic: "Sample topic: Unknown on both sides", difficulty: "mixed" });
-    expect((await workerPg.query(`SELECT * FROM usage_bucket_drift`)).rows).toEqual([]);
+    // scoped to this account: the database is shared, and another test file creates a drifted bucket on purpose
+    expect((await workerPg.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = $1`, [ctx.userId])).rows).toEqual([]);
   });
 });
 
