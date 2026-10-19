@@ -93,6 +93,17 @@ pnpm supabase:stop
 - 测试:单元 +31(含 7×3 种难度/时长组合全部 verified、确定性、哈希、依赖、视图、各类篡改被发现),集成 +3;10 项变异检查全部被发现。
 - **已知限制**:`inputsHash` 目前只校验格式、不重算(M5 的调整会用到它);叙述是通用模板,不是针对主题的讲解(M3b 引入真实 LLM 后改进);渲染仍是骨架(M4)。
 
+## 排查"作业为什么失败了"
+
+作业失败时页面只显示一句话,原因在三个地方:
+1. **数据库**(最权威):`generation_job.error_code`。本地查询:
+   `docker exec supabase_db_noteprep psql -U postgres -c "select to_char(created_at,'HH24:MI:SS') t, state, error_code, attempt, max_attempts, calls_used from generation_job order by created_at desc limit 10;"`
+   常见代码:`llm_invalid_output`(模型的回答无法使用)、`llm_auth`(密钥/权限问题)、`llm_rate_limited`/`llm_overloaded`/`llm_timeout`(可重试,用完次数才失败)、`budget_exceeded`、`validation_failed`(课包没通过验证)、`package_build_failed`、`deadline_exceeded`(没有 worker 在跑,任务超时)、`canceled`。
+2. **worker 终端**(运行 `pnpm worker:dev` 的那个窗口):每行一个 JSON 事件,看 `job_claimed`、`job_requeued`、`job_failed`(带 `code`)、`job_succeeded`;日志**不含**课包内容、提示或密钥。
+3. **修订的 `generation_meta`**(成功的作业):是否调用了模型、提供方/模型、尝试次数、是否回退到模板、被拒的规则代码(只有代码,没有文字)。
+
+两个容易踩的坑:**没有 worker 在跑**,作业会一直"排队"直到超时失败;**旧的 `/lessons/new` 快速表单**不适用于真实模型(它的占位提示只能满足假提供方),所以真实提供方下它改为直接使用你输入的目标、不调用模型——想看真实模型写的文字请用 `/prepare`。**跑 `pnpm test:e2e` 前先停掉 `pnpm worker:dev`**:它们共用本地数据库,你的 worker 会抢走测试的作业(e2e 现在会在开始时检测并明确报错)。
+
 ## M3b LLM 适配器与文字检查(完成,已用真实服务做过一次小规模评估)
 
 - **适配器**(`src/lib/llm/anthropic.ts`):按 Anthropic 官方 Messages API 文档(2026-10-19 核对)实现的 `LlmProvider`——固定端点、`x-api-key` 与 `anthropic-version` 头、`output_config.format` 的 JSON Schema 结构化输出(只用文档列出的受支持关键字)、`stop_reason` 与 `usage` 处理、HTTP 状态到错误类型的映射(429/5xx/529/超时可重试,其余不重试)。输入作为**一个 JSON 文档放在用户消息里,不拼进系统提示**;厂商错误正文**绝不**传出(只保留状态与 `request-id`);调用方取消会向上抛出而不是当作厂商错误。供应商默认是 Anthropic,**这是临时选择(D-40)**,接口不变,换供应商只需新增一个适配器。

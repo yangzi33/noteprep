@@ -53,6 +53,13 @@ export interface PipelineDeps {
   /** "llm" asks the model for the wording of curriculum lessons; the default "template" never calls it (the M3a path). */
   proseMode?: "template" | "llm";
   proseMaxOutputTokens?: number;
+  /**
+   * How a legacy (request v1) job gets the objectives for its placeholder content. "model" (default) asks the
+   * provider, which is how the Phase 1 failure paths are exercised with the fake provider. "request" uses the
+   * objectives the tutor typed and never calls a model: the legacy prompt was written for the fake provider and
+   * a real model cannot satisfy it, so a real provider must use "request".
+   */
+  legacyProse?: "model" | "request";
 }
 
 const SkeletonProse = z.object({ objectives: z.array(z.string().max(300)).min(1).max(10) });
@@ -142,6 +149,17 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     validation = { report, status: report.overall, validatorVersion: PACKAGE_VALIDATOR_VERSION };
     revisionSchemaVersion = PACKAGE_REVISION_SCHEMA_VERSION;
     meta = { package: pkg.schemaVersion, ...proseMeta, compiler: compiler.id, contextHash: spec.context.contextHash };
+  } else if (deps.legacyProse === "request") {
+    await checkpoint("validating");
+    objectives = spec.objectives;
+    content = {
+      skeleton: true,
+      spec: { topic: spec.topic, level: spec.level, difficulty: spec.difficulty, durationMinutes: spec.durationMinutes },
+      objectives,
+    };
+    validation = { report: { overall: "verified", skeleton: true }, status: "verified", validatorVersion: "skeleton/0" };
+    revisionSchemaVersion = 1;
+    meta = { skeleton: true, llm: false, compiler: compiler.id };
   } else {
     const result = await llm.generateStructured({
       requestId: randomUUID(),
