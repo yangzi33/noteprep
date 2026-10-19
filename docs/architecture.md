@@ -2,6 +2,7 @@
 
 > 状态:设计文档,**尚无实现**。文中"待验证"表示依赖尚未用真实运行证据确认的第三方能力。版本号来自 2026-10-18 的 npm registry 查询,仅作 Phase 1 选型起点,须在 Phase 1 重新核对后固定。
 > 相关:[product](product.md) · [implementation-plan](implementation-plan.md) · [test-plan](test-plan.md) · [security-and-privacy](security-and-privacy.md) · [decisions](decisions.md)
+> **方向调整(2026-10-19):** 产品改为**选择优先、课程感知**(见 [product-vision](product-vision.md)、[refactor-plan](refactor-plan.md))。本文中与之冲突的部分已按新方向修订,或标注为【已被取代】。**额度、任务、幂等、围栏、权益、认证与所有权、存储与沙箱的规则不变。**
 
 ## 1. 设计原则
 
@@ -17,7 +18,7 @@
 ```mermaid
 flowchart LR
   subgraph Browser["浏览器(不可信)"]
-    UI["Next.js 页面 / 编辑器\n只持有 Supabase URL + publishable key"]
+    UI["Next.js 页面(选择向导 / 课包预览与调整)\n只持有 Supabase URL + publishable key"]
   end
 
   subgraph Vercel["Vercel: Web 应用(半可信:处理用户输入)"]
@@ -204,9 +205,9 @@ sequenceDiagram
   K->>K: 代码生成题目参数与答案
   K->>L: 最小字段请求(仅文字部分)
   L-->>K: 结构化文字(经 Zod 校验)
-  K->>K: 数学验证(有界修复)→ 渲染 .tex ×2
+  K->>K: 数学验证(有界修复)→ 渲染 .tex(每份所请求的文档)
   K->>R: stdin tar(无网络/无秘密)
-  R-->>K: stdout tar(PDF ×2 + 报告)
+  R-->>K: stdout tar(每份文档的 PDF + 报告)
   K->>S: 写入 …/{attemptId}/ 并校验
   K->>DB: 【事务2】校验围栏 → 发布修订+清单 → job succeeded → 预留 consumed
   B->>W: 轮询状态 / 历史页(读取权威状态)
@@ -302,7 +303,7 @@ tx(async (t) => {
   const j = await t.q`SELECT * FROM generation_job WHERE id=${job.id} FOR UPDATE`;
   if (j.state!=='running' || j.fencing_token!==token || j.cancel_requested_at) throw StaleOrCanceled();
   if (await lessonDeleted(t, j.lesson_id)) throw StaleOrCanceled();             // 删除后不得发布
-  assertManifestComplete(artifacts, attemptPrefix(j, attemptId));                // 4 个文件,sha256+大小,路径前缀属于本 attempt
+  assertManifestComplete(artifacts, attemptPrefix(j, attemptId));                // 所请求文档的全部文件,sha256+大小,路径前缀属于本 attempt
   const rev = await insertFinalizedRevision(t, revisionDraft, artifacts);        // 内容 + 验证报告 + 清单
   await t.q`UPDATE lesson SET current_revision_id=${rev.id} WHERE id=${j.lesson_id}`;
   const r = await t.q`UPDATE usage_reservation SET state='consumed', settled_at=now()
@@ -322,7 +323,7 @@ tx(async (t) => {
 });
 ```
 
-- 成功事实 = 同一事务内的 **revision 发布 + 清单 + job succeeded + 预留 consumed**。清单必须包含学生版/教师版各 `.tex` 与 `.pdf`;**任一缺失 → `assertManifestComplete` 失败 → 不提交,走失败路径并释放预留**。
+- 成功事实 = 同一事务内的 **revision 发布 + 清单 + job succeeded + 预留 consumed**。清单(版本化,`manifestVersion`)必须包含**所请求文档**(Notes、Worksheet、Solutions;完整包三份)各自的 `.pdf` 及内部 `.tex`;**任一缺失 → `assertManifestComplete` 失败 → 不提交,走失败路径并释放预留**。(2026-10-19:原为学生版/教师版 4 个文件;旧清单对旧修订继续有效。)
 - `commitSuccess` 对"同一 attempt 已成功"幂等返回(处理提交后响应丢失的重试)。
 - 对象存储与数据库不共享事务:先把对象写入 `…/{attemptId}/` 前缀并校验(HEAD + sha256),再提交清单(见 §10)。
 
@@ -372,9 +373,9 @@ tx(async (t) => {
 |---|---|---|
 | `LessonRevision.content`(JSON,`schemaVersion`) | 目标、前置知识、时间安排、解释、例题、练习(仅题面)、答案册(单独数组)、常见错误 | **事实来源** |
 | `validationReport` | 逐题验证项(方法、覆盖、结果、限制、validatorVersion、被验证内容的哈希) | 事实,依附于具体内容哈希 |
-| `.tex` ×2、`.pdf` ×2 | 由某个 revisionId + templateVersion 确定性渲染/编译而来 | **派生物**,清单记录 sha256;任何内容变化 → 新修订 |
+| `.tex`(内部)与 `.pdf`,每份所请求的文档一对 | 由某个 revisionId + templateVersion 确定性渲染/编译而来 | **派生物**,清单记录 sha256;任何内容变化 → 新修订;`.tex` 不提供给用户 |
 
-练习题面与答案分列:`exercises[]` 不含答案;`answerKey[]` 以 `questionId` 关联。学生版渲染函数的输入类型**不包含** `answerKey`(类型层面隔离),并在 worker 里对编译后的学生版 PDF 文本做"不含答案串"检查(见 test-plan)。例题(`workedExamples`)带完整解答,两个版本都保留。
+练习题面与答案分列:`exercises[]` 不含答案;`answerKey[]` 以 `questionId` 关联。(2026-10-19:"学生版/教师版"现为 Worksheet / Notes + Solutions 三份文档,同样的类型层面隔离适用于 Worksheet。)Worksheet(原学生版)渲染函数的输入类型**不包含** `answerKey`(类型层面隔离),并在 worker 里对编译后的学生版 PDF 文本做"不含答案串"检查(见 test-plan)。例题(`workedExamples`)带完整解答,两个版本都保留。
 
 ### 7.2 一元一次方程的结构与示例
 
@@ -382,7 +383,7 @@ tx(async (t) => {
 
 **支持的子集(首版,Type A/B):** `ax + b = c`、`ax + b = cx + d`;`a,b,c,d` 为整数或简单分数(分子/分母有范围上限);单变量 `x`;结果种类 `unique | no_solution | identity`。允许的步骤操作:`add_const_both_sides`、`add_x_term_both_sides`、`multiply_both_sides`(非零)、`divide_both_sides`(非零)。**不支持(验证器返回 `unsupported`,不会被标为 verified):** 括号/分配律(列为紧随其后的扩展,通过验证覆盖后才开放)、变量在分母、不等式、含文字情境的建模题、任何未在语法中的表达式。没有 eval、没有 `new Function`、没有通用 CAS、不执行模型生成的代码。
 
-下面是一个**人工可核对的示意**(`contentHash` 为占位符,真实值由代码计算):
+下面是一个**人工可核对的示意**(`contentHash` 为占位符,真实值由代码计算)。**说明(2026-10-19):** 这里展示的是**数学题目部分**的结构,仍然有效且已实现于 `src/lib/math`;整体课包的顶层结构(分节、依赖、逐节哈希、三份文档)由 `lesson-package/1` 取代这里的 `lesson-content/1`,见 [refactor-plan](refactor-plan.md) §3.3。
 
 ```json
 {
@@ -463,7 +464,7 @@ tx(async (t) => {
 |---|---|---|
 | `verified` | 上述确定性检查在**全部适用项**上通过,且题型在支持子集内 | 仅由确定性检查产生 |
 | `failed` | 至少一项确定性检查被证伪(答案错、步骤不等价、题答不对应…) | 确定性检查 |
-| `unverified` | 题型/表达式不在支持子集;或手工编辑后尚未重新验证;或只覆盖了部分适用项 | 验证器或编辑动作 |
+| `unverified` | 题型/表达式不在支持子集;或内容被改动后尚未重新验证;或只覆盖了部分适用项 | 验证器或编辑动作 |
 
 - **LLM 复审与随机数值抽样只能作为 `supplementary` 记录**(`proves: false`),在聚合状态时被忽略:它们可以把 `verified` 降级(发现疑点→提示人工),**永远不能**把 `unverified` 升为 `verified`。
 - 状态聚合是一个纯函数,只读确定性检查结果,有单元测试覆盖。
@@ -474,13 +475,16 @@ tx(async (t) => {
 
 `generateLinearQuestion({ form, difficulty, seed })`:种子 `= hash(jobId, questionId)` 保证重试可复现;按难度表选取整数/分数范围,保证唯一解、答案可读(basic 为整数,challenge 可为简单分数),并避免过于平凡的参数。LLM 的输入只有题型与难度标签、不含也不决定数字。
 
-### 7.6 编辑、失效与导出
+### 7.6 预览、调整、失效与导出(2026-10-19 修订;原"编辑器"设计已取消)
 
-- 编辑始终发生在 `status=draft` 的修订上(从 finalized 修订"派生草稿";草稿可多次保存)。编辑器提交的是结构化补丁(Zod 校验),文本是纯文本加受限占位符,**不接受 HTML/任意 LaTeX/URL/宏**。
-- 每道题计算 `contentHash`(题面+参数+答案+步骤的规范 JSON)。保存时,哈希变化的题目其旧验证项立即作废(状态回到 `unverified`),草稿上的派生文件引用同时清除。
-- "重新验证"是确定性计算(不消耗生成次数,受计算配额/速率限制)。
-- **定稿(finalize)**:无 `failed` 项才可继续;存在 `unverified` 项时,必须由教师逐项明确确认(`acknowledgement` 记录确认时间、题目 ID、validatorVersion);确认不会改变其 `unverified` 状态,教师版 PDF 的校验状态表会如实显示。定稿后内容不可变,随后入队 `compile` 任务(受速率/计算限额,不预留生成额度)。
-- 预览:KaTeX/MathJax 仅用于编辑器内的公式预览(受限宏、禁 HTML、禁 URL、禁信任选项),**不能替代**真实 PDF 编译。UI 明示"请在授课前自行审阅 AI 生成材料",不宣称零错误。
+> 原设计里的内容编辑器(受限字段编辑、定稿时逐项确认未验证项、KaTeX 预览)**已被取代**:数学内容不再手改,所以不存在"手工修改后的未验证数学";预览就是真实编译的 PDF。新设计见 [refactor-plan](refactor-plan.md) §3–§4。
+
+- **预览** = 真实编译的 PDF(经短时签名 URL 嵌入),每份文档一个标签页;**不**用 KaTeX/MathJax 代替。UI 明示"请在授课前自行审阅 AI 生成材料",不宣称零错误。
+- **预设调整**(更容易/更难、增加例题/练习、减少理论、展开分步解答、聚焦课程目标、更改课时)创建**新的草稿修订**;只重新生成受影响的节及其依赖节(`derives` 边永远传递:解答是练习的纯函数),**未受影响的节原样复用,内容与哈希逐字节相同**。重新验证、渲染、编译后才发布。
+- **极小的文字更正**只能改文字字段(标题、讲解、叙述、常见错误);**数学内容(题目、答案、步骤)不可手改**,只能通过调整或重新生成改变,从而答案与解答永远一致。更正同样创建新修订,标记该节 `edited`,并经文字检查(无课程声明、无 HTML/URL/LaTeX 命令)。
+- **失效**:每道题与每一节都有内容哈希;内容变化 → 旧验证项与派生文件立即作废,新修订必须重新验证(沿用既有的哈希绑定机制)。已发现的数学错误阻止导出。
+- **计费**(D-33):不调用模型的确定性调整不是"新生成"(受速率与计算配额限制);含模型的调整消耗每课包的调整额度(配置值,与生成次数分开),遵循"成功才消耗、失败返还、一次结算"。
+- 导出只提供 PDF;`.tex` 不提供给用户(D-31)。
 
 ### 7.7 模板、引擎、语言
 
@@ -511,7 +515,7 @@ type StructuredResult =
                           retryable: boolean } };
 ```
 
-- 供应商 SDK 细节只出现在 `src/lib/llm/<provider>.ts` 内;UI 与领域层不引用。
+- 供应商 SDK 细节只出现在 `src/lib/llm/<provider>.ts` 内;UI 与领域层不引用。(2026-10-19:`task` 枚举将随 M3b 扩展为按节的文字任务——讲解、叙述、常见错误等;LLM 输入包含已解析的课程上下文快照(目标释义、概念 ID),**输出不得包含课程名称/编码/对齐声明**,见 [refactor-plan](refactor-plan.md) §3。)
 - 原始供应商输出**不当作可信内容存储**:`value` 必须通过应用 Zod 模式(含长度、禁止 URL/HTML/LaTeX 命令/控制字符)后,才进入 LessonDraft;日志不记录提示词与输出正文。
 - 首版:一个 `fake`(确定性,CI 默认)+ 一个真实适配器。**默认假设**真实适配器为 Anthropic Claude(可逆,所选模型 ID、超时、token 与成本上限均为配置;不在代码里写死价格);供应商作为子处理方须在隐私政策中披露,保留期与训练政策以其官方条款为准,不在文档中断言"零保留"。
 - 用户备注与模型输出都是数据:不能选择工具、读文件、改系统提示、访问 URL;生成流程没有浏览或外部工具执行。
@@ -575,7 +579,7 @@ sequenceDiagram
 
 ## 10. 私有 Storage
 
-- 桶 `lesson-artifacts`,私有。对象路径**由服务端生成**:`{ownerId}/{lessonId}/{revisionId}/{attemptId}/{edition}.{tex|pdf}`,`edition ∈ {student, teacher}`。用户输入从不参与路径。
+- 桶 `lesson-artifacts`,私有。对象路径**由服务端生成**:`{ownerId}/{lessonId}/{revisionId}/{attemptId}/{document}.{tex|pdf}`,`document ∈ {notes, worksheet, solutions}`(2026-10-19:原为 `edition ∈ {student, teacher}`)。用户输入从不参与路径。
 - **所有权验证两层**:① DAL 按 `(artifactId|revisionId, ownerId)` 查询清单与路径(路径取自数据库,不取自请求);② Storage RLS 策略:`storage.objects` 的 SELECT 仅当路径首段等于 `auth.uid()`(无策略给 `anon`)。
 - **下载**:Route Handler → `requireUser()` → DAL 取清单项(校验 lesson 未删除、revision 为 finalized、清单含该项)→ 用**用户会话客户端**调用 `createSignedUrl(path, ttl≈60s)`(受 RLS 约束,Web 无需 secret key)→ 返回 302/URL;响应 `no-store`。具体 API 行为与 RLS 联合效果在 Phase 1 用本地 Supabase 实测(**待验证**);若此路径不可行,备选:由 Web 持有范围最小的服务端凭据,在 DAL 授权后签发——这会让 Web 多持有一个秘密,须同步更新 §2 表与威胁模型。
 - **写入/删除**:仅 worker(secret key)。先写 `…/{attemptId}/`,校验(HEAD + sha256 + 大小),再事务提交清单。只有被已提交清单引用的前缀才可下载;孤儿前缀由 sweeper 在宽限期后删除。

@@ -1,6 +1,6 @@
 # 产品愿景(2026-10-19 更新)
 
-> 状态:**提案,待用户批准**。本文件描述新的产品方向并与现有 [product.md](product.md) 对账;批准前不改动任何既有文档、`CLAUDE.md` 或代码。
+> 状态:**已批准的方向**(2026-10-19);与既有文档的对账已完成(见 [refactor-audit](refactor-audit.md) §5)。决定:D-30(MVP 目标 Ontario Grade 9,真实数据集为之后的独立里程碑)、D-31(不提供 `.tex`)、D-33(调整计费方案 B)已批准,D-36 推迟。
 > 相关:[refactor-audit](refactor-audit.md) · [curriculum-architecture](curriculum-architecture.md) · [refactor-plan](refactor-plan.md)
 
 ## 1. 一句话
