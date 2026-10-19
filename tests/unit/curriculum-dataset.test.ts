@@ -4,6 +4,7 @@ import { CAPABILITIES, capabilityFor, isSupportedConcept } from "@/lib/curriculu
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir, DatasetFileError } from "@/lib/curriculum/files";
 import { datasetHash, validateDataset, type DatasetIssue } from "@/lib/curriculum/validate-dataset";
+import { resolveLoadTarget } from "@/lib/server/curriculum/load";
 import { generateLinearQuestion } from "@/lib/math/generator";
 import { validateLinearQuestion } from "@/lib/math/validate";
 
@@ -239,5 +240,19 @@ describe("stable id golden lists", () => {
   it("the capability registry concept ids never change", () => {
     expect(Object.keys(CAPABILITIES).sort()).toEqual(["linear-equations-one-variable"]);
     for (const [key, cap] of Object.entries(CAPABILITIES)) expect(cap.conceptId).toBe(key);
+  });
+});
+
+describe("loader target environment", () => {
+  it("defaults to development and accepts only the three known values", () => {
+    expect(resolveLoadTarget(undefined, false)).toEqual({ ok: true, targetEnv: "development" });
+    expect(resolveLoadTarget("staging", true)).toEqual({ ok: true, targetEnv: "staging" });
+    expect(resolveLoadTarget("prod", false)).toMatchObject({ ok: false });
+    expect(resolveLoadTarget("", false)).toMatchObject({ ok: false });
+  });
+
+  it("refuses --allow-sample for production, and still allows a plain production load", () => {
+    expect(resolveLoadTarget("production", true)).toMatchObject({ ok: false });
+    expect(resolveLoadTarget("production", false)).toEqual({ ok: true, targetEnv: "production" });
   });
 });

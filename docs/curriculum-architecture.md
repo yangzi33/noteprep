@@ -66,7 +66,7 @@ data/curricula/<curriculumId>/<versionLabel>/
 - **CI 数据集校验**(随 PR 运行):ID 唯一且格式合法;引用完整(课程→版本、单元→课程、主题→单元、映射→主题/条目/概念);每个条目有 `sourceRef`;版本有 `sourceUrl`/`licenseNote`;文本长度上限(防止粘贴原文);`supported` 的主题其概念在能力注册表中有注册,且该能力的 fixtures 全部通过。
 - **人工核对是必经环节**:每条转写由你或学科专家抽检并签字(记录在 `dataset.json` 的 `review` 字段:谁、何时、范围)。
 - **合成测试数据集**:用于测试级联与"无级别"体系(AP/IB 形态),标记 `synthetic: true`,加载器在非测试环境**拒绝**加载。
-- **示例数据集**(D-30,CM 之前使用):标记 `sample: true`,**仅在开发/staging 由环境开关允许,生产加载器拒绝**;界面标注"示例,非真实课程";使用它生成的课包**不渲染任何对齐声明**(可追溯性不变量不被削弱)。
+- **示例数据集**(D-30,CM 之前使用):标记 `sample: true`,**仅在开发/staging 由环境开关允许,生产加载器拒绝(`CURRICULUM_TARGET_ENV=production` 时加载脚本拒绝 `--allow-sample`,默认 `development`)**;界面标注"示例,非真实课程";使用它生成的课包**不渲染任何对齐声明**(可追溯性不变量不被削弱)。
 
 ## 5. 授权与文本策略
 

@@ -28,6 +28,26 @@ export interface LoadResult {
   outcome: "loaded" | "unchanged";
 }
 
+export type LoadTargetEnv = "production" | "staging" | "development";
+
+/**
+ * Decides whether a load may proceed for the declared target environment. The loader itself, not workflow
+ * convention, refuses sample data for production: `--allow-sample` is an error there even when passed.
+ */
+export function resolveLoadTarget(
+  raw: string | undefined,
+  allowSample: boolean,
+): { ok: true; targetEnv: LoadTargetEnv } | { ok: false; error: string } {
+  const value = raw === undefined ? "development" : raw;
+  if (value !== "production" && value !== "staging" && value !== "development") {
+    return { ok: false, error: `CURRICULUM_TARGET_ENV must be production, staging or development (got "${value}")` };
+  }
+  if (value === "production" && allowSample) {
+    return { ok: false, error: "--allow-sample is refused when CURRICULUM_TARGET_ENV=production: sample data must never be loaded into production" };
+  }
+  return { ok: true, targetEnv: value };
+}
+
 const date = (value: string | undefined) => (value ? new Date(`${value.slice(0, 10)}T00:00:00Z`) : null);
 
 /**
@@ -50,6 +70,9 @@ export async function loadDataset(db: Db, dataset: Dataset, options: LoadOptions
 
   return db.$transaction(
     async (tx) => {
+      // Serialize loads per curriculum: a concurrent load of the same version then sees it as "unchanged"
+      // instead of hitting a unique violation, and two successors of one parent cannot both publish.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${meta.curriculum.id}, 0))`;
       const existing = await tx.curriculumVersion.findUnique({ where: { id: versionId } });
       if (existing) {
         if (existing.datasetHash === hash) return { versionId, outcome: "unchanged" as const };
