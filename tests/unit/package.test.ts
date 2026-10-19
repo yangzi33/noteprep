@@ -252,6 +252,122 @@ describe("validation catches defects", () => {
   });
 });
 
+describe("validation of identity, hashes, edges and required content", () => {
+  const codes = (r: { structure: { issues: { code: string }[] }; prose: { issues: { code: string }[] } }) => [...r.structure.issues, ...r.prose.issues].map((i) => i.code);
+  type AlignmentSection = Extract<Section, { kind: "alignment" }>;
+  const alignment = (pkg: LessonPackage) => {
+    const section = kindOf(pkg, "alignment") as AlignmentSection;
+    const block = section.blocks[0]!;
+    if (block.type !== "alignment") throw new Error("no alignment block");
+    return { section, block };
+  };
+
+  it("a tampered alignment block fails even when the section hash is recomputed", () => {
+    const mutations: Record<string, (b: ReturnType<typeof alignment>["block"]) => void> = {
+      curriculumName: (b) => void (b.curriculumName = "Totally Official Ministry Curriculum"),
+      versionLabel: (b) => void (b.versionLabel = "2099"),
+      datasetKind: (b) => void (b.datasetKind = "real"),
+      claim: (b) => void (b.claim = "aligned"),
+      coverage: (b) => void (b.objectives[0]!.coverage = "partial"),
+      note: (b) => void (b.objectives[0]!.note = "Added note"),
+      label: (b) => void (b.objectives[0]!.label = "Something else"),
+      officialCode: (b) => void (b.objectives[0]!.officialCode = "XX-9"),
+      id: (b) => void (b.objectives[0]!.id = "o-other"),
+      dropped: (b) => void b.objectives.pop(),
+    };
+    for (const [name, mutate] of Object.entries(mutations)) {
+      const pkg = clone(build());
+      const { section, block } = alignment(pkg);
+      mutate(block);
+      section.contentHash = sectionContentHash(section);
+      expect(codes(validatePackage(pkg)), name).toContain("ALIGNMENT_NOT_IN_DATASET");
+      expect(validatePackage(pkg).overall, name).toBe("failed");
+    }
+  });
+  it("a package whose claim is weaker than the snapshot allows also fails", () => {
+    const pkg = clone(build({}, "s", makeContext("real")));
+    const { section, block } = alignment(pkg);
+    expect(block.claim).toBe("aligned");
+    block.claim = "none";
+    section.contentHash = sectionContentHash(section);
+    expect(codes(validatePackage(pkg))).toContain("ALIGNMENT_NOT_IN_DATASET");
+  });
+
+  it("a wrong or missing inputsHash is caught", () => {
+    const pkg = clone(build());
+    kindOf(pkg, "explanation").inputsHash = `sha256:${"0".repeat(64)}`;
+    expect(codes(validatePackage(pkg))).toContain("INPUTS_HASH_MISMATCH");
+    // an upstream edit that is rehashed on its own section leaves the dependents' inputsHash stale
+    const upstream = clone(build());
+    const objectives = kindOf(upstream, "objectives") as Extract<Section, { kind: "objectives" }>;
+    objectives.title = "Renamed objectives";
+    objectives.contentHash = sectionContentHash(objectives);
+    const report = validatePackage(upstream);
+    expect(report.structure.issues.filter((i) => i.code === "INPUTS_HASH_MISMATCH").map((i) => i.where).sort()).toEqual(["sec-exercises", "sec-explanation"]);
+  });
+  it("inputsHash verifies for packages with model-written prose and with fewer documents", () => {
+    for (const documents of [["worksheet"], ["solutions"], ["notes", "worksheet"]] as const) {
+      expect(validatePackage(build({ documents: [...documents] })).overall, documents.join()).toBe("verified");
+    }
+  });
+
+  it("missing, extra or wrong dependency edges are caught", () => {
+    const missing = clone(build());
+    missing.deps = [];
+    expect(codes(validatePackage(missing))).toContain("DEP_EDGES_MISMATCH");
+    const dropped = clone(build());
+    dropped.deps.pop();
+    expect(codes(validatePackage(dropped))).toContain("DEP_EDGES_MISMATCH");
+    const extra = clone(build());
+    extra.deps.push({ from: "sec-objectives", to: "sec-solutions", kind: "references" });
+    expect(codes(validatePackage(extra))).toContain("DEP_EDGES_MISMATCH");
+    const wrongKind = clone(build());
+    wrongKind.deps[3]!.kind = "references";
+    expect(codes(validatePackage(wrongKind))).toContain("DEP_EDGES_MISMATCH");
+    const duplicated = clone(build());
+    duplicated.deps.push(duplicated.deps[0]!);
+    expect(codes(validatePackage(duplicated))).toContain("DEP_EDGES_MISMATCH");
+  });
+
+  it("a package without exercises, solutions or worked examples fails", () => {
+    const empty = (kind: "exercises" | "solutions" | "worked_examples") => {
+      const pkg = clone(build());
+      const s = kindOf(pkg, kind) as { blocks: { type: string }[]; contentHash: string; title: string; kind: string };
+      s.blocks = s.blocks.filter((b) => b.type === "paragraph").slice(0, 1);
+      s.contentHash = sectionContentHash(s as never);
+      return validatePackage(pkg);
+    };
+    expect(codes(empty("exercises"))).toContain("SECTION_EMPTY");
+    expect(codes(empty("solutions"))).toContain("SECTION_EMPTY");
+    expect(codes(empty("worked_examples"))).toContain("SECTION_EMPTY");
+    expect(empty("exercises").overall).toBe("failed");
+  });
+  it("a package missing a section kind that a requested document needs fails; one a document does not need may be absent", () => {
+    for (const kind of ["derivation", "teaching_sequence", "common_mistakes", "alignment", "objectives"] as const) {
+      const pkg = clone(build());
+      const gone = kindOf(pkg, kind).id;
+      pkg.sections = pkg.sections.filter((s) => s.id !== gone);
+      expect(codes(validatePackage(pkg)), kind).toContain("SECTION_KIND_MISSING");
+    }
+    const worksheetOnly = clone(build({ documents: ["worksheet"] }));
+    worksheetOnly.sections = worksheetOnly.sections.filter((s) => ["exercises", "alignment"].includes(s.kind));
+    worksheetOnly.deps = [];
+    worksheetOnly.outline.sections = worksheetOnly.outline.sections.filter((s) => ["exercises", "alignment"].includes(s.kind));
+    expect(codes(validatePackage(worksheetOnly))).not.toContain("SECTION_KIND_MISSING");
+  });
+
+  it("malformed stored request or context is reported, never thrown", () => {
+    for (const patch of [{ context: { contextHash: "x" } }, { context: null }, { context: "text" }, { request: null }, { request: { requestVersion: 2 } }, { context: {} }]) {
+      const pkg = { ...clone(build()), ...patch };
+      let report: ReturnType<typeof validatePackage> | undefined;
+      expect(() => (report = validatePackage(pkg))).not.toThrow();
+      expect(report!.overall).toBe("failed");
+      expect(report!.structure.issues.length).toBeGreaterThan(0);
+      expect(report!.structure.issues[0]!.code).toMatch(/^(CONTEXT|REQUEST)_INVALID$/);
+    }
+  });
+});
+
 describe("prose rules", () => {
   const tweak = (text: string, ctx = makeContext()) => {
     const pkg = clone(build({}, "s", ctx));

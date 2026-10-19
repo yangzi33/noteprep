@@ -3,13 +3,14 @@ import { z } from "zod";
 // Deliberately lenient on discriminants (`type`, `form`, `op.type`, `solution.kind` are plain strings):
 // an unknown value means "not supported", which must come out as `unverified`, not as a parse failure.
 // Malformed shapes (a missing field, a number that is not a string) are `failed`.
+// Objects are strict: an extra key anywhere in a question is a schema failure, not silently carried content.
 
-export const SideSchema = z.object({ x: z.array(z.string()), c: z.array(z.string()) });
-export const EquationSchema = z.object({ lhs: SideSchema, rhs: SideSchema });
-export const OperationSchema = z.object({ type: z.string(), value: z.string() });
-export const StepSchema = z.object({ id: z.string().min(1), op: OperationSchema, result: EquationSchema });
-export const SolutionSchema = z.object({ kind: z.string(), value: z.string().optional() });
-export const ProblemSchema = z.object({
+export const SideSchema = z.strictObject({ x: z.array(z.string()), c: z.array(z.string()) });
+export const EquationSchema = z.strictObject({ lhs: SideSchema, rhs: SideSchema });
+export const OperationSchema = z.strictObject({ type: z.string(), value: z.string() });
+export const StepSchema = z.strictObject({ id: z.string().min(1), op: OperationSchema, result: EquationSchema });
+export const SolutionSchema = z.strictObject({ kind: z.string(), value: z.string().optional() });
+export const ProblemSchema = z.strictObject({
   type: z.string(),
   form: z.string(),
   params: z.record(z.string(), z.string()),
@@ -17,7 +18,7 @@ export const ProblemSchema = z.object({
 });
 
 /** One question joined with its solution (worked example, or exercise + its answer-key entry). */
-export const QuestionSchema = z.object({
+export const QuestionSchema = z.strictObject({
   id: z.string().min(1),
   role: z.enum(["example", "exercise"]),
   problem: ProblemSchema,
