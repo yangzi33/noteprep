@@ -27,6 +27,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | staging 项目 URL | staging 部署 |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | staging 的 publishable key | staging 部署 |
 | `NEXT_PUBLIC_SITE_URL` | staging 域名 | staging 部署 |
+| `CURRICULUM_ALLOW_SAMPLE` | `1`(显示**示例**课程数据,仅 staging;**生产不设置**) | staging 部署(M2 起需要) |
 | (Phase 3)`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET` | Stripe **测试模式** | staging 部署 |
 
 Vercel 的变量类型:`DATABASE_URL` 选 **Secret**(保存后只能覆盖、不能查看,先存进密码管理器);三个 `NEXT_PUBLIC_*` 选 **Config**(本来就会进浏览器)。环境勾选 **Production 和 Preview**,不要勾 Development(那是 `vercel dev`/`vercel env pull` 的本地用途)。**变量改动只对新的部署生效,`NEXT_PUBLIC_*` 在构建时写入**,所以改完要重新部署。

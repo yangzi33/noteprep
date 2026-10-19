@@ -141,3 +141,19 @@ CurriculumContext = {
 ## 11. 测试
 
 课程映射:数据集 schema、引用完整性、稳定 ID 清单(黄金列表,变更需显式决定)、`partial` 必带 `note`、`supported` 与注册表一致、长度上限。级联选择:只返回所选体系的级别/课程/主题;换上一步会清空后续;合成"无级别"数据集会跳过级别步骤;不受支持的主题灰显且服务端拒绝。上下文到达生成引擎:断言 worker 对 LLM 的请求输入包含目标 ID/释义与概念 ID,生成器收到概念能力;相同输入得到相同快照与 `contextHash`。可追溯性:渲染的对齐文本逐字等于由数据集派生的字符串;LLM 输出含课程声明时被拒绝(含提示注入风格的样本)。
+
+## 12. M1 实现记录(2026-10-19)
+
+M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到代码、迁移与测试中。
+
+| 项 | 实现 / 与设计的差异 |
+|---|---|
+| 表与约束 | 12 张表(`education_system`、`curriculum`、`curriculum_version`、`curriculum_level`、`curriculum_course`、`curriculum_unit`、`curriculum_topic`、`curriculum_objective`、`topic_objective`、`topic_prerequisite`、`concept`、`topic_concept`)。子表**重复存 `version_id`**,用复合外键让整棵树留在同一版本;子表 ID 必须以版本 ID 为前缀(CHECK) |
+| 课程序号 | **同一级别内唯一**(无级别时在整个版本内唯一),不是版本内全局唯一(验证器最初写成全局唯一,被 Grade 1/Grade 2 的夹具发现后改正) |
+| 不可变性 | 触发器强制:已发布/被取代/已撤回的版本及其子行不可改;草稿可编辑、可删除;状态只向前:published→superseded→withdrawn;发布时必须有 `published_at` |
+| 数据集种类 | `real / sample / synthetic`;`real` 必须有来源 URL、检索日期、人工核对记录(CHECK + 验证器);非 real 必须在版本标签与课程名里自称 sample/synthetic |
+| 可见性 | DAL 只返回**已发布**版本;**被新版本取代的版本不再提供给新课包**(旧课包用快照,不受影响);示例/合成数据按环境开关控制,生产默认全部不可见 |
+| 能力注册表 | 在代码里(`src/lib/curriculum/capabilities.ts`);`concept` 表与注册表必须**完全一致**(测试);新增概念 = 代码 + 通过的 fixtures + 一条迁移 |
+| 验证器补充规则 | 除设计里列出的规则外,新增:同一版本内课程代码唯一、同一单元内官方编码唯一(都是数据库唯一约束),避免数据集通过验证却在加载中途失败 |
+| 环境变量 | `CURRICULUM_ALLOW_SAMPLE`(`0`/`1`,默认 `0`,其他值报错);在 Vercel staging 设为 `1` 才能看到示例数据,**生产不要设置** |
+| 尚未做 | 向托管库加载示例数据的审批工作流(M2 需要在 staging 演示时再加,方式与 `db-migrate.yml` 相同);选择界面(M2);真实数据集(CM) |

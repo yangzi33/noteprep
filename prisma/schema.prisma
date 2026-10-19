@@ -302,3 +302,230 @@ model RateLimitWindow {
   @@id([key, windowStart])
   @@map("rate_limit_window")
 }
+
+// ---------------------------------------------------------------------------------------------------
+// Curriculum reference data (docs/curriculum-architecture.md). Public, versioned, read-only for the
+// runtime roles. Rows of a published version are immutable (triggers in *_curriculum_guards). Every
+// child row repeats `version_id`, and composite foreign keys keep the whole tree inside one version.
+// ---------------------------------------------------------------------------------------------------
+
+enum CurriculumVersionStatus {
+  draft
+  published
+  superseded
+  withdrawn
+
+  @@map("curriculum_version_status")
+}
+
+enum DatasetKind {
+  real
+  sample
+  synthetic
+
+  @@map("dataset_kind")
+}
+
+enum CoverageLevel {
+  full
+  partial
+
+  @@map("coverage_level")
+}
+
+model EducationSystem {
+  id         String   @id
+  name       String
+  regionCode String   @map("region_code")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  curricula Curriculum[]
+
+  @@map("education_system")
+}
+
+model Curriculum {
+  id                String   @id
+  educationSystemId String   @map("education_system_id")
+  subject           String
+  name              String
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  educationSystem EducationSystem     @relation(fields: [educationSystemId], references: [id], onDelete: Restrict)
+  versions        CurriculumVersion[]
+
+  @@map("curriculum")
+}
+
+model CurriculumVersion {
+  id                  String                  @id
+  curriculumId        String                  @map("curriculum_id")
+  label               String
+  effectiveFrom       DateTime?               @map("effective_from") @db.Date
+  status              CurriculumVersionStatus @default(draft)
+  datasetKind         DatasetKind             @map("dataset_kind")
+  sourceTitle         String                  @map("source_title")
+  sourceUrl           String?                 @map("source_url")
+  sourcePublisher     String?                 @map("source_publisher")
+  sourceRetrievedAt   DateTime?               @map("source_retrieved_at") @db.Date
+  licenseNote         String                  @map("license_note")
+  datasetHash         String                  @map("dataset_hash")
+  supersedesVersionId String?                 @map("supersedes_version_id")
+  reviewedBy          String?                 @map("reviewed_by")
+  reviewedAt          DateTime?               @map("reviewed_at") @db.Timestamptz(6)
+  reviewScope         String?                 @map("review_scope")
+  createdAt           DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  publishedAt         DateTime?               @map("published_at") @db.Timestamptz(6)
+
+  curriculum   Curriculum            @relation(fields: [curriculumId], references: [id], onDelete: Restrict)
+  supersedes   CurriculumVersion?    @relation("VersionSupersedes", fields: [supersedesVersionId], references: [id], onDelete: Restrict)
+  supersededBy CurriculumVersion[]   @relation("VersionSupersedes")
+  levels       CurriculumLevel[]
+  courses      CurriculumCourse[]
+  units        CurriculumUnit[]
+  topics       CurriculumTopic[]
+  objectives   CurriculumObjective[]
+
+  @@unique([curriculumId, label])
+  @@map("curriculum_version")
+}
+
+model CurriculumLevel {
+  id        String @id
+  versionId String @map("version_id")
+  label     String
+  kind      String
+  ordinal   Int
+
+  version CurriculumVersion  @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  courses CurriculumCourse[]
+
+  @@unique([id, versionId])
+  @@unique([versionId, ordinal])
+  @@map("curriculum_level")
+}
+
+model CurriculumCourse {
+  id        String  @id
+  versionId String  @map("version_id")
+  levelId   String? @map("level_id")
+  code      String
+  title     String
+  ordinal   Int
+
+  version CurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  level   CurriculumLevel?  @relation(fields: [levelId, versionId], references: [id, versionId], onDelete: Restrict)
+  units   CurriculumUnit[]
+
+  @@unique([id, versionId])
+  @@unique([versionId, code])
+  @@map("curriculum_course")
+}
+
+model CurriculumUnit {
+  id        String  @id
+  versionId String  @map("version_id")
+  courseId  String  @map("course_id")
+  code      String?
+  title     String
+  ordinal   Int
+
+  version    CurriculumVersion     @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  course     CurriculumCourse      @relation(fields: [courseId, versionId], references: [id, versionId], onDelete: Restrict)
+  topics     CurriculumTopic[]
+  objectives CurriculumObjective[]
+
+  @@unique([id, versionId])
+  @@unique([courseId, ordinal])
+  @@map("curriculum_unit")
+}
+
+model CurriculumTopic {
+  id        String @id
+  versionId String @map("version_id")
+  unitId    String @map("unit_id")
+  title     String
+  summary   String
+  ordinal   Int
+
+  version        CurriculumVersion   @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  unit           CurriculumUnit      @relation(fields: [unitId, versionId], references: [id, versionId], onDelete: Restrict)
+  objectiveLinks TopicObjective[]
+  concepts       TopicConcept[]
+  prerequisites  TopicPrerequisite[] @relation("TopicRequires")
+  requiredBy     TopicPrerequisite[] @relation("TopicRequiredBy")
+
+  @@unique([id, versionId])
+  @@unique([unitId, ordinal])
+  @@map("curriculum_topic")
+}
+
+model CurriculumObjective {
+  id           String  @id
+  versionId    String  @map("version_id")
+  unitId       String  @map("unit_id")
+  officialCode String  @map("official_code")
+  label        String
+  sourceRef    String  @map("source_ref")
+  sourcePage   String? @map("source_page")
+
+  version CurriculumVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  unit    CurriculumUnit    @relation(fields: [unitId, versionId], references: [id, versionId], onDelete: Restrict)
+  topics  TopicObjective[]
+
+  @@unique([id, versionId])
+  @@unique([unitId, officialCode])
+  @@map("curriculum_objective")
+}
+
+model TopicObjective {
+  topicId     String        @map("topic_id")
+  objectiveId String        @map("objective_id")
+  versionId   String        @map("version_id")
+  coverage    CoverageLevel
+  note        String?
+
+  topic     CurriculumTopic     @relation(fields: [topicId, versionId], references: [id, versionId], onDelete: Restrict)
+  objective CurriculumObjective @relation(fields: [objectiveId, versionId], references: [id, versionId], onDelete: Restrict)
+
+  @@id([topicId, objectiveId])
+  @@map("topic_objective")
+}
+
+model TopicPrerequisite {
+  topicId             String  @map("topic_id")
+  prerequisiteTopicId String  @map("prerequisite_topic_id")
+  versionId           String  @map("version_id")
+  note                String?
+
+  topic        CurriculumTopic @relation("TopicRequires", fields: [topicId, versionId], references: [id, versionId], onDelete: Restrict)
+  prerequisite CurriculumTopic @relation("TopicRequiredBy", fields: [prerequisiteTopicId, versionId], references: [id, versionId], onDelete: Restrict)
+
+  @@id([topicId, prerequisiteTopicId])
+  @@map("topic_prerequisite")
+}
+
+/// Engine-facing concept shared by all curricula. Capabilities live in code (src/lib/curriculum/capabilities.ts);
+/// rows are added by migrations.
+model Concept {
+  id   String @id
+  name String
+
+  topics TopicConcept[]
+
+  @@map("concept")
+}
+
+model TopicConcept {
+  topicId   String        @map("topic_id")
+  conceptId String        @map("concept_id")
+  versionId String        @map("version_id")
+  coverage  CoverageLevel
+  note      String?
+
+  topic   CurriculumTopic @relation(fields: [topicId, versionId], references: [id, versionId], onDelete: Restrict)
+  concept Concept         @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+
+  @@id([topicId, conceptId])
+  @@map("topic_concept")
+}

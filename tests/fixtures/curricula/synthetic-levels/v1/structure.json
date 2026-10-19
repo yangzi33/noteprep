@@ -1,0 +1,82 @@
+{
+  "levels": [
+    {
+      "id": "synthetic-levels@v1/g1",
+      "label": "Synthetic Grade 1",
+      "kind": "grade",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2",
+      "label": "Synthetic Grade 2",
+      "kind": "grade",
+      "ordinal": 2
+    }
+  ],
+  "courses": [
+    {
+      "id": "synthetic-levels@v1/g1/ca",
+      "levelId": "synthetic-levels@v1/g1",
+      "code": "SYN-A",
+      "title": "Synthetic Course A",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cb",
+      "levelId": "synthetic-levels@v1/g2",
+      "code": "SYN-B",
+      "title": "Synthetic Course B",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cc",
+      "levelId": "synthetic-levels@v1/g2",
+      "code": "SYN-C",
+      "title": "Synthetic Course C",
+      "ordinal": 2
+    }
+  ],
+  "units": [
+    {
+      "id": "synthetic-levels@v1/g1/ca/u1",
+      "courseId": "synthetic-levels@v1/g1/ca",
+      "title": "Synthetic unit A1",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cb/u1",
+      "courseId": "synthetic-levels@v1/g2/cb",
+      "title": "Synthetic unit B1",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cc/u1",
+      "courseId": "synthetic-levels@v1/g2/cc",
+      "title": "Synthetic unit C1",
+      "ordinal": 1
+    }
+  ],
+  "topics": [
+    {
+      "id": "synthetic-levels@v1/g1/ca/u1/t1",
+      "unitId": "synthetic-levels@v1/g1/ca/u1",
+      "title": "Synthetic topic A1.1",
+      "summary": "Supported synthetic topic.",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cb/u1/t1",
+      "unitId": "synthetic-levels@v1/g2/cb/u1",
+      "title": "Synthetic topic B1.1",
+      "summary": "Supported synthetic topic.",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-levels@v1/g2/cc/u1/t1",
+      "unitId": "synthetic-levels@v1/g2/cc/u1",
+      "title": "Synthetic topic C1.1",
+      "summary": "Unsupported synthetic topic.",
+      "ordinal": 1
+    }
+  ]
+}

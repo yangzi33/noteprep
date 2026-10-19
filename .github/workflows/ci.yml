@@ -36,6 +36,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Validate curriculum datasets
+        run: pnpm curriculum:validate
       - run: pnpm build
 
   integration:

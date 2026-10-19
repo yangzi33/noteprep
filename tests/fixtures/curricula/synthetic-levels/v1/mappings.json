@@ -1,0 +1,38 @@
+{
+  "topicObjectives": [
+    {
+      "topicId": "synthetic-levels@v1/g1/ca/u1/t1",
+      "objectiveId": "synthetic-levels@v1/obj/a1",
+      "coverage": "full"
+    },
+    {
+      "topicId": "synthetic-levels@v1/g2/cb/u1/t1",
+      "objectiveId": "synthetic-levels@v1/obj/b1",
+      "coverage": "full"
+    },
+    {
+      "topicId": "synthetic-levels@v1/g2/cc/u1/t1",
+      "objectiveId": "synthetic-levels@v1/obj/c1",
+      "coverage": "full"
+    }
+  ],
+  "topicConcepts": [
+    {
+      "topicId": "synthetic-levels@v1/g1/ca/u1/t1",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full"
+    },
+    {
+      "topicId": "synthetic-levels@v1/g2/cb/u1/t1",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full"
+    }
+  ],
+  "prerequisites": [
+    {
+      "topicId": "synthetic-levels@v1/g2/cb/u1/t1",
+      "prerequisiteTopicId": "synthetic-levels@v1/g1/ca/u1/t1",
+      "note": "synthetic"
+    }
+  ]
+}

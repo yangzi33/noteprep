@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "synthetic-system-b",
+    "name": "Synthetic System B",
+    "regionCode": "ZZ"
+  },
+  "curriculum": {
+    "id": "synthetic-nolevels",
+    "name": "Synthetic Curriculum Without Levels",
+    "subject": "math"
+  },
+  "version": {
+    "id": "synthetic-nolevels@v1",
+    "label": "Synthetic v1",
+    "kind": "synthetic",
+    "source": {
+      "title": "Synthetic test fixture"
+    },
+    "licenseNote": "Synthetic test fixture; no real content."
+  }
+}

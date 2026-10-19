@@ -1,6 +1,7 @@
 import "server-only";
 import type { Db } from "../db";
 import { createAccountDal } from "./account";
+import { createCurriculumDal, type CurriculumDalOptions } from "./curriculum";
 import { createGenerationDal, type GenerationDeps } from "./generation";
 import { createHistoryDal } from "./history";
 import type { BackoffPolicy } from "@/lib/domain/retry";
@@ -10,14 +11,16 @@ import { createSettlementDal } from "./settlement";
 export { toJobDto, type JobDto } from "./dto";
 export type { CommitSuccessInput, FinishJobInput, RevisionDraft } from "./settlement";
 export type { AllowanceView, HistoryItem } from "./history";
+export type { CurriculumSummary, SelectionOption, SelectionOptions, SelectionStep } from "./curriculum";
 export type { ClaimedJob, HeartbeatResult, JobsDal, SweepReport, UsageCharge } from "./jobs";
 
 /** Web runtime: account setup, enqueueing, owner-filtered reads. Use the `app_runtime` connection. */
-export function createWebDal(db: Db, deps?: GenerationDeps) {
+export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions }) {
   return {
     account: createAccountDal(db, deps?.limits?.trialLimit),
     generation: createGenerationDal(db, deps),
     history: createHistoryDal(db, deps),
+    curriculum: createCurriculumDal(db, deps?.curriculum),
   };
 }
 

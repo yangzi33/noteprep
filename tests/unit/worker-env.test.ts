@@ -59,3 +59,16 @@ describe("local object store", () => {
     }
   });
 });
+
+import { parseServerEnv } from "@/lib/server/env";
+
+describe("server environment (curriculum visibility)", () => {
+  const db = "postgresql://web_login:x@127.0.0.1:5432/db";
+  it("hides the sample curriculum unless explicitly enabled", () => {
+    expect(parseServerEnv({ DATABASE_URL: db }).CURRICULUM_ALLOW_SAMPLE).toBe("0");
+    expect(parseServerEnv({ DATABASE_URL: db, CURRICULUM_ALLOW_SAMPLE: "1" }).CURRICULUM_ALLOW_SAMPLE).toBe("1");
+  });
+  it("rejects any other value rather than guessing", () => {
+    for (const bad of ["true", "yes", "2", ""]) expect(() => parseServerEnv({ DATABASE_URL: db, CURRICULUM_ALLOW_SAMPLE: bad })).toThrow();
+  });
+});
