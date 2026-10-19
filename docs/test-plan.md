@@ -102,6 +102,13 @@ PR 门禁默认用 fake LLM + 虚构数据;真实 LLM 质量/成本评估与 Str
 - 角色权限检查:`app_runtime`/`worker_runtime` 无 BYPASSRLS/CREATEDB/SUPERUSER;`app_runtime` 无权 DDL。
 - **静态/配置**:没有任何 `NEXT_PUBLIC_*` 变量包含秘密(构建产物扫描);日志/错误上报样例中无 JWT、签名 URL、完整提示词、课包正文、Stripe 秘密。
 
+## 5b. 预览与下载(M5,已实现)
+
+- **Storage 边界**(`tests/supabase/storage.test.ts`,真实 Storage + RLS):适配器存取/删前缀/拒绝越界路径;私有桶;所有者签发并下载逐字节一致;签名 URL 到期失效;`.tex` 所有者也不可读;他人/未登录不可读;任何浏览器会话不可写/覆盖/删。**变异**:去掉扩展名条件、去掉所有者条件、桶设为公开、开放写入——各自被发现。
+- **DAL**(集成):越权矩阵(他人、已删除、未知 id、他人课包的修订、**同一所有者另一课包的修订**)全部同一个 NotFound;路径只来自该修订的清单;旧占位课包/草稿不可预览。
+- **E2E**:真实 worker 写入真实 Storage;三标签页、链接带 revision、每份文件字节哈希等于清单、`no-store`、跨用户 404、未登录 401、`.tex`/越界参数 404;完成后作业页自动跳转。`E2E_COMPILER=docker` 时断言真实 `%PDF-`。
+- **未覆盖**:移动端 PDF 内嵌;CDN/框架缓存键;下载频率限制;视觉回归。
+
 ## 6. 真实编译沙箱(L3,L4 上在目标主机重复)
 
 > **M4 状态(2026-10-19):** 下表的负面用例已在**本地真实镜像**(runc + 默认 seccomp)上实现为 `pnpm test:latex`(`tests/latex/`),并在 CI 的 `LaTeX sandbox` 任务里运行;**尚未**在目标生产主机(L4)与 gVisor 下重复。

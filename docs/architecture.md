@@ -581,7 +581,7 @@ sequenceDiagram
 
 - 桶 `lesson-artifacts`,私有。对象路径**由服务端生成**:`{ownerId}/{lessonId}/{revisionId}/{attemptId}/{document}.{tex|pdf}`,`document ∈ {notes, worksheet, solutions}`(2026-10-19:原为 `edition ∈ {student, teacher}`)。用户输入从不参与路径。
 - **所有权验证两层**:① DAL 按 `(artifactId|revisionId, ownerId)` 查询清单与路径(路径取自数据库,不取自请求);② Storage RLS 策略:`storage.objects` 的 SELECT 仅当路径首段等于 `auth.uid()`(无策略给 `anon`)。
-- **下载**:Route Handler → `requireUser()` → DAL 取清单项(校验 lesson 未删除、revision 为 finalized、清单含该项)→ 用**用户会话客户端**调用 `createSignedUrl(path, ttl≈60s)`(受 RLS 约束,Web 无需 secret key)→ 返回 302/URL;响应 `no-store`。具体 API 行为与 RLS 联合效果在 Phase 1 用本地 Supabase 实测(**待验证**);若此路径不可行,备选:由 Web 持有范围最小的服务端凭据,在 DAL 授权后签发——这会让 Web 多持有一个秘密,须同步更新 §2 表与威胁模型。
+- **下载**:Route Handler → `requireUser()` → DAL 取清单项(校验 lesson 未删除、revision 为 finalized、清单含该项)→ 用**用户会话客户端**调用 `createSignedUrl(path, ttl≈60s)`(受 RLS 约束,Web 无需 secret key)→ 返回 302/URL;响应 `no-store`。**M5 已用本地 Supabase 实测**:此路径可行(签名 URL 由用户会话签发、受 RLS 约束、到期失效;策略额外限定扩展名为 pdf,`.tex` 用户读不到),`tests/supabase/storage.test.ts`;Web 因此**不需要** secret key,备选方案不采用。
 - **写入/删除**:仅 worker(secret key)。先写 `…/{attemptId}/`,校验(HEAD + sha256 + 大小),再事务提交清单。只有被已提交清单引用的前缀才可下载;孤儿前缀由 sweeper 在宽限期后删除。
 - **删除**:课包删除 → 置 `Lesson.deletedAt`(立即阻断下载与在途发布)→ 取消在途任务 → 异步清理对象 → 清理记录(保留不含内容的任务/用量记录以便核算)。账户删除见 [security-and-privacy](security-and-privacy.md) §7。
 

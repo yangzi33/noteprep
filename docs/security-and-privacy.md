@@ -73,7 +73,7 @@ Supabase 官方 Prisma 指南为 `prisma` 角色授予 `bypassrls` 与 `createdb
 | T10 | LaTeX 注入/文件读取/shell 逃逸/宏炸弹 | 固定模板;转义;结构化→代码生成数学;`-no-shell-escape`;**OS 级沙箱为边界**(禁网、无秘密、非 root、只读根、限额、超时杀进程组) | §6 全部负例 |
 | T11 | 容器逃逸 | **现状(M4)**:本地与 CI 是 runc + Docker 默认 seccomp,配合 `--network none`、只读根、`--cap-drop ALL`、`no-new-privileges`、非 root、资源限制、无挂载/无 socket、无继承环境(40 个真实镜像测试验证,见 test-plan §6);**gVisor 未使用也未验证**,生产主机上的隔离强度待 D-03/D-20 评估;runner 账户无凭据;沙箱无挂载/Docker socket;目标平台能力实测,不满足即阻断 | §6、L4 |
 | T12 | 恶意/异常 PDF | 沙箱内检查;worker 只校验类型/大小/哈希/路径与归属;不自行解析 PDF | §6 |
-| T13 | 跨用户缓存泄露(CDN/框架缓存/带 Set-Cookie 响应) | 私有页面动态渲染;`Cache-Control: private, no-store`;检查 CDN/框架缓存键 | E2E 双用户缓存测试 |
+| T13 | 跨用户缓存泄露(CDN/框架缓存/带 Set-Cookie 响应) | 私有页面动态渲染;`Cache-Control: private, no-store`(M5:文件路由已加并有 E2E 断言;**CDN/框架缓存键尚未在部署环境检查**) | E2E 双用户缓存测试 |
 | T14 | XSS | 不渲染不可信 HTML;文字字段纯文本;预览是真实编译的 PDF(不再使用 KaTeX 预览);CSP | 单元+E2E |
 | T21 | **课程声明伪造/不可追溯的对齐**(LLM 输出里编造课程编码或"符合某考纲") | 对齐信息只由代码从所选的、受支持的数据集渲染;LLM 文字经检查拒绝课程名称/编码/对齐措辞;无上下文不渲染对齐区块 | test-plan §2b 可追溯性用例 |
 | T22 | **`.tex` 外泄/用户可控 TeX**(D-31) | 不向用户提供 `.tex`;用户无法提交 TeX;文字更正只能改文字字段并经检查 | 导出路径测试、文字检查测试 |
