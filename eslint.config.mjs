@@ -18,7 +18,7 @@ const eslintConfig = defineConfig([
         {
           patterns: [
             {
-              group: ["@prisma/client", "@prisma/client/*", "@prisma/adapter-*"],
+              group: ["@prisma/client", "@prisma/client/*", "@prisma/adapter-*", "**/generated/prisma", "**/generated/prisma/*"],
               message: "Import the database client only inside src/lib/server/dal.",
             },
           ],
@@ -35,7 +35,8 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: [DAL_GLOB],
+    // The data access layer and the db module that builds the client may import it; so may tests.
+    files: [DAL_GLOB, "src/lib/server/db.ts", "tests/**"],
     rules: { "no-restricted-imports": "off" },
   },
   {

@@ -4,10 +4,11 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T3 完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T4 完成)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
-- **尚无**:认证、额度与任务的应用代码(DAL)、worker、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
+- **尚无**:认证(`requireUser`)、worker 领取/心跳/sweeper、UI、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -83,4 +84,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T4 额度领域与 DAL 事务**(创建/完成/释放、幂等、并发测试)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T5 认证**(本地 Supabase、`requireUser`、跨用户矩阵测试)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
