@@ -21,6 +21,9 @@
 | D-14 | 内部成本核算用整数微单位(`*_micros`) | LLM 成本需亚分精度;不用于向客户计费 | 无 |
 | D-22 | TypeScript 5.9.3、ESLint 9.39.5(不用 `latest` 的 TS 7 / ESLint 10) | 跟随官方 `create-next-app@16.4.2` 脚手架实际使用的主版本;ESLint 9 在 npm 上被标记 deprecated,已知 | 评估 Next/eslint-config-next 对 TS 7 / ESLint 10 的支持后升级 |
 | D-23 | 不启用 `cacheComponents`/`partialPrefetching`;不用 Google 托管字体 | 私有按用户页面避免意外缓存;构建不依赖外部字体网络 | 需要时再按页面评估缓存策略 |
+| D-24 | 本地 Supabase:邮箱确认开启、禁用匿名登录;暂不启动 Realtime/Studio/Storage/Edge/Analytics;`supabase` CLI 作为固定版本的开发依赖 | 满足"验证邮箱"滥用控制;减少镜像体积;版本可复现 | P2 需要 Storage 时再启用 |
+| D-25 | 令牌验证只接受非对称算法;应用账户在 `getUser()` 确认邮箱后才创建 | HS256 共享密钥可伪造任意用户(实测);防止未验证邮箱获得免费额度 | 无 |
+| D-26 | 开发时应用连接 Supabase 的 Postgres(54322)用 `web_login`(app_runtime);迁移用 `postgres` 所有者(`MIGRATION_DATABASE_URL`);集成测试用 compose 的独立 Postgres | 运行凭据与迁移凭据分离;真实 Supabase 边界测试 | 无 |
 | D-15 | 括号/分配律等不进入首个验收切片 | 缩小可验证覆盖,先证明流水线 | 首切片验收后独立评审扩展 |
 
 ## 3. 未确定且影响上线的决策(需要用户/业务输入)

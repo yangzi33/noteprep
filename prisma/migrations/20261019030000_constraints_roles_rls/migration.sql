@@ -153,17 +153,28 @@ ALTER TABLE "rate_limit_window" ADD CONSTRAINT "rate_limit_window_count_nonneg" 
 -- ---------------------------------------------------------------------------
 -- Runtime roles (NOLOGIN groups). Never superuser, CREATEDB or BYPASSRLS.
 -- ---------------------------------------------------------------------------
+-- Attributes are fixed at creation time: a non-superuser migration owner (as on Supabase) cannot ALTER them.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_runtime') THEN
-    CREATE ROLE app_runtime NOLOGIN;
+    CREATE ROLE app_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'worker_runtime') THEN
-    CREATE ROLE worker_runtime NOLOGIN;
+    CREATE ROLE worker_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
   END IF;
 END $$;
-ALTER ROLE app_runtime NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
-ALTER ROLE worker_runtime NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+
+-- Fail closed if a pre-existing role has any elevated attribute.
+DO $$
+DECLARE bad text;
+BEGIN
+  SELECT string_agg(rolname, ', ') INTO bad FROM pg_roles
+   WHERE rolname IN ('app_runtime', 'worker_runtime')
+     AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR rolcanlogin);
+  IF bad IS NOT NULL THEN
+    RAISE EXCEPTION 'runtime roles must be plain NOLOGIN groups without elevated attributes: %', bad;
+  END IF;
+END $$;
 
 -- Supabase's Data API roles (absent on a plain Postgres) get nothing, now or by default.
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;

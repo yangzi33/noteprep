@@ -4,11 +4,12 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T4 完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T5 完成)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
-- **尚无**:认证(`requireUser`)、worker 领取/心跳/sweeper、UI、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- 认证:`@supabase/ssr` + `proxy.ts` 仅刷新会话;`requireUser`/`requireAccount` 用 `getClaims` 验签(只接受非对称算法),邮箱经 `getUser()` 确认后才创建账户与试用额度;登录/注册/登出与 `/account` 页面;在真实本地 Supabase 上测试了伪造令牌、未确认邮箱、Data API 无法访问业务表。
+- **尚无**:worker 领取/心跳/sweeper、任务与历史 UI、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -28,6 +29,19 @@ pnpm test:integration      # 每次运行新建临时数据库、重放全部迁
 pnpm db:down
 ```
 
+本地 Supabase(认证与 Data API 边界测试,以及运行应用):
+
+```bash
+cp .env.example .env       # 然后把 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY 换成 pnpm supabase:status 输出的值
+pnpm supabase:start        # 首次会下载镜像;已在 supabase/config.toml 关闭暂不需要的服务
+pnpm db:migrate:deploy     # 用 MIGRATION_DATABASE_URL 把迁移应用到 Supabase 的 Postgres
+pnpm db:dev-roles          # 创建本地 web_login / worker_login(仅开发用的一次性密码)
+pnpm test:supabase         # 真实 Auth + Data API 的边界测试
+pnpm dev                   # http://127.0.0.1:3000 ;注册邮件在 http://127.0.0.1:54324 (Mailpit)
+pnpm supabase:stop
+```
+
+
 数据库注意事项:
 
 - 本机 5432 端口可能被其他项目占用,所以本项目使用 54329。
@@ -35,7 +49,7 @@ pnpm db:down
 - **不要重新运行 `prisma init`**:它会把第三方 "agent skills" 文本从 GitHub 下载到 `.agents/`、`.claude/`、`.windsurf/` 并写入 `skills-lock.json`。这些内容未经审阅,已删除且不应提交。
 - `pnpm install` 会触发根包的 `postinstall`(`prisma generate`,不需要数据库连接),生成物位于被忽略的 `src/generated/prisma`。
 
-尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。
+尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。`test:supabase` 是额外加入的命令。
 
 ## 文档导航
 
@@ -84,4 +98,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T5 认证**(本地 Supabase、`requireUser`、跨用户矩阵测试)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T6 Worker 骨架**(领取/租约/围栏/sweeper,假 LLM 与仅测试可用的假编译端口)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。

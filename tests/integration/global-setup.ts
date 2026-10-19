@@ -50,7 +50,7 @@ export default async function setup(project: TestProject) {
   const databaseUrl = withDatabase(ADMIN_URL, database);
   // Real migrations through the real CLI: proves they replay from an empty database.
   await run("pnpm", ["exec", "prisma", "migrate", "deploy"], {
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: { ...process.env, DATABASE_URL: databaseUrl, MIGRATION_DATABASE_URL: databaseUrl },
     timeout: 110_000,
   });
 

@@ -6,6 +6,12 @@ import { inTransaction } from "./tx";
 
 export function createAccountDal(db: Db, trialLimit: number = DEV_DEFAULT_LIMITS.trialLimit) {
   return {
+    /** The profile's status, or null when the account has not been created yet. */
+    async getStatus(ctx: AuthedCtx): Promise<"active" | "deleting" | null> {
+      const profile = await db.profile.findUnique({ where: { id: ctx.userId }, select: { status: true } });
+      return profile?.status ?? null;
+    },
+
     /**
      * Idempotent: creates the profile and its single lifetime trial bucket. Duplicate signup
      * callbacks, retries and races all converge on one profile and one bucket (partial unique index).

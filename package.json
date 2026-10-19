@@ -9,6 +9,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
     "lucide-react": "1.59.0",
@@ -32,6 +34,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.2",
     "prisma": "7.10.1",
+    "supabase": "2.121.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "5.0.5"
@@ -49,6 +52,11 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "test:integration": "vitest run --config vitest.integration.config.mts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "db:dev-roles": "bash scripts/dev-roles.sh",
+    "test:supabase": "vitest run --config vitest.supabase.config.mts"
   }
 }

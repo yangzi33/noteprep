@@ -6,7 +6,7 @@ import nextTs from "eslint-config-next/typescript";
 // - only the data access layer may import the database client;
 // - process.env is read only in the env modules.
 const DAL_GLOB = "src/lib/server/dal/**";
-const ENV_FILES = ["src/lib/server/env.ts", "worker/env.ts"];
+const ENV_FILES = ["src/lib/server/env.ts", "worker/env.ts", "src/lib/supabase/public-env.ts"];
 
 const eslintConfig = defineConfig([
   ...nextVitals,

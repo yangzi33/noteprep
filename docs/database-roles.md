@@ -14,6 +14,8 @@
 
 迁移执行者(`migrator`)就是表的所有者,**不在迁移里创建**,只在受保护的发布流程中使用其连接串。`anon`、`authenticated`(Supabase Data API 角色,如存在)与 `PUBLIC` 对业务表没有任何权限,并撤销了默认授权;所有业务表都启用 RLS,对两个运行时角色用 `USING (true)` 的策略放行 —— **owner 隔离由服务端 DAL 负责,不由 RLS 负责**。
 
+角色属性在 `CREATE ROLE` 时指定,**迁移不使用 `ALTER ROLE` 改属性**:Supabase 的 `postgres` 所有者不是真正的超级用户,`ALTER ROLE … NOBYPASSRLS` 会被拒绝(P1-T5 在真实 Supabase 上发现)。如果同名角色已存在,迁移会断言它没有任何提升属性,否则失败。
+
 ## 登录用户
 
 带密码的登录用户**不写进迁移**,由各环境单独创建并加入组角色:
