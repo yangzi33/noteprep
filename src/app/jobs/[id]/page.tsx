@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { JobStatus } from "@/components/job-status";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { requireAccount } from "@/lib/server/auth/require-user";
@@ -14,6 +14,16 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   } catch (error) {
     if (domainErrorCode(error) === "NOT_FOUND") notFound();
     throw error;
+  }
+  // A finished curriculum lesson goes straight to its preview. Legacy placeholder packs have none, and stay here.
+  if (view.state === "succeeded" && view.revisionId) {
+    const lesson = await webDal()
+      .lessons.getLessonView(ctx, view.lessonId, view.revisionId)
+      .catch((error: unknown) => {
+        if (domainErrorCode(error) === "NOT_FOUND") return null;
+        throw error;
+      });
+    if (lesson) redirect(`/lessons/${lesson.lessonId}?rev=${lesson.revisionId}`);
   }
   return (
     <main className="mx-auto max-w-3xl p-8">

@@ -27,13 +27,25 @@ describe("worker configuration", () => {
     expect(JSON.stringify(config.dockerClientEnv)).not.toContain("secret");
   });
   it("in production requires the real compiler and an image pinned by digest", () => {
-    const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production" };
+    const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production", OBJECT_STORE: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SECRET_KEY: "k" };
     expect(() => workerEnv({ ...prod, ALLOW_FAKE_COMPILER: "1" })).toThrow();
     expect(() => workerEnv({ ...prod, COMPILER: "skeleton" })).toThrow();
     expect(() => workerEnv({ ...prod, COMPILER: "docker" })).toThrow(/pinned by digest/);
     expect(() => workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: "noteprep-latex:latest" })).toThrow(/pinned by digest/);
     const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
     expect(workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: digest }).LATEX_IMAGE).toBe(digest);
+  });
+  it("keeps files on local disk by default, and the Supabase store needs its URL and secret key", () => {
+    expect(workerEnv(base).OBJECT_STORE).toBe("fs");
+    expect(() => workerEnv({ ...base, OBJECT_STORE: "supabase" })).toThrow(/SUPABASE_URL and SUPABASE_SECRET_KEY/);
+    expect(() => workerEnv({ ...base, OBJECT_STORE: "supabase", SUPABASE_URL: "http://127.0.0.1:54321" })).toThrow(/SUPABASE_SECRET_KEY/);
+    expect(workerEnv({ ...base, OBJECT_STORE: "supabase", SUPABASE_URL: "http://127.0.0.1:54321", SUPABASE_SECRET_KEY: "k" }).OBJECT_STORE).toBe("supabase");
+  });
+  it("refuses local-disk storage in production", () => {
+    const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
+    const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production", COMPILER: "docker", LATEX_IMAGE: digest };
+    expect(() => workerEnv(prod)).toThrow(/OBJECT_STORE must be supabase/);
+    expect(workerEnv({ ...prod, OBJECT_STORE: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SECRET_KEY: "k" }).OBJECT_STORE).toBe("supabase");
   });
   it("rejects an unknown compiler and out-of-range limits", () => {
     expect(() => workerEnv({ ...base, COMPILER: "latex" })).toThrow();

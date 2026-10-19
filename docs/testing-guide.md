@@ -1,4 +1,4 @@
-# 测试指南(动手版,截至 M4)
+# 测试指南(动手版,截至 M5)
 
 本文告诉你**怎么跑测试、怎么在应用里手动验证、每项测试能证明什么、哪些还没验证**。测试策略与证据层级见 [test-plan.md](./test-plan.md);本文只讲操作。所有数据均为虚构/样例数据。
 
@@ -19,9 +19,9 @@
 | `pnpm typecheck` | `next typegen` + `tsc --noEmit` | — |
 | `pnpm test` | 单元测试(约 424 个):课包、文字规则、LLM 适配器、渲染、沙箱参数、清单 v2、表单 | — |
 | `pnpm test:integration` | 真实 Postgres(约 162 个):额度并发、幂等、课程、请求 v2、结算、旧路径 | `pnpm db:up` |
-| `pnpm test:supabase` | 登录、Storage、RLS、Data API 边界(15 个) | `pnpm supabase:start` |
+| `pnpm test:supabase` | 登录、Storage(私有桶、签名 URL、仅 PDF)、RLS、Data API 边界(26 个) | `pnpm supabase:start`(Storage 已在 `config.toml` 启用;改配置后需 stop 再 start) |
 | `pnpm test:latex` | **真实容器**(40 个):OS 隔离、恶意 TeX、完整链路、可复现性 | `pnpm latex:image` |
-| `pnpm test:e2e` | Playwright 关键流程 | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
+| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑 | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
@@ -41,10 +41,10 @@
    | 目的 | 设置 |
    | --- | --- |
    | 无费用、确定性文字 | `LESSON_PROSE=template`,`COMPILER=skeleton` |
-   | 真实 PDF 编译(无模型) | `COMPILER=docker`,`LESSON_PROSE=template`,先 `pnpm latex:image` |
+   | 真实 PDF 编译(无模型) | `COMPILER=docker`,`LESSON_PROSE=template`,先 `pnpm latex:image`;**要在页面里预览还需** `OBJECT_STORE=supabase`、`SUPABASE_URL`、`SUPABASE_SECRET_KEY`(见 README M5) |
    | 真实模型写文字 | `LESSON_PROSE=llm` + `LLM_*`(会产生费用) |
 
-7. 看结果:任务页应依次显示排队 → 生成 → 验证 → 编译 → 保存 → 完成。**M5 之前没有预览/下载界面**,PDF 只在 Storage 和数据库里(见 §5)。
+7. 看结果:任务页依次显示排队 → 生成 → 验证 → 编译 → 保存 → 完成,**完成后自动跳转到 `/lessons/[id]` 预览页**(标签页切换三份文档、新标签页打开、下载 PDF、课程信息面板)。预览要求 worker 用 `OBJECT_STORE=supabase`;用默认的 `fs` 时页面能打开但文件取不到(会显示"暂时无法提供")。
 8. 额度:成功后"剩余生成次数"减 1;失败后不扣("This did not use one of your generations");第 4 次应被拒绝。同一幂等键重复提交只产生一个任务。
 
 ## 4. 失败时看哪里
@@ -54,10 +54,11 @@
 - `COMPILER=docker` 失败常见原因:镜像不存在(`pnpm latex:image`)、Docker 守护进程不可达、超时。
 - 已知缺口:`CompileError.detail` 目前**没有**写入任务记录。
 
-## 5. 检查生成的 PDF(M5 之前)
+## 5. 检查生成的 PDF
 
+- 页面:`/lessons/[id]` 直接预览/下载(`.tex` 不对用户提供)。
 - 数据库:最新 `LessonRevision` 的 manifest v2(每个文档的 `pdf.path / sha256 / bytes / pages`)。
-- Storage:路径 `{owner}/{lesson}/{revision}/{attempt}/{doc}.{pdf|tex}`;用 Supabase Studio 下载 PDF 后人工打开。
+- Storage:桶 `lesson-artifacts`,路径 `{owner}/{lesson}/{revision}/{attempt}/{doc}.{pdf|tex}`;本地没有启用 Studio,用页面下载,或用 `OBJECT_STORE=fs` 时在 `.data/objects` 下查看。
 - 人工检查清单:三份文档是否齐全(按所选输出包);**Worksheet 不含任何答案**;Solutions 与 Notes 里的题号/答案一致;页边距、分页(每道题的作答线与题目同页)、公式不溢出;页脚/提示语提醒教师先审阅。
 
 ## 6. 真实模型评估(单独、受控、会花钱)
@@ -67,7 +68,7 @@
 ## 7. 这些测试**不能**证明什么
 
 - 沙箱是 runc + Docker 默认 seccomp,**不是 gVisor**;生产主机未验证(D-03、D-20、D-44)。上线前必须在目标主机重跑 `pnpm test:latex`。
-- 没有教师/人工审阅模型写的文字;没有版面视觉回归。
+- 没有教师/人工审阅模型写的文字;没有版面视觉回归;移动端 PDF 内嵌没有真机测试;CDN/框架缓存键没有在部署环境检查;下载的频率限制尚未接入。
 - Staging 没有 worker 主机,任务会一直排队;staging 尚未加载样例数据。
 - Stripe 订阅矩阵、孤儿对象清理、备份恢复演练尚未覆盖(Phase 3/4)。
 - 假流程通过 ≠ 可以上线(CLAUDE.md §11)。

@@ -1,6 +1,6 @@
 # 重构计划(提案)
 
-> 状态:**M1(课程域模型 + 示例数据集)、M2(选择向导 + 请求 v2)、M3a(课包内容模型 + 确定性生成)、M3b(LLM 适配器与文字检查)与 M4(三份文档渲染与沙箱编译;本地 runc 沙箱,gVisor/目标主机未验证)已完成;M5 尚未开始。** 关键决定已批准(2026-10-19):D-30(MVP 目标 Ontario Grade 9;真实数据集为之后的独立里程碑 CM)、D-31(不提供 `.tex`)、D-33(调整计费方案 B);D-36 推迟到 CM。** 既有文档与 `CLAUDE.md` 已按新方向对账。里程碑 M5(预览、下载与预设调整)等待用户的启动批准。
+> 状态:**M1(课程域模型 + 示例数据集)、M2(选择向导 + 请求 v2)、M3a(课包内容模型 + 确定性生成)、M3b(LLM 适配器与文字检查)、M4(三份文档渲染与沙箱编译;本地 runc 沙箱,gVisor/目标主机未验证)与 M5(课包预览与导出:私有 Storage、用户会话签名 URL、预览页)已完成;M6(预设调整与极小更正)尚未开始。** 关键决定已批准(2026-10-19):D-30(MVP 目标 Ontario Grade 9;真实数据集为之后的独立里程碑 CM)、D-31(不提供 `.tex`)、D-33(调整计费方案 B);D-36 推迟到 CM。** 既有文档与 `CLAUDE.md` 已按新方向对账。里程碑 M6(预设调整与更正)等待用户的启动批准。
 > 相关:[product-vision](product-vision.md) · [refactor-audit](refactor-audit.md) · [curriculum-architecture](curriculum-architecture.md)
 
 ## 1. 原则

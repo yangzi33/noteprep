@@ -4,15 +4,15 @@ noteprep.app
 
 面向独立私人 STEM(首个学科:中学数学)辅导老师的备课自动化:**选择**课程体系/级别/课程/主题与时长、难度,几分钟内得到一套排版专业的课包(Tutor Lesson Notes、Student Practice Worksheet、Solutions/Answer Key);预览、用预设快速调整,再导出 PDF。LaTeX 完全在幕后,老师不需要写或编辑 LaTeX。方向详见 [docs/product-vision.md](docs/product-vision.md)。
 
-## 当前状态:Phase 1 已完成并合并;Phase 2 进行中(P2-T1、P2-T2 完成);产品方向已调整,重构里程碑待启动
+## 当前状态:Phase 1 已完成并合并;Phase 2 进行中(重构里程碑 M1–M5 已完成并合并,下一步 M6;下方"Phase 1 当时的状态"为历史记录)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
 - 认证:`@supabase/ssr` + `proxy.ts` 仅刷新会话;`requireUser`/`requireAccount` 用 `getClaims` 验签(只接受非对称算法),邮箱经 `getUser()` 确认后才创建账户与试用额度;登录/注册/登出与 `/account` 页面;在真实本地 Supabase 上测试了伪造令牌、未确认邮箱、Data API 无法访问业务表。
 - Worker 骨架(`worker/`,`pnpm worker:dev`):`SKIP LOCKED` 领取、租约+心跳、围栏 token、单一总预算、有界重试(指数退避+抖动)、取消、sweeper(过期租约/截止时间/重试用尽;释放预留;报告计数漂移)、优雅退出。流水线使用假 LLM、**仅骨架用的假编译器**(产物以 `SKELETON - NOT A COMPILED PDF` 开头,生产环境拒绝启动)和本地磁盘对象存储;数学验证与排版是 Phase 2 的占位。
-- UI 骨架:导航、创建课包表单(幂等键随表单实例生成)、任务状态页(服务端渲染 + 轮询,刷新不丢)、取消、历史与剩余额度;所有页面与 `/api/jobs/[id]` 仅对所有者可见。课包文件目前是占位物,**没有下载功能**(Phase 2)。
+- UI 骨架:导航、创建课包表单(幂等键随表单实例生成)、任务状态页(服务端渲染 + 轮询,刷新不丢)、取消、历史与剩余额度;所有页面与 `/api/jobs/[id]` 仅对所有者可见。(Phase 1 当时课包文件是占位物;M5 起有真实 PDF 的预览与下载,见下方 M5 一节。)
 - Playwright 端到端(真实浏览器 + 本地 Supabase + 真实 worker 进程):登录→生成→完成→历史;重复提交与刷新不重复消耗;取消返还额度;超时失败给出清晰提示并返还额度;三次后第四次被拒(页面与服务端);跨用户隔离;未登录重定向。
-- **尚无**:Stripe、真实 LLM、数学验证、LaTeX 编译与沙箱、孤儿对象清理(P3)、IP 级限流接入(DAL 支持 `ipHash`,Web 尚未传入,P3-T2)。页面只是占位,**不是可用产品**。
+- **尚无**:Stripe、真实 LLM、数学验证、LaTeX 编译与沙箱、孤儿对象清理(P3)、IP 级限流接入(DAL 支持 `ipHash`,Web 尚未传入,P3-T2)。**仍不是可上线产品**(见各里程碑的"未验证")。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -102,7 +102,17 @@ pnpm supabase:stop
 - **worker**:`COMPILER=docker`(默认 `skeleton` 仅本地占位)、`LATEX_IMAGE`(生产必须用 `@sha256:` 摘要)、`LATEX_WALL_CLOCK_SECONDS`。真实编译器下,旧的 `/lessons/new` 作业会干净地失败并返还额度(它只会产出标注为占位的文件,绝不能存成真实结果)。
 - **本地运行真实编译**:`pnpm latex:image`(构建镜像)→ 在 `.env` 里设 `COMPILER="docker"`(并可去掉 `ALLOW_FAKE_COMPILER`)→ `pnpm worker:dev`。`pnpm test:latex` 在**真实镜像**上运行 40 个测试(需要 Docker 和 `pnpm db:up`)。
 - **测试**:单元 +98(渲染/转义/注入语料与模糊测试、tar 读取器、docker 参数、用假 docker 验证"容器返回什么才信"、清单 v2、worker 配置);`test:latex` 40 个(镜像钉版本、编译三份真实 PDF 且逐字节可复现、**OS 边界**:网络/文件系统/能力/seccomp/宿主可见性/环境变量/fork/内存/磁盘/输出/超时、**恶意 TeX**:shell escape、文件读写、路径穿越、展开炸弹、死循环、页数/日志炸弹、JavaScript/Launch 动作、隐藏对象流、**完整链路**:数据库→流水线→渲染→沙箱→存储→结算);集成 +8;CI 新增 `LaTeX sandbox` 任务(构建镜像并运行)。对沙箱做的变异检查(网络、只读根、能力、no-new-privileges、tmpfs 执行、进程数、root、宿主侧杀容器、活动内容扫描、结算清单、流水线各检查)全部被发现。
-- **未验证/已知限制**:本地是 **runc + 默认 seccomp**,**没有 gVisor**,也没有在目标生产主机上验证(D-03/D-20 仍待定);没有 Stripe/LLM 参与的真实端到端;页面/下载界面还没有(M5),所以现在只能在存储里和数据库里看到 PDF;`CompileError.detail`(一行脱敏原因)目前只在编译器内部,尚未写入作业记录。
+- **未验证/已知限制**:本地是 **runc + 默认 seccomp**,**没有 gVisor**,也没有在目标生产主机上验证(D-03/D-20 仍待定);没有 Stripe/LLM 参与的真实端到端;`CompileError.detail`(一行脱敏原因)目前只在编译器内部,尚未写入作业记录。
+
+## M5 课包预览与导出(完成)
+
+- **页面**:`/lessons/[id]?rev=…&doc=…`——三个标签页(Tutor Lesson Notes / Student Practice Worksheet / Solutions / Answer Key,只显示所请求的文档),预览是**真正编译出的 PDF**(浏览器自带查看器的 `<iframe>`),"在新标签页打开"与"下载 PDF"始终可用(预览不显示时的降级)。所有链接都带 `rev`,预览、下载、各标签页因此**永远来自同一个 revisionId**。页面还显示"AI 材料请先自己通读"的提示和**课程信息面板**:文字完全由数据集字段拼成;样例/合成数据集一律写"不是真实课程,不作对齐声明",即使存储的声明字段写着 aligned。`/jobs/[id]` 在作业成功后自动跳转到该页(旧的占位课包仍留在作业页)。
+- **文件如何到浏览器**(`/lessons/[id]/documents/[doc]?rev=…[&download=1]`):验证会话 → DAL 按 `ownerId` 取该修订的**清单里**写着的 PDF 路径(路径从不来自请求)→ 用**用户自己的会话**向 Storage 签发 60 秒的签名 URL(因此 Storage 的 RLS 再检查一次;Web 不持有 secret key)→ 302,响应 `private, no-store`。别人的、已删除的、不存在的、旧占位课包的,一律同一个 404;未登录 401;`doc` 只能是 notes/worksheet/solutions,**没有任何办法请求 `.tex`**(D-31)。
+- **Storage**(迁移 `…_storage_artifacts`):私有桶 `lesson-artifacts`(25 MB 上限);RLS 只有一条:`authenticated` 可 SELECT 路径首段等于自己 `auth.uid()` **且扩展名为 pdf** 的对象——浏览器没有任何写/改/删权限,`.tex` 连所有者本人也读不到。本地需要启用 Storage(`supabase/config.toml` 已改为 `enabled = true`;改后需要 `pnpm supabase:stop && pnpm supabase:start`,首次会拉取 storage 镜像)。迁移在没有 `storage` 模式的纯 Postgres(集成测试库)上会跳过这一步。
+- **worker 写入**:`OBJECT_STORE=supabase` + `SUPABASE_URL` + `SUPABASE_SECRET_KEY`(只给 worker;生产强制 `supabase`)。默认仍是 `fs`(本地磁盘,测试用)——**用 `fs` 时预览页打不开文件**。
+- **本地看到真实 PDF**:`pnpm latex:image`;`.env` 里设 `COMPILER="docker"`、`OBJECT_STORE="supabase"`、`SUPABASE_URL="http://127.0.0.1:54321"`、`SUPABASE_SECRET_KEY`(取自 `pnpm supabase:status`)→ 重启 `pnpm worker:dev` → 在 `/prepare` 生成 → 作业完成后自动打开预览页。
+- **测试**:Supabase 边界 +11(适配器存取/删前缀/拒绝越界路径;私有桶公开 URL 无效;所有者能签发并下载与存入完全一致的字节;签名 URL 到期失效;所有者拿不到 `.tex`;他人/未登录拿不到;任何浏览器会话不能写/覆盖/删);集成 +6(越权矩阵:他人、已删除、未知 id、别的课包的修订、同一所有者另一课包的修订,清单来源,旧占位课包与草稿);单元 +6;E2E +2(真实 worker + 真实 Storage:三标签页、链接带 revision、每份文件的字节哈希等于清单、跨用户 404、未登录 401、`.tex`/越界参数 404;本地用 `E2E_COMPILER=docker` 在真实 PDF 上跑过)。对 Storage 策略(去掉扩展名条件/所有者条件/公开桶/开放写入)、DAL(所有者、已删除、修订归属、`.tex` 路径)、路由与页面(no-store、预览不带 revision、标签页丢 revision)做过变异检查,全部被发现;两处冗余防线(课包与修订各自的所有者过滤、`finalized` 状态与"清单只存在于已完成修订"的数据库约束)单独去掉不会失败——这是有意的纵深防御,同时去掉才会失败。
+- **未验证/已知限制**:预览用浏览器自带 PDF 查看器——移动端兼容性没有在真机上测过(因此有降级链接);下载的"请求频率限制"尚未接入(CLAUDE.md 要求,P3);服务端不在每次发放前重新校验文件哈希(worker 写入时已校验);无版面视觉回归;调整与更正是 M6。
 
 ## 排查"作业为什么失败了"
 

@@ -16,7 +16,12 @@ const WorkerEnv = z
     POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
     LEASE_SECONDS: z.coerce.number().int().min(5).max(300).default(30),
     SWEEP_INTERVAL_SECONDS: z.coerce.number().int().min(1).max(600).default(15),
+    /** "fs" keeps files on local disk (development and tests); "supabase" writes to the private Storage bucket. */
+    OBJECT_STORE: z.enum(["fs", "supabase"]).default("fs"),
     OBJECT_STORE_DIR: z.string().min(1).default(".data/objects"),
+    /** Only for OBJECT_STORE=supabase. The secret key bypasses Storage RLS, so it is held by the worker alone. */
+    SUPABASE_URL: z.url().optional(),
+    SUPABASE_SECRET_KEY: z.string().min(1).optional(),
     /** "fake" needs no credentials. "anthropic" calls the real API and needs the four settings below. */
     LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
     /** "template" never calls a model; "llm" asks the provider for the wording of curriculum lessons. */
@@ -31,6 +36,12 @@ const WorkerEnv = z
     LLM_BASE_URL: z.url({ protocol: /^https$/ }).optional(),
   })
   .superRefine((env, ctx) => {
+    if (env.OBJECT_STORE === "supabase" && (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY)) {
+      ctx.addIssue({ code: "custom", message: "OBJECT_STORE=supabase also needs SUPABASE_URL and SUPABASE_SECRET_KEY" });
+    }
+    if (env.NODE_ENV === "production" && env.OBJECT_STORE === "fs") {
+      ctx.addIssue({ code: "custom", message: "OBJECT_STORE must be supabase in production" });
+    }
     if (env.NODE_ENV === "production" && env.ALLOW_FAKE_COMPILER === "1") {
       ctx.addIssue({ code: "custom", message: "ALLOW_FAKE_COMPILER must not be set in production" });
     }

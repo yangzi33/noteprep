@@ -214,7 +214,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
             ))}
           </fieldset>
           <p className="text-xs text-muted-foreground">
-            This build produces placeholder files only; real documents arrive with the rendering milestone. Choosing fewer documents still uses one generation.
+            Choosing fewer documents still uses one generation.
           </p>
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={exhausted}>
