@@ -4,13 +4,15 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T6 与 P1-T8 完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T8 全部完成;验收见下)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
 - 认证:`@supabase/ssr` + `proxy.ts` 仅刷新会话;`requireUser`/`requireAccount` 用 `getClaims` 验签(只接受非对称算法),邮箱经 `getUser()` 确认后才创建账户与试用额度;登录/注册/登出与 `/account` 页面;在真实本地 Supabase 上测试了伪造令牌、未确认邮箱、Data API 无法访问业务表。
 - Worker 骨架(`worker/`,`pnpm worker:dev`):`SKIP LOCKED` 领取、租约+心跳、围栏 token、单一总预算、有界重试(指数退避+抖动)、取消、sweeper(过期租约/截止时间/重试用尽;释放预留;报告计数漂移)、优雅退出。流水线使用假 LLM、**仅骨架用的假编译器**(产物以 `SKELETON - NOT A COMPILED PDF` 开头,生产环境拒绝启动)和本地磁盘对象存储;数学验证与排版是 Phase 2 的占位。
-- **尚无**:任务与历史 UI、Stripe、真实 LLM、数学验证、LaTeX 编译与沙箱、孤儿对象清理(P3)。页面只是占位,**不是可用产品**。
+- UI 骨架:导航、创建课包表单(幂等键随表单实例生成)、任务状态页(服务端渲染 + 轮询,刷新不丢)、取消、历史与剩余额度;所有页面与 `/api/jobs/[id]` 仅对所有者可见。课包文件目前是占位物,**没有下载功能**(Phase 2)。
+- Playwright 端到端(真实浏览器 + 本地 Supabase + 真实 worker 进程):登录→生成→完成→历史;重复提交与刷新不重复消耗;取消返还额度;超时失败给出清晰提示并返还额度;三次后第四次被拒(页面与服务端);跨用户隔离;未登录重定向。
+- **尚无**:Stripe、真实 LLM、数学验证、LaTeX 编译与沙箱、孤儿对象清理(P3)、IP 级限流接入(DAL 支持 `ipHash`,Web 尚未传入,P3-T2)。页面只是占位,**不是可用产品**。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -38,6 +40,7 @@ pnpm supabase:start        # 首次会下载镜像;已在 supabase/config.toml �
 pnpm db:migrate:deploy     # 用 MIGRATION_DATABASE_URL 把迁移应用到 Supabase 的 Postgres
 pnpm db:dev-roles          # 创建本地 web_login / worker_login(仅开发用的一次性密码)
 pnpm test:supabase         # 真实 Auth + Data API 的边界测试
+pnpm test:e2e              # Playwright:构建并启动应用(3100 端口),测试内启动真实 worker;需先 supabase:start,并已 `pnpm exec playwright install chromium`
 pnpm worker:dev           # 单独的进程;读取 .env 里的 WORKER_DATABASE_URL,产物写到 .data/objects
 pnpm dev                   # http://127.0.0.1:3000 ;注册邮件在 http://127.0.0.1:54324 (Mailpit)
 pnpm supabase:stop
@@ -51,7 +54,7 @@ pnpm supabase:stop
 - **不要重新运行 `prisma init`**:它会把第三方 "agent skills" 文本从 GitHub 下载到 `.agents/`、`.claude/`、`.windsurf/` 并写入 `skills-lock.json`。这些内容未经审阅,已删除且不应提交。
 - `pnpm install` 会触发根包的 `postinstall`(`prisma generate`,不需要数据库连接),生成物位于被忽略的 `src/generated/prisma`。
 
-尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。`test:supabase` 是额外加入的命令。
+尚未建立(见实施计划):`test:latex`(Phase 2)。`test:supabase` 与 `db:up`/`db:down` 等是额外加入的命令。
 
 ## CI
 
@@ -106,4 +109,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T7 UI 骨架与 Playwright**(创建表单、状态轮询、历史与额度页、骨架路径的端到端)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。Phase 1 的全部任务已完成。下一阶段是 **Phase 2**(第一条真正可用的路径:数学内核、内容 schema、渲染、隔离编译、真实 LLM、编辑与下载),第一个任务是 **P2-T1 数学内核与人工核对的 fixtures**;沙箱 spike(P2-T6)需要一台 Linux 机器(见 docs/staging-setup.md §5)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。

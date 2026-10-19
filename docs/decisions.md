@@ -26,6 +26,7 @@
 | D-26 | 开发时应用连接 Supabase 的 Postgres(54322)用 `web_login`(app_runtime);迁移用 `postgres` 所有者(`MIGRATION_DATABASE_URL`);集成测试用 compose 的独立 Postgres | 运行凭据与迁移凭据分离;真实 Supabase 边界测试 | 无 |
 | D-27 | Worker 用 `tsx --conditions=react-server` 运行,以便复用带 `server-only` 的 DAL;`tsx` 固定版本 | `server-only` 在 React server 条件下解析为空模块,避免为 worker 复制一份 DAL | Phase 2 若改为编译产物运行,同样保留该条件 |
 | D-28 | 对象存储与编译在 Phase 1 通过端口注入,仅有本地磁盘/骨架实现;孤儿对象清理推迟到 P3-T1 | Phase 1 只验证控制流与结算;真实 Storage 适配器在 Phase 2 | 无 |
+| D-29 | 应用边界(Server Action、Route Handler、页面)用 `domainErrorCode()` 判断领域错误,不用 `instanceof` | Next.js 对服务端组件和路由处理器分别打包,各有一份错误类;`instanceof` 在 Route Handler 中失效,导致他人任务返回 500(E2E 发现) | 无 |
 | D-15 | 括号/分配律等不进入首个验收切片 | 缩小可验证覆盖,先证明流水线 | 首切片验收后独立评审扩展 |
 
 ## 3. 未确定且影响上线的决策(需要用户/业务输入)

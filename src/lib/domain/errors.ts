@@ -1,5 +1,8 @@
 /** Domain errors carry a stable machine-readable code; messages never include content. */
 export class DomainError extends Error {
+  /** Explicit marker (a property, not a class identity) so duplicated module copies still recognize each other. */
+  readonly isDomainError = true;
+
   constructor(
     readonly code: string,
     message: string,
@@ -78,4 +81,16 @@ export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);
   }
+}
+
+/**
+ * The stable code of a domain error, or null for anything else. Match on this rather than `instanceof`
+ * wherever a caller may live in a different bundle than the thrower: Next.js builds server components,
+ * server actions and route handlers separately, so each gets its own copy of these classes and an
+ * `instanceof` check can fail even though the error is the right kind (found by the E2E tests).
+ */
+export function domainErrorCode(error: unknown): string | null {
+  const e = error as { isDomainError?: unknown; code?: unknown } | null;
+  if (error instanceof Error && e?.isDomainError === true && typeof e.code === "string") return e.code;
+  return null;
 }
