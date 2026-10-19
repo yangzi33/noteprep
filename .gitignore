@@ -25,3 +25,6 @@ npm-debug.log*
 
 /src/generated/prisma
 .data/
+
+# local tool state (plugins), never committed
+.superpowers/
