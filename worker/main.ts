@@ -5,7 +5,8 @@ import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, type Compiler
 import { DockerLatexCompiler } from "@/lib/latex/docker-compiler";
 import { DEFAULT_SANDBOX } from "@/lib/latex/sandbox";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
-import { FsObjectStore } from "@/lib/storage/store";
+import { FsObjectStore, type ObjectStore } from "@/lib/storage/store";
+import { SupabaseObjectStore } from "@/lib/storage/supabase-store";
 import { workerEnv } from "./env";
 import { log } from "./log";
 import { runWorkerLoop } from "./loop";
@@ -31,6 +32,10 @@ async function main() {
     });
   }
 
+  const store: ObjectStore =
+    config.OBJECT_STORE === "supabase"
+      ? new SupabaseObjectStore(config.SUPABASE_URL!, config.SUPABASE_SECRET_KEY!)
+      : new FsObjectStore(path.resolve(config.OBJECT_STORE_DIR));
   const llm = createLlmProvider(config);
   // Never log the key; the provider id, prose mode and model name are enough to know what a worker is doing.
   // The real compiler for curriculum lessons, or the labelled placeholder one for local runs. Legacy quick-form lessons
@@ -40,7 +45,7 @@ async function main() {
       ? new DockerLatexCompiler({ ...DEFAULT_SANDBOX, image: config.LATEX_IMAGE, wallClockMs: config.LATEX_WALL_CLOCK_SECONDS * 1000, clientEnv: config.dockerClientEnv })
       : new SkeletonDocumentCompiler();
   const legacyCompiler: Compiler = config.COMPILER === "docker" ? refusingLegacyCompiler : new SkeletonCompiler();
-  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id });
+  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id, store: config.OBJECT_STORE });
   await runWorkerLoop({
     deps: {
       jobs: dal.jobs,
@@ -53,7 +58,7 @@ async function main() {
       compiler: legacyCompiler,
       documentCompiler,
       legacyEnabled: config.COMPILER !== "docker",
-      store: new FsObjectStore(path.resolve(config.OBJECT_STORE_DIR)),
+      store,
       leaseMs: config.LEASE_SECONDS * 1000,
     },
     workerId: config.workerId,
