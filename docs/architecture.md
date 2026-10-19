@@ -535,9 +535,9 @@ sequenceDiagram
     W-->>S: 2xx
   end
   K->>DB: 领取 status IN (received, failed) 且到期的事件
-  K->>S: GET 订阅当前状态(权威;含条目周期、latest_invoice)
+  K->>S: GET 订阅当前状态(权威，含条目周期、latest_invoice)
   K->>DB: 事务:pg_advisory_xact_lock(订阅) → 更新 Subscription → 必要时 INSERT paid bucket(ON CONFLICT DO NOTHING) → 事件置 processed
-  Note over K,DB: 失败 → status=failed + 退避重试;积压告警
+  Note over K,DB: 失败 → status=failed + 退避重试，积压告警
 ```
 
 - **收到 ≠ 处理成功**:`WebhookEvent.status` 区分 received / processing / processed / failed;2xx 仅表示"已持久记录"。

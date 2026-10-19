@@ -60,6 +60,12 @@ pnpm supabase:stop
 
 `.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
 
+## Phase 2 进度
+
+- **P2-T1 数学内核(完成)**:`src/lib/math`——BigInt 精确有理数(无浮点;拒绝小数/科学计数法/越界数字)、一元一次方程独立求解(唯一解/无解/恒等式)、逐步等价检查(声明的操作作用于上一步必须得到所写的结果,乘除零被拒,解集不得改变)、代入原方程、答案册核对、最终形式检查;状态 `verified/failed/unverified` **只由确定性检查产生**:任何失败→failed,必需检查未运行(例如没有步骤)→unverified;LLM 复审或随机抽样只能作为补充证据,**不能**让任何题变成 verified,发现疑点会把 verified 降为 unverified;报告绑定内容哈希,内容变化后旧结论视为 unverified。整课校验还检查题号唯一、答案册与练习一一对应、无孤立答案。
+- 测试:`tests/fixtures/math` 里 32 道**人工审定**的单题用例(含无解、恒等式、分数/负系数、除以零、答案错误、步骤错误、"最终答案对但中间错"、"等价但不是所述步骤"、题答错位、不支持的写法)与 8 个整课用例,每个都带人工推导;已通过独立的 Python `fractions` 交叉核对,并做过 6 项变异检查(其中一项暴露了缺失用例,已补)。
+- 尚未做:参数生成器(P2-T2)、内容 schema/修订(P2-T3)、LaTeX 渲染(P2-T4)、真实 LLM(P2-T5)、沙箱编译(P2-T6)等。
+
 ## 文档导航
 
 | 文档 | 内容 |
