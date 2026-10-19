@@ -44,7 +44,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # `migrate status` exits 1 while migrations are pending. For a status run that red result is the
+      # information; for a deploy run it must not stop the job before the migrations are applied.
       - name: Migration status
+        continue-on-error: ${{ inputs.action == 'deploy' }}
         run: pnpm exec prisma migrate status
       - name: Apply migrations
         if: inputs.action == 'deploy'
