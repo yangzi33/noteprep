@@ -1,0 +1,304 @@
+// Schema for docs/architecture.md section 5.
+// Constraints Prisma cannot express (CHECKs, partial unique indexes, triggers, roles,
+// RLS) live as hand-written SQL in the migration named *_constraints_roles_rls.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProfileStatus {
+  active
+  deleting
+
+  @@map("profile_status")
+}
+
+enum JobKind {
+  generate
+  compile
+
+  @@map("job_kind")
+}
+
+enum JobState {
+  queued
+  running
+  succeeded
+  failed
+  canceled
+
+  @@map("job_state")
+}
+
+enum JobStage {
+  generating
+  validating
+  compiling
+  storing
+
+  @@map("job_stage")
+}
+
+enum BucketKind {
+  trial
+  paid
+
+  @@map("bucket_kind")
+}
+
+enum ReservationState {
+  reserved
+  consumed
+  released
+
+  @@map("reservation_state")
+}
+
+enum RevisionStatus {
+  draft
+  finalized
+  rejected
+
+  @@map("revision_status")
+}
+
+enum ValidationStatus {
+  verified
+  failed
+  unverified
+
+  @@map("validation_status")
+}
+
+enum WebhookEventStatus {
+  received
+  processing
+  processed
+  failed
+
+  @@map("webhook_event_status")
+}
+
+/// Application profile; `id` equals the Supabase Auth user id.
+model Profile {
+  id                  String        @id @db.Uuid
+  status              ProfileStatus @default(active)
+  stripeCustomerId    String?       @unique @map("stripe_customer_id")
+  deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lessons       Lesson[]
+  jobs          GenerationJob[]
+  buckets       UsageBucket[]
+  reservations  UsageReservation[]
+  subscriptions Subscription[]
+  idempotency   IdempotencyKey[]
+
+  @@map("profile")
+}
+
+model Lesson {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId           String    @map("owner_id") @db.Uuid
+  title             String
+  inputSpec         Json      @map("input_spec")
+  /// Must point at a revision of this same lesson: FK (current_revision_id, id) -> (id, lesson_id).
+  currentRevisionId String?   @map("current_revision_id") @db.Uuid
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  owner           Profile          @relation(fields: [ownerId], references: [id])
+  currentRevision LessonRevision?  @relation("CurrentRevision", fields: [currentRevisionId, id], references: [id, lessonId], onDelete: NoAction, onUpdate: NoAction)
+  revisions       LessonRevision[] @relation("LessonRevisions")
+  jobs            GenerationJob[]
+
+  @@unique([id, ownerId])
+  @@map("lesson")
+}
+
+model LessonRevision {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lessonId         String           @map("lesson_id") @db.Uuid
+  ownerId          String           @map("owner_id") @db.Uuid
+  number           Int
+  status           RevisionStatus
+  schemaVersion    Int              @map("schema_version")
+  content          Json
+  contentHash      String           @map("content_hash")
+  validationReport Json             @map("validation_report")
+  validationStatus ValidationStatus @map("validation_status")
+  acknowledgement  Json?
+  sourceRevisionId String?          @map("source_revision_id") @db.Uuid
+  templateVersion  String?          @map("template_version")
+  validatorVersion String           @map("validator_version")
+  generationMeta   Json?            @map("generation_meta")
+  /// Write-once (NULL -> value) for finalized revisions; enforced by trigger.
+  artifactManifest Json?            @map("artifact_manifest")
+  createdByJobId   String?          @map("created_by_job_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lesson     Lesson           @relation("LessonRevisions", fields: [lessonId, ownerId], references: [id, ownerId])
+  source     LessonRevision?  @relation("RevisionSource", fields: [sourceRevisionId], references: [id])
+  derived    LessonRevision[] @relation("RevisionSource")
+  jobs       GenerationJob[]
+  currentFor Lesson[]         @relation("CurrentRevision")
+
+  @@unique([lessonId, number])
+  @@unique([id, ownerId])
+  @@unique([id, lessonId])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("lesson_revision")
+}
+
+model GenerationJob {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId           String    @map("owner_id") @db.Uuid
+  kind              JobKind
+  state             JobState  @default(queued)
+  stage             JobStage?
+  lessonId          String    @map("lesson_id") @db.Uuid
+  /// Compile jobs: the revision to compile. Generate jobs: the revision they published.
+  revisionId        String?   @map("revision_id") @db.Uuid
+  requestHash       String    @map("request_hash")
+  attempt           Int       @default(0)
+  maxAttempts       Int       @map("max_attempts")
+  runAfter          DateTime  @default(now()) @map("run_after") @db.Timestamptz(6)
+  leaseOwner        String?   @map("lease_owner")
+  leaseExpiresAt    DateTime? @map("lease_expires_at") @db.Timestamptz(6)
+  fencingToken      BigInt    @default(0) @map("fencing_token")
+  cancelRequestedAt DateTime? @map("cancel_requested_at") @db.Timestamptz(6)
+  deadlineAt        DateTime  @map("deadline_at") @db.Timestamptz(6)
+  callsUsed         Int       @default(0) @map("calls_used")
+  maxCalls          Int       @map("max_calls")
+  tokensUsed        BigInt    @default(0) @map("tokens_used")
+  maxTokens         BigInt    @map("max_tokens")
+  /// Internal cost accounting in micro-units; not a customer billing amount.
+  costMicros        BigInt    @default(0) @map("cost_micros")
+  maxCostMicros     BigInt    @map("max_cost_micros")
+  errorCode         String?   @map("error_code")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt         DateTime? @map("started_at") @db.Timestamptz(6)
+  finishedAt        DateTime? @map("finished_at") @db.Timestamptz(6)
+
+  owner       Profile           @relation(fields: [ownerId], references: [id])
+  lesson      Lesson            @relation(fields: [lessonId, ownerId], references: [id, ownerId])
+  revision    LessonRevision?   @relation(fields: [revisionId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  reservation UsageReservation?
+
+  // Partial indexes (queued by run_after, running by lease) are added in SQL.
+  @@index([ownerId, state])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("generation_job")
+}
+
+model IdempotencyKey {
+  ownerId      String   @map("owner_id") @db.Uuid
+  operation    String
+  key          String
+  requestHash  String   @map("request_hash")
+  resourceType String?  @map("resource_type")
+  resourceId   String?  @map("resource_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner Profile @relation(fields: [ownerId], references: [id])
+
+  @@id([ownerId, operation, key])
+  @@map("idempotency_key")
+}
+
+model UsageBucket {
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId        String     @map("owner_id") @db.Uuid
+  kind           BucketKind
+  limitCount     Int        @map("limit_count")
+  used           Int        @default(0)
+  reserved       Int        @default(0)
+  startsAt       DateTime   @default(now()) @map("starts_at") @db.Timestamptz(6)
+  endsAt         DateTime?  @map("ends_at") @db.Timestamptz(6)
+  subscriptionId String?    @map("subscription_id") @db.Uuid
+  /// Paid buckets: subscription item period start (epoch seconds), docs/decisions.md D-13.
+  periodKey      BigInt?    @map("period_key")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner        Profile            @relation(fields: [ownerId], references: [id])
+  subscription Subscription?      @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  reservations UsageReservation[]
+
+  // One trial bucket per owner is a partial unique index in SQL.
+  @@unique([subscriptionId, periodKey])
+  @@index([ownerId, kind])
+  @@map("usage_bucket")
+}
+
+model UsageReservation {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId      String           @map("owner_id") @db.Uuid
+  bucketId     String           @map("bucket_id") @db.Uuid
+  jobId        String           @unique @map("job_id") @db.Uuid
+  state        ReservationState @default(reserved)
+  settleReason String?          @map("settle_reason")
+  reservedAt   DateTime         @default(now()) @map("reserved_at") @db.Timestamptz(6)
+  settledAt    DateTime?        @map("settled_at") @db.Timestamptz(6)
+
+  owner  Profile       @relation(fields: [ownerId], references: [id])
+  bucket UsageBucket   @relation(fields: [bucketId], references: [id])
+  job    GenerationJob @relation(fields: [jobId], references: [id])
+
+  @@index([bucketId, state])
+  @@map("usage_reservation")
+}
+
+model Subscription {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId              String    @map("owner_id") @db.Uuid
+  stripeSubscriptionId String    @unique @map("stripe_subscription_id")
+  stripePriceId        String    @map("stripe_price_id")
+  /// Stripe status string stored as received.
+  status               String
+  cancelAtPeriodEnd    Boolean   @default(false) @map("cancel_at_period_end")
+  periodStart          DateTime? @map("period_start") @db.Timestamptz(6)
+  periodEnd            DateTime? @map("period_end") @db.Timestamptz(6)
+  latestInvoicePaid    Boolean   @default(false) @map("latest_invoice_paid")
+  syncedAt             DateTime  @map("synced_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner   Profile       @relation(fields: [ownerId], references: [id])
+  buckets UsageBucket[]
+
+  // At most one "live" subscription per owner is a partial unique index in SQL.
+  @@index([ownerId])
+  @@map("subscription")
+}
+
+/// Metadata only; full Stripe payloads are intentionally not stored.
+model WebhookEvent {
+  id            String             @id
+  type          String
+  objectId      String?            @map("object_id")
+  livemode      Boolean
+  stripeCreated DateTime?          @map("stripe_created") @db.Timestamptz(6)
+  receivedAt    DateTime           @default(now()) @map("received_at") @db.Timestamptz(6)
+  status        WebhookEventStatus @default(received)
+  attempts      Int                @default(0)
+  nextAttemptAt DateTime           @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lastErrorCode String?            @map("last_error_code")
+  processedAt   DateTime?          @map("processed_at") @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt])
+  @@map("webhook_event")
+}
+
+model RateLimitWindow {
+  key         String
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  count       Int      @default(0)
+
+  @@id([key, windowStart])
+  @@map("rate_limit_window")
+}

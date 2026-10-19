@@ -4,10 +4,10 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T2 完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T3 完成)
 
-- 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则。
-- **尚无**:数据库、认证、任务/额度、worker、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
+- **尚无**:认证、额度与任务的应用代码(DAL)、worker、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -21,9 +21,20 @@ pnpm lint
 pnpm typecheck    # next typegen && tsc --noEmit
 pnpm test         # Vitest 单元测试
 pnpm build
+pnpm db:up                 # 启动本地 Postgres 17(compose.yaml,127.0.0.1:54329,一次性开发凭据)
+pnpm db:migrate:deploy     # 对 .env 中的 DATABASE_URL 应用迁移(先 cp .env.example .env)
+pnpm test:integration      # 每次运行新建临时数据库、重放全部迁移、再跑测试
+pnpm db:down
 ```
 
-尚未建立(见实施计划):`test:integration`、`test:e2e`、`worker:dev`、`test:latex`、`db:migrate:dev`、`db:migrate:deploy`。
+数据库注意事项:
+
+- 本机 5432 端口可能被其他项目占用,所以本项目使用 54329。
+- 非交互环境中请用 `db:migrate:deploy`;`db:migrate:dev` 需要交互式终端(生成新迁移时使用)。
+- **不要重新运行 `prisma init`**:它会把第三方 "agent skills" 文本从 GitHub 下载到 `.agents/`、`.claude/`、`.windsurf/` 并写入 `skills-lock.json`。这些内容未经审阅,已删除且不应提交。
+- `pnpm install` 会触发根包的 `postinstall`(`prisma generate`,不需要数据库连接),生成物位于被忽略的 `src/generated/prisma`。
+
+尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。
 
 ## 文档导航
 
@@ -72,4 +83,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T3 Prisma schema、迁移与数据库角色**(需要本地 Postgres/Supabase)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T4 额度领域与 DAL 事务**(创建/完成/释放、幂等、并发测试)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。

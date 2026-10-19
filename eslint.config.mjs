@@ -39,10 +39,15 @@ const eslintConfig = defineConfig([
     rules: { "no-restricted-imports": "off" },
   },
   {
+    // Tooling and tests configure themselves from the environment.
+    files: ["tests/**", "prisma7.config.ts", "*.config.mts"],
+    rules: { "no-restricted-properties": "off" },
+  },
+  {
     files: ENV_FILES,
     rules: { "no-restricted-properties": "off" },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]),
+  globalIgnores(["src/generated/**", ".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]),
 ]);
 
 export default eslintConfig;

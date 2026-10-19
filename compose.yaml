@@ -1,0 +1,22 @@
+# Local development and integration-test database only.
+# The credentials below are throwaway values for a container bound to 127.0.0.1.
+# Port 54329 avoids clashing with other local Postgres instances on 5432.
+services:
+  db:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24 # PostgreSQL 17.11
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: noteprep_dev
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - noteprep-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d noteprep_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  noteprep-db:
