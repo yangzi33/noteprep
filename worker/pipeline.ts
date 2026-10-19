@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { GenerateInput } from "@/lib/domain/generation";
+import { normalizeJobInput } from "@/lib/domain/job-input";
 import { artifactPath, EDITIONS, FORMATS, type ManifestEntry } from "@/lib/domain/manifest";
 import type { ClaimedJob, JobsDal } from "@/lib/server/dal/jobs";
 import type { createSettlementDal } from "@/lib/server/dal/settlement";
@@ -65,14 +65,24 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
 
   // --- generating ---------------------------------------------------------------------------
   await checkpoint("generating");
-  const spec = GenerateInput.parse(await jobs.getInput(job.id, job.fencingToken));
+  const spec = normalizeJobInput(await jobs.getInput(job.id, job.fencingToken)); // v1 or v2 request, same pipeline
   const result = await llm.generateStructured({
     requestId: randomUUID(),
     jobId: job.id,
     task: "lesson_prose",
     schemaVersion: 1,
     system: "skeleton",
-    input: { topic: spec.topic, level: spec.level, objectives: spec.objectives, difficulty: spec.difficulty },
+    // Only what this lesson needs. For a curriculum lesson that includes the chosen objectives and the concept
+    // the engine will use, so the model writes about the selected topic rather than inventing one.
+    input: {
+      topic: spec.topic,
+      level: spec.level,
+      objectives: spec.objectives,
+      difficulty: spec.difficulty,
+      ...(spec.context
+        ? { conceptIds: spec.context.concepts.map((c) => c.id), contextHash: spec.context.contextHash, prerequisites: spec.context.prerequisites.map((p) => p.title) }
+        : {}),
+    },
     limits: { timeoutMs: 30_000, maxOutputTokens: 2_000, maxCostMicros: 100_000 },
     signal,
   });
@@ -91,7 +101,12 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
   await checkpoint("validating");
   const prose = SkeletonProse.safeParse(result.value);
   if (!prose.success) throw new PipelineError("invalid_output", false);
-  const content = { skeleton: true, spec, objectives: prose.data.objectives };
+  const content = {
+    skeleton: true,
+    spec: { topic: spec.topic, level: spec.level, difficulty: spec.difficulty, durationMinutes: spec.durationMinutes },
+    objectives: prose.data.objectives,
+    ...(spec.context ? { context: spec.context } : {}), // the immutable snapshot the lesson was generated from
+  };
 
   // --- compiling ----------------------------------------------------------------------------
   await checkpoint("compiling");

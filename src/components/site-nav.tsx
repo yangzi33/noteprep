@@ -13,7 +13,8 @@ export async function SiteNav() {
         </Link>
         {user ? (
           <>
-            <Link href="/lessons/new">New lesson</Link>
+            <Link href="/prepare">Prepare</Link>
+            <Link href="/lessons/new">Quick form</Link>
             <Link href="/lessons">History</Link>
             <span className="ml-auto text-muted-foreground">{user.email}</span>
             <form>

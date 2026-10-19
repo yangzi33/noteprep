@@ -26,6 +26,7 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.publishableKey,
       NEXT_PUBLIC_SITE_URL: env.webUrl,
       DATABASE_URL: env.webDatabaseUrl,
+      CURRICULUM_ALLOW_SAMPLE: "1",
     },
   },
 });
