@@ -1,6 +1,7 @@
 import { verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import { validateLessonMath, VALIDATOR_VERSION, type LessonMathReport } from "@/lib/math/validate";
 import { sectionContentHash } from "./hash";
+import { checkText, curriculumNames } from "./prose-rules";
 import { DOCUMENT_SECTION_KINDS, PackageSchema, type LessonPackage, type Section } from "./schema";
 
 export const PACKAGE_VALIDATOR_VERSION = `package/1+${VALIDATOR_VERSION}`;
@@ -26,15 +27,6 @@ export interface PackageReport {
   validatorVersion: string;
 }
 
-/**
- * Prose blocks hold words only. Math enters a document through validated question blocks, so a number,
- * formula symbol, link, or curriculum word in prose is a defect (the narration could contradict the math,
- * or make a curriculum claim that only the dataset may make). Dataset-sourced sections are exempt from the
- * character rules and instead must repeat the dataset's text exactly.
- */
-const FORBIDDEN_CHARS = /[\d=$\\<>{}^_~|]|https?:|www\./i;
-const CLAIM_WORDS = /\b(align(ed|s|ment)?|curricul\w*|syllabus|standards?|expectations?)\b/i;
-
 function proseTexts(section: Section): string[] {
   const out: string[] = [];
   for (const block of section.blocks) {
@@ -48,9 +40,7 @@ function proseTexts(section: Section): string[] {
 
 export function checkProse(pkg: LessonPackage, context: CurriculumContext): ProseCheckReport {
   const issues: Issue[] = [];
-  const names = [context.curriculum.name, context.curriculum.version.label, ...context.objectives.flatMap((o) => (o.officialCode ? [o.officialCode] : []))]
-    .map((n) => n.toLowerCase())
-    .filter((n) => n.length >= 3);
+  const names = curriculumNames(context);
 
   for (const section of pkg.sections) {
     if (section.kind === "alignment") {
@@ -83,16 +73,6 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
     }
   }
   return { overall: issues.length === 0 ? "pass" : "fail", issues };
-}
-
-/** Every rule a text breaks (not just the first), so a report shows the whole problem. */
-function checkText(text: string, names: string[]): string[] {
-  const codes: string[] = [];
-  if (FORBIDDEN_CHARS.test(text)) codes.push("PROSE_HAS_MATH_OR_MARKUP");
-  if (CLAIM_WORDS.test(text)) codes.push("PROSE_MAKES_CURRICULUM_CLAIM");
-  const lower = text.toLowerCase();
-  if (names.some((n) => lower.includes(n))) codes.push("PROSE_NAMES_CURRICULUM");
-  return codes;
 }
 
 function checkStructure(pkg: LessonPackage, context: CurriculumContext): StructureReport {

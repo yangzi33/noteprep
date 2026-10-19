@@ -2,7 +2,7 @@ import path from "node:path";
 import { createDb } from "@/lib/server/db";
 import { createWorkerDal } from "@/lib/server/dal";
 import { SkeletonCompiler } from "@/lib/latex/compiler";
-import { FakeLlmProvider } from "@/lib/llm/fake";
+import { createLlmProvider } from "@/lib/llm/factory";
 import { FsObjectStore } from "@/lib/storage/store";
 import { workerEnv } from "./env";
 import { log } from "./log";
@@ -21,12 +21,16 @@ async function main() {
     });
   }
 
-  log("worker_started", { worker: config.workerId, llm: "fake", compiler: "skeleton" });
+  const llm = createLlmProvider(config);
+  // Never log the key; the provider id, prose mode and model name are enough to know what a worker is doing.
+  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: "skeleton" });
   await runWorkerLoop({
     deps: {
       jobs: dal.jobs,
       settlement: dal.settlement,
-      llm: new FakeLlmProvider(),
+      llm,
+      proseMode: config.LESSON_PROSE,
+      proseMaxOutputTokens: config.LLM_MAX_OUTPUT_TOKENS,
       compiler: new SkeletonCompiler(),
       store: new FsObjectStore(path.resolve(config.OBJECT_STORE_DIR)),
       leaseMs: config.LEASE_SECONDS * 1000,

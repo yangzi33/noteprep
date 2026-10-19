@@ -3,6 +3,7 @@ import { DomainError } from "@/lib/domain/errors";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { GENERATOR_VERSION, generateExerciseSet, generateLinearQuestion, type GeneratedQuestion } from "@/lib/math/generator";
 import { sectionContentHash, sectionInputsHash } from "./hash";
+import { PROSE_PROMPT_VERSION, type ProseDraft } from "./prose";
 import {
   PACKAGE_SCHEMA_VERSION,
   DOCUMENT_SECTION_KINDS,
@@ -26,6 +27,11 @@ export interface BuildInput {
   context: CurriculumContext;
   /** Same seed, same request and context: byte-identical package. The pipeline uses the lesson id. */
   seed: string;
+  /**
+   * Model-written wording that already passed the prose rules. Without it the templated wording is used, so the
+   * model can only ever improve the words of a package that is complete and verified without it.
+   */
+  prose?: { draft: ProseDraft; model: string | null };
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -58,7 +64,7 @@ function drawQuestions(seed: string, difficulty: "basic" | "mixed" | "challenge"
   throw new PackageBuildError("could not draw exercises that differ from the worked examples");
 }
 
-type Draft = { kind: SectionKind; title: string; blocks: Section["blocks"]; method: "deterministic"; minutes: number; params: Record<string, unknown> };
+type Draft = { kind: SectionKind; title: string; blocks: Section["blocks"]; method: "deterministic" | "llm"; model?: string; minutes: number; params: Record<string, unknown> };
 
 /** Edges: `from` is upstream of `to`. Solutions are a pure function of the exercises, so they always travel together. */
 const EDGES = [
@@ -70,7 +76,7 @@ const EDGES = [
 
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
-export function buildPackage({ request, context, seed }: BuildInput): LessonPackage {
+export function buildPackage({ request, context, seed, prose }: BuildInput): LessonPackage {
   const concept = context.concepts.find((c) => c.id === LINEAR_CONCEPT_ID);
   if (!concept) throw new PackageBuildError("the selected topic has no concept the engine can generate");
   if (!concept.capability.difficulties.includes(request.difficulty)) throw new PackageBuildError("the engine does not support this difficulty for the selected concept");
@@ -78,6 +84,10 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
   const plan = planOutline(request.durationMinutes);
   const wantDegenerate = request.difficulty !== "basic" && concept.capability.outcomes.includes("no_solution");
   const { examples, exercises } = drawQuestions(seed, request.difficulty, plan.exampleCount, plan.exerciseCount, wantDegenerate);
+
+  // Sections whose words the model wrote say so; the rest of the package is identical with or without it.
+  const llmMeta = prose ? ({ method: "llm", ...(prose.model ? { model: prose.model } : {}) } as const) : ({ method: "deterministic" } as const);
+  const llmParams: Record<string, unknown> = prose ? { promptVersion: PROSE_PROMPT_VERSION, model: prose.model } : {};
 
   const drafts: Draft[] = [
     {
@@ -108,14 +118,16 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
     {
       kind: "explanation",
       title: "Key ideas",
-      blocks: [
-        { type: "paragraph", text: "An equation says that two expressions have the same value. Solving it means finding the value of the unknown that makes the statement true." },
-        { type: "paragraph", text: "Whatever is done to one side of an equation must also be done to the other side, so that the two sides stay equal." },
-        { type: "list", items: ["Undo addition and subtraction first, using the opposite operation on both sides.", "Then undo multiplication or division, again on both sides.", "When the unknown appears on both sides, collect the unknown terms on one side first.", "Always check the answer by substituting it back into the original equation."] },
-      ],
-      method: "deterministic",
+      blocks: prose
+        ? prose.draft.explanation.map((text) => ({ type: "paragraph" as const, text }))
+        : [
+            { type: "paragraph", text: "An equation says that two expressions have the same value. Solving it means finding the value of the unknown that makes the statement true." },
+            { type: "paragraph", text: "Whatever is done to one side of an equation must also be done to the other side, so that the two sides stay equal." },
+            { type: "list", items: ["Undo addition and subtraction first, using the opposite operation on both sides.", "Then undo multiplication or division, again on both sides.", "When the unknown appears on both sides, collect the unknown terms on one side first.", "Always check the answer by substituting it back into the original equation."] },
+          ],
+      ...llmMeta,
       minutes: plan.explanation,
-      params: {},
+      params: llmParams,
     },
     {
       kind: "derivation",
@@ -123,35 +135,37 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
       blocks: [
         {
           type: "step_list",
-          steps: [
-            "Start from an equation that is true for some value of the unknown.",
-            "Applying the same operation to both sides keeps the two sides equal, so the new equation has the same solution.",
-            "Each operation is chosen to remove one term or factor next to the unknown.",
-            "Repeat until the unknown stands alone; the other side then shows its value.",
-          ],
+          steps: prose
+            ? prose.draft.derivation
+            : [
+                "Start from an equation that is true for some value of the unknown.",
+                "Applying the same operation to both sides keeps the two sides equal, so the new equation has the same solution.",
+                "Each operation is chosen to remove one term or factor next to the unknown.",
+                "Repeat until the unknown stands alone; the other side then shows its value.",
+              ],
         },
       ],
-      method: "deterministic",
+      ...llmMeta,
       minutes: 0,
-      params: {},
+      params: llmParams,
     },
     {
       kind: "worked_examples",
       title: "Worked examples",
       blocks: [
-        { type: "paragraph", text: "Work through each example with the learner, asking them to name the next step before it is shown." },
+        { type: "paragraph", text: prose ? prose.draft.exampleIntro : "Work through each example with the learner, asking them to name the next step before it is shown." },
         ...examples.map((q) => ({ type: "worked_example" as const, questionId: q.id, problem: q.problem, solution: q.solution, steps: q.steps })),
         ...(wantDegenerate ? [{ type: "note" as const, text: "The last example has no solution. Discuss why the unknown disappears and what that tells us." }] : []),
       ],
-      method: "deterministic",
+      ...llmMeta,
       minutes: plan.examples,
-      params: { seed, exampleCount: examples.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+      params: { seed, exampleCount: examples.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION, ...llmParams },
     },
     {
       kind: "teaching_sequence",
       title: "Teaching sequence",
       blocks: [
-        { type: "list", items: ["Recall earlier work and state the goal of the lesson.", "Introduce the key ideas and the method.", "Work through the examples together.", "Let the learner attempt the exercises, giving help only when asked.", "Review mistakes and summarize."] },
+        { type: "list", items: prose ? prose.draft.teachingSequence : ["Recall earlier work and state the goal of the lesson.", "Introduce the key ideas and the method.", "Work through the examples together.", "Let the learner attempt the exercises, giving help only when asked.", "Review mistakes and summarize."] },
         {
           type: "timing",
           items: [
@@ -162,9 +176,9 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
           ],
         },
       ],
-      method: "deterministic",
+      ...llmMeta,
       minutes: plan.review,
-      params: {},
+      params: llmParams,
     },
     {
       kind: "common_mistakes",
@@ -172,18 +186,20 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
       blocks: [
         {
           type: "list",
-          items: [
-            "Changing only one side of the equation.",
-            "Forgetting that a negative sign belongs to the term that follows it.",
-            "Adding when the opposite operation is needed.",
-            "Dividing only part of one side by the coefficient.",
-            "Skipping the check by substitution.",
-          ],
+          items: prose
+            ? prose.draft.commonMistakes
+            : [
+                "Changing only one side of the equation.",
+                "Forgetting that a negative sign belongs to the term that follows it.",
+                "Adding when the opposite operation is needed.",
+                "Dividing only part of one side by the coefficient.",
+                "Skipping the check by substitution.",
+              ],
         },
       ],
-      method: "deterministic",
+      ...llmMeta,
       minutes: 0,
-      params: {},
+      params: llmParams,
     },
     {
       kind: "exercises",
@@ -244,7 +260,11 @@ export function buildPackage({ request, context, seed }: BuildInput): LessonPack
     sections.push({
       ...withoutHashes,
       id: sectionId(draft.kind),
-      provenance: { method: draft.method, ...(draft.params.seed ? { seed: String(draft.params.seed), generatorVersion: GENERATOR_VERSION } : {}) },
+      provenance: {
+        method: draft.method,
+        ...(draft.params.seed ? { seed: String(draft.params.seed), generatorVersion: GENERATOR_VERSION } : {}),
+        ...(draft.method === "llm" ? { promptVersion: PROSE_PROMPT_VERSION, ...(draft.model ? { model: draft.model } : {}) } : {}),
+      },
       inputsHash: sectionInputsHash({ kind: draft.kind, params: { ...draft.params, contextHash: context.contextHash, minutes: draft.minutes }, upstreamContentHashes: upstream }),
       contentHash,
     } as Section);
