@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { verifyContextHash } from "@/lib/curriculum/context";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
-import { CurriculumNotFound, IdempotencyConflict, InvalidSelection, TopicUnsupported } from "@/lib/domain/errors";
+import { CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS } from "@/lib/domain/generation";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
@@ -22,7 +22,7 @@ import type { LlmProvider, StructuredRequest, StructuredResult } from "@/lib/llm
 import { FsObjectStore } from "@/lib/storage/store";
 import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
-import { pgErrorCode, pools } from "./helpers";
+import { pgErrorCode, pools, seedRevision } from "./helpers";
 
 const flags = vi.hoisted(() => ({ forceInvalid: false }));
 // Lets one test make the (real) package validator report a failure, to prove the job then fails and releases its allowance.
@@ -349,8 +349,8 @@ describe("curriculum lessons with model-written wording", () => {
 });
 
 /** Creates a curriculum lesson, runs the worker until the job settles, and returns what was stored. */
-async function packWith(over: Partial<PipelineDeps>, requestOver: Record<string, unknown> = {}) {
-  const ctx = await account();
+async function packWith(over: Partial<PipelineDeps>, requestOver: Record<string, unknown> = {}, existing?: Awaited<ReturnType<typeof account>>) {
+  const ctx = existing ?? (await account());
   const { job } = await web.generation.createGeneration(ctx, request(requestOver), key());
   const d: PipelineDeps = { ...deps, ...over };
   for (let i = 0; i < 12 && !["succeeded", "failed", "canceled"].includes((await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state); i++) {
@@ -473,6 +473,76 @@ describe("the three-document pack", () => {
     expect((await admin.query(`SELECT state, error_code FROM generation_job WHERE id = $1`, [job.id])).rows[0]).toMatchObject({ state: "failed", error_code: "legacy_unsupported" });
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
     expect((await packWith({ legacyEnabled: false })).row.state).toBe("succeeded");
+  });
+});
+
+describe("viewing a finished pack", () => {
+  it("shows the owner their pack: documents, pages, the revision, and the dataset's alignment statement", async () => {
+    const { ctx, rev } = await packWith({});
+    const view = await web.lessons.getLessonView(ctx, rev.lesson_id);
+    expect(view).toMatchObject({ lessonId: rev.lesson_id, revisionId: rev.revision_id, isCurrent: true, templateVersion: "classic/1", validationStatus: "verified" });
+    expect(view.documents.map((d) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
+    expect(view.documents.every((d) => d.pages === 1 && d.bytes > 0)).toBe(true);
+    // the sample dataset never produces an alignment claim
+    expect(view.alignment).toMatchObject({ claim: "none", datasetKind: "sample" });
+    expect(JSON.stringify(view)).not.toContain(ctx.userId); // no storage paths reach the page
+  });
+
+  it("a pack of fewer documents lists only those", async () => {
+    const { ctx, rev } = await packWith({}, { documents: ["worksheet"] });
+    expect((await web.lessons.getLessonView(ctx, rev.lesson_id)).documents.map((d) => d.document)).toEqual(["worksheet"]);
+    await expect(web.lessons.getArtifact(ctx, rev.lesson_id, rev.revision_id, "solutions")).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it("hands out the PDF named in this revision's own manifest, with a friendly file name, and never the source", async () => {
+    const { ctx, rev } = await packWith({});
+    for (const d of rev.artifact_manifest.documents) {
+      const ref = await web.lessons.getArtifact(ctx, rev.lesson_id, rev.revision_id, d.document);
+      expect(ref).toMatchObject({ path: d.pdf.path, sha256: d.pdf.sha256, bytes: d.pdf.bytes });
+      expect(ref.path.endsWith(".pdf")).toBe(true);
+      expect(ref.filename).toMatch(/^[A-Za-z0-9-]+\.pdf$/);
+    }
+  });
+
+  it("another user, a deleted lesson, an unknown id and another lesson's revision are all the same NotFound", async () => {
+    const a = await packWith({});
+    const b = await packWith({});
+    const a2 = await packWith({}, {}, a.ctx); // the SAME owner's second lesson
+    const mallory = await account();
+    const attacks: [string, () => Promise<unknown>][] = [
+      ["view as another user", () => web.lessons.getLessonView(mallory, a.rev.lesson_id)],
+      ["view a revision as another user", () => web.lessons.getLessonView(mallory, a.rev.lesson_id, a.rev.revision_id)],
+      ["file as another user", () => web.lessons.getArtifact(mallory, a.rev.lesson_id, a.rev.revision_id, "notes")],
+      ["file as another user, naming their own lesson", () => web.lessons.getArtifact(mallory, mallory.userId, a.rev.revision_id, "notes")],
+      ["owner, but another lesson's revision", () => web.lessons.getLessonView(a.ctx, a.rev.lesson_id, b.rev.revision_id)],
+      ["owner, file of another lesson's revision", () => web.lessons.getArtifact(a.ctx, a.rev.lesson_id, b.rev.revision_id, "notes")],
+      ["owner, own other lesson's revision", () => web.lessons.getLessonView(a.ctx, a.rev.lesson_id, a2.rev.revision_id)],
+      ["owner, file of own other lesson's revision", () => web.lessons.getArtifact(a.ctx, a.rev.lesson_id, a2.rev.revision_id, "notes")],
+      ["unknown lesson", () => web.lessons.getLessonView(a.ctx, randomUUID())],
+      ["unknown revision", () => web.lessons.getLessonView(a.ctx, a.rev.lesson_id, randomUUID())],
+    ];
+    for (const [name, attack] of attacks) await expect(attack(), name).rejects.toBeInstanceOf(NotFound);
+
+    await admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [a.rev.lesson_id]);
+    await expect(web.lessons.getLessonView(a.ctx, a.rev.lesson_id)).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getArtifact(a.ctx, a.rev.lesson_id, a.rev.revision_id, "notes")).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it("a legacy placeholder pack, or a damaged manifest, has nothing to preview", async () => {
+    const legacy = await packWith({});
+    const v1 = { ownerId: legacy.ctx.userId };
+    const lessonId = (await admin.query(`INSERT INTO lesson (owner_id, title, input_spec) VALUES ($1, 'Legacy', '{}') RETURNING id`, [v1.ownerId])).rows[0].id as string;
+    const revisionId = await seedRevision(admin, { lessonId, ownerId: v1.ownerId, status: "finalized", artifactManifest: { manifestVersion: 1, files: [] } });
+    await admin.query(`UPDATE lesson SET current_revision_id = $1 WHERE id = $2`, [revisionId, lessonId]);
+    await expect(web.lessons.getLessonView(legacy.ctx, lessonId)).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getArtifact(legacy.ctx, lessonId, revisionId, "notes")).rejects.toBeInstanceOf(NotFound);
+  });
+
+  it("an unfinished (draft) revision is not viewable", async () => {
+    const { ctx } = await packWith({});
+    const lessonId = (await admin.query(`INSERT INTO lesson (owner_id, title, input_spec) VALUES ($1, 'Draft', '{}') RETURNING id`, [ctx.userId])).rows[0].id as string;
+    const revisionId = await seedRevision(admin, { lessonId, ownerId: ctx.userId, status: "draft" });
+    await expect(web.lessons.getLessonView(ctx, lessonId, revisionId)).rejects.toBeInstanceOf(NotFound);
   });
 });
 

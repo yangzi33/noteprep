@@ -33,7 +33,9 @@ test("choose a curriculum topic step by step, generate, and see the lesson finis
 
     await page.getByRole("button", { name: "Generate lesson" }).click();
     await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
-    await expect(page.getByTestId("job-status")).toHaveAttribute("data-state", "succeeded");
+    // the placeholder worker here does not store files in Storage, but the lesson is complete and opens on its preview page
+    await expect(page).toHaveURL(/\/lessons\/[0-9a-f-]{36}\?rev=[0-9a-f-]{36}$/, { timeout: 45_000 });
+    await expect(page.getByTestId("lesson-title")).toBeVisible();
     expect(await allowanceText(page)).toBe("2 of 3 generations left.");
   } finally {
     await worker.stop();
