@@ -182,3 +182,14 @@ M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到
 | 修订 | `schema_version = 2`;v1 的 `content_hash` 现在用规范 JSON 计算(只影响新写入的修订;旧修订的哈希是历史值,不再重算) |
 | 尚未做 | 真实渲染(M4);LLM 叙述与更丰富的讲解(M3b);调整(M5) |
 
+## 15. M3b 实现记录(2026-10-19)
+
+| 项 | 实现 / 与设计的差异 |
+|---|---|
+| 范围 | 模型写 explanation、derivation、worked_examples 的引言、teaching_sequence、common_mistakes 五段纯文字;`objectives`/`prerequisites` 仍是数据集措辞原样,`exercises`/`solutions` 仍由生成器产出,`alignment` 仍由代码从数据集写出 |
+| 来源标记 | 由模型写的节 `provenance = {method:"llm", promptVersion, model}`;`inputsHash` 含提示版本与模型,所以换模型或提示会使这些节的哈希变化,其余节的哈希不变 |
+| 回退 | 回退到 M3a 模板文字;因此"模型只能改进文字,不能让课包变得不完整或未验证" |
+| 与设计的差异 | 设计里的"提纲文字"没有单独的 LLM 步骤:提纲(时间预算)仍是确定性的;"有界修复"= 一次带规则代码的重试 |
+| 验证 | 模型文字经过两道检查:进入课包前的 `checkProseDraft`,和课包整体的 `validatePackage`(不依赖前者) |
+| 未验证 | 适配器**没有对真实服务调用过**:请求/响应形状来自官方文档并由模拟 HTTP 测试覆盖,但真实行为(结构化输出对本提示的遵守率、延迟、成本、思考 token 的计入方式)要在有密钥时用 `pnpm eval:prose` 实测;`thinking`/`effort` 参数未设置(使用模型默认),这是成本的一个未控变量,评估时需关注 |
+

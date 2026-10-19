@@ -11,6 +11,8 @@ import { renderSkeletonSource } from "@/lib/latex/skeleton";
 import type { LlmProvider } from "@/lib/llm/types";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
 import { buildPackage } from "@/lib/package/build";
+import { PROSE_PROMPT_VERSION, type ProseDraft } from "@/lib/package/prose";
+import { generateProse, ProseProviderError } from "@/lib/package/prose-generate";
 import { PACKAGE_REVISION_SCHEMA_VERSION } from "@/lib/package/schema";
 import { PACKAGE_VALIDATOR_VERSION, validatePackage } from "@/lib/package/validate";
 
@@ -48,6 +50,9 @@ export interface PipelineDeps {
   compiler: Compiler;
   store: ObjectStore;
   leaseMs: number;
+  /** "llm" asks the model for the wording of curriculum lessons; the default "template" never calls it (the M3a path). */
+  proseMode?: "template" | "llm";
+  proseMaxOutputTokens?: number;
 }
 
 const SkeletonProse = z.object({ objectives: z.array(z.string().max(300)).min(1).max(10) });
@@ -81,9 +86,48 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
   let meta: Record<string, unknown>;
 
   if (spec.request && spec.context) {
+    // Wording first (the only model call), then the package is built around it. Unusable wording twice in a row
+    // falls back to the templated wording, which is always complete and verified without the model.
+    let prose: { draft: ProseDraft; model: string | null } | undefined;
+    let proseMeta: Record<string, unknown> = { llm: false };
+    if (deps.proseMode === "llm") {
+      let outcome;
+      try {
+        outcome = await generateProse({
+          llm,
+          jobId: job.id,
+          context: spec.context,
+          request: spec.request,
+          signal,
+          maxOutputTokens: deps.proseMaxOutputTokens ?? 4_000,
+          requestId: randomUUID,
+          charge: async (usage) => {
+            const { exceeded } = await jobs.chargeUsage(job.id, job.fencingToken, {
+              calls: 1,
+              tokens: usage.inputTokens + usage.outputTokens,
+              costMicros: usage.costMicros,
+            });
+            if (exceeded) throw new PipelineError("budget_exceeded", false);
+          },
+        });
+      } catch (error) {
+        if (error instanceof ProseProviderError) throw new PipelineError(error.code, error.retryable);
+        throw error;
+      }
+      if (outcome.draft) prose = { draft: outcome.draft, model: outcome.model };
+      proseMeta = {
+        llm: true,
+        provider: llm.id,
+        model: outcome.model,
+        promptVersion: PROSE_PROMPT_VERSION,
+        proseAttempts: outcome.attempts,
+        proseFallback: outcome.draft === null,
+        ...(outcome.rejected.length > 0 ? { proseRejected: outcome.rejected } : {}), // rule codes only, never the text
+      };
+    }
     let pkg;
     try {
-      pkg = buildPackage({ request: spec.request, context: spec.context, seed: job.lessonId });
+      pkg = buildPackage({ request: spec.request, context: spec.context, seed: job.lessonId, prose });
     } catch (error) {
       if (error instanceof DomainError) throw new PipelineError("package_build_failed", false);
       throw error;
@@ -97,7 +141,7 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     content = pkg;
     validation = { report, status: report.overall, validatorVersion: PACKAGE_VALIDATOR_VERSION };
     revisionSchemaVersion = PACKAGE_REVISION_SCHEMA_VERSION;
-    meta = { package: pkg.schemaVersion, llm: false, compiler: compiler.id, contextHash: spec.context.contextHash };
+    meta = { package: pkg.schemaVersion, ...proseMeta, compiler: compiler.id, contextHash: spec.context.contextHash };
   } else {
     const result = await llm.generateStructured({
       requestId: randomUUID(),

@@ -64,6 +64,7 @@ const provenance = z.strictObject({
   seed: z.string().optional(),
   generatorVersion: z.string().optional(),
   promptVersion: z.string().optional(),
+  model: z.string().max(100).optional(),
 });
 const common = {
   id: Id,
