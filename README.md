@@ -4,11 +4,56 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 0(仅设计文档)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T5 与 P1-T8 的工作流完成)
 
-- **仓库中没有应用代码**:没有 `package.json`、没有脚手架、没有测试、没有 CI、没有部署。因此**没有任何可运行的命令、演示或测试通过结果**。
-- 本轮只产出设计文档;未安装依赖、未创建云资源、未收费、未部署。
-- 仓库规则见 [CLAUDE.md](CLAUDE.md)。
+- 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
+- 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
+- 认证:`@supabase/ssr` + `proxy.ts` 仅刷新会话;`requireUser`/`requireAccount` 用 `getClaims` 验签(只接受非对称算法),邮箱经 `getUser()` 确认后才创建账户与试用额度;登录/注册/登出与 `/account` 页面;在真实本地 Supabase 上测试了伪造令牌、未确认邮箱、Data API 无法访问业务表。
+- **尚无**:worker 领取/心跳/sweeper、任务与历史 UI、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
+
+### 当前可用命令(均已在本机实际运行通过,2026-10-18)
+
+前提:Node 24(`.nvmrc` 为 24.13.1)、pnpm 10.33.0。
+
+```bash
+pnpm install --frozen-lockfile
+pnpm dev          # 本地开发服务器
+pnpm lint
+pnpm typecheck    # next typegen && tsc --noEmit
+pnpm test         # Vitest 单元测试
+pnpm build
+pnpm db:up                 # 启动本地 Postgres 17(compose.yaml,127.0.0.1:54329,一次性开发凭据)
+pnpm db:migrate:deploy     # 对 .env 中的 DATABASE_URL 应用迁移(先 cp .env.example .env)
+pnpm test:integration      # 每次运行新建临时数据库、重放全部迁移、再跑测试
+pnpm db:down
+```
+
+本地 Supabase(认证与 Data API 边界测试,以及运行应用):
+
+```bash
+cp .env.example .env       # 然后把 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY 换成 pnpm supabase:status 输出的值
+pnpm supabase:start        # 首次会下载镜像;已在 supabase/config.toml 关闭暂不需要的服务
+pnpm db:migrate:deploy     # 用 MIGRATION_DATABASE_URL 把迁移应用到 Supabase 的 Postgres
+pnpm db:dev-roles          # 创建本地 web_login / worker_login(仅开发用的一次性密码)
+pnpm test:supabase         # 真实 Auth + Data API 的边界测试
+pnpm dev                   # http://127.0.0.1:3000 ;注册邮件在 http://127.0.0.1:54324 (Mailpit)
+pnpm supabase:stop
+```
+
+
+数据库注意事项:
+
+- 本机 5432 端口可能被其他项目占用,所以本项目使用 54329。
+- 非交互环境中请用 `db:migrate:deploy`;`db:migrate:dev` 需要交互式终端(生成新迁移时使用)。
+- **不要重新运行 `prisma init`**:它会把第三方 "agent skills" 文本从 GitHub 下载到 `.agents/`、`.claude/`、`.windsurf/` 并写入 `skills-lock.json`。这些内容未经审阅,已删除且不应提交。
+- `pnpm install` 会触发根包的 `postinstall`(`prisma generate`,不需要数据库连接),生成物位于被忽略的 `src/generated/prisma`。
+
+尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。`test:supabase` 是额外加入的命令。
+
+## CI
+
+`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**这些工作流已通过 actionlint 并在干净克隆中重放了命令,但尚未在 GitHub 上实际运行过。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
 
 ## 文档导航
 
@@ -20,8 +65,10 @@ noteprep.app
 | [docs/test-plan.md](docs/test-plan.md) | 数学 fixtures、并发额度、故障恢复、权限隔离、Stripe 事件矩阵、沙箱负面测试、E2E;各层能证明什么 |
 | [docs/security-and-privacy.md](docs/security-and-privacy.md) | 威胁模型、信任边界、数据清单、最小权限、删除与保留、未确定事项 |
 | [docs/decisions.md](docs/decisions.md) | 已定约束、可逆默认、待决策事项、已核对的官方资料 |
+| [docs/database-roles.md](docs/database-roles.md) | 数据库运行时角色、授权与登录用户创建 |
+| [docs/staging-setup.md](docs/staging-setup.md) | Supabase / Vercel / GitHub / Stripe / Linux 主机的 staging 准备清单 |
 
-## 计划采用的技术栈(尚未安装)
+## 技术栈(已安装部分:Next.js、React、Tailwind、shadcn/ui、Vitest;其余为计划)
 
 Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreSQL + Prisma(稳定 7.x)· Supabase Auth 与私有 Storage · 薄的 provider-agnostic LLM 适配器(fake + 一个真实适配器)· 独立持久 worker(Postgres 任务表 + 租约)· 每任务隔离的 pdfLaTeX 沙箱 · Stripe 订阅 · pnpm · Vitest · Playwright · GitHub Actions · Vercel(仅 Web)。具体版本在 Phase 1 核对后固定。
 
@@ -57,4 +104,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1(工程基础与纵向骨架)**需要用户另行授权**后才开始。第一个任务:**P1-T0 环境前置核对**,随后 **P1-T1 固定工具链**。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T6 Worker 骨架**(领取/租约/围栏/sweeper,假 LLM 与仅测试可用的假编译端口)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。

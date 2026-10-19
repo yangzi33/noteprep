@@ -114,6 +114,7 @@ Supabase 官方 Prisma 指南为 `prisma` 角色授予 `bypassrls` 与 `createdb
 
 ## 9. 尚未确定/待验证
 
+0. **JWT 签名算法(P1-T5 实测发现,上线门槛)**:只要项目仍启用旧的 HS256 共享密钥,持有该密钥的人就能为任意用户 ID 伪造被 Auth 服务端(`getUser`)乃至 `getClaims` 接受的令牌(本地栈实测;本地 demo 密钥是公开的)。应用层 `verifyClaims` 只接受 ES256/RS256/EdDSA 并有测试;**托管项目还必须使用非对称签名密钥并撤销旧密钥**,上线前在 Supabase 控制台核对。另:`getClaims` 只做本地验签,登出/撤销后令牌在过期前仍可通过(已有测试记录),所以计费、删除等敏感操作使用 `getUser()`。
 1. 下载签名 URL 是否可由用户会话客户端在 RLS 下直接签发(待用本地 Supabase 实测);否则 Web 需要额外持有受限服务端凭据。
 2. gVisor 在目标主机上的兼容性与逃逸后果隔离(runner 账户机制)。
 3. Stripe 受限 key 的最小权限集合;API 版本固定。

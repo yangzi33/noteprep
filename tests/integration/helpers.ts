@@ -1,0 +1,112 @@
+import { randomUUID } from "node:crypto";
+import pg from "pg";
+import { inject } from "vitest";
+
+export type Db = pg.Pool;
+
+export function pools() {
+  const info = inject("testDb");
+  return {
+    admin: new pg.Pool({ connectionString: info.adminUrl, max: 8 }),
+    app: new pg.Pool({ connectionString: info.appUrl, max: 8 }),
+    worker: new pg.Pool({ connectionString: info.workerUrl, max: 8 }),
+  };
+}
+
+/** Resolves with the Postgres error code (SQLSTATE) raised by `fn`, or null if it succeeded. */
+export async function pgErrorCode(fn: () => Promise<unknown>): Promise<string | null> {
+  try {
+    await fn();
+    return null;
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (!code) throw error;
+    return code;
+  }
+}
+
+export async function seedOwner(db: Db) {
+  const id = randomUUID();
+  await db.query(`INSERT INTO profile (id) VALUES ($1)`, [id]);
+  return id;
+}
+
+export async function seedLesson(db: Db, ownerId: string) {
+  const id = randomUUID();
+  await db.query(`INSERT INTO lesson (id, owner_id, title, input_spec) VALUES ($1, $2, 'Fictional lesson', '{}')`, [
+    id,
+    ownerId,
+  ]);
+  return id;
+}
+
+export interface RevisionInput {
+  lessonId: string;
+  ownerId: string;
+  number?: number;
+  status?: "draft" | "finalized" | "rejected";
+  validationStatus?: "verified" | "failed" | "unverified";
+  acknowledgement?: object | null;
+  content?: object;
+  artifactManifest?: object | null;
+}
+
+export async function seedRevision(db: Db, r: RevisionInput) {
+  const id = randomUUID();
+  await db.query(
+    `INSERT INTO lesson_revision
+       (id, lesson_id, owner_id, number, status, schema_version, content, content_hash,
+        validation_report, validation_status, acknowledgement, validator_version, artifact_manifest)
+     VALUES ($1,$2,$3,$4,$5,1,$6,'sha256:test','{}',$7,$8,'test/0',$9)`,
+    [
+      id,
+      r.lessonId,
+      r.ownerId,
+      r.number ?? 1,
+      r.status ?? "draft",
+      JSON.stringify(r.content ?? { v: 1 }),
+      r.validationStatus ?? "verified",
+      r.acknowledgement === undefined ? null : JSON.stringify(r.acknowledgement),
+      r.artifactManifest === undefined ? null : JSON.stringify(r.artifactManifest),
+    ],
+  );
+  return id;
+}
+
+export async function seedTrialBucket(db: Db, ownerId: string, limit = 3) {
+  const id = randomUUID();
+  await db.query(`INSERT INTO usage_bucket (id, owner_id, kind, limit_count) VALUES ($1,$2,'trial',$3)`, [
+    id,
+    ownerId,
+    limit,
+  ]);
+  return id;
+}
+
+/** Inserts a queued generate job together with its reservation in one transaction. */
+export async function seedJobWithReservation(db: Db, ownerId: string, lessonId: string, bucketId: string) {
+  const jobId = randomUUID();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `INSERT INTO generation_job (id, owner_id, kind, lesson_id, request_hash, max_attempts, deadline_at,
+                                   max_calls, max_tokens, max_cost_micros)
+       VALUES ($1,$2,'generate',$3,'h',3, now() + interval '1 hour', 10, 100000, 1000000)`,
+      [jobId, ownerId, lessonId],
+    );
+    await client.query(`INSERT INTO usage_reservation (owner_id, bucket_id, job_id) VALUES ($1,$2,$3)`, [
+      ownerId,
+      bucketId,
+      jobId,
+    ]);
+    await client.query(`UPDATE usage_bucket SET reserved = reserved + 1 WHERE id = $1`, [bucketId]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return jobId;
+}

@@ -1,0 +1,51 @@
+name: Database migrations
+
+# Manual only. Production and staging migrations never run on push, on pull requests, or at Web
+# startup (CLAUDE.md section 12). Protect the `staging` and `production` GitHub environments with
+# required reviewers; the owner-role connection string lives only in those environments' secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      action:
+        description: "status = show pending migrations only; deploy = apply them"
+        type: choice
+        options: [status, deploy]
+        default: status
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrate-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: ${{ inputs.action }} (${{ inputs.environment }})
+    if: github.ref == 'refs/heads/main' # only reviewed, merged migrations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    env:
+      MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migration status
+        run: pnpm exec prisma migrate status
+      - name: Apply migrations
+        if: inputs.action == 'deploy'
+        run: pnpm db:migrate:deploy

@@ -110,7 +110,7 @@ docs/
 
 要点:
 
-- **绝不**信任浏览器提供的 userId、session 对象或路由可见性;`getSession()` 不用于服务端授权。
+- **绝不**信任浏览器提供的 userId、session 对象或路由可见性;`getSession()` 不用于服务端授权。`verifyClaims` 另外要求 `role=authenticated`、非匿名、有 email,且令牌头部算法属于非对称白名单(见 security-and-privacy §9);首次创建应用账户前再用 `getUser()` 向 Auth 服务端确认邮箱已验证。
 - **Prisma 直连不会继承当前 Supabase 用户的 RLS 身份**。Supabase 的 Prisma 指南让 `prisma` 角色带 `bypassrls`、`createdb`(其文档所述),本项目**不照抄**:`app_runtime`、`worker_runtime` 均无 BYPASSRLS/CREATEDB/超级用户。因此 owner 隔离的第一责任在 DAL(服务端 owner 过滤),这是显式声明的设计,而不是依赖 RLS。
 - 纵深防御:所有业务表 `ENABLE ROW LEVEL SECURITY`,对 `anon`/`authenticated` **不授予任何权限**且不设策略(Data API 访问一律拒绝);对 `app_runtime`/`worker_runtime` 用显式 `TO <role> USING (true)` 策略(RLS 不用于它们的 owner 隔离)。可选加固(Phase 4 评估,不是首版承诺):事务内 `SET LOCAL app.user_id` + owner 策略。
 - Server Action 视为可被直接 POST:每个 action 内重新 `requireUser()`、校验输入(Zod)、校验资源归属(IDOR)、只返回 DTO。Origin/Host 校验保持 Next 默认,生产配置 `allowedOrigins` 前先核对实际域名。
