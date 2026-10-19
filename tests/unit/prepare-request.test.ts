@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeJobInput } from "@/lib/domain/job-input";
+import { requestHash } from "@/lib/domain/hash";
 import { parseLessonRequest } from "@/lib/domain/lesson-request";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 
@@ -30,6 +31,30 @@ describe("parseLessonRequest", () => {
     for (const bad of [{ ...v2, notes: "hi" }, { ...v2, durationMinutes: 14 }, { ...v2, durationMinutes: 181 }, { ...v2, durationMinutes: 60.5 }, { ...v2, documents: ["notes", "notes"] }, { ...v2, documents: ["tex"] }, { ...v2, templateId: "x" }, { ...v2, locale: "fr" }]) {
       expect(() => parseLessonRequest(bad), JSON.stringify(bad)).toThrow();
     }
+  });
+});
+
+describe("canonical set-valued fields", () => {
+  const hashOf = (raw: unknown) => {
+    const parsed = parseLessonRequest(raw);
+    return requestHash("generate", 2, parsed.input);
+  };
+  it("orders documents canonically, so the same set in any order is the same request", () => {
+    const a = parseLessonRequest({ ...v2, documents: ["solutions", "notes", "worksheet"] });
+    const b = parseLessonRequest({ ...v2, documents: ["worksheet", "solutions", "notes"] });
+    expect(a.input).toEqual(b.input);
+    expect((a.input as { documents: string[] }).documents).toEqual(["notes", "worksheet", "solutions"]);
+    expect(hashOf({ ...v2, documents: ["worksheet", "notes"] })).toBe(hashOf({ ...v2, documents: ["notes", "worksheet"] }));
+    expect(hashOf({ ...v2, documents: ["notes"] })).not.toBe(hashOf({ ...v2, documents: ["notes", "worksheet"] }));
+  });
+  it("sorts objectiveIds, so the same set in any order is the same request", () => {
+    expect(hashOf({ ...v2, objectiveIds: ["b", "a", "c"] })).toBe(hashOf({ ...v2, objectiveIds: ["c", "a", "b"] }));
+    expect((parseLessonRequest({ ...v2, objectiveIds: ["b", "a"] }).input as { objectiveIds: string[] }).objectiveIds).toEqual(["a", "b"]);
+    expect(hashOf({ ...v2, objectiveIds: ["a"] })).not.toBe(hashOf({ ...v2, objectiveIds: ["a", "b"] }));
+  });
+  it("rejects duplicates in objectiveIds and in documents instead of collapsing them", () => {
+    expect(() => parseLessonRequest({ ...v2, objectiveIds: ["a", "a"] })).toThrow(/objectiveIds must not repeat/);
+    expect(() => parseLessonRequest({ ...v2, documents: ["notes", "notes"] })).toThrow(/documents must not repeat/);
   });
 });
 

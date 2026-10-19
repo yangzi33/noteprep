@@ -6,12 +6,14 @@ import { afterAll, beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { verifyContextHash } from "@/lib/curriculum/context";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
-import { CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
+import { AllowanceExhausted, CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS } from "@/lib/domain/generation";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, SKELETON_MARKER, type DocumentCompiler } from "@/lib/latex/compiler";
 import { renderDocument } from "@/lib/latex/render";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
@@ -179,6 +181,110 @@ describe("creating a curriculum lesson", () => {
     const lesson = (await admin.query(`SELECT l.* FROM lesson l JOIN generation_job j ON j.lesson_id = l.id WHERE j.id = $1`, [job.id])).rows[0];
     expect(lesson).toMatchObject({ request_version: 1, curriculum_version_id: null, topic_id: null, objective_ids: [] });
   });
+});
+
+// Tests that only enqueue leave queued jobs behind; cancel them so later suites that drive the worker get their own job.
+const cancelQueued = () =>
+  admin.query(
+    `UPDATE generation_job SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
+            error_code = 'test_cleanup', finished_at = now() WHERE state IN ('queued', 'running')`,
+  );
+
+const V1_REQUEST = { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives: ["Solve ax + b = c"], durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" };
+
+describe("one idempotency key across request formats", () => {
+  afterAll(cancelQueued);
+  const counts = async (ownerId: string) => ({
+    jobs: (await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+    reservations: (await admin.query(`SELECT count(*)::int AS n FROM usage_reservation WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+    lessons: (await admin.query(`SELECT count(*)::int AS n FROM lesson WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+  });
+  it("conflicts when a key first used for a v1 request is reused for a v2 request", async () => {
+    const ctx = await account();
+    const k = key();
+    await web.generation.createGeneration(ctx, V1_REQUEST, k);
+    await expect(web.generation.createGeneration(ctx, request(), k)).rejects.toBeInstanceOf(IdempotencyConflict);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect(await counts(ctx.userId)).toEqual({ jobs: 1, reservations: 1, lessons: 1 });
+  });
+  it("conflicts when a key first used for a v2 request is reused for a v1 request", async () => {
+    const ctx = await account();
+    const k = key();
+    await web.generation.createGeneration(ctx, request(), k);
+    await expect(web.generation.createGeneration(ctx, V1_REQUEST, k)).rejects.toBeInstanceOf(IdempotencyConflict);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect(await counts(ctx.userId)).toEqual({ jobs: 1, reservations: 1, lessons: 1 });
+  });
+});
+
+describe("the allowance invariants hold for curriculum requests", () => {
+  afterAll(cancelQueued);
+  it("allows three complete generations and rejects the fourth", async () => {
+    const ctx = await account();
+    for (let i = 1; i <= 3; i++) {
+      const { job } = await web.generation.createGeneration(ctx, request(), key());
+      expect(await runToEnd(job.id)).toMatchObject({ state: "succeeded" });
+      expect(await bucket(ctx.userId)).toEqual({ used: i, reserved: 0 });
+    }
+    const err = await web.generation.createGeneration(ctx, request(), key()).catch((e) => e);
+    expect(err).toBeInstanceOf(AllowanceExhausted);
+    expect(err).toMatchObject({ source: "trial", pending: 0 });
+    expect(await bucket(ctx.userId)).toEqual({ used: 3, reserved: 0 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(3);
+  });
+
+  it("lets exactly one of many concurrent requests take the last unit", async () => {
+    const ctx = await account();
+    await admin.query(`UPDATE usage_bucket SET used = 2 WHERE owner_id = $1`, [ctx.userId]);
+    const results = await Promise.allSettled(Array.from({ length: 12 }, () => web.generation.createGeneration(ctx, request(), key())));
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(rejected).toHaveLength(11);
+    for (const r of rejected) expect(r.reason).toBeInstanceOf(AllowanceExhausted);
+    expect(await bucket(ctx.userId)).toEqual({ used: 2, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(1);
+  });
+
+  it("collapses concurrent identical requests with one key into one job and one reservation", async () => {
+    const ctx = await account();
+    const k = key();
+    const results = await Promise.all(Array.from({ length: 8 }, () => web.generation.createGeneration(ctx, request(), k)));
+    expect(new Set(results.map((r) => r.job.id)).size).toBe(1);
+    expect(results.filter((r) => !r.replayed)).toHaveLength(1);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM usage_reservation WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(1);
+  });
+
+  it("treats the same set of documents in another order as the same request", async () => {
+    const ctx = await account();
+    const k = key();
+    const first = await web.generation.createGeneration(ctx, request({ documents: ["notes", "worksheet"] }), k);
+    const again = await web.generation.createGeneration(ctx, request({ documents: ["worksheet", "notes"] }), k);
+    expect(again).toMatchObject({ replayed: true, job: { id: first.job.id } });
+    const lesson = (await admin.query(`SELECT input_spec FROM lesson WHERE owner_id = $1`, [ctx.userId])).rows[0];
+    expect(lesson.input_spec.request.documents).toEqual(["notes", "worksheet"]);
+  });
+});
+
+describe("enqueueing under connection-pool pressure", () => {
+  afterAll(cancelQueued);
+  it("does not starve itself when simultaneous submissions outnumber the pool", async () => {
+    // A pool of 3 and 12 simultaneous submissions: if the curriculum lookup needed a connection of its own while
+    // the transaction holds one, every connection would be taken by a waiting transaction and nothing could finish.
+    const smallDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: info.appUrl, max: 3 }) });
+    try {
+      const small = createWebDal(smallDb, { limits, curriculum: { allowSample: true } });
+      const ctxs = await Promise.all(Array.from({ length: 12 }, () => account()));
+      const started = Date.now();
+      const results = await Promise.allSettled(ctxs.map((c) => small.generation.createGeneration(c, request(), key())));
+      const elapsed = Date.now() - started;
+      expect(results.filter((r) => r.status === "rejected").map((r) => String((r as PromiseRejectedResult).reason))).toEqual([]);
+      expect(elapsed).toBeLessThan(8_000);
+      for (const c of ctxs) expect(await bucket(c.userId)).toEqual({ used: 0, reserved: 1 });
+    } finally {
+      await smallDb.$disconnect();
+    }
+  }, 60_000);
 });
 
 async function runToEnd(jobId: string) {
