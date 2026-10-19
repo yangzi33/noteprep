@@ -247,8 +247,16 @@ describe("loader target environment", () => {
   it("defaults to development and accepts only the three known values", () => {
     expect(resolveLoadTarget(undefined, false)).toEqual({ ok: true, targetEnv: "development" });
     expect(resolveLoadTarget("staging", true)).toEqual({ ok: true, targetEnv: "staging" });
+    expect(resolveLoadTarget("development", true)).toEqual({ ok: true, targetEnv: "development" });
+    expect(resolveLoadTarget("Production", false)).toMatchObject({ ok: false });
+    expect(resolveLoadTarget("Production", true)).toMatchObject({ ok: false });
     expect(resolveLoadTarget("prod", false)).toMatchObject({ ok: false });
     expect(resolveLoadTarget("", false)).toMatchObject({ ok: false });
+  });
+
+  it("--allow-sample needs an explicit non-production target: unset or empty is refused", () => {
+    expect(resolveLoadTarget(undefined, true)).toMatchObject({ ok: false });
+    expect(resolveLoadTarget("", true)).toMatchObject({ ok: false });
   });
 
   it("refuses --allow-sample for production, and still allows a plain production load", () => {

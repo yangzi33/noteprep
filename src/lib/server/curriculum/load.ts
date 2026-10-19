@@ -38,6 +38,9 @@ export function resolveLoadTarget(
   raw: string | undefined,
   allowSample: boolean,
 ): { ok: true; targetEnv: LoadTargetEnv } | { ok: false; error: string } {
+  if (allowSample && (raw === undefined || raw === "")) {
+    return { ok: false, error: "--allow-sample requires CURRICULUM_TARGET_ENV to be set explicitly to staging or development" };
+  }
   const value = raw === undefined ? "development" : raw;
   if (value !== "production" && value !== "staging" && value !== "development") {
     return { ok: false, error: `CURRICULUM_TARGET_ENV must be production, staging or development (got "${value}")` };

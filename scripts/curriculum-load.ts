@@ -6,7 +6,7 @@ import { DatasetRejected, loadDataset, resolveLoadTarget } from "../src/lib/serv
 // Usage: pnpm curriculum:load <dataset dir> [--allow-sample]
 // Runs on the OWNER connection (MIGRATION_DATABASE_URL), never the runtime one: the runtime roles cannot
 // write curriculum tables. Sample datasets need --allow-sample, which is refused when CURRICULUM_TARGET_ENV
-// is production (values production|staging|development, default development).
+// is production (production|staging|development); --allow-sample requires it set explicitly.
 async function main() {
   const args = process.argv.slice(2);
   const dir = args.find((a) => !a.startsWith("--"));
