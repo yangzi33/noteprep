@@ -22,6 +22,13 @@ export default async function globalSetup() {
 
   const db = new pg.Client({ connectionString: env.dbUrl });
   await db.connect();
+  // The tests start their own worker on this database. A worker you left running (pnpm worker:dev) would claim
+  // the tests' jobs with its own settings, and the failures would look unrelated. Fail early and say why.
+  const { rows: others } = await db.query(`SELECT count(*)::int AS n FROM pg_stat_activity WHERE usename = 'worker_login' AND pid <> pg_backend_pid()`);
+  if (others[0].n > 0) {
+    await db.end();
+    throw new Error(`${others[0].n} connection(s) from another worker are open on this database. Stop "pnpm worker:dev" before running the e2e tests: they share the local database and that worker would take the tests' jobs.`);
+  }
   await db.query(
     `UPDATE generation_job SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
             error_code = 'e2e_cleanup', finished_at = now() WHERE state IN ('queued', 'running')`,

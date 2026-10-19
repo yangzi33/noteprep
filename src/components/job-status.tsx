@@ -71,7 +71,7 @@ export function JobStatus({ initial }: { initial: JobView }) {
           <Link href="/lessons" className="underline">
             History
           </Link>
-          <Link href="/lessons/new" className="underline">
+          <Link href="/prepare" className="underline">
             New lesson
           </Link>
         </p>

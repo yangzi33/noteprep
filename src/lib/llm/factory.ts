@@ -26,3 +26,12 @@ export function createLlmProvider(settings: LlmSettings): LlmProvider {
     ...(settings.LLM_BASE_URL ? { baseUrl: settings.LLM_BASE_URL } : {}),
   });
 }
+
+/**
+ * How legacy (request v1) jobs get their placeholder objectives. The legacy prompt exists only to exercise the
+ * pipeline's failure paths with the fake provider; a real model cannot satisfy it (every real attempt failed with
+ * invalid_output), so any other provider uses the objectives the tutor typed and is never called.
+ */
+export function legacyProseFor(provider: LlmProvider): "model" | "request" {
+  return provider.id === "fake" ? "model" : "request";
+}

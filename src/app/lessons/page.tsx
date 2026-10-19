@@ -23,7 +23,7 @@ export default async function HistoryPage() {
       {items.length === 0 ? (
         <p className="mt-6 text-sm">
           Nothing here yet.{" "}
-          <Link href="/lessons/new" className="underline">
+          <Link href="/prepare" className="underline">
             Create your first lesson
           </Link>
           .
