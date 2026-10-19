@@ -226,6 +226,28 @@ describe("running a curriculum lesson", () => {
     expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0].n).toBe(0);
   });
 
+  it("a legacy v1 request with a real provider never calls the model and uses the tutor's own objectives", async () => {
+    let called = 0;
+    const realLooking: LlmProvider = {
+      id: "anthropic",
+      async generateStructured(): Promise<StructuredResult> {
+        called++;
+        return { ok: false, error: { type: "invalid_output", retryable: false } }; // what a real model gives the legacy prompt
+      },
+    };
+    const ctx = await account();
+    const objectives = ["Solve ax + b = c", "Check the answer by substitution"];
+    const { job } = await web.generation.createGeneration(ctx, { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives, durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" }, key());
+    const d: PipelineDeps = { ...deps, llm: realLooking, legacyProse: "request" };
+    for (let i = 0; i < 10 && (await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state !== "succeeded"; i++) await runOnce(d, "w-legacy");
+    expect((await admin.query(`SELECT state, calls_used FROM generation_job WHERE id = $1`, [job.id])).rows[0]).toMatchObject({ state: "succeeded", calls_used: 0 });
+    expect(called).toBe(0);
+    const rev = (await admin.query(`SELECT content, generation_meta FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+    expect(rev.content).toMatchObject({ skeleton: true, objectives });
+    expect(rev.generation_meta).toMatchObject({ skeleton: true, llm: false });
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
   it("still takes the legacy path for a v1 request: model prose, skeleton content, one call", async () => {
     const ctx = await account();
     const { job } = await web.generation.createGeneration(ctx, { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives: ["Solve ax + b = c"], durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" }, key());

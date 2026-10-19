@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AnthropicProvider, classifyHttpStatus, costMicros } from "@/lib/llm/anthropic";
-import { createLlmProvider } from "@/lib/llm/factory";
+import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FakeLlmProvider } from "@/lib/llm/fake";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest } from "@/lib/llm/types";
 import { workerEnv } from "../../worker/env";
@@ -197,6 +197,13 @@ describe("the same contract for every provider", () => {
     }
     expect(isRetryableLlmError("server_error")).toBe(true);
     expect(isRetryableLlmError("auth")).toBe(false);
+  });
+});
+
+describe("legacy quick-form lessons", () => {
+  it("ask only the fake provider for placeholder wording; a real provider is never called for them", () => {
+    expect(legacyProseFor(new FakeLlmProvider())).toBe("model");
+    expect(legacyProseFor(provider(mockFetch(() => json(message())).fetchImpl))).toBe("request");
   });
 });
 

@@ -2,7 +2,7 @@ import path from "node:path";
 import { createDb } from "@/lib/server/db";
 import { createWorkerDal } from "@/lib/server/dal";
 import { SkeletonCompiler } from "@/lib/latex/compiler";
-import { createLlmProvider } from "@/lib/llm/factory";
+import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FsObjectStore } from "@/lib/storage/store";
 import { workerEnv } from "./env";
 import { log } from "./log";
@@ -30,6 +30,8 @@ async function main() {
       settlement: dal.settlement,
       llm,
       proseMode: config.LESSON_PROSE,
+      // The legacy quick form's prompt only suits the fake provider; with a real one it uses the tutor's own objectives.
+      legacyProse: legacyProseFor(llm),
       proseMaxOutputTokens: config.LLM_MAX_OUTPUT_TOKENS,
       compiler: new SkeletonCompiler(),
       store: new FsObjectStore(path.resolve(config.OBJECT_STORE_DIR)),
