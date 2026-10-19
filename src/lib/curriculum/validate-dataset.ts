@@ -1,6 +1,6 @@
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { isSupportedConcept } from "./capabilities";
-import { ID_PATTERN, LIMITS, type Dataset } from "./dataset-schema";
+import { isValidId, LIMITS, ORDINAL_MAX, type Dataset } from "./dataset-schema";
 
 export interface DatasetIssue {
   code:
@@ -26,9 +26,26 @@ export interface DatasetIssue {
     | "VERSION_ID_MISMATCH"
     | "DUPLICATE_MAPPING"
     | "COURSE_CODE_DUPLICATE"
-    | "OFFICIAL_CODE_DUPLICATE";
+    | "OFFICIAL_CODE_DUPLICATE"
+    | "ORDINAL_RANGE"
+    | "DATE_INVALID"
+    | "REAL_SOURCE_URL"
+    | "REAL_REVIEW_BLANK";
   where: string;
   detail?: string;
+}
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+
+/** Strict ISO-8601 date or date-time (no locale parsing); calendar-impossible values are rejected. */
+export function isIsoDate(value: string): boolean {
+  const m = ISO_DATE.exec(value);
+  if (!m) return false;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) return false;
+  if (m[4] !== undefined && (Number(m[4]) > 23 || Number(m[5]) > 59 || (m[6] !== undefined && Number(m[6]) > 59))) return false;
+  return !Number.isNaN(new Date(value).getTime());
 }
 
 /** Stable hash of the whole dataset; any content change gives a different hash. */
@@ -50,7 +67,7 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   // ---- ids: format and global uniqueness --------------------------------------------------------------
   const seen = new Map<string, string>();
   const registerId = (id: string, where: string) => {
-    if (!ID_PATTERN.test(id)) add("ID_FORMAT", where, id);
+    if (!isValidId(id)) add("ID_FORMAT", where, id);
     const previous = seen.get(id);
     if (previous) add("ID_DUPLICATE", where, `${id} (also ${previous})`);
     else seen.set(id, where);
@@ -60,7 +77,7 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     ["curriculum", meta.curriculum.id],
     ["version", meta.version.id],
   ] as const) {
-    if (!ID_PATTERN.test(id)) add("ID_FORMAT", label, id);
+    if (!isValidId(id)) add("ID_FORMAT", label, id);
   }
   structure.levels.forEach((l, i) => registerId(l.id, `levels[${i}]`));
   structure.courses.forEach((c, i) => registerId(c.id, `courses[${i}]`));
@@ -78,12 +95,25 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     if (required && value.trim() === "") add("EMPTY_TEXT", where);
     if (value.length > max) add("TEXT_TOO_LONG", where, `${value.length} > ${max}`);
   };
-  structure.levels.forEach((l, i) => text(l.label, LIMITS.title, `levels[${i}].label`));
+  text(meta.educationSystem.name, LIMITS.name, "educationSystem.name");
+  text(meta.curriculum.name, LIMITS.name, "curriculum.name");
+  text(meta.version.label, LIMITS.name, "version.label");
+  text(meta.version.source.title, LIMITS.name, "version.source.title");
+  text(meta.version.source.publisher, LIMITS.name, "version.source.publisher", false);
+  text(meta.version.licenseNote, LIMITS.licenseNote, "version.licenseNote", false); // blank is reported as LICENSE_NOTE_MISSING
+  text(meta.version.review?.scope, LIMITS.scope, "version.review.scope", false);
+  structure.levels.forEach((l, i) => {
+    text(l.label, LIMITS.title, `levels[${i}].label`);
+    text(l.kind, LIMITS.code, `levels[${i}].kind`);
+  });
   structure.courses.forEach((c, i) => {
     text(c.title, LIMITS.title, `courses[${i}].title`);
     text(c.code, LIMITS.title, `courses[${i}].code`);
   });
-  structure.units.forEach((u, i) => text(u.title, LIMITS.title, `units[${i}].title`));
+  structure.units.forEach((u, i) => {
+    text(u.title, LIMITS.title, `units[${i}].title`);
+    text(u.code, LIMITS.code, `units[${i}].code`, false);
+  });
   structure.topics.forEach((t, i) => {
     text(t.title, LIMITS.title, `topics[${i}].title`);
     text(t.summary, LIMITS.summary, `topics[${i}].summary`);
@@ -136,6 +166,15 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     if (objectiveCodes.has(key)) add("OFFICIAL_CODE_DUPLICATE", `objectives[${i}].officialCode`, o.officialCode);
     objectiveCodes.add(key);
   });
+
+  // ---- ordinals must fit the database column and its CHECK ------------------------------------------------
+  const ordinal = (value: number, where: string) => {
+    if (!Number.isInteger(value) || value < 0 || value > ORDINAL_MAX) add("ORDINAL_RANGE", where, `${value} not in 0..${ORDINAL_MAX}`);
+  };
+  structure.levels.forEach((x, i) => ordinal(x.ordinal, `levels[${i}].ordinal`));
+  structure.courses.forEach((x, i) => ordinal(x.ordinal, `courses[${i}].ordinal`));
+  structure.units.forEach((x, i) => ordinal(x.ordinal, `units[${i}].ordinal`));
+  structure.topics.forEach((x, i) => ordinal(x.ordinal, `topics[${i}].ordinal`));
 
   // ---- sibling ordinals ---------------------------------------------------------------------------------
   const dupOrdinals = (groups: Map<string, number[]>, where: string) => {
@@ -213,9 +252,25 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   // ---- version metadata and honest labelling -------------------------------------------------------------
   const v = meta.version;
   if (v.licenseNote.trim() === "") add("LICENSE_NOTE_MISSING", "version.licenseNote");
+  const date = (value: string | undefined, where: string) => {
+    if (value !== undefined && !isIsoDate(value)) add("DATE_INVALID", where, "expected an ISO-8601 date or date-time");
+  };
+  date(v.effectiveFrom, "version.effectiveFrom");
+  date(v.source.retrievedAt, "version.source.retrievedAt");
+  date(v.review?.at, "version.review.at");
   if (v.kind === "real") {
     if (!v.source.url || !v.source.retrievedAt) add("REAL_NEEDS_SOURCE", "version.source", "url and retrievedAt are required");
     if (!v.review) add("REAL_NEEDS_REVIEW", "version.review", "a human review record is required");
+    if (v.source.url) {
+      let https = false;
+      try {
+        https = new URL(v.source.url).protocol === "https:";
+      } catch {
+        https = false;
+      }
+      if (!https) add("REAL_SOURCE_URL", "version.source.url", "an https URL is required");
+    }
+    if (v.review && (v.review.by.trim() === "" || v.review.scope.trim() === "")) add("REAL_REVIEW_BLANK", "version.review", "reviewer and scope must not be blank");
   } else {
     // sample and synthetic data must announce themselves so they cannot pass for a real curriculum
     const word = v.kind === "sample" ? /sample/i : /synthetic/i;
