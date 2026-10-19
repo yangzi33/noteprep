@@ -28,6 +28,8 @@ const RESOURCE_FUNCTIONS: Record<string, (ctx: AuthedCtx, jobId: string) => Prom
 };
 const CALLER_ONLY_FUNCTIONS = ["createGeneration"];
 const ACCOUNT_CALLER_ONLY_FUNCTIONS = ["ensureAccount", "getStatus"];
+// Read-only views that take no resource id: they can only ever describe the caller.
+const HISTORY_CALLER_ONLY_FUNCTIONS = ["getAllowance", "listJobs"];
 
 const input = {
   topic: "linear_equations_one_variable",
@@ -40,9 +42,10 @@ const input = {
 
 describe("web data access layer: ownership", () => {
   it("exposes exactly the classified functions (guard against unreviewed additions)", () => {
-    expect(Object.keys(dal).sort()).toEqual(["account", "generation"]);
+    expect(Object.keys(dal).sort()).toEqual(["account", "generation", "history"]);
     expect(Object.keys(dal.generation).sort()).toEqual([...Object.keys(RESOURCE_FUNCTIONS), ...CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.account).sort()).toEqual([...ACCOUNT_CALLER_ONLY_FUNCTIONS].sort());
+    expect(Object.keys(dal.history).sort()).toEqual([...HISTORY_CALLER_ONLY_FUNCTIONS].sort());
   });
 
   it.each(Object.keys(RESOURCE_FUNCTIONS))("%s refuses another user's job and changes nothing", async (name) => {

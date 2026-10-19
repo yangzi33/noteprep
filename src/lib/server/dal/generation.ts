@@ -10,7 +10,6 @@ import {
   RateLimited,
   TooManyActiveJobs,
 } from "@/lib/domain/errors";
-import { isEntitled, periodKeyFor } from "@/lib/domain/entitlement";
 import {
   DEV_DEFAULT_LIMITS,
   GENERATE_OPERATION,
@@ -21,6 +20,7 @@ import {
 } from "@/lib/domain/generation";
 import { requestHash } from "@/lib/domain/hash";
 import type { AuthedCtx } from "../auth/context";
+import { resolveAllowanceSource } from "./allowance-source";
 import type { Db } from "../db";
 import { toJobDto, type JobDto } from "./dto";
 import { releaseReservation } from "./reservation";
@@ -66,13 +66,12 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
 
   /** Locks the bucket this job will draw from. The source is fixed here and never re-chosen. */
   async function lockAllowanceBucket(tx: Tx, ownerId: string, now: Date): Promise<{ bucket: BucketRow; source: "trial" | "paid" }> {
-    const subscription = await tx.subscription.findFirst({ where: { ownerId, status: "active" } });
-    if (isEntitled(subscription, now) && subscription?.periodStart) {
-      // Entitled accounts draw only from the paid period bucket (no fallback to the trial; decisions D-07).
+    const source = await resolveAllowanceSource(tx, ownerId, now);
+    if (source.kind === "paid") {
       const rows = await tx.$queryRaw<BucketRow[]>`
         SELECT id, used, reserved, limit_count FROM usage_bucket
-         WHERE subscription_id = ${subscription.id}::uuid
-           AND period_key = ${periodKeyFor(subscription.periodStart)}::bigint
+         WHERE subscription_id = ${source.subscriptionId}::uuid
+           AND period_key = ${source.periodKey}::bigint
            AND starts_at <= ${now}::timestamptz AND ends_at > ${now}::timestamptz
            FOR UPDATE`;
       const bucket = rows[0];

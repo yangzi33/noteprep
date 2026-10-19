@@ -7,14 +7,20 @@ import { makeAuthedCtx, type AuthedCtx } from "./context";
 import { isEmailConfirmed, verifyClaims } from "./verify";
 
 /**
- * The only producer of AuthedCtx for requests. Identity comes from a JWT verified on the server;
- * the browser's cookies are never trusted as a user id. Unauthenticated callers are redirected.
+ * Identity for the current request without redirecting: null when signed out. Identity comes from a JWT
+ * verified on the server; the browser's cookies are never trusted as a user id.
  */
-export async function requireUser(): Promise<{ ctx: AuthedCtx; email: string }> {
+export async function getRequestUser(): Promise<{ ctx: AuthedCtx; email: string } | null> {
   const supabase = await createServerSupabase();
   const user = await verifyClaims(supabase);
+  return user ? { ctx: makeAuthedCtx(user.userId), email: user.email } : null;
+}
+
+/** The producer of AuthedCtx for pages and actions: unauthenticated callers are redirected to sign in. */
+export async function requireUser(): Promise<{ ctx: AuthedCtx; email: string }> {
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  return { ctx: makeAuthedCtx(user.userId), email: user.email };
+  return user;
 }
 
 /**

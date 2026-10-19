@@ -41,7 +41,7 @@ const eslintConfig = defineConfig([
   },
   {
     // Tooling and tests configure themselves from the environment.
-    files: ["tests/**", "prisma7.config.ts", "*.config.mts"],
+    files: ["tests/**", "prisma7.config.ts", "*.config.mts", "playwright.config.ts"],
     rules: { "no-restricted-properties": "off" },
   },
   {
