@@ -61,6 +61,8 @@
     "db:dev-roles": "bash scripts/dev-roles.sh",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
     "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "curriculum:validate": "tsx scripts/curriculum-validate.ts",
+    "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts"
   }
 }

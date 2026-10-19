@@ -1,0 +1,25 @@
+{
+  "objectives": [
+    {
+      "id": "sample-math@sample-1/obj/e1",
+      "unitId": "sample-math@sample-1/level-a/course-1/equations",
+      "officialCode": "S-E.1",
+      "label": "Sample objective: solve one-unknown equations",
+      "sourceRef": "sample dataset (invented)"
+    },
+    {
+      "id": "sample-math@sample-1/obj/e2",
+      "unitId": "sample-math@sample-1/level-a/course-1/equations",
+      "officialCode": "S-E.2",
+      "label": "Sample objective: solve equations with brackets",
+      "sourceRef": "sample dataset (invented)"
+    },
+    {
+      "id": "sample-math@sample-1/obj/s1",
+      "unitId": "sample-math@sample-1/level-a/course-1/shapes",
+      "officialCode": "S-S.1",
+      "label": "Sample objective: find areas of simple shapes",
+      "sourceRef": "sample dataset (invented)"
+    }
+  ]
+}

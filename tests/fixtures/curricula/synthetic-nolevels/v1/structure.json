@@ -1,0 +1,47 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "synthetic-nolevels@v1/course-x",
+      "code": "SYN-X",
+      "title": "Synthetic Course X",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-nolevels@v1/course-y",
+      "code": "SYN-Y",
+      "title": "Synthetic Course Y",
+      "ordinal": 2
+    }
+  ],
+  "units": [
+    {
+      "id": "synthetic-nolevels@v1/course-x/u1",
+      "courseId": "synthetic-nolevels@v1/course-x",
+      "title": "Synthetic unit X1",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-nolevels@v1/course-y/u1",
+      "courseId": "synthetic-nolevels@v1/course-y",
+      "title": "Synthetic unit Y1",
+      "ordinal": 1
+    }
+  ],
+  "topics": [
+    {
+      "id": "synthetic-nolevels@v1/course-x/u1/t1",
+      "unitId": "synthetic-nolevels@v1/course-x/u1",
+      "title": "Synthetic topic X1.1",
+      "summary": "Supported synthetic topic.",
+      "ordinal": 1
+    },
+    {
+      "id": "synthetic-nolevels@v1/course-y/u1/t1",
+      "unitId": "synthetic-nolevels@v1/course-y/u1",
+      "title": "Synthetic topic Y1.1",
+      "summary": "Unsupported synthetic topic.",
+      "ordinal": 1
+    }
+  ]
+}

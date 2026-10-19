@@ -1,6 +1,6 @@
 # 重构计划(提案)
 
-> 状态:**关键决定已批准(2026-10-19):D-30(MVP 目标 Ontario Grade 9;真实数据集为之后的独立里程碑 CM)、D-31(不提供 `.tex`)、D-33(调整计费方案 B);D-36 推迟到 CM。** 既有文档与 `CLAUDE.md` 已按新方向对账。**里程碑 M1 尚未开始,等待用户的启动批准。**
+> 状态:**M1 已完成(课程域模型 + 示例数据集);M2 尚未开始。** 关键决定已批准(2026-10-19):D-30(MVP 目标 Ontario Grade 9;真实数据集为之后的独立里程碑 CM)、D-31(不提供 `.tex`)、D-33(调整计费方案 B);D-36 推迟到 CM。** 既有文档与 `CLAUDE.md` 已按新方向对账。里程碑 M2 等待用户的启动批准。
 > 相关:[product-vision](product-vision.md) · [refactor-audit](refactor-audit.md) · [curriculum-architecture](curriculum-architecture.md)
 
 ## 1. 原则

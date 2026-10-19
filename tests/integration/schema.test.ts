@@ -31,6 +31,19 @@ const TABLES = [
   "subscription",
   "webhook_event",
   "rate_limit_window",
+  // curriculum reference data (public, read-only for the runtime roles)
+  "education_system",
+  "curriculum",
+  "curriculum_version",
+  "curriculum_level",
+  "curriculum_course",
+  "curriculum_unit",
+  "curriculum_topic",
+  "curriculum_objective",
+  "topic_objective",
+  "topic_prerequisite",
+  "concept",
+  "topic_concept",
 ];
 
 describe("roles, grants and row level security", () => {

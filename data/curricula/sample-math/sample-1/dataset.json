@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "sample-system",
+    "name": "Sample Education System (not real)",
+    "regionCode": "XX"
+  },
+  "curriculum": {
+    "id": "sample-math",
+    "name": "Sample Mathematics (not a real curriculum)",
+    "subject": "math"
+  },
+  "version": {
+    "id": "sample-math@sample-1",
+    "label": "Sample 1 (not a real curriculum)",
+    "kind": "sample",
+    "source": {
+      "title": "Invented for development; there is no real source"
+    },
+    "licenseNote": "Invented sample content containing no real curriculum text. Must never be used for curriculum alignment claims."
+  }
+}

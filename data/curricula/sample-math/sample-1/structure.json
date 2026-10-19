@@ -1,0 +1,65 @@
+{
+  "levels": [
+    {
+      "id": "sample-math@sample-1/level-a",
+      "label": "Sample Level A",
+      "kind": "grade",
+      "ordinal": 1
+    }
+  ],
+  "courses": [
+    {
+      "id": "sample-math@sample-1/level-a/course-1",
+      "levelId": "sample-math@sample-1/level-a",
+      "code": "SAMPLE-1",
+      "title": "Sample Course 1",
+      "ordinal": 1
+    }
+  ],
+  "units": [
+    {
+      "id": "sample-math@sample-1/level-a/course-1/equations",
+      "courseId": "sample-math@sample-1/level-a/course-1",
+      "code": "E",
+      "title": "Sample unit: Equations",
+      "ordinal": 1
+    },
+    {
+      "id": "sample-math@sample-1/level-a/course-1/shapes",
+      "courseId": "sample-math@sample-1/level-a/course-1",
+      "code": "S",
+      "title": "Sample unit: Shapes",
+      "ordinal": 2
+    }
+  ],
+  "topics": [
+    {
+      "id": "sample-math@sample-1/level-a/course-1/equations/solve-basic",
+      "unitId": "sample-math@sample-1/level-a/course-1/equations",
+      "title": "Sample topic: Solving equations with one unknown",
+      "summary": "Invented topic: undo operations to find the unknown.",
+      "ordinal": 1
+    },
+    {
+      "id": "sample-math@sample-1/level-a/course-1/equations/both-sides",
+      "unitId": "sample-math@sample-1/level-a/course-1/equations",
+      "title": "Sample topic: Unknown on both sides",
+      "summary": "Invented topic: collect the unknown on one side first.",
+      "ordinal": 2
+    },
+    {
+      "id": "sample-math@sample-1/level-a/course-1/equations/brackets",
+      "unitId": "sample-math@sample-1/level-a/course-1/equations",
+      "title": "Sample topic: Equations with brackets",
+      "summary": "Invented topic: expand brackets, then solve.",
+      "ordinal": 3
+    },
+    {
+      "id": "sample-math@sample-1/level-a/course-1/shapes/areas",
+      "unitId": "sample-math@sample-1/level-a/course-1/shapes",
+      "title": "Sample topic: Areas of simple shapes",
+      "summary": "Invented topic with no verified generator yet.",
+      "ordinal": 1
+    }
+  ]
+}

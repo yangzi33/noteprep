@@ -1,0 +1,22 @@
+{
+  "topicObjectives": [
+    {
+      "topicId": "synthetic-nolevels@v1/course-x/u1/t1",
+      "objectiveId": "synthetic-nolevels@v1/obj/x1",
+      "coverage": "full"
+    },
+    {
+      "topicId": "synthetic-nolevels@v1/course-y/u1/t1",
+      "objectiveId": "synthetic-nolevels@v1/obj/y1",
+      "coverage": "full"
+    }
+  ],
+  "topicConcepts": [
+    {
+      "topicId": "synthetic-nolevels@v1/course-x/u1/t1",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full"
+    }
+  ],
+  "prerequisites": []
+}

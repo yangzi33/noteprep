@@ -77,6 +77,27 @@ export class NotCompleteSuccess extends DomainError {
   }
 }
 
+/** The curriculum version or topic does not exist, is not published, or is not visible in this environment. */
+export class CurriculumNotFound extends DomainError {
+  constructor() {
+    super("CURRICULUM_NOT_FOUND", "Curriculum selection not found");
+  }
+}
+
+/** The topic exists in the dataset but the engine cannot generate and verify practice for it. */
+export class TopicUnsupported extends DomainError {
+  constructor() {
+    super("TOPIC_UNSUPPORTED", "This topic is not supported yet");
+  }
+}
+
+/** The chosen level/course/unit/topic/objectives do not fit together. */
+export class InvalidSelection extends DomainError {
+  constructor(detail = "Invalid selection") {
+    super("INVALID_SELECTION", detail);
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

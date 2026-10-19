@@ -1,0 +1,18 @@
+{
+  "objectives": [
+    {
+      "id": "synthetic-nolevels@v1/obj/x1",
+      "unitId": "synthetic-nolevels@v1/course-x/u1",
+      "officialCode": "SYN-X1",
+      "label": "Synthetic objective X1",
+      "sourceRef": "synthetic"
+    },
+    {
+      "id": "synthetic-nolevels@v1/obj/y1",
+      "unitId": "synthetic-nolevels@v1/course-y/u1",
+      "officialCode": "SYN-Y1",
+      "label": "Synthetic objective Y1",
+      "sourceRef": "synthetic"
+    }
+  ]
+}

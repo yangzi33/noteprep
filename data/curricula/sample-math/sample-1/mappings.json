@@ -1,0 +1,53 @@
+{
+  "topicObjectives": [
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/solve-basic",
+      "objectiveId": "sample-math@sample-1/obj/e1",
+      "coverage": "full"
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/both-sides",
+      "objectiveId": "sample-math@sample-1/obj/e1",
+      "coverage": "full"
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/brackets",
+      "objectiveId": "sample-math@sample-1/obj/e2",
+      "coverage": "partial",
+      "note": "Practice covers equations without brackets only; expanding brackets is not generated yet."
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/shapes/areas",
+      "objectiveId": "sample-math@sample-1/obj/s1",
+      "coverage": "full"
+    }
+  ],
+  "topicConcepts": [
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/solve-basic",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full"
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full"
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/brackets",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Only the bracket-free part of this topic can be generated and verified."
+    }
+  ],
+  "prerequisites": [
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/both-sides",
+      "prerequisiteTopicId": "sample-math@sample-1/level-a/course-1/equations/solve-basic"
+    },
+    {
+      "topicId": "sample-math@sample-1/level-a/course-1/equations/brackets",
+      "prerequisiteTopicId": "sample-math@sample-1/level-a/course-1/equations/both-sides"
+    }
+  ]
+}
