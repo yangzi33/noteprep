@@ -4,12 +4,13 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T5 与 P1-T8 的工作流完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T6 与 P1-T8 完成)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
 - 认证:`@supabase/ssr` + `proxy.ts` 仅刷新会话;`requireUser`/`requireAccount` 用 `getClaims` 验签(只接受非对称算法),邮箱经 `getUser()` 确认后才创建账户与试用额度;登录/注册/登出与 `/account` 页面;在真实本地 Supabase 上测试了伪造令牌、未确认邮箱、Data API 无法访问业务表。
-- **尚无**:worker 领取/心跳/sweeper、任务与历史 UI、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- Worker 骨架(`worker/`,`pnpm worker:dev`):`SKIP LOCKED` 领取、租约+心跳、围栏 token、单一总预算、有界重试(指数退避+抖动)、取消、sweeper(过期租约/截止时间/重试用尽;释放预留;报告计数漂移)、优雅退出。流水线使用假 LLM、**仅骨架用的假编译器**(产物以 `SKELETON - NOT A COMPILED PDF` 开头,生产环境拒绝启动)和本地磁盘对象存储;数学验证与排版是 Phase 2 的占位。
+- **尚无**:任务与历史 UI、Stripe、真实 LLM、数学验证、LaTeX 编译与沙箱、孤儿对象清理(P3)。页面只是占位,**不是可用产品**。
 - 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
 
 ### 当前可用命令(均已在本机实际运行通过,2026-10-18)
@@ -37,6 +38,7 @@ pnpm supabase:start        # 首次会下载镜像;已在 supabase/config.toml �
 pnpm db:migrate:deploy     # 用 MIGRATION_DATABASE_URL 把迁移应用到 Supabase 的 Postgres
 pnpm db:dev-roles          # 创建本地 web_login / worker_login(仅开发用的一次性密码)
 pnpm test:supabase         # 真实 Auth + Data API 的边界测试
+pnpm worker:dev           # 单独的进程;读取 .env 里的 WORKER_DATABASE_URL,产物写到 .data/objects
 pnpm dev                   # http://127.0.0.1:3000 ;注册邮件在 http://127.0.0.1:54324 (Mailpit)
 pnpm supabase:stop
 ```
@@ -53,7 +55,7 @@ pnpm supabase:stop
 
 ## CI
 
-`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**这些工作流已通过 actionlint 并在干净克隆中重放了命令,但尚未在 GitHub 上实际运行过。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
+`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
 
 ## 文档导航
 
@@ -104,4 +106,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T6 Worker 骨架**(领取/租约/围栏/sweeper,假 LLM 与仅测试可用的假编译端口)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T7 UI 骨架与 Playwright**(创建表单、状态轮询、历史与额度页、骨架路径的端到端)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
