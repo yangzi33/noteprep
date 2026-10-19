@@ -1,6 +1,6 @@
 # 数据库角色与迁移权限
 
-> 状态:P1-T3 已实现于 `prisma/migrations/*_constraints_roles_rls`;下面描述的是该迁移实际创建的内容。生产/staging 的登录用户尚未创建(未部署)。
+> 状态:P1-T3 已实现于 `prisma/migrations/*_constraints_roles_rls`;下面描述的是该迁移实际创建的内容。staging 的 `web_login` 已创建(2026-10-19);生产尚未创建(未部署)。
 > 相关:[architecture](architecture.md) §4–§5 · [security-and-privacy](security-and-privacy.md) §3
 
 ## 角色模型
@@ -23,6 +23,18 @@
 ```sql
 CREATE ROLE web_login    LOGIN PASSWORD '<来自密钥管理>' IN ROLE app_runtime;
 CREATE ROLE worker_login LOGIN PASSWORD '<来自密钥管理>' IN ROLE worker_runtime;
+```
+
+**必须在迁移之后执行**:`app_runtime`/`worker_runtime` 是迁移创建的。创建后确认组成员关系,缺少时补授权(第一次 staging 部署正是因为缺少成员关系,出现了 `permission denied for table profile`):
+
+```sql
+select r.rolname as member, g.rolname as in_group
+from pg_roles r
+join pg_auth_members m on m.member = r.oid
+join pg_roles g on g.oid = m.roleid
+where r.rolname in ('web_login', 'worker_login');
+
+GRANT app_runtime TO web_login;      -- 幂等;必要时再对 worker_login 授予 worker_runtime
 ```
 
 集成测试(`tests/integration/global-setup.ts`)对每次运行创建随机名称的临时登录用户并在结束时删除。
