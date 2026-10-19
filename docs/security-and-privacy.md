@@ -71,7 +71,7 @@ Supabase 官方 Prisma 指南为 `prisma` 角色授予 `bypassrls` 与 `createdb
 | T8 | 支付跳转抢先开通 | 成功页只读本地权益;按需核对必须用 Stripe 权威状态且校验用户归属 | §7 |
 | T9 | 提示注入(备注/模型输出试图改系统提示、读文件、访问 URL、索要秘密) | 备注与输出皆为数据;生成流程无工具/浏览;输出经 Zod 校验;数字与答案由代码生成;禁止 URL/HTML/LaTeX 命令进入文字字段 | L1 单元 + 红队用例 |
 | T10 | LaTeX 注入/文件读取/shell 逃逸/宏炸弹 | 固定模板;转义;结构化→代码生成数学;`-no-shell-escape`;**OS 级沙箱为边界**(禁网、无秘密、非 root、只读根、限额、超时杀进程组) | §6 全部负例 |
-| T11 | 容器逃逸 | gVisor(减少内核暴露面);runner 账户无凭据;沙箱无挂载/Docker socket;目标平台能力实测,不满足即阻断 | §6、L4 |
+| T11 | 容器逃逸 | **现状(M4)**:本地与 CI 是 runc + Docker 默认 seccomp,配合 `--network none`、只读根、`--cap-drop ALL`、`no-new-privileges`、非 root、资源限制、无挂载/无 socket、无继承环境(40 个真实镜像测试验证,见 test-plan §6);**gVisor 未使用也未验证**,生产主机上的隔离强度待 D-03/D-20 评估;runner 账户无凭据;沙箱无挂载/Docker socket;目标平台能力实测,不满足即阻断 | §6、L4 |
 | T12 | 恶意/异常 PDF | 沙箱内检查;worker 只校验类型/大小/哈希/路径与归属;不自行解析 PDF | §6 |
 | T13 | 跨用户缓存泄露(CDN/框架缓存/带 Set-Cookie 响应) | 私有页面动态渲染;`Cache-Control: private, no-store`;检查 CDN/框架缓存键 | E2E 双用户缓存测试 |
 | T14 | XSS | 不渲染不可信 HTML;文字字段纯文本;预览是真实编译的 PDF(不再使用 KaTeX 预览);CSP | 单元+E2E |

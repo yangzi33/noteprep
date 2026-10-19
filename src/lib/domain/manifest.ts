@@ -1,3 +1,4 @@
+import type { DocumentKind } from "@/lib/package/schema";
 import { ManifestIncomplete } from "./errors";
 
 export const EDITIONS = ["student", "teacher"] as const;
@@ -45,5 +46,59 @@ export function assertManifestComplete(entries: readonly ManifestEntry[], scope:
     if (!Number.isInteger(entry.bytes) || entry.bytes <= 0) {
       throw new ManifestIncomplete(`${edition}.${format} is empty`);
     }
+  }
+}
+
+// --- manifest v2: the three-document pack (docs/refactor-plan.md section 3.4) --------------------------------------------
+
+export const MANIFEST_V2 = 2;
+export const MAX_PDF_PAGES = 40;
+
+export interface StoredFile {
+  path: string;
+  sha256: string;
+  bytes: number;
+}
+
+export interface ManifestDocument {
+  document: DocumentKind;
+  /** What the tutor downloads. */
+  pdf: StoredFile & { pages: number };
+  /** The rendered source of this revision. Internal: never offered to users (decision D-31). */
+  tex: StoredFile;
+}
+
+export interface ManifestV2 {
+  manifestVersion: typeof MANIFEST_V2;
+  templateVersion: string;
+  documents: ManifestDocument[];
+}
+
+/** Server-generated path for one file of a document; user input never participates. */
+export function artifactPathV2(scope: ManifestScope, document: DocumentKind, format: Format): string {
+  return `${scope.ownerId}/${scope.lessonId}/${scope.revisionId}/${scope.attemptId}/${document}.${format}`;
+}
+
+/**
+ * A complete pack is exactly the requested documents, each with its PDF and its source, all under this attempt's own
+ * prefix, with real hashes, sizes and page counts. A missing, extra or misplaced file means nothing is published.
+ */
+export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestScope, requested: readonly DocumentKind[]): void {
+  if (manifest.manifestVersion !== MANIFEST_V2) throw new ManifestIncomplete("unknown manifest version");
+  if (typeof manifest.templateVersion !== "string" || manifest.templateVersion.length === 0) throw new ManifestIncomplete("no template version");
+  if (requested.length === 0 || new Set(requested).size !== requested.length) throw new ManifestIncomplete("invalid requested documents");
+  const got = manifest.documents.map((d) => d.document);
+  if (got.length !== requested.length || new Set(got).size !== got.length || !requested.every((r) => got.includes(r))) {
+    throw new ManifestIncomplete(`expected documents ${[...requested].sort().join(",")}, got ${[...got].sort().join(",")}`);
+  }
+  for (const doc of manifest.documents) {
+    for (const format of FORMATS) {
+      const file = doc[format];
+      const label = `${doc.document}.${format}`;
+      if (file.path !== artifactPathV2(scope, doc.document, format)) throw new ManifestIncomplete(`${label} is outside this attempt's prefix`);
+      if (!/^[0-9a-f]{64}$/.test(file.sha256)) throw new ManifestIncomplete(`${label} has no valid sha256`);
+      if (!Number.isInteger(file.bytes) || file.bytes <= 0) throw new ManifestIncomplete(`${label} is empty`);
+    }
+    if (!Number.isInteger(doc.pdf.pages) || doc.pdf.pages < 1 || doc.pdf.pages > MAX_PDF_PAGES) throw new ManifestIncomplete(`${doc.document}.pdf has an invalid page count`);
   }
 }

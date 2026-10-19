@@ -6,7 +6,8 @@ import {
   NotFound,
   StaleOrCanceled,
 } from "@/lib/domain/errors";
-import { assertManifestComplete, type ManifestEntry } from "@/lib/domain/manifest";
+import { assertManifestComplete, assertManifestV2Complete, type ManifestEntry, type ManifestV2 } from "@/lib/domain/manifest";
+import type { DocumentKind } from "@/lib/package/schema";
 import type { Db } from "../db";
 import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
@@ -31,7 +32,9 @@ export interface CommitSuccessInput {
   /** Pre-generated before upload so object paths can include it. */
   revisionId: string;
   revision: RevisionDraft;
-  manifest: readonly ManifestEntry[];
+  /** A legacy four-file list, or a version 2 manifest (the requested documents must then be named). */
+  manifest: readonly ManifestEntry[] | ManifestV2;
+  requestedDocuments?: readonly DocumentKind[];
 }
 
 export interface FinishJobInput {
@@ -90,12 +93,9 @@ export function createSettlementDal(db: Db) {
         if (input.revision.validationStatus !== "verified") {
           throw new NotCompleteSuccess("only fully verified output counts as a complete generation");
         }
-        assertManifestComplete(input.manifest, {
-          ownerId: job.owner_id,
-          lessonId: job.lesson_id,
-          revisionId: input.revisionId,
-          attemptId: input.attemptId,
-        });
+        const scope = { ownerId: job.owner_id, lessonId: job.lesson_id, revisionId: input.revisionId, attemptId: input.attemptId };
+        if (Array.isArray(input.manifest)) assertManifestComplete(input.manifest as readonly ManifestEntry[], scope);
+        else assertManifestV2Complete(input.manifest as ManifestV2, scope, input.requestedDocuments ?? []);
 
         const next = await tx.$queryRaw<{ n: number }[]>`
           SELECT COALESCE(MAX(number), 0) + 1 AS n FROM lesson_revision WHERE lesson_id = ${job.lesson_id}::uuid`;

@@ -44,6 +44,23 @@ jobs:
     name: LaTeX sandbox (real image, negative tests)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    services:
+      postgres:
+        # Same pinned image as the integration job; the full-chain test creates a throwaway database in it.
+        image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # throwaway service container, not reachable from outside the job
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

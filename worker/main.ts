@@ -1,12 +1,22 @@
 import path from "node:path";
 import { createDb } from "@/lib/server/db";
 import { createWorkerDal } from "@/lib/server/dal";
-import { SkeletonCompiler } from "@/lib/latex/compiler";
+import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, type Compiler, type DocumentCompiler } from "@/lib/latex/compiler";
+import { DockerLatexCompiler } from "@/lib/latex/docker-compiler";
+import { DEFAULT_SANDBOX } from "@/lib/latex/sandbox";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FsObjectStore } from "@/lib/storage/store";
 import { workerEnv } from "./env";
 import { log } from "./log";
 import { runWorkerLoop } from "./loop";
+
+/** Placeholder files must never become a real lesson's result; the pipeline refuses legacy jobs before it gets here. */
+const refusingLegacyCompiler: Compiler = {
+  id: "none",
+  async compile() {
+    throw new CompileError("compile_failed", false);
+  },
+};
 
 // Run with: pnpm worker:dev  (tsx --conditions=react-server, so the shared server-only DAL modules load)
 async function main() {
@@ -23,7 +33,14 @@ async function main() {
 
   const llm = createLlmProvider(config);
   // Never log the key; the provider id, prose mode and model name are enough to know what a worker is doing.
-  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: "skeleton" });
+  // The real compiler for curriculum lessons, or the labelled placeholder one for local runs. Legacy quick-form lessons
+  // only know the placeholder compile, so they are refused when the compiler is real.
+  const documentCompiler: DocumentCompiler =
+    config.COMPILER === "docker"
+      ? new DockerLatexCompiler({ ...DEFAULT_SANDBOX, image: config.LATEX_IMAGE, wallClockMs: config.LATEX_WALL_CLOCK_SECONDS * 1000, clientEnv: config.dockerClientEnv })
+      : new SkeletonDocumentCompiler();
+  const legacyCompiler: Compiler = config.COMPILER === "docker" ? refusingLegacyCompiler : new SkeletonCompiler();
+  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id });
   await runWorkerLoop({
     deps: {
       jobs: dal.jobs,
@@ -33,7 +50,9 @@ async function main() {
       // The legacy quick form's prompt only suits the fake provider; with a real one it uses the tutor's own objectives.
       legacyProse: legacyProseFor(llm),
       proseMaxOutputTokens: config.LLM_MAX_OUTPUT_TOKENS,
-      compiler: new SkeletonCompiler(),
+      compiler: legacyCompiler,
+      documentCompiler,
+      legacyEnabled: config.COMPILER !== "docker",
       store: new FsObjectStore(path.resolve(config.OBJECT_STORE_DIR)),
       leaseMs: config.LEASE_SECONDS * 1000,
     },

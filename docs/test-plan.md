@@ -104,6 +104,8 @@ PR 门禁默认用 fake LLM + 虚构数据;真实 LLM 质量/成本评估与 Str
 
 ## 6. 真实编译沙箱(L3,L4 上在目标主机重复)
 
+> **M4 状态(2026-10-19):** 下表的负面用例已在**本地真实镜像**(runc + 默认 seccomp)上实现为 `pnpm test:latex`(`tests/latex/`),并在 CI 的 `LaTeX sandbox` 任务里运行;**尚未**在目标生产主机(L4)与 gVisor 下重复。
+
 `pnpm test:latex` 运行在**真实镜像与真实运行时**上(只检查 Dockerfile 文本不算通过)。
 
 **正例**:有效课包 → **所请求的每份文档**(完整包三份)各一个有效 PDF(`%PDF-` 头、页数合理、字体嵌入、`pdftotext` 可提取预期文本);**Worksheet** 的 PDF 文本不含任何独立练习答案串;重复编译的文本/版面度量稳定;Worksheet 的书写空间存在且不被分页截断。
