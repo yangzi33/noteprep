@@ -1,0 +1,2305 @@
+[
+  {
+    "name": "unique_integer",
+    "reasoning": "3x+5=20 -> 3x=15 -> x=5. Check 3*5+5=20.",
+    "question": {
+      "id": "q1",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "q1.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q1.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "two_sided",
+    "reasoning": "2x-7=5x+8. Add -5x: -3x-7=8. Add 7: -3x=15. Divide by -3: x=-5. Check 2(-5)-7=-17 and 5(-5)+8=-17.",
+    "question": {
+      "id": "q2",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=cx+d",
+        "params": {
+          "a": "2",
+          "b": "-7",
+          "c": "5",
+          "d": "8"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "-7"
+            ]
+          },
+          "rhs": {
+            "x": [
+              "5"
+            ],
+            "c": [
+              "8"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "-5"
+      },
+      "steps": [
+        {
+          "id": "q2.s1",
+          "op": {
+            "type": "add_x_term_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "-3"
+              ],
+              "c": [
+                "-7"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "8"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q2.s2",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "7"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "-3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q2.s3",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "-3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "-5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "fraction_solution",
+    "reasoning": "2x+1=2 -> 2x=1 -> x=1/2. Check 2*(1/2)+1=2.",
+    "question": {
+      "id": "q3",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "2",
+          "b": "1",
+          "c": "2"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "1"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "2"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "1/2"
+      },
+      "steps": [
+        {
+          "id": "q3.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-1"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "2"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q3.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "2"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "1/2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "fraction_coefficient",
+    "reasoning": "(1/2)x+3=7 -> (1/2)x=4 -> x=8 (multiply both sides by 2). Check 4+3=7.",
+    "question": {
+      "id": "q4",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "1/2",
+          "b": "3",
+          "c": "7"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "1/2"
+            ],
+            "c": [
+              "3"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "7"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "8"
+      },
+      "steps": [
+        {
+          "id": "q4.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1/2"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "4"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q4.s2",
+          "op": {
+            "type": "multiply_both_sides",
+            "value": "2"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "8"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "negative_coefficient",
+    "reasoning": "-4x+1=9 -> -4x=8 -> x=-2. Check -4(-2)+1=9.",
+    "question": {
+      "id": "q5",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "-4",
+          "b": "1",
+          "c": "9"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "-4"
+            ],
+            "c": [
+              "1"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "9"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "-2"
+      },
+      "steps": [
+        {
+          "id": "q5.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-1"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "-4"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "8"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q5.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "-4"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "-2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "no_solution",
+    "reasoning": "4x+6=4x-2. Subtract 4x from both sides: 6=-2, which is false for every x, so there is no solution.",
+    "question": {
+      "id": "q6",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=cx+d",
+        "params": {
+          "a": "4",
+          "b": "6",
+          "c": "4",
+          "d": "-2"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "4"
+            ],
+            "c": [
+              "6"
+            ]
+          },
+          "rhs": {
+            "x": [
+              "4"
+            ],
+            "c": [
+              "-2"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "no_solution"
+      },
+      "steps": [
+        {
+          "id": "q6.s1",
+          "op": {
+            "type": "add_x_term_both_sides",
+            "value": "-4"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "0"
+              ],
+              "c": [
+                "6"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "-2"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "identity",
+    "reasoning": "2x+3=2x+3. Subtract 2x: 3=3, true for every x, so every x is a solution.",
+    "question": {
+      "id": "q7",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=cx+d",
+        "params": {
+          "a": "2",
+          "b": "3",
+          "c": "2",
+          "d": "3"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "3"
+            ]
+          },
+          "rhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "3"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "identity"
+      },
+      "steps": [
+        {
+          "id": "q7.s1",
+          "op": {
+            "type": "add_x_term_both_sides",
+            "value": "-2"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "0"
+              ],
+              "c": [
+                "3"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "3"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "unsimplified_intermediate_lists",
+    "reasoning": "3x+5=20 written with unsimplified term lists after the first step: (5-5) on the left and (20-5) on the right still sum to 0 and 15.",
+    "question": {
+      "id": "q8",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "q8.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": [
+                "5",
+                "-5"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "20",
+                "-5"
+              ]
+            }
+          }
+        },
+        {
+          "id": "q8.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "non_terminating_fraction",
+    "reasoning": "3x+0=1 -> x=1/3.",
+    "question": {
+      "id": "q9",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "0",
+          "c": "1"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "0"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "1"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "1/3"
+      },
+      "steps": [
+        {
+          "id": "q9.s1",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": [
+                "0"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "1/3"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "answer_written_unreduced",
+    "reasoning": "Same as 3x=1; the answer 2/6 is exactly 1/3 once reduced, so it is the same number.",
+    "question": {
+      "id": "q10",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "0",
+          "c": "1"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "0"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "1"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "2/6"
+      },
+      "steps": [
+        {
+          "id": "q10.s1",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": [
+                "0"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "1/3"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "verified"
+    }
+  },
+  {
+    "name": "wrong_answer",
+    "reasoning": "3x+5=20 has solution 5, but the key says 4. 3*4+5=17, not 20.",
+    "question": {
+      "id": "f1",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "4"
+      },
+      "steps": [
+        {
+          "id": "f1.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f1.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "answer_key_match"
+      ]
+    }
+  },
+  {
+    "name": "wrong_step_result",
+    "reasoning": "20-5 is 15, but the step says 16.",
+    "question": {
+      "id": "f2",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f2.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "16"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f2.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "f2.s1"
+    }
+  },
+  {
+    "name": "final_answer_right_but_middle_wrong",
+    "reasoning": "The last line says x=5, which is correct, but the first step claims 20-5=14. A right answer must not hide a wrong step.",
+    "question": {
+      "id": "f3",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f3.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "14"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f3.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "f3.s1"
+    }
+  },
+  {
+    "name": "equivalent_line_but_not_the_stated_step",
+    "reasoning": "The step says 'add -5 to both sides' but the line shown is 6x=30, the ORIGINAL equation doubled. 6x=30 has the same solution (x=5) as 3x+5=20, so nothing else would notice; only comparing the line with what the stated operation produces (3x=15) catches it.",
+    "question": {
+      "id": "f3b",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f3b.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "6"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "30"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f3b.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "6"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "result_mismatch"
+    }
+  },
+  {
+    "name": "divide_by_zero",
+    "reasoning": "Dividing both sides by 0 is not a valid step.",
+    "question": {
+      "id": "f4",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f4.s1",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "0"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "zero_operand"
+    }
+  },
+  {
+    "name": "multiply_by_zero",
+    "reasoning": "Multiplying both sides by 0 turns every equation into 0=0 and loses the solution.",
+    "question": {
+      "id": "f5",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f5.s1",
+          "op": {
+            "type": "multiply_both_sides",
+            "value": "0"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "0"
+              ],
+              "c": [
+                "0"
+              ]
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "0"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "zero_operand"
+    }
+  },
+  {
+    "name": "answer_for_a_different_question",
+    "reasoning": "The key belongs to 2x+1=2 (x=1/2) but is attached to 3x+5=20 (x=5).",
+    "question": {
+      "id": "f6",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "1/2"
+      },
+      "steps": [
+        {
+          "id": "f6.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f6.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "answer_key_match"
+      ]
+    }
+  },
+  {
+    "name": "equation_differs_from_parameters",
+    "reasoning": "Parameters say 3x+5=20 but the written equation is 3x+6=20.",
+    "question": {
+      "id": "f7",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "6"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f7.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "equation_matches_params"
+      ]
+    }
+  },
+  {
+    "name": "decimal_number_rejected",
+    "reasoning": "0.5 is not accepted: numbers must be exact fractions like 1/2, so no floating-point trap is possible.",
+    "question": {
+      "id": "f8",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "0.5",
+          "b": "3",
+          "c": "7"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "0.5"
+            ],
+            "c": [
+              "3"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "7"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "8"
+      },
+      "steps": [
+        {
+          "id": "f8.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "0.5"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "4"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "params_domain"
+      ],
+      "reason": "not_exact_rational"
+    }
+  },
+  {
+    "name": "number_out_of_range",
+    "reasoning": "A coefficient of 9,999,999 is outside the allowed range (|numerator| <= 1,000,000).",
+    "question": {
+      "id": "f9",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "9999999",
+          "b": "1",
+          "c": "2"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "9999999"
+            ],
+            "c": [
+              "1"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "2"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "1/9999999"
+      },
+      "steps": [
+        {
+          "id": "f9.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-1"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "9999999"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "params_domain"
+      ],
+      "reason": "out_of_range"
+    }
+  },
+  {
+    "name": "extra_parameter",
+    "reasoning": "Form ax+b=c takes exactly a, b and c; a stray d is rejected.",
+    "question": {
+      "id": "f10",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20",
+          "d": "1"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f10.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "params_domain"
+      ],
+      "reason": "wrong_parameter_set"
+    }
+  },
+  {
+    "name": "zero_leading_coefficient",
+    "reasoning": "0x+5=20 is not a linear equation in x (and has no solution), so form ax+b=c requires a != 0.",
+    "question": {
+      "id": "f11",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "0",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "0"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "no_solution"
+      },
+      "steps": [
+        {
+          "id": "f11.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "0"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "params_domain"
+      ],
+      "reason": "zero_leading_coefficient"
+    }
+  },
+  {
+    "name": "claims_no_solution_but_has_one",
+    "reasoning": "3x+5=20 has the unique solution 5; claiming no solution is wrong.",
+    "question": {
+      "id": "f12",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "no_solution"
+      },
+      "steps": [
+        {
+          "id": "f12.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f12.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "answer_key_match"
+      ]
+    }
+  },
+  {
+    "name": "stops_before_stating_the_answer",
+    "reasoning": "The steps are all correct but end at 3x=15 without reaching x=5, so the worked solution is incomplete.",
+    "question": {
+      "id": "f13",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f13.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "final_form"
+      ]
+    }
+  },
+  {
+    "name": "duplicate_step_ids",
+    "reasoning": "Two steps share an id, which would make narrations ambiguous.",
+    "question": {
+      "id": "f14",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "f14.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f14.s1",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "step_equivalence"
+      ],
+      "reason": "duplicate_step_id"
+    }
+  },
+  {
+    "name": "malformed_question",
+    "reasoning": "The question has no solution object at all.",
+    "question": {
+      "id": "f15",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "steps": []
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "schema"
+      ]
+    }
+  },
+  {
+    "name": "answer_value_not_a_number",
+    "reasoning": "The answer is the word 'five', not an exact number.",
+    "question": {
+      "id": "f16",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "five"
+      },
+      "steps": [
+        {
+          "id": "f16.s1",
+          "op": {
+            "type": "add_const_both_sides",
+            "value": "-5"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        },
+        {
+          "id": "f16.s2",
+          "op": {
+            "type": "divide_both_sides",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "1"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "5"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "failed",
+      "mustFail": [
+        "answer_key_match"
+      ]
+    }
+  },
+  {
+    "name": "unsupported_form_parentheses",
+    "reasoning": "a(x+b)=c needs distribution, which this validator does not cover yet. Not wrong, just not proven.",
+    "question": {
+      "id": "u1",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "a(x+b)=c",
+        "params": {
+          "a": "2",
+          "b": "3",
+          "c": "10"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "6"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "10"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "2"
+      },
+      "steps": []
+    },
+    "expect": {
+      "status": "unverified",
+      "reason": "unsupported_form"
+    }
+  },
+  {
+    "name": "unsupported_problem_type",
+    "reasoning": "An inequality is outside the supported question types.",
+    "question": {
+      "id": "u2",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_inequality",
+        "form": "ax+b<c",
+        "params": {
+          "a": "2",
+          "b": "1",
+          "c": "5"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "2"
+            ],
+            "c": [
+              "1"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "5"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "2"
+      },
+      "steps": []
+    },
+    "expect": {
+      "status": "unverified",
+      "reason": "unsupported_problem_type"
+    }
+  },
+  {
+    "name": "unsupported_operation",
+    "reasoning": "'distribute' is not one of the checkable operations.",
+    "question": {
+      "id": "u3",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": [
+        {
+          "id": "u3.s1",
+          "op": {
+            "type": "distribute",
+            "value": "3"
+          },
+          "result": {
+            "lhs": {
+              "x": [
+                "3"
+              ],
+              "c": []
+            },
+            "rhs": {
+              "x": [],
+              "c": [
+                "15"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "expect": {
+      "status": "unverified",
+      "reason": "unsupported_operation"
+    }
+  },
+  {
+    "name": "no_steps_to_check",
+    "reasoning": "Problem and answer are right but there are no steps, so the working is not covered. Partial coverage is unverified, never verified.",
+    "question": {
+      "id": "u4",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "unique",
+        "value": "5"
+      },
+      "steps": []
+    },
+    "expect": {
+      "status": "unverified"
+    }
+  },
+  {
+    "name": "unknown_solution_kind",
+    "reasoning": "'two_solutions' is not a solution kind this validator knows.",
+    "question": {
+      "id": "u5",
+      "role": "exercise",
+      "problem": {
+        "type": "linear_one_var",
+        "form": "ax+b=c",
+        "params": {
+          "a": "3",
+          "b": "5",
+          "c": "20"
+        },
+        "equation": {
+          "lhs": {
+            "x": [
+              "3"
+            ],
+            "c": [
+              "5"
+            ]
+          },
+          "rhs": {
+            "x": [],
+            "c": [
+              "20"
+            ]
+          }
+        }
+      },
+      "solution": {
+        "kind": "two_solutions"
+      },
+      "steps": []
+    },
+    "expect": {
+      "status": "unverified",
+      "reason": "unsupported_solution_kind"
+    }
+  }
+]

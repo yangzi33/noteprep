@@ -1,0 +1,1658 @@
+[
+  {
+    "name": "complete_and_correct",
+    "reasoning": "One example and two exercises, every answer present and right.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-2",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "4",
+              "b": "6",
+              "c": "4",
+              "d": "-2"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "-2"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "questionId": "ex-2",
+          "solution": {
+            "kind": "no_solution"
+          },
+          "steps": [
+            {
+              "id": "ex-2.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-4"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "0"
+                  ],
+                  "c": [
+                    "6"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-2"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "expect": {
+      "overall": "verified"
+    }
+  },
+  {
+    "name": "exercise_without_answer",
+    "reasoning": "ex-2 has no answer-key entry.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-2",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "4",
+              "b": "6",
+              "c": "4",
+              "d": "-2"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "-2"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "expect": {
+      "overall": "failed"
+    }
+  },
+  {
+    "name": "orphan_answer",
+    "reasoning": "The key answers ex-9, which is not an exercise.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "questionId": "ex-9",
+          "solution": {
+            "kind": "unique",
+            "value": "1"
+          },
+          "steps": []
+        }
+      ]
+    },
+    "expect": {
+      "overall": "failed",
+      "failedSetChecks": [
+        "no_orphan_answers"
+      ]
+    }
+  },
+  {
+    "name": "answers_swapped",
+    "reasoning": "ex-1 carries ex-2's answer and ex-2 carries ex-1's.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-2",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "4",
+              "b": "6",
+              "c": "4",
+              "d": "-2"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "-2"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "no_solution"
+          },
+          "steps": [
+            {
+              "id": "ex-2.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-4"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "0"
+                  ],
+                  "c": [
+                    "6"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-2"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "questionId": "ex-2",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "expect": {
+      "overall": "failed"
+    }
+  },
+  {
+    "name": "duplicate_question_ids",
+    "reasoning": "Two exercises are both called ex-1.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "4",
+              "b": "6",
+              "c": "4",
+              "d": "-2"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "4"
+                ],
+                "c": [
+                  "-2"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "expect": {
+      "overall": "failed",
+      "failedSetChecks": [
+        "question_ids_unique"
+      ]
+    }
+  },
+  {
+    "name": "one_unverified_makes_it_unverified",
+    "reasoning": "A valid exercise plus one in an unsupported form: nothing is wrong, but not everything is proven.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-3",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "a(x+b)=c",
+            "params": {
+              "a": "2",
+              "b": "3",
+              "c": "10"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "10"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "-5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "questionId": "ex-3",
+          "solution": {
+            "kind": "unique",
+            "value": "2"
+          },
+          "steps": []
+        }
+      ]
+    },
+    "expect": {
+      "overall": "unverified"
+    }
+  },
+  {
+    "name": "one_failed_beats_unverified",
+    "reasoning": "A wrong answer and an unsupported question together: failed wins.",
+    "lesson": {
+      "workedExamples": [
+        {
+          "id": "we-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=c",
+            "params": {
+              "a": "3",
+              "b": "5",
+              "c": "20"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "3"
+                ],
+                "c": [
+                  "5"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "20"
+                ]
+              }
+            }
+          },
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "we-1.s1",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "we-1.s2",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "5"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "exercises": [
+        {
+          "id": "ex-1",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "ax+b=cx+d",
+            "params": {
+              "a": "2",
+              "b": "-7",
+              "c": "5",
+              "d": "8"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "-7"
+                ]
+              },
+              "rhs": {
+                "x": [
+                  "5"
+                ],
+                "c": [
+                  "8"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "ex-3",
+          "problem": {
+            "type": "linear_one_var",
+            "form": "a(x+b)=c",
+            "params": {
+              "a": "2",
+              "b": "3",
+              "c": "10"
+            },
+            "equation": {
+              "lhs": {
+                "x": [
+                  "2"
+                ],
+                "c": [
+                  "6"
+                ]
+              },
+              "rhs": {
+                "x": [],
+                "c": [
+                  "10"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "answerKey": [
+        {
+          "questionId": "ex-1",
+          "solution": {
+            "kind": "unique",
+            "value": "5"
+          },
+          "steps": [
+            {
+              "id": "ex-1.s1",
+              "op": {
+                "type": "add_x_term_both_sides",
+                "value": "-5"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": [
+                    "-7"
+                  ]
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "8"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s2",
+              "op": {
+                "type": "add_const_both_sides",
+                "value": "7"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "-3"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "15"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "ex-1.s3",
+              "op": {
+                "type": "divide_both_sides",
+                "value": "-3"
+              },
+              "result": {
+                "lhs": {
+                  "x": [
+                    "1"
+                  ],
+                  "c": []
+                },
+                "rhs": {
+                  "x": [],
+                  "c": [
+                    "-5"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "questionId": "ex-3",
+          "solution": {
+            "kind": "unique",
+            "value": "2"
+          },
+          "steps": []
+        }
+      ]
+    },
+    "expect": {
+      "overall": "failed"
+    }
+  },
+  {
+    "name": "empty_lesson",
+    "reasoning": "Nothing to validate is never reported as verified.",
+    "lesson": {
+      "workedExamples": [],
+      "exercises": [],
+      "answerKey": []
+    },
+    "expect": {
+      "overall": "unverified"
+    }
+  }
+]
