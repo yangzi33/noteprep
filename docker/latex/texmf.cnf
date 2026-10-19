@@ -1,0 +1,6 @@
+% Read after the distribution's texmf.cnf. Shell escape is off; opening and writing files is restricted to the
+% current directory tree ("paranoid"). Neither setting is relied on as the security boundary (the container is).
+shell_escape = f
+openout_any = p
+openin_any = p
+parse_first_line = f

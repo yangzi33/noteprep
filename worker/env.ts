@@ -41,9 +41,20 @@ const WorkerEnv = z
     }
   });
 
-export type WorkerConfig = z.infer<typeof WorkerEnv> & { workerId: string };
+/** The few variables the Docker client needs to reach its daemon. Nothing else of the worker's environment is passed on. */
+const DOCKER_CLIENT_VARS = ["PATH", "HOME", "DOCKER_HOST", "DOCKER_CONFIG", "DOCKER_CONTEXT", "XDG_RUNTIME_DIR"] as const;
+
+export function dockerClientEnv(source: Record<string, string | undefined> = process.env): Record<string, string> {
+  return Object.fromEntries(DOCKER_CLIENT_VARS.flatMap((k) => (source[k] === undefined ? [] : [[k, source[k]!]])));
+}
+
+export type WorkerConfig = z.infer<typeof WorkerEnv> & { workerId: string; dockerClientEnv: Record<string, string> };
 
 export function workerEnv(source: Record<string, string | undefined> = process.env): WorkerConfig {
   const parsed = WorkerEnv.parse(source);
-  return { ...parsed, workerId: parsed.WORKER_ID ?? `worker-${process.pid}-${Math.random().toString(36).slice(2, 8)}` };
+  return {
+    ...parsed,
+    workerId: parsed.WORKER_ID ?? `worker-${process.pid}-${Math.random().toString(36).slice(2, 8)}`,
+    dockerClientEnv: dockerClientEnv(source),
+  };
 }

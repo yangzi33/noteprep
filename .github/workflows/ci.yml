@@ -40,6 +40,25 @@ jobs:
         run: pnpm curriculum:validate
       - run: pnpm build
 
+  latex-sandbox:
+    name: LaTeX sandbox (real image, negative tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Builds the compilation image from docker/latex/Dockerfile (base pinned by digest, versions checked against
+      # docker/latex/packages.lock) and runs the sandbox tests against it: Dockerfile text alone proves nothing.
+      - run: pnpm latex:image
+      - run: pnpm test:latex
+
   integration:
     name: Integration tests (real Postgres)
     runs-on: ubuntu-24.04

@@ -28,6 +28,9 @@ export const ALLOWED_CONTROL_SYMBOLS: ReadonlySet<string> = new Set(["\\", "{", 
 
 export function preamble(document: DocumentKind): string {
   return [
+    // Object compression off: every PDF dictionary stays readable text, so the host can scan for active content (an
+    // object stream would hide dictionaries inside compressed bytes) and reject any PDF that has one.
+    "\\pdfobjcompresslevel=0",
     "\\documentclass[11pt,letterpaper]{article}",
     "\\usepackage[T1]{fontenc}",
     "\\usepackage[utf8]{inputenc}",
