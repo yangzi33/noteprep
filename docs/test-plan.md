@@ -1,0 +1,166 @@
+# 测试计划
+
+> 状态:计划。**本轮未运行任何应用测试**(仓库中没有应用代码)。下表中的"能证明什么"是该层测试在设计上的证明力,不是已取得的结果。
+> 相关:[architecture](architecture.md) · [implementation-plan](implementation-plan.md) · [security-and-privacy](security-and-privacy.md)
+
+## 1. 证据层级:各层能证明什么、不能证明什么
+
+| 层 | 运行位置 | 能证明 | 不能证明 |
+|---|---|---|---|
+| **L1 单元(fake)** | `pnpm test`,纯 TS | 纯逻辑:有理数/求解/步骤检查、状态聚合、转义与渲染、额度状态机规则、provider 错误分类 | 任何数据库、认证、存储、编译隔离、支付行为 |
+| **L2 集成(真实临时 Postgres)** | `pnpm test:integration` | 事务、并发、唯一/CHECK 约束、回滚、迁移可重放、角色权限 | Supabase Auth/Storage/RLS 的真实行为;Prisma 与池化的生产组合 |
+| **L3 本地服务** | 本地 Supabase + Stripe CLI + 本地容器运行时 | Supabase 认证与 Storage/RLS 边界、webhook 验签与处理、真实 TeX 镜像编译与沙箱负面测试(在**本地**运行时与内核上) | 目标生产主机的隔离能力;真实 LLM 质量;生产网络 |
+| **L4 staging** | 独立项目 + Stripe 测试模式 + 真实 LLM(限额)+ 目标类型主机 | 端到端真实集成、并发结算、目标平台上的沙箱能力、恢复演练 | 长期规模与真实用户行为 |
+| **L5 人工** | 人 | 数学内容正确性抽查、PDF 可读性/版式、文案与风险提示、隐私文档审阅 | 可重复回归(需把发现固化为 fixtures/测试) |
+
+PR 门禁默认用 fake LLM + 虚构数据;真实 LLM 质量/成本评估与 Stripe/Supabase staging 预演在受控条件下**单独**运行,不在每次 PR 中产生真实费用。**fake 流程通过 ≠ 可上线。**
+
+## 2. 数学 fixtures(L1,人工审定)
+
+`tests/fixtures/math/*.json`,每个 fixture 含:输入、期望状态、**人工核对者的推理**(注释),期望值由人工给出,不由被测代码生成。
+
+| 类别 | 例子 | 期望 |
+|---|---|---|
+| 唯一解整数 | 3x+5=20 → 5 | verified |
+| 两边含 x | 2x−7=5x+8 → −5 | verified |
+| 分数解 | 2x+1=2 → 1/2 | verified |
+| 分数系数 | (1/2)x+3=7 → 8 | verified |
+| 负系数 | −4x+1=9 → −2 | verified |
+| 无解 | 4x+6=4x−2 | verified(kind=no_solution) |
+| 恒等式 | 2x+3=2x+3 | verified(kind=identity) |
+| 答案错误 | 答案册写 x=4(正确为 5) | failed |
+| 步骤错误 | 某步"两边加 5"但右边加了 6 | failed(步骤等价) |
+| 末步对但中间步错 | 中间步错、末步碰巧给出正确答案 | failed(**不能只看最终答案**) |
+| 除以零 | 步骤"除以 0"/"乘以 0" | failed |
+| 题答错位 | `answerKey.questionId` 指向另一题 | failed(对应关系) |
+| 题面与参数不一致 | `equation` 与 `params` 不符 | failed |
+| 不支持表达式 | 括号、变量在分母、不等式 | unverified(`unsupported`) |
+| 手工编辑后 | 改参数不重验 | unverified,旧验证项作废 |
+| 浮点陷阱 | 0.1+0.2 型输入 | 输入被拒或精确处理;任何路径不出现浮点比较 |
+| 超范围 | 超大整数/分母 | 被拒(范围上限) |
+| 状态聚合 | LLM 复审"通过"+ 确定性 unverified | 仍 unverified;LLM 复审标 `proves:false` |
+
+另:参数生成器的**属性测试**(任意种子生成的题必为 verified,且难度范围/可读性规则成立);**变异验证**(人为破坏求解器/步骤检查器的某一条规则,fixtures 必须有用例失败)。
+
+## 3. 额度与并发(L2)
+
+| 用例 | 验证 |
+|---|---|
+| 第 1/2/3 次成功,第 4 次拒绝 | `used` 依次 1/2/3;第 4 次 `AllowanceExhausted`,无新 job/reservation/idempotency 记录 |
+| 两个请求竞争最后 1 次(含 N=20 路压力) | 恰好 1 个成功;`used+reserved<=limit` 始终成立;其余得到 `AllowanceExhausted(pending=1)` |
+| 竞争中赢家随后失败 | 释放后额度回到可用;败者重试可成功 |
+| 同键同请求重试 | 返回原 job;`reserved` 不增加 |
+| 同键不同请求 | 409,无副作用 |
+| 并发同键(两路同时) | 一个新建、一个读取到同一 job |
+| 删除课包/重复注册回调/登出 | 不改变 trial bucket(`limit/used`),且只有一个 trial bucket |
+| 事务回滚 | 入队事务任一步失败 → 无半成品(job 无 reservation、reservation 无 job) |
+| 40001/40P01 | 注入序列化失败/死锁后整体重试,最终一致 |
+| CHECK 兜底 | 绕过应用代码直接 `UPDATE` 越界被数据库拒绝 |
+| 不变量扫描 | 任意测试序列后:`reserved = count(reserved)`、`used = count(consumed)` |
+| 结算幂等 | `commitSuccess` 重复调用/重放 → 消耗一次;`consumed` 后再 `release` → 无效 |
+| 速率/并发/成本限制 | 失败任务不退还速率计数;连续失败触发熔断;24h 成本上限计入失败任务 |
+| 付费 bucket | 同一 `(subscription, period)` 重复创建 → 单一 bucket;跨周期在途任务用原 bucket 结算 |
+
+## 4. 故障注入与恢复(L2 + L3)
+
+在流水线每个检查点注入故障(崩溃/异常/超时),断言**最终状态与额度**:
+
+| 注入点 | 期望 |
+|---|---|
+| 模型超时(可重试 → 耗尽) | failed,reservation released |
+| 数学不通过(修复耗尽) | failed,`rejected` 草稿保存,released |
+| 编译失败 | failed,released,用户可见脱敏错误 |
+| 上传中途中断 | 重试用新 attempt 前缀;耗尽 failed + released;孤儿对象被清理 |
+| 上传完成、提交前崩溃 | 租约过期后重新排队,新 attempt 完成;`used` 只增 1 |
+| 提交后、worker 退出前崩溃 | job 已 succeeded;sweeper 不再动它 |
+| 提交成功、客户端没收到响应 | 轮询/历史页读到 succeeded;同幂等键重放返回原 job |
+| worker 重启 | 残留沙箱被清理;任务被其他 worker 接管 |
+| 旧 worker 晚到成功(token 已变/状态已变) | `commitSuccess` 被拒,不发布、不消耗 |
+| 取消(queued / running) | released;running 在下一次心跳或提交处终止;晚到成功被拒 |
+| 课包/账户在途删除 | 在途任务不能发布;恢复流程不复活已删除内容 |
+| 清单缺 1/4 个文件 | 不提交;failed + released |
+| 租约过期但无人重新领取时旧 worker 提交 | 状态已被 sweeper 置 queued → 提交被拒 |
+
+## 5. 授权与隔离(L2 + L3)
+
+- **DAL 遍历测试**:枚举 `src/lib/server/dal` 导出的所有函数,以"用户 B 的上下文 + 用户 A 的资源 ID"调用,全部必须拒绝/返回未找到。新增 DAL 函数而无对应用例 → 测试失败(通过导出清单与用例清单对账)。
+- 跨用户:读取/编辑/取消 lesson、revision、job;下载文件;billing portal/checkout 入口;轮询他人 job → 全部拒绝。
+- **伪造**:篡改 Cookie/JWT、请求体中的 `ownerId`/`userId`、直接 POST Server Action、伪造的 Storage 路径/他人签名 URL → 被拒。
+- **Supabase 边界(L3,不可用 mock)**:`anon`/`authenticated` 通过 Data API 无法读写任何业务表;Storage RLS:用户 A 的会话无法为用户 B 的路径签名/读取;未登录无法访问;签名 URL 过期后失效。
+- 角色权限检查:`app_runtime`/`worker_runtime` 无 BYPASSRLS/CREATEDB/SUPERUSER;`app_runtime` 无权 DDL。
+- **静态/配置**:没有任何 `NEXT_PUBLIC_*` 变量包含秘密(构建产物扫描);日志/错误上报样例中无 JWT、签名 URL、完整提示词、课包正文、Stripe 秘密。
+
+## 6. 真实编译沙箱(L3,L4 上在目标主机重复)
+
+`pnpm test:latex` 运行在**真实镜像与真实运行时**上(只检查 Dockerfile 文本不算通过)。
+
+**正例**:有效课包 → 两份有效 PDF(`%PDF-` 头、页数合理、字体嵌入、`pdftotext` 可提取预期文本);学生版 PDF 文本不含任何独立练习答案串;重复编译的文本/版面度量稳定。
+
+**负例(应全部"被阻止或无害",并且清理完成)**:
+
+| 攻击 | 期望 |
+|---|---|
+| `\input{/etc/passwd}`、`\openin` 读沙箱内外文件 | 沙箱内**没有任何不该被读到的数据**(验证:沙箱文件系统清单仅含白名单);读取失败或只读到无害内容 |
+| `\write18`/`\immediate\write18{…}`、`-shell-escape` 相关 | 未执行;进程列表无外部命令 |
+| 路径穿越 `\input{../../x}`、写 `\openout` 到任意路径 | 失败;写入限制在 tmpfs;无宿主文件变化 |
+| 网络:DNS/TCP/UDP 出站 | 全部失败(`--network none` 实测) |
+| 宏展开炸弹 / 无限递归 / 巨大输出 | 在 CPU/内存/时间/输出限额内被终止;进程组被杀;无残留进程 |
+| 内存/磁盘炸弹、fork 炸弹 | 被 pids/内存/tmpfs 限制阻止;宿主不受影响 |
+| 符号链接/硬链接产物、非预期文件、超大文件、过多文件 | worker 解包校验拒绝 |
+| 异常/恶意 PDF 结构(超大对象、含 `/JavaScript`/`/Launch`) | 沙箱内检查拒绝;worker 不解析 PDF 结构 |
+| 日志泄露 | 返回用户的日志不含绝对路径/环境变量/内部主机名 |
+| 跨任务污染 | 连续两个任务:第二个看不到第一个的任何文件/环境;容器 `--rm` 后无残留卷 |
+| 容器内环境 | 无 DB/Storage/LLM/Stripe 变量;非 root;根文件系统只读;能力已丢弃(`/proc/self/status` 检查) |
+| 逃逸后果(L4) | 从 runner 账户视角无法读 worker 凭据(文件权限/`/proc` 隔离实测) |
+| 超时 | 故意挂起的 TeX 在 wall-clock 到点后被杀,临时目录被清理 |
+
+**文本转义(L1)**:对 `\ { } $ & # ^ _ ~ %`、控制字符、超出 T1 的 Unicode、超长输入逐一断言被转义或被明确拒绝;并有模糊测试(随机字符串经渲染后在沙箱内编译,不得改变文档结构)。
+
+## 7. Stripe 事件矩阵(L2 用固定载荷 + L3 用 Stripe CLI/测试模式 + L4 staging)
+
+| 场景 | 期望 |
+|---|---|
+| 无效/缺失签名;篡改 body;时间戳超出容差 | 400,不写事件、不改权益 |
+| 重复事件 ID | 去重;不重复处理 |
+| 乱序:`updated(active)` 晚于 `deleted` | 以 Stripe 当前状态为准 → 保持 canceled |
+| 并发:同订阅两个事件同时处理 | advisory lock 串行;结果一致 |
+| 写库失败后重试 | 返回非 2xx → Stripe 重试;或已 2xx 但处理失败 → status=failed,sweeper 重试 |
+| 首次付款 | 同步后创建该周期 paid bucket;成功页在 webhook 前只显示"确认中" |
+| 续费 | 新周期 bucket 恰好创建一次;重复 `invoice.paid`(含不同事件 ID)不重复发放 |
+| 支付失败 → `past_due` | 不再创建新付费预留;在途任务可完成;恢复后(`active` 且发票已付)恢复 |
+| 期末取消(`cancel_at_period_end`) | 周期内仍可用完;到期后不能创建新付费生成;历史成果仍可访问 |
+| `unpaid` / `incomplete` / `incomplete_expired` / `paused` / `canceled` / 未知 / `trialing` | 均不允许新付费预留 |
+| 缺失事件 | 对账任务从 Stripe 拉取并校正 |
+| 无法确认权益(Stripe 不可达) | 不开放新付费生成;历史访问不受影响 |
+| Customer Portal | 会话由服务端为已验证用户创建,不接受客户端传入客户 ID |
+| Checkout 客户端篡改金额/价格/客户 ID | 被忽略/拒绝(价格 ID 白名单) |
+| 单账户重复订阅/Checkout 竞态 | 只保留一个有效订阅;第二个被标记处理 |
+| 退款/争议 | 待决策 D-10 后补充期望 |
+| 秘密与载荷 | 日志不含 Stripe 秘密与完整事件载荷;数据库不存卡信息 |
+
+## 8. E2E(Playwright)
+
+关键路径(骨架阶段先覆盖前三项,Phase 2/3 逐步补全):
+
+1. 登录 → 提交 → 状态走到终态 → 历史可见。
+2. 浏览器后退/刷新/重复点击提交:不丢任务、不重复消耗。
+3. 耗尽试用 → 第 4 次被拒并引导订阅。
+4. (P2)完整生成 → 编辑 → 重验/重编译 → 下载学生/教师 `.tex` 与 PDF。
+5. (P3)测试模式订阅 → 新生成 → 到期/取消后历史仍可下载。
+6. 额度用尽、失败、超时、取消、可重试状态的 UI 反馈。
+
+## 9. 人工检查与上线前必需证据
+
+- **人工数学抽查**:按预先写下的抽样规则(按题型/难度分层),至少抽查真实 LLM 生成的课包;记录错误数/抽查题数,每个发现固化为 fixture。
+- **PDF 可读性**:编号、页边距、分页、长公式、答案分离、字体嵌入、打印测试(A4)。
+- **文案审阅**:AI 材料需自行审阅的提示、无"零错误"宣称、无未经证实的课程对齐宣称。
+- **恢复演练**:数据库与 Storage 备份恢复;worker 重启;密钥轮换。
+- **成本**:真实单课包成本与失败成本测量,据此设定速率/成本阈值。
+
+## 10. 当前状态
+
+| 项 | 状态 |
+|---|---|
+| 任何应用测试 | **未运行**(无代码) |
+| 本机运行时前提 | Node v24.13.1、pnpm 10.33.0 已检测;Docker/TeX/Supabase CLI **未检测到** |
+| 文档本地链接检查 | 本轮已做(见交付报告) |
