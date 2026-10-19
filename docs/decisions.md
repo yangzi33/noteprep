@@ -19,6 +19,8 @@
 | D-12 | Webhook 端点只"验签+持久记录",处理由 worker 异步完成;成功页可触发按需核对 | Stripe 文档:快速 2xx、异步队列处理;收到≠处理成功 | 无 |
 | D-13 | 付费 bucket 周期键 = `(stripeSubscriptionId, 订阅条目 period_start)` | Stripe 无单独"周期 ID";条目周期来自已验证的订阅对象 | 若发现更稳定的标识(如周期发票 ID)再评估 |
 | D-14 | 内部成本核算用整数微单位(`*_micros`) | LLM 成本需亚分精度;不用于向客户计费 | 无 |
+| D-22 | TypeScript 5.9.3、ESLint 9.39.5(不用 `latest` 的 TS 7 / ESLint 10) | 跟随官方 `create-next-app@16.4.2` 脚手架实际使用的主版本;ESLint 9 在 npm 上被标记 deprecated,已知 | 评估 Next/eslint-config-next 对 TS 7 / ESLint 10 的支持后升级 |
+| D-23 | 不启用 `cacheComponents`/`partialPrefetching`;不用 Google 托管字体 | 私有按用户页面避免意外缓存;构建不依赖外部字体网络 | 需要时再按页面评估缓存策略 |
 | D-15 | 括号/分配律等不进入首个验收切片 | 缩小可验证覆盖,先证明流水线 | 首切片验收后独立评审扩展 |
 
 ## 3. 未确定且影响上线的决策(需要用户/业务输入)

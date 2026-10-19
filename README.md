@@ -4,11 +4,26 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 0(仅设计文档)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T2 完成)
 
-- **仓库中没有应用代码**:没有 `package.json`、没有脚手架、没有测试、没有 CI、没有部署。因此**没有任何可运行的命令、演示或测试通过结果**。
-- 本轮只产出设计文档;未安装依赖、未创建云资源、未收费、未部署。
-- 仓库规则见 [CLAUDE.md](CLAUDE.md)。
+- 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则。
+- **尚无**:数据库、认证、任务/额度、worker、Stripe、LLM、LaTeX 编译。页面只是占位,**不是可用产品**。
+- 工作流与规则见 [CLAUDE.md](CLAUDE.md);设计见下方文档。
+
+### 当前可用命令(均已在本机实际运行通过,2026-10-18)
+
+前提:Node 24(`.nvmrc` 为 24.13.1)、pnpm 10.33.0。
+
+```bash
+pnpm install --frozen-lockfile
+pnpm dev          # 本地开发服务器
+pnpm lint
+pnpm typecheck    # next typegen && tsc --noEmit
+pnpm test         # Vitest 单元测试
+pnpm build
+```
+
+尚未建立(见实施计划):`test:integration`、`test:e2e`、`worker:dev`、`test:latex`、`db:migrate:dev`、`db:migrate:deploy`。
 
 ## 文档导航
 
@@ -21,7 +36,7 @@ noteprep.app
 | [docs/security-and-privacy.md](docs/security-and-privacy.md) | 威胁模型、信任边界、数据清单、最小权限、删除与保留、未确定事项 |
 | [docs/decisions.md](docs/decisions.md) | 已定约束、可逆默认、待决策事项、已核对的官方资料 |
 
-## 计划采用的技术栈(尚未安装)
+## 技术栈(已安装部分:Next.js、React、Tailwind、shadcn/ui、Vitest;其余为计划)
 
 Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreSQL + Prisma(稳定 7.x)· Supabase Auth 与私有 Storage · 薄的 provider-agnostic LLM 适配器(fake + 一个真实适配器)· 独立持久 worker(Postgres 任务表 + 租约)· 每任务隔离的 pdfLaTeX 沙箱 · Stripe 订阅 · pnpm · Vitest · Playwright · GitHub Actions · Vercel(仅 Web)。具体版本在 Phase 1 核对后固定。
 
@@ -57,4 +72,4 @@ Next.js App Router · TypeScript strict · Tailwind CSS · shadcn/ui · PostgreS
 
 ## 下一阶段入口
 
-Phase 1(工程基础与纵向骨架)**需要用户另行授权**后才开始。第一个任务:**P1-T0 环境前置核对**,随后 **P1-T1 固定工具链**。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
+Phase 1 已获授权并在 `feat/p1-foundations` 分支进行。下一个任务:**P1-T3 Prisma schema、迁移与数据库角色**(需要本地 Postgres/Supabase)。详见 [docs/implementation-plan.md](docs/implementation-plan.md)。
