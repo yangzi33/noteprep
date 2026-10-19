@@ -43,7 +43,7 @@ export class SupabaseObjectStore implements ObjectStore {
   async put(objectPath: string, data: Uint8Array): Promise<void> {
     const { error } = await this.client.storage
       .from(this.bucket)
-      .upload(this.checked(objectPath), data, { contentType: contentTypeFor(objectPath), upsert: true, cacheControl: "3600" });
+      .upload(this.checked(objectPath), data, { contentType: contentTypeFor(objectPath), upsert: true, cacheControl: "0" });
     if (error) throw new StorageError(isRetryable(error));
   }
 

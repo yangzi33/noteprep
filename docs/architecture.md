@@ -334,8 +334,8 @@ tx(async (t) => {
 | 模型超时/限流/5xx | running/generating | 在预算内退避重试;耗尽 → `failed(llm_*)` | released |
 | 数学验证不通过 | running/validating | 至多 N 次有界修复(重新生成说明文字,**不**改数字);仍失败 → 保存 `rejected` 草稿供查看,`failed(validation_failed)` | released |
 | 编译失败(确定性) | running/compiling | 不重试(沙箱/基础设施类错误至多重试一次);`failed(compile_failed)`,返回脱敏的可操作信息 | released |
-| 上传中断 | running/storing | 重试使用新的 attemptId 前缀;耗尽 → `failed(storage_failed)`;残留对象由 sweeper 清理 | released |
-| 上传成功但 DB 提交失败 | 事务回滚,对象孤立 | worker 对提交做有界重试(幂等);仍失败或崩溃 → 租约过期 → 重新排队、新 attempt 重做;孤立对象由 sweeper 清理 | 仍 reserved,直到成功或终态失败 |
+| 上传中断 | running/storing | 重试使用新的 attemptId 前缀;耗尽 → `failed(storage_failed)`;失败的尝试会尽力删除自己的前缀;崩溃留下的残留对象需要定期对账(P3,尚未实现) | released |
+| 上传成功但 DB 提交失败 | 事务回滚,对象孤立 | worker 对提交做有界重试(幂等);仍失败或崩溃 → 租约过期 → 重新排队、新 attempt 重做;失败的尝试会尽力删除自己的前缀(提交被明确拒绝时);崩溃留下的孤立对象需要定期对账(P3,尚未实现) | 仍 reserved,直到成功或终态失败 |
 | DB 已提交但浏览器没收到响应 | succeeded 已成事实 | 页面刷新/轮询/历史页读取权威状态;幂等 POST 重放返回原 job | consumed(一次) |
 | worker 重启/崩溃 | running,租约不再续 | sweeper:`lease_expires_at<now()` 的 running 任务 → queued(attempt<max 且预算未尽)或 failed;启动时杀掉带 `noteprep-job` 标签的残留沙箱 | 沿用原预留 |
 | 旧 worker 晚到成功 | job 已 requeued/failed/canceled 或 token 已变 | `commitSuccess` 的 token/state 检查失败 → 回滚;其对象成为孤儿被清理;**不会再次消耗** | 不变 |
@@ -582,7 +582,7 @@ sequenceDiagram
 - 桶 `lesson-artifacts`,私有。对象路径**由服务端生成**:`{ownerId}/{lessonId}/{revisionId}/{attemptId}/{document}.{tex|pdf}`,`document ∈ {notes, worksheet, solutions}`(2026-10-19:原为 `edition ∈ {student, teacher}`)。用户输入从不参与路径。
 - **所有权验证两层**:① DAL 按 `(artifactId|revisionId, ownerId)` 查询清单与路径(路径取自数据库,不取自请求);② Storage RLS 策略:`storage.objects` 的 SELECT 仅当路径首段等于 `auth.uid()`(无策略给 `anon`)。
 - **下载**:Route Handler → `requireUser()` → DAL 取清单项(校验 lesson 未删除、revision 为 finalized、清单含该项)→ 用**用户会话客户端**调用 `createSignedUrl(path, ttl≈60s)`(受 RLS 约束,Web 无需 secret key)→ 返回 302/URL;响应 `no-store`。**M5 已用本地 Supabase 实测**:此路径可行(签名 URL 由用户会话签发、受 RLS 约束、到期失效;策略额外限定扩展名为 pdf,`.tex` 用户读不到),`tests/supabase/storage.test.ts`;Web 因此**不需要** secret key,备选方案不采用。
-- **写入/删除**:仅 worker(secret key)。先写 `…/{attemptId}/`,校验(HEAD + sha256 + 大小),再事务提交清单。只有被已提交清单引用的前缀才可下载;孤儿前缀由 sweeper 在宽限期后删除。
+- **写入/删除**:仅 worker(secret key)。先写 `…/{attemptId}/`,校验(HEAD + sha256 + 大小),再事务提交清单。只有被已提交清单引用的前缀才可下载;失败的尝试会尽力删除自己的前缀(删除失败只记录日志);worker 在上传后、清理前崩溃留下的孤儿前缀,计划由定期对账在宽限期后删除(P3,**尚未实现**,sweeper 目前不清理对象)。
 - **删除**:课包删除 → 置 `Lesson.deletedAt`(立即阻断下载与在途发布)→ 取消在途任务 → 异步清理对象 → 清理记录(保留不含内容的任务/用量记录以便核算)。账户删除见 [security-and-privacy](security-and-privacy.md) §7。
 
 ## 11. LaTeX 编译隔离与部署

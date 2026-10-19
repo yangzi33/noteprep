@@ -91,6 +91,22 @@ describe("what a signed-in user may do with the bucket (Storage RLS)", () => {
     expect(sha256Of(new Uint8Array(await res.arrayBuffer()))).toBe(sha256Of(PDF));
   });
 
+  it("a PDF stored by the worker's adapter is never served as cacheable: no positive max-age, nothing public", async () => {
+    const path = `${prefixFor(alice)}/cache.pdf`;
+    await store.put(path, PDF);
+    const { data } = await userClient(alice).storage.from(ARTIFACT_BUCKET).createSignedUrl(path, 60);
+    const signed = await fetch(data!.signedUrl);
+    // The stored object's own Cache-Control is visible on the authenticated route (the local signed route sends none).
+    const authenticated = await fetch(`${env().apiUrl}/storage/v1/object/authenticated/${ARTIFACT_BUCKET}/${path}`, { headers: { Authorization: `Bearer ${alice.accessToken}`, apikey: env().publishableKey } });
+    expect(signed.status).toBe(200);
+    expect(authenticated.status).toBe(200);
+    for (const res of [signed, authenticated]) {
+      const cacheControl = res.headers.get("cache-control") ?? "";
+      expect(cacheControl).not.toMatch(/max-age=([1-9]\d*)/);
+      expect(cacheControl).not.toMatch(/public/i);
+    }
+  });
+
   it("a signed URL stops working when it expires", async () => {
     const { data } = await userClient(alice).storage.from(ARTIFACT_BUCKET).createSignedUrl(pdfPath, 1);
     expect((await fetch(data!.signedUrl)).status).toBe(200);

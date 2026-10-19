@@ -91,6 +91,13 @@ test("a finished lesson opens on its preview, with all three documents from one 
     expect((await anonymous.request.get(`/lessons/${lessonId}/documents/notes?rev=${revisionId}`, { maxRedirects: 0 })).status()).toBe(401);
     await anonymous.close();
 
+    // an account that is being deleted gets nothing either, exactly like the page refuses it
+    await sql(`UPDATE profile SET status = 'deleting' WHERE id = $1`, [user.id]);
+    expect((await page.request.get(`/lessons/${lessonId}/documents/notes?rev=${revisionId}`, { maxRedirects: 0 })).status()).toBe(404);
+    expect((await page.request.get(`/lessons/${lessonId}/documents/notes?rev=${revisionId}&download=1`, { maxRedirects: 0 })).status()).toBe(404);
+    await sql(`UPDATE profile SET status = 'active' WHERE id = $1`, [user.id]);
+    expect((await page.request.get(`/lessons/${lessonId}/documents/notes?rev=${revisionId}`, { maxRedirects: 0 })).status()).toBe(302);
+
     // there is no way to ask for the source, a missing revision, or a made-up document
     for (const bad of [`/lessons/${lessonId}/documents/notes.tex?rev=${revisionId}`, `/lessons/${lessonId}/documents/tex?rev=${revisionId}`, `/lessons/${lessonId}/documents/notes`, `/lessons/${lessonId}/documents/notes?rev=${lessonId}`, `/lessons/${lessonId}/documents/..%2Fnotes?rev=${revisionId}`]) {
       expect((await page.request.get(bad, { maxRedirects: 0 })).status(), bad).toBe(404);

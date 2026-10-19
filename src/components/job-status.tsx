@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { cancelJobAction } from "@/app/jobs/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { isRetrying, isTerminal, type JobView } from "@/lib/ui/job-view";
+import { succeededLessonLink } from "@/lib/ui/lesson-view";
 import { describeOutcome, stageLabel, stateLabel } from "@/lib/ui/messages";
 
 const POLL_MS = 2000;
@@ -59,8 +60,13 @@ export function JobStatus({ initial }: { initial: JobView }) {
       {job.cancelRequested && !isTerminal(job.state) && <p className="mt-1 text-sm">Cancel requested…</p>}
       {outcome && <p className="mt-2 text-sm">{outcome}</p>}
       {job.state === "succeeded" && (
-        <p className="mt-2 text-sm">
-          The lesson pack was saved. This build only produces placeholder files; downloads arrive with real compilation.
+        <p className="mt-2 text-sm" data-testid="job-succeeded">
+          {succeededLessonLink(job).text}{" "}
+          {succeededLessonLink(job).href && (
+            <Link href={succeededLessonLink(job).href!} className="underline">
+              Open the preview
+            </Link>
+          )}
         </p>
       )}
       {offline && <p className="mt-2 text-sm text-muted-foreground">Connection problem; still trying…</p>}

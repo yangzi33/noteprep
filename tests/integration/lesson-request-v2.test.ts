@@ -602,6 +602,62 @@ describe("the three-document pack", () => {
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
   });
 
+  describe("a failed attempt removes the files it uploaded", () => {
+    const withCommit = (commit: PipelineDeps["settlement"]["commitSuccess"]): Partial<PipelineDeps> => ({ settlement: { ...worker.settlement, commitSuccess: commit } as PipelineDeps["settlement"] });
+    const lessonFiles = async (ownerId: string, lessonId: string) => (await listed(`${ownerId}/${lessonId}`)).filter((f) => f.endsWith(".pdf") || f.endsWith(".tex"));
+
+    it("when the commit is refused on every attempt: nothing stays in storage and the allowance is released", async () => {
+      const refuse = async () => {
+        throw new ManifestIncomplete("forced");
+      };
+      const { ctx, row } = await packWith(withCommit(refuse));
+      expect(row.state).toBe("failed");
+      const lessonId = (await admin.query(`SELECT id FROM lesson WHERE owner_id = $1`, [ctx.userId])).rows[0].id as string;
+      expect(await lessonFiles(ctx.userId, lessonId)).toEqual([]);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("a refused first attempt leaves only the successful retry's files, which the manifest names", async () => {
+      let calls = 0;
+      const once: PipelineDeps["settlement"]["commitSuccess"] = async (input) => {
+        if (calls++ === 0) throw new ManifestIncomplete("forced");
+        return worker.settlement.commitSuccess(input);
+      };
+      const { ctx, row, rev } = await packWith(withCommit(once));
+      expect(row).toMatchObject({ state: "succeeded", attempt: 2 });
+      const files = await lessonFiles(ctx.userId, rev.lesson_id);
+      const named = rev.artifact_manifest.documents.flatMap((d: { pdf: { path: string }; tex: { path: string } }) => [d.pdf.path, d.tex.path]).map((p: string) => p.split("/").slice(2).join("/"));
+      expect([...files].sort()).toEqual([...named].sort());
+      expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+    });
+
+    it("a commit refused because the job was canceled meanwhile also removes the uploaded files", async () => {
+      let jobId = "";
+      const cancelThenCommit: PipelineDeps["settlement"]["commitSuccess"] = async (input) => {
+        jobId = input.jobId;
+        await admin.query(`UPDATE generation_job SET cancel_requested_at = now() WHERE id = $1`, [input.jobId]);
+        return worker.settlement.commitSuccess(input);
+      };
+      const ctx = await account();
+      await web.generation.createGeneration(ctx, request(), key());
+      await runOnce({ ...deps, ...withCommit(cancelThenCommit) }, "w-cancel");
+      expect(jobId).not.toBe("");
+      const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [jobId])).rows[0].lesson_id as string;
+      expect(await lessonFiles(ctx.userId, lessonId)).toEqual([]);
+      expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
+    });
+
+    it("a failing cleanup never hides the original failure", async () => {
+      const failing = new FsObjectStore(storeDir);
+      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), deletePrefix: async () => { throw new Error("delete failed"); } };
+      const refuse = async () => {
+        throw new ManifestIncomplete("forced");
+      };
+      const { row } = await packWith({ store, ...withCommit(refuse) });
+      expect(row.state).toBe("failed"); // retried and exhausted, exactly as without a cleanup failure
+    });
+  });
+
   it("settlement itself refuses a manifest that is not exactly the requested pack, and nothing is consumed", async () => {
     const ctx = await account();
     const { job } = await web.generation.createGeneration(ctx, request(), key());
