@@ -4,7 +4,7 @@ noteprep.app
 
 面向独立数学辅导老师的备课工具(AI Tutor Lesson Prep):输入主题与要求,生成可编辑的讲义、练习、独立答案与逐步解答,并导出学生版与教师答案版的 LaTeX 源文件和真正编译的 PDF。
 
-## 当前状态:Phase 1 进行中(P1-T0 至 P1-T5 完成)
+## 当前状态:Phase 1 进行中(P1-T0 至 P1-T5 与 P1-T8 的工作流完成)
 
 - 已有:固定的工具链、Next.js App Router 骨架(TypeScript strict、Tailwind、shadcn/ui)、`/healthz`、Vitest、架构边界的 ESLint 规则、Prisma schema 与迁移(含 CHECK/部分唯一索引/触发器/运行时角色/RLS,见 [docs/database-roles.md](docs/database-roles.md))、真实 Postgres 上的集成测试。
 - 额度与任务的 DAL 事务(`src/lib/server/dal`):账户初始化、创建生成(幂等 + 限流 + 预留 + 入队,一个事务)、取消、围栏式提交成功/失败结算;在真实 Postgres 上有并发与故障用例,并做过变异验证。
@@ -51,6 +51,10 @@ pnpm supabase:stop
 
 尚未建立(见实施计划):`test:e2e`、`worker:dev`、`test:latex`。`test:supabase` 是额外加入的命令。
 
+## CI
+
+`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**这些工作流已通过 actionlint 并在干净克隆中重放了命令,但尚未在 GitHub 上实际运行过。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
+
 ## 文档导航
 
 | 文档 | 内容 |
@@ -61,6 +65,8 @@ pnpm supabase:stop
 | [docs/test-plan.md](docs/test-plan.md) | 数学 fixtures、并发额度、故障恢复、权限隔离、Stripe 事件矩阵、沙箱负面测试、E2E;各层能证明什么 |
 | [docs/security-and-privacy.md](docs/security-and-privacy.md) | 威胁模型、信任边界、数据清单、最小权限、删除与保留、未确定事项 |
 | [docs/decisions.md](docs/decisions.md) | 已定约束、可逆默认、待决策事项、已核对的官方资料 |
+| [docs/database-roles.md](docs/database-roles.md) | 数据库运行时角色、授权与登录用户创建 |
+| [docs/staging-setup.md](docs/staging-setup.md) | Supabase / Vercel / GitHub / Stripe / Linux 主机的 staging 准备清单 |
 
 ## 技术栈(已安装部分:Next.js、React、Tailwind、shadcn/ui、Vitest;其余为计划)
 
