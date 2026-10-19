@@ -7,7 +7,7 @@ import { artifactPath, artifactPathV2, EDITIONS, FORMATS, MANIFEST_V2, type Mani
 import type { ClaimedJob, JobsDal } from "@/lib/server/dal/jobs";
 import type { createSettlementDal } from "@/lib/server/dal/settlement";
 import { CompileError, type Compiler, type DocumentCompiler } from "@/lib/latex/compiler";
-import { renderPackage, RenderError, TEMPLATE_VERSION } from "@/lib/latex/render";
+import { renderPackage, TEMPLATE_VERSION } from "@/lib/latex/render";
 import { renderSkeletonSource } from "@/lib/latex/skeleton";
 import type { LlmProvider } from "@/lib/llm/types";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
@@ -221,16 +221,20 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     let rendered;
     try {
       rendered = renderPackage(builtPackage);
-    } catch (error) {
-      if (error instanceof RenderError) throw new PipelineError("render_failed", false);
-      throw error;
+    } catch {
+      // Rendering is deterministic: whatever went wrong (a refused text, a RangeError from a view, a malformed block) will
+      // go wrong again, and a retry would repeat the paid model call first. Never retried.
+      throw new PipelineError("render_failed", false);
     }
     let compiledDocs;
     try {
       compiledDocs = await documentCompiler.compile({ documents: rendered.map((d) => ({ id: d.id, tex: d.tex })), signal });
     } catch (error) {
-      if (error instanceof CompileError) throw new PipelineError(error.code, error.retryable);
-      throw error;
+      if (signal?.aborted) throw error; // cancellation and lease loss are handled by the runner
+      // Only an unavailable sandbox is transient. The same source times out or fails again, so those (and anything the
+      // compiler did not classify) are final instead of repeating the model call.
+      if (error instanceof CompileError) throw new PipelineError(error.code, error.code === "sandbox_unavailable" && error.retryable);
+      throw new PipelineError("compile_failed", false);
     }
     // Compile everything or nothing: the compiler must return exactly the documents asked for.
     if (compiledDocs.length !== rendered.length || !rendered.every((d) => compiledDocs.some((c) => c.id === d.id))) {

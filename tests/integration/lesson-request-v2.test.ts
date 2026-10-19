@@ -18,7 +18,7 @@ import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, SKELETON_MARK
 import { renderDocument } from "@/lib/latex/render";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
 import { ManifestIncomplete } from "@/lib/domain/errors";
-import { artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
+import { artifactPath, artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
 import { FAKE_PROSE, FakeLlmProvider, type FakeStep } from "@/lib/llm/fake";
 import type { LlmProvider, StructuredRequest, StructuredResult } from "@/lib/llm/types";
 import { FsObjectStore } from "@/lib/storage/store";
@@ -26,11 +26,23 @@ import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pgErrorCode, pools, seedRevision } from "./helpers";
 
-const flags = vi.hoisted(() => ({ forceInvalid: false }));
+const flags = vi.hoisted(() => ({ forceInvalid: false, renderThrows: null as Error | null }));
 // Lets one test make the (real) package validator report a failure, to prove the job then fails and releases its allowance.
 vi.mock("@/lib/package/validate", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/package/validate")>();
   return { ...real, validatePackage: (pkg: unknown) => (flags.forceInvalid ? { ...real.validatePackage(pkg), overall: "failed" as const } : real.validatePackage(pkg)) };
+});
+
+// Lets one test make rendering fail with an unexpected (non-RenderError) error.
+vi.mock("@/lib/latex/render", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/latex/render")>();
+  return {
+    ...real,
+    renderPackage: (pkg: Parameters<typeof real.renderPackage>[0]) => {
+      if (flags.renderThrows) throw flags.renderThrows;
+      return real.renderPackage(pkg);
+    },
+  };
 });
 
 const info = inject("testDb");
@@ -529,6 +541,53 @@ describe("the three-document pack", () => {
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
   });
 
+  describe("deterministic failures are final: a retry would repeat the paid model call for nothing", () => {
+    const calls = async (jobId: string) => (await admin.query(`SELECT calls_used FROM generation_job WHERE id = $1`, [jobId])).rows[0].calls_used as number;
+    const llmPack = (over: Partial<PipelineDeps>) => packWith({ llm: new FakeLlmProvider(), proseMode: "llm", ...over });
+
+    it("an unexpected error while rendering fails the job after one attempt and one model call", async () => {
+      flags.renderThrows = new RangeError("unknown section");
+      try {
+        const { ctx, jobId, row, rev } = await llmPack({});
+        expect(row).toMatchObject({ state: "failed", error_code: "render_failed", attempt: 1 });
+        expect(await calls(jobId)).toBe(1);
+        expect(rev).toBeUndefined();
+        expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+      } finally {
+        flags.renderThrows = null;
+      }
+    });
+
+    it("a compiler that throws an unclassified error fails the job after one attempt and one model call", async () => {
+      const broken: DocumentCompiler = { id: "broken", compile: async () => { throw new Error("boom"); } };
+      const { ctx, jobId, row } = await llmPack({ documentCompiler: broken });
+      expect(row).toMatchObject({ state: "failed", error_code: "compile_failed", attempt: 1 });
+      expect(await calls(jobId)).toBe(1);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("a compile timeout fails the job after one attempt and one model call", async () => {
+      const slow: DocumentCompiler = { id: "slow", compile: async () => { throw new CompileError("compile_timeout", true, "compiling took too long"); } };
+      const { ctx, jobId, row } = await llmPack({ documentCompiler: slow });
+      expect(row).toMatchObject({ state: "failed", error_code: "compile_timeout", attempt: 1 });
+      expect(await calls(jobId)).toBe(1);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("an unavailable sandbox is still transient: the job is retried against the same reservation", async () => {
+      let n = 0;
+      const flaky: DocumentCompiler = {
+        id: "flaky",
+        async compile(r) {
+          if (n++ === 0) throw new CompileError("sandbox_unavailable", true, "the compiler is not available");
+          return new SkeletonDocumentCompiler().compile(r);
+        },
+      };
+      const { row } = await llmPack({ documentCompiler: flaky });
+      expect(row).toMatchObject({ state: "succeeded", attempt: 2 });
+    });
+  });
+
   it("a storage failure fails the job and releases the allowance", async () => {
     const failing: ObjectStore = {
       put: async () => {
@@ -557,10 +616,12 @@ describe("the three-document pack", () => {
     const full: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion: "classic/1", documents: [doc("notes"), doc("worksheet"), doc("solutions")] };
     const revision = { schemaVersion: 2, content: { x: 1 }, contentHash: `sha256:${"b".repeat(64)}`, validationReport: { overall: "verified" }, validationStatus: "verified" as const, templateVersion: "classic/1", validatorVersion: "t" };
     const base = { jobId: job.id, fencingToken: claimed.fencingToken, attemptId, revisionId, revision };
+    const legacy = (["student", "teacher"] as const).flatMap((edition) => (["tex", "pdf"] as const).map((format) => ({ edition, format, path: artifactPath(scope, edition, format), sha256: "a".repeat(64), bytes: 10 })));
     const wrong = [
       { manifest: { ...full, documents: full.documents.slice(0, 2) }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // one missing
       { manifest: full, requestedDocuments: ["notes", "worksheet"] as const }, // one extra
-      { manifest: full, requestedDocuments: undefined }, // no statement of what was requested
+      { manifest: legacy as never, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // a legacy list on a version 2 job
+      { manifest: { ...full, templateVersion: "classic/0" }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // not the revision's template
       { manifest: { ...full, documents: [doc("notes"), doc("worksheet"), { ...doc("solutions"), pdf: { ...file("solutions", "pdf"), path: `${ctx.userId}/${lessonId}/${revisionId}/${randomUUID()}/solutions.pdf`, pages: 1 } }] }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // another attempt's file
     ];
     for (const w of wrong) await expect(worker.settlement.commitSuccess({ ...base, manifest: w.manifest, requestedDocuments: w.requestedDocuments })).rejects.toBeInstanceOf(ManifestIncomplete);
@@ -568,6 +629,30 @@ describe("the three-document pack", () => {
     expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
     await expect(worker.settlement.commitSuccess({ ...base, manifest: full, requestedDocuments: ["notes", "worksheet", "solutions"] })).resolves.toMatchObject({ replayed: false });
     expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("settlement takes the requested documents from the stored request, not from the caller", async () => {
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, request(), key()); // asks for all three
+    const claimed = (await worker.jobs.claimNext("w-derive", 60_000))!;
+    const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [job.id])).rows[0].lesson_id as string;
+    const revisionId = randomUUID();
+    const attemptId = randomUUID();
+    const scope = { ownerId: ctx.userId, lessonId, revisionId, attemptId };
+    const doc = (document: "notes" | "worksheet" | "solutions") => ({
+      document,
+      pdf: { path: artifactPathV2(scope, document, "pdf"), sha256: "a".repeat(64), bytes: 10, pages: 1 },
+      tex: { path: artifactPathV2(scope, document, "tex"), sha256: "a".repeat(64), bytes: 10 },
+    });
+    // The manifest is missing the worksheet, and the caller (wrongly) says only notes and solutions were requested.
+    const missing: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion: "classic/1", documents: [doc("notes"), doc("solutions")] };
+    const revision = { schemaVersion: 2, content: { x: 1 }, contentHash: `sha256:${"b".repeat(64)}`, validationReport: { overall: "verified" }, validationStatus: "verified" as const, templateVersion: "classic/1", validatorVersion: "t" };
+    const input = { jobId: job.id, fencingToken: claimed.fencingToken, attemptId, revisionId, revision, manifest: missing };
+    await expect(worker.settlement.commitSuccess({ ...input, requestedDocuments: ["notes", "solutions"] })).rejects.toBeInstanceOf(ManifestIncomplete);
+    await expect(worker.settlement.commitSuccess(input)).rejects.toBeInstanceOf(ManifestIncomplete); // and saying nothing does not help
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
+    expect((await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state).toBe("running");
   });
 
   it("legacy quick-form lessons are refused when the compiler is real, and curriculum lessons are not", async () => {
