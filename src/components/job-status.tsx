@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cancelJobAction } from "@/app/jobs/[id]/actions";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,12 @@ const POLL_MS = 2000;
 export function JobStatus({ initial }: { initial: JobView }) {
   const [job, setJob] = useState<JobView>(initial);
   const [offline, setOffline] = useState(false);
+  const router = useRouter();
+
+  // When the job finishes, ask the server again: a finished curriculum lesson redirects to its preview.
+  useEffect(() => {
+    if (job.state === "succeeded" && initial.state !== "succeeded") router.refresh();
+  }, [job.state, initial.state, router]);
 
   useEffect(() => {
     if (isTerminal(job.state)) return;

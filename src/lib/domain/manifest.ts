@@ -1,4 +1,5 @@
-import type { DocumentKind } from "@/lib/package/schema";
+import { z } from "zod";
+import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { ManifestIncomplete } from "./errors";
 
 export const EDITIONS = ["student", "teacher"] as const;
@@ -101,4 +102,22 @@ export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestSc
     }
     if (!Number.isInteger(doc.pdf.pages) || doc.pdf.pages < 1 || doc.pdf.pages > MAX_PDF_PAGES) throw new ManifestIncomplete(`${doc.document}.pdf has an invalid page count`);
   }
+}
+
+// --- reading a stored manifest back ----------------------------------------------------------------------------------
+
+const storedFile = z.strictObject({ path: z.string().min(1).max(400), sha256: z.string().regex(/^[0-9a-f]{64}$/), bytes: z.number().int().positive() });
+const ManifestV2Schema = z.strictObject({
+  manifestVersion: z.literal(MANIFEST_V2),
+  templateVersion: z.string().min(1).max(60),
+  documents: z
+    .array(z.strictObject({ document: z.enum(DOCUMENT_KINDS), pdf: storedFile.extend({ pages: z.number().int().min(1).max(MAX_PDF_PAGES) }), tex: storedFile }))
+    .min(1)
+    .max(3),
+});
+
+/** A stored v2 manifest, or null for anything else (a legacy v1 pack, a missing manifest, a damaged one). */
+export function parseManifestV2(value: unknown): ManifestV2 | null {
+  const parsed = ManifestV2Schema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
