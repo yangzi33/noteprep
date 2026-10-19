@@ -37,6 +37,15 @@ export interface SelectionInput {
   unitId?: string;
 }
 
+export interface SelectionPath {
+  versionId: string;
+  curriculum: { id: string; name: string; versionLabel: string; kind: DatasetKind };
+  level: { id: string; label: string } | null;
+  course: { id: string; label: string } | null;
+  unit: { id: string; label: string } | null;
+  topic: { id: string; label: string; supported: boolean; coverage: Coverage | null } | null;
+}
+
 export interface CurriculumSummary {
   id: string;
   name: string;
@@ -76,6 +85,24 @@ export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) 
     return { version, levels, courses, units, topics, supportedConcepts };
   }
 
+
+  /** Checks that the chosen level/course/unit fit together and returns the matching rows. */
+  function resolveChain(tree: Awaited<ReturnType<typeof loadTree>>, input: SelectionInput) {
+    const hasLevels = tree.levels.length > 0;
+    if (!hasLevels && input.levelId) throw new InvalidSelection("this curriculum has no levels");
+    const level = input.levelId ? tree.levels.find((l) => l.id === input.levelId) : undefined;
+    if (input.levelId && !level) throw new InvalidSelection("unknown level");
+    const course = input.courseId ? tree.courses.find((c) => c.id === input.courseId) : undefined;
+    if (input.courseId && !course) throw new InvalidSelection("unknown course");
+    if (course && hasLevels && course.levelId !== input.levelId) throw new InvalidSelection("the course is not in the chosen level");
+    const unit = input.unitId ? tree.units.find((u) => u.id === input.unitId) : undefined;
+    if (input.unitId && !unit) throw new InvalidSelection("unknown unit");
+    if (unit && unit.courseId !== input.courseId) throw new InvalidSelection("the unit is not in the chosen course");
+    if (input.unitId && !input.courseId) throw new InvalidSelection("choose a course before a unit");
+    if (input.courseId && hasLevels && !input.levelId) throw new InvalidSelection("choose a level before a course");
+    return { level, course, unit };
+  }
+
   return {
     /** Published curricula visible here, with their versions (latest first). */
     async listCurricula(): Promise<CurriculumSummary[]> {
@@ -103,6 +130,36 @@ export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) 
     },
 
     /**
+     * Labels for what has been chosen so far (for a breadcrumb), after checking that the chain is consistent.
+     * A topic may only be given together with its unit.
+     */
+    async getSelectionPath(input: SelectionInput & { topicId?: string }): Promise<SelectionPath> {
+      const tree = await loadTree(input.versionId);
+      const { level, course, unit } = resolveChain(tree, input);
+      let topic: SelectionPath["topic"] = null;
+      if (input.topicId) {
+        const found = tree.topics.find((t) => t.id === input.topicId);
+        if (!found || !unit || found.unitId !== unit.id) throw new InvalidSelection("the topic is not in the chosen unit");
+        const concepts = tree.supportedConcepts.get(found.id) ?? [];
+        topic = {
+          id: found.id,
+          label: found.title,
+          supported: concepts.length > 0,
+          coverage: concepts.length === 0 ? null : concepts.some((c) => c.coverage === "full") ? "full" : "partial",
+        };
+      }
+      const { curriculum } = tree.version;
+      return {
+        versionId: input.versionId,
+        curriculum: { id: curriculum.id, name: curriculum.name, versionLabel: tree.version.label, kind: tree.version.datasetKind },
+        level: level ? { id: level.id, label: level.label } : null,
+        course: course ? { id: course.id, label: `${course.title} (${course.code})` } : null,
+        unit: unit ? { id: unit.id, label: unit.title } : null,
+        topic,
+      };
+    },
+
+    /**
      * The options for the NEXT step given what has been chosen so far. The chain must be consistent
      * (the course belongs to the level, the unit to the course); anything else is an invalid selection.
      */
@@ -113,18 +170,7 @@ export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) 
       const unitSupported = (unitId: string) => tree.topics.some((t) => t.unitId === unitId && topicSupported(t.id));
       const courseSupported = (courseId: string) => tree.units.some((u) => u.courseId === courseId && unitSupported(u.id));
 
-      if (!hasLevels && input.levelId) throw new InvalidSelection("this curriculum has no levels");
-      const level = input.levelId ? tree.levels.find((l) => l.id === input.levelId) : undefined;
-      if (input.levelId && !level) throw new InvalidSelection("unknown level");
-      const course = input.courseId ? tree.courses.find((c) => c.id === input.courseId) : undefined;
-      if (input.courseId && !course) throw new InvalidSelection("unknown course");
-      if (course && hasLevels && course.levelId !== input.levelId) throw new InvalidSelection("the course is not in the chosen level");
-      const unit = input.unitId ? tree.units.find((u) => u.id === input.unitId) : undefined;
-      if (input.unitId && !unit) throw new InvalidSelection("unknown unit");
-      if (unit && unit.courseId !== input.courseId) throw new InvalidSelection("the unit is not in the chosen course");
-      if (input.unitId && !input.courseId) throw new InvalidSelection("choose a course before a unit");
-      if (input.courseId && hasLevels && !input.levelId) throw new InvalidSelection("choose a level before a course");
-
+      const { level, course, unit } = resolveChain(tree, input);
       if (hasLevels && !level) {
         return {
           versionId: input.versionId,

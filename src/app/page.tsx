@@ -14,7 +14,7 @@ export default async function HomePage() {
       <div className="mt-6">
         {user ? (
           <Button asChild>
-            <Link href="/lessons/new">Create a lesson</Link>
+            <Link href="/prepare">Prepare a lesson</Link>
           </Button>
         ) : (
           <Button asChild>

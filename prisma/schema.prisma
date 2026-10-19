@@ -103,20 +103,28 @@ model Profile {
 }
 
 model Lesson {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ownerId           String    @map("owner_id") @db.Uuid
-  title             String
-  inputSpec         Json      @map("input_spec")
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId             String    @map("owner_id") @db.Uuid
+  title               String
+  inputSpec           Json      @map("input_spec")
   /// Must point at a revision of this same lesson: FK (current_revision_id, id) -> (id, lesson_id).
-  currentRevisionId String?   @map("current_revision_id") @db.Uuid
-  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  currentRevisionId   String?   @map("current_revision_id") @db.Uuid
+  /// 1 = the original free-form request, 2 = curriculum selection (docs/refactor-plan.md section 3).
+  requestVersion      Int       @default(1) @map("request_version")
+  /// Pinned curriculum version and topic for v2 lessons; null for v1. Never changes after creation.
+  curriculumVersionId String?   @map("curriculum_version_id")
+  topicId             String?   @map("topic_id")
+  objectiveIds        String[]  @default([]) @map("objective_ids")
+  deletedAt           DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
-  owner           Profile          @relation(fields: [ownerId], references: [id])
-  currentRevision LessonRevision?  @relation("CurrentRevision", fields: [currentRevisionId, id], references: [id, lessonId], onDelete: NoAction, onUpdate: NoAction)
-  revisions       LessonRevision[] @relation("LessonRevisions")
-  jobs            GenerationJob[]
+  owner             Profile            @relation(fields: [ownerId], references: [id])
+  currentRevision   LessonRevision?    @relation("CurrentRevision", fields: [currentRevisionId, id], references: [id, lessonId], onDelete: NoAction, onUpdate: NoAction)
+  curriculumVersion CurriculumVersion? @relation(fields: [curriculumVersionId], references: [id], onDelete: Restrict)
+  topic             CurriculumTopic?   @relation(fields: [topicId, curriculumVersionId], references: [id, versionId], onDelete: Restrict)
+  revisions         LessonRevision[]   @relation("LessonRevisions")
+  jobs              GenerationJob[]
 
   @@unique([id, ownerId])
   @@map("lesson")
@@ -385,6 +393,7 @@ model CurriculumVersion {
   units        CurriculumUnit[]
   topics       CurriculumTopic[]
   objectives   CurriculumObjective[]
+  lessons      Lesson[]
 
   @@unique([curriculumId, label])
   @@map("curriculum_version")
@@ -454,6 +463,7 @@ model CurriculumTopic {
   concepts       TopicConcept[]
   prerequisites  TopicPrerequisite[] @relation("TopicRequires")
   requiredBy     TopicPrerequisite[] @relation("TopicRequiredBy")
+  lessons        Lesson[]
 
   @@unique([id, versionId])
   @@unique([unitId, ordinal])

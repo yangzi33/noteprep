@@ -13,13 +13,14 @@ import { inTransaction, type Tx } from "./tx";
 
 export interface RevisionDraft {
   schemaVersion: number;
-  content: Prisma.InputJsonValue;
+  /** Any JSON-serializable value; validated by the caller and stored as jsonb. */
+  content: unknown;
   contentHash: string;
-  validationReport: Prisma.InputJsonValue;
+  validationReport: unknown;
   validationStatus: "verified" | "failed" | "unverified";
   templateVersion: string;
   validatorVersion: string;
-  generationMeta?: Prisma.InputJsonValue;
+  generationMeta?: unknown;
 }
 
 export interface CommitSuccessInput {
@@ -106,13 +107,13 @@ export function createSettlementDal(db: Db) {
             number: next[0]?.n ?? 1,
             status: "finalized",
             schemaVersion: input.revision.schemaVersion,
-            content: input.revision.content,
+            content: input.revision.content as Prisma.InputJsonValue,
             contentHash: input.revision.contentHash,
-            validationReport: input.revision.validationReport,
+            validationReport: input.revision.validationReport as Prisma.InputJsonValue,
             validationStatus: input.revision.validationStatus,
             templateVersion: input.revision.templateVersion,
             validatorVersion: input.revision.validatorVersion,
-            generationMeta: input.revision.generationMeta,
+            generationMeta: input.revision.generationMeta as Prisma.InputJsonValue | undefined,
             artifactManifest: input.manifest as unknown as Prisma.InputJsonValue,
             createdByJobId: input.jobId,
           },

@@ -9,6 +9,9 @@ const GENERATION_ERRORS: Record<string, string> = {
   QUEUE_BUSY: "The service is busy right now. Please try again in a few minutes.",
   IDEMPOTENCY_KEY_REUSED: "This form was already submitted with different details. Reload the page and try again.",
   ACCOUNT_NOT_ACTIVE: "This account cannot create new lessons.",
+  CURRICULUM_NOT_FOUND: "That curriculum selection is not available. Please choose again.",
+  TOPIC_UNSUPPORTED: "We cannot yet generate verified practice for that topic. Please choose another topic.",
+  INVALID_SELECTION: "Those choices do not fit together. Please start the selection again.",
 };
 
 export function generationErrorMessage(code: string | null | undefined): string | null {

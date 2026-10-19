@@ -11,16 +11,17 @@ import { createSettlementDal } from "./settlement";
 export { toJobDto, type JobDto } from "./dto";
 export type { CommitSuccessInput, FinishJobInput, RevisionDraft } from "./settlement";
 export type { AllowanceView, HistoryItem } from "./history";
-export type { CurriculumSummary, SelectionOption, SelectionOptions, SelectionStep } from "./curriculum";
+export type { CurriculumSummary, SelectionOption, SelectionOptions, SelectionPath, SelectionStep } from "./curriculum";
 export type { ClaimedJob, HeartbeatResult, JobsDal, SweepReport, UsageCharge } from "./jobs";
 
 /** Web runtime: account setup, enqueueing, owner-filtered reads. Use the `app_runtime` connection. */
 export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions }) {
+  const curriculum = createCurriculumDal(db, deps?.curriculum);
   return {
     account: createAccountDal(db, deps?.limits?.trialLimit),
-    generation: createGenerationDal(db, deps),
+    generation: createGenerationDal(db, { ...deps, resolveContext: curriculum.resolveCurriculumContext }),
     history: createHistoryDal(db, deps),
-    curriculum: createCurriculumDal(db, deps?.curriculum),
+    curriculum,
   };
 }
 

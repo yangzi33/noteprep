@@ -14,11 +14,13 @@ import {
   DEV_DEFAULT_LIMITS,
   GENERATE_OPERATION,
   GENERATE_REQUEST_VERSION,
-  GenerateInput,
   IdempotencyKeySchema,
   type GenerationLimits,
 } from "@/lib/domain/generation";
 import { requestHash } from "@/lib/domain/hash";
+import { parseLessonRequest } from "@/lib/domain/lesson-request";
+import type { CurriculumContext } from "@/lib/curriculum/context";
+import type { Prisma } from "@/generated/prisma/client";
 import type { AuthedCtx } from "../auth/context";
 import { resolveAllowanceSource } from "./allowance-source";
 import type { Db } from "../db";
@@ -26,7 +28,11 @@ import { toJobDto, type JobDto } from "./dto";
 import { releaseReservation } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
+export type ResolveContext = (input: { versionId: string; topicId: string; objectiveIds?: string[] }) => Promise<CurriculumContext>;
+
 export interface GenerationDeps {
+  /** Resolves a v2 request's curriculum context (provided by createWebDal). Without it v2 requests are refused. */
+  resolveContext?: ResolveContext;
   limits?: GenerationLimits;
   clock?: () => Date;
 }
@@ -98,9 +104,9 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
       rawIdempotencyKey: string,
       options: CreateGenerationOptions = {},
     ): Promise<CreateGenerationResult> {
-      const input = GenerateInput.parse(rawInput);
+      const parsed = parseLessonRequest(rawInput);
       const key = IdempotencyKeySchema.parse(rawIdempotencyKey);
-      const hash = requestHash(GENERATE_OPERATION, GENERATE_REQUEST_VERSION, input);
+      const hash = requestHash(GENERATE_OPERATION, parsed.version === 1 ? GENERATE_REQUEST_VERSION : 2, parsed.input);
       const ownerId = ctx.userId;
 
       return inTransaction(db, async (tx) => {
@@ -129,6 +135,30 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
           return { job: toJobDto(job), replayed: true };
         }
 
+        // 1b. What the lesson is made of. A v2 request resolves its curriculum context HERE, after the replay
+        // check above (so retrying an old request still returns the original job even if the curriculum
+        // version has since been superseded) and before anything is reserved (so a refused topic costs nothing).
+        let lessonData: Omit<Prisma.LessonUncheckedCreateInput, "ownerId">;
+        if (parsed.version === 1) {
+          lessonData = { title: "Linear equations in one variable", inputSpec: parsed.input };
+        } else {
+          if (!deps.resolveContext) throw new InvariantViolation("curriculum context resolver is not configured");
+          const request = parsed.input;
+          const context = await deps.resolveContext({
+            versionId: request.curriculum.versionId,
+            topicId: request.curriculum.topicId,
+            objectiveIds: request.objectiveIds,
+          });
+          lessonData = {
+            title: context.topic.title,
+            inputSpec: { requestVersion: 2, request, context } as unknown as Prisma.InputJsonValue,
+            requestVersion: 2,
+            curriculumVersionId: context.curriculum.version.id,
+            topicId: context.topic.id,
+            objectiveIds: context.objectives.map((o) => o.id),
+          };
+        }
+
         // 2. Durable limits. Counters committed with a job are never refunded when it later fails.
         await bumpRateLimit(tx, `gen:u:${ownerId}`, limits.rateLimitPerHourPerUser);
         if (options.ipHash) await bumpRateLimit(tx, `gen:ip:${options.ipHash}`, limits.rateLimitPerHourPerIp);
@@ -145,9 +175,7 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
         if (reserved === 0) throw new AllowanceExhausted(bucket.reserved, source);
 
         // 4. Lesson shell, job, reservation, and the idempotency back-reference.
-        const lesson = await tx.lesson.create({
-          data: { ownerId, title: "Linear equations in one variable", inputSpec: input },
-        });
+        const lesson = await tx.lesson.create({ data: { ownerId, ...lessonData } });
         const job = await tx.generationJob.create({
           data: {
             ownerId,

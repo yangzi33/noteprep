@@ -13,6 +13,13 @@ export default async function globalSetup() {
   });
   execFileSync("bash", ["scripts/dev-roles.sh"], { stdio: "pipe", timeout: 60_000 });
 
+  // The labelled sample curriculum, loaded on the owner connection (the runtime roles cannot write it).
+  execFileSync("pnpm", ["-s", "curriculum:load", "data/curricula/sample-math/sample-1", "--allow-sample"], {
+    env: { ...process.env, MIGRATION_DATABASE_URL: env.dbUrl },
+    stdio: "pipe",
+    timeout: 60_000,
+  });
+
   const db = new pg.Client({ connectionString: env.dbUrl });
   await db.connect();
   await db.query(
