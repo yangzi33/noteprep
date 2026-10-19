@@ -1,0 +1,10 @@
+# Versions of what shapes the OUTPUT (TeX, fonts, poppler), as installed in the image on 2026-10-19 (debian:bookworm-slim, linux/amd64). `pnpm test:latex` fails if a
+# rebuild changes any of them; update this file on purpose, after rerunning the sandbox tests, when the image is rebuilt.
+lmodern 2.005-1
+poppler-utils 22.12.0-2+deb12u3
+texlive-base 2022.20230122-3
+texlive-binaries 2022.20220321.62855-5.1+deb12u2
+texlive-fonts-recommended 2022.20230122-3
+texlive-latex-base 2022.20230122-3
+texlive-latex-recommended 2022.20230122-3
+pdfTeX 3.141592653-2.6-1.40.24 (TeX Live 2022/Debian)

@@ -64,6 +64,8 @@
     "test:e2e": "playwright test",
     "curriculum:validate": "tsx scripts/curriculum-validate.ts",
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
-    "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts"
+    "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",
+    "latex:image": "docker build -t noteprep-latex:dev docker/latex",
+    "test:latex": "vitest run --config vitest.latex.config.mts"
   }
 }
