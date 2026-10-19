@@ -28,15 +28,26 @@ export function classifyHttpStatus(status: number): LlmErrorType {
   return "unknown";
 }
 
-const fail = (type: LlmErrorType, usage?: Usage, providerRequestId?: string): StructuredResult => ({
+const fail = (type: LlmErrorType, usage?: Usage, providerRequestId?: string, truncated = false, usageEstimated = false): StructuredResult => ({
   ok: false,
-  error: { type, retryable: isRetryableLlmError(type) },
+  error: { type, retryable: isRetryableLlmError(type), ...(truncated ? { truncated: true } : {}) },
   ...(usage ? { usage } : {}),
+  ...(usageEstimated ? { usageEstimated: true } : {}),
   ...(providerRequestId ? { providerRequestId } : {}),
 });
 
 export function costMicros(inputTokens: number, outputTokens: number, config: Pick<AnthropicConfig, "priceInputMicrosPerMTok" | "priceOutputMicrosPerMTok">): number {
   return Math.ceil((inputTokens * config.priceInputMicrosPerMTok + outputTokens * config.priceOutputMicrosPerMTok) / 1_000_000);
+}
+
+/**
+ * Worst case for a call whose usage is unknown: the full output allowance plus a rough input size (about 3
+ * characters per token, rounded up) at the configured prices. A call that failed may still have been billed, so
+ * it is counted against the job's budget at this ceiling rather than at zero.
+ */
+export function usageCeiling(requestBody: string, maxOutputTokens: number, config: Pick<AnthropicConfig, "priceInputMicrosPerMTok" | "priceOutputMicrosPerMTok">): Usage {
+  const inputTokens = Math.ceil(requestBody.length / 3);
+  return { inputTokens, outputTokens: maxOutputTokens, costMicros: costMicros(inputTokens, maxOutputTokens, config) };
 }
 
 export class AnthropicProvider implements LlmProvider {
@@ -62,28 +73,32 @@ export class AnthropicProvider implements LlmProvider {
       ...(request.responseSchema ? { output_config: { format: { type: "json_schema", schema: request.responseSchema } } } : {}),
     };
 
+    const requestBody = JSON.stringify(body);
+    const unknownUsage = (type: LlmErrorType, providerRequestId?: string): StructuredResult =>
+      fail(type, usageCeiling(requestBody, request.limits.maxOutputTokens, this.config), providerRequestId, false, true);
+
     let response: Response;
     try {
       response = await this.doFetch(this.url, {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": this.config.apiKey, "anthropic-version": API_VERSION },
-        body: JSON.stringify(body),
+        body: requestBody,
         signal,
       });
     } catch (error) {
       if (request.signal?.aborted) throw error; // the caller canceled: let the pipeline's own abort handling see it
-      if (timeout.aborted) return fail("timeout");
-      return fail("server_error"); // network failure before any response: worth another attempt
+      if (timeout.aborted) return unknownUsage("timeout");
+      return unknownUsage("server_error"); // network failure before any response: worth another attempt
     }
 
     const providerRequestId = response.headers.get("request-id") ?? undefined;
-    if (!response.ok) return fail(classifyHttpStatus(response.status), undefined, providerRequestId);
+    if (!response.ok) return unknownUsage(classifyHttpStatus(response.status), providerRequestId);
 
     let message: unknown;
     try {
       message = await response.json();
     } catch {
-      return fail("invalid_output", undefined, providerRequestId);
+      return unknownUsage("invalid_output", providerRequestId); // billed, but we cannot see how much
     }
     const m = message as {
       content?: { type?: string; text?: string }[];
@@ -96,11 +111,12 @@ export class AnthropicProvider implements LlmProvider {
     const usage: Usage | undefined =
       typeof inputTokens === "number" && typeof outputTokens === "number" ? { inputTokens, outputTokens, costMicros: costMicros(inputTokens, outputTokens, this.config) } : undefined;
 
+    if (!usage) return unknownUsage(m.stop_reason === "refusal" ? "refused" : "invalid_output", providerRequestId);
     if (m.stop_reason === "refusal") return fail("refused", usage, providerRequestId);
     // Truncated or paused output is not a complete answer, and asking again with the same limit would repeat it.
-    if (m.stop_reason !== "end_turn") return fail("invalid_output", usage, providerRequestId);
+    if (m.stop_reason !== "end_turn") return fail("invalid_output", usage, providerRequestId, m.stop_reason === "max_tokens");
     const text = m.content?.find((block) => block.type === "text")?.text;
-    if (typeof text !== "string" || !usage) return fail("invalid_output", usage, providerRequestId);
+    if (typeof text !== "string") return fail("invalid_output", usage, providerRequestId);
     let value: unknown;
     try {
       value = JSON.parse(text);

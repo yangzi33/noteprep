@@ -122,6 +122,41 @@ describe("Anthropic response", () => {
     const { fetchImpl } = mockFetch(() => json(message({ stop_reason: "max_tokens" })));
     expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, usage: { inputTokens: 1_000, outputTokens: 200 } });
   });
+  it("flags a max_tokens stop as truncation, so the caller does not ask again with the same limit", async () => {
+    const { fetchImpl } = mockFetch(() => json(message({ stop_reason: "max_tokens" })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output", truncated: true } });
+    const other = mockFetch(() => json(message({ content: [{ type: "text", text: "{" }] })));
+    const result = await provider(other.fetchImpl).generateStructured(request());
+    expect(result).toMatchObject({ ok: false, error: { type: "invalid_output" } });
+    expect(result.ok === false && result.error.truncated).toBeFalsy();
+  });
+  it("reports a conservative usage ceiling when no usage is known (HTTP error, network failure, timeout, unparsable body)", async () => {
+    const req = request(); // maxOutputTokens 1000 at 15_000_000 micros per MTok = 15_000 micros for the output alone
+    const ceilingCases: (() => Response | Promise<Response>)[] = [
+      () => json({ type: "error" }, 500),
+      () => json({ type: "error" }, 429),
+      () => new Response("<html>bad gateway</html>", { status: 200 }),
+      () => json(message({ usage: undefined })),
+    ];
+    for (const respond of ceilingCases) {
+      const result = await provider(mockFetch(respond).fetchImpl).generateStructured(req);
+      expect(result.ok).toBe(false);
+      expect(result.usage).toMatchObject({ outputTokens: 1_000 });
+      expect(result.usage!.inputTokens).toBeGreaterThan(0);
+      expect(result.usage!.costMicros).toBeGreaterThanOrEqual(15_000);
+      expect(result.ok === false && result.usageEstimated).toBe(true);
+    }
+    const net = await provider(mockFetch(() => { throw new TypeError("down"); }).fetchImpl).generateStructured(req);
+    expect(net).toMatchObject({ ok: false, usageEstimated: true, usage: { outputTokens: 1_000 } });
+    const slow = mockFetch(({ init }) => new Promise<Response>((_, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "TimeoutError")))));
+    const timed = await provider(slow.fetchImpl).generateStructured(request({ limits: { timeoutMs: 20, maxOutputTokens: 100, maxCostMicros: 1 } }));
+    expect(timed).toMatchObject({ ok: false, usageEstimated: true, usage: { outputTokens: 100 } });
+  });
+  it("does not estimate when the provider reported the usage", async () => {
+    const result = await provider(mockFetch(() => json(message({ stop_reason: "max_tokens" }))).fetchImpl).generateStructured(request());
+    expect(result).toMatchObject({ ok: false, usage: { inputTokens: 1_000, outputTokens: 200 } });
+    expect(result.ok === false && result.usageEstimated).toBeFalsy();
+  });
   it("treats a non-JSON body as unusable output", async () => {
     const { fetchImpl } = mockFetch(() => new Response("<html>bad gateway</html>", { status: 200 }));
     expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output" } });

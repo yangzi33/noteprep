@@ -41,7 +41,16 @@ export interface Usage {
 
 export type StructuredResult =
   | { ok: true; value: unknown; resultSchemaVersion: number; provider: string; model: string; usage: Usage; providerRequestId?: string }
-  | { ok: false; error: { type: LlmErrorType; retryable: boolean }; usage?: Usage; providerRequestId?: string };
+  | {
+      ok: false;
+      /** `truncated`: the answer hit the output-token limit; asking again with the same limit would only repeat it. */
+      error: { type: LlmErrorType; retryable: boolean; truncated?: boolean };
+      /** What the call cost, as reported or (see usageEstimated) as a conservative ceiling. Absent only if unknown. */
+      usage?: Usage;
+      /** True when `usage` is a ceiling computed from the request's limits because the provider reported none. */
+      usageEstimated?: boolean;
+      providerRequestId?: string;
+    };
 
 export interface LlmProvider {
   readonly id: string;
