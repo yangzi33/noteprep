@@ -29,3 +29,7 @@ npm-debug.log*
 
 # local tool state (plugins), never committed
 .superpowers/
+
+# local secrets and Claude Code session exports, never committed
+/supabaseapi
+/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt
