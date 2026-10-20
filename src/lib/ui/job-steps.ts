@@ -39,6 +39,8 @@ export function jobSteps(job: Pick<JobView, "state" | "stage">): JobStep[] {
     for (let i = 0; i < current; i += 1) stepStates[i] = "done";
     stepStates[current] = "active";
   } else if (job.state === "failed" && job.stage !== null) {
+    // NOTE: failed/canceled jobs with a stage cannot occur with the current backend (it clears
+    // the stage on every terminal transition) and the view renders no steps for those states.
     const current = STAGE_STEP_INDEX[job.stage];
     for (let i = 0; i < current; i += 1) stepStates[i] = "done";
     stepStates[current] = "failed";

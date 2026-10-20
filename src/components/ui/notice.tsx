@@ -28,7 +28,7 @@ export function Notice({
       className={cn("flex items-start gap-2 rounded-notice border px-4 py-3 text-sm", styles[intent], className)}
       {...props}
     >
-      <Icon aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", intent === "progress" && "animate-spin")} />
+      <Icon aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", intent === "progress" && "animate-spin motion-reduce:animate-none")} />
       <div className="min-w-0">{children}</div>
     </div>
   );
