@@ -48,17 +48,26 @@ export function audit(texts: Record<string, string>): string[] {
     // The registry token: only the push job's "Log in to GHCR" step env, never anywhere else (any spelling).
     const walk = (node: unknown, path: string[]) => {
       if (typeof node === "string") {
-        if (TOKEN.test(node)) {
-          const ok =
-            file === "images.yml" && path[0] === "jobs" && path[1] === "push" && path[2] === "steps" && path[4] === "env" &&
-            path.length === 6 && isObj(jobs.push) && isObj((jobs.push.steps as unknown[])[Number(path[3])]) &&
-            ((jobs.push.steps as Doc[])[Number(path[3])]!.name === "Log in to GHCR");
-          if (!ok) bad.push(`${file}: token reference at ${path.join(".")}`);
+        const atLogin =
+          file === "images.yml" && path[0] === "jobs" && path[1] === "push" && path[2] === "steps" && path[4] === "env" &&
+          path.length === 6 && isObj(jobs.push) && isObj((jobs.push.steps as unknown[])[Number(path[3])]) &&
+          ((jobs.push.steps as Doc[])[Number(path[3])]!.name === "Log in to GHCR");
+        if (TOKEN.test(node) && !atLogin) bad.push(`${file}: token reference at ${path.join(".")}`);
+        // `secrets` as a whole object (toJSON(secrets), secrets: inherit style expressions) is never allowed.
+        if (/\bsecrets\b(?!\s*\.\s*\w|\s*\[\s*['"])/.test(node)) bad.push(`${file}: whole secrets object at ${path.join(".")}`);
+        // ci.yml has no secrets at all (its docker-socket justification depends on it); images.yml only the login token.
+        if ((file === "ci.yml" || file === "images.yml") && /\bsecrets\b/.test(node) && !(atLogin && /^\$\{\{\s*secrets\.GITHUB_TOKEN\s*\}\}$/.test(node.trim()))) {
+          bad.push(`${file}: secrets reference at ${path.join(".")}`);
         }
       } else if (Array.isArray(node)) node.forEach((v, i) => walk(v, [...path, String(i)]));
       else if (isObj(node)) for (const [k, v] of Object.entries(node)) walk(v, [...path, k]);
     };
     walk(doc, []);
+
+    // No privileged or chained triggers anywhere.
+    const onAll = (doc as Doc).on ?? (doc as Doc)["true" as string];
+    const trig = typeof onAll === "string" ? [onAll] : Array.isArray(onAll) ? onAll.map(String) : isObj(onAll) ? Object.keys(onAll) : [];
+    for (const t of trig) if (t === "pull_request_target" || t === "workflow_run") bad.push(`${file}: forbidden trigger ${t}`);
 
     if (file === "images.yml") {
       const on = (doc as Doc).on ?? (doc as Doc)["true" as string];
@@ -73,9 +82,24 @@ export function audit(texts: Record<string, string>): string[] {
       if (isObj(push)) {
         if (JSON.stringify(push.permissions) !== JSON.stringify({ packages: "write" })) bad.push("images.yml: push permissions must be exactly packages: write");
         if (push.needs !== "build-test") bad.push("images.yml: push must need build-test");
-        for (const s of Array.isArray(push.steps) ? (push.steps as Doc[]) : []) {
-          if (typeof s.uses === "string" && s.uses.startsWith("actions/checkout@")) bad.push("images.yml: push checks out the repository");
-          if (typeof s.run === "string" && /\bpnpm\b|\bnpm\b|\bnode\b/.test(s.run)) bad.push("images.yml: push runs repository tooling");
+        // Exact step allowlist: the only third-party code is the pinned download; the artifact is data, never executed.
+        const steps = Array.isArray(push.steps) ? (push.steps as Doc[]) : [];
+        const names = ["", "Load the tested images and verify their IDs", "Log in to GHCR", "Push and record digests read back from the registry", ""];
+        if (steps.length !== 5) bad.push(`images.yml: push has ${steps.length} steps, expected 5`);
+        steps.forEach((st, i) => {
+          if (i === 0) {
+            if (typeof st.uses !== "string" || !st.uses.startsWith("actions/download-artifact@")) bad.push("images.yml: push step 1 must be download-artifact");
+          } else if (st.uses !== undefined) bad.push(`images.yml: push step ${i + 1} must not use an action`);
+          if (names[i] && st.name !== names[i]) bad.push(`images.yml: push step ${i + 1} name changed`);
+          if (typeof st.run === "string") {
+            if (/\bpnpm\b|\bnpm\b|\bnode\b/.test(st.run)) bad.push("images.yml: push runs repository tooling");
+            const rest = st.run.replaceAll("docker load -i out/images.tar", "").replaceAll("< out/images.txt", "").replace(/awk '[^']*' out\/images\.txt/g, "");
+            if (/\bout\/|\.\/|\bsource\b|\beval\b/.test(rest)) bad.push(`images.yml: push step ${i + 1} touches the artifact beyond docker load / reading images.txt`);
+          }
+        });
+        const load = steps[1]?.run;
+        if (typeof load !== "string" || !load.includes("${GITHUB_REPOSITORY_OWNER,,}") || !load.includes("${GITHUB_SHA}")) {
+          bad.push("images.yml: push must rebuild the expected refs from the owner and commit SHA");
         }
       }
       const bt = jobs["build-test"];
@@ -123,6 +147,14 @@ describe("workflows", () => {
       ["bracket-spelled token in ci.yml", mutate("ci.yml", "      - run: pnpm lint", "      - run: echo ${{ secrets['GITHUB_TOKEN'] }}\n      - run: pnpm lint")],
       ["token in the push job env", mutate("images.yml", "      - id: digests", "      - run: echo ${{ secrets.GITHUB_TOKEN }}\n      - id: digests")],
       ["unpinned action", mutate("images.yml", /actions\/download-artifact@[0-9a-f]{40}/, "actions/download-artifact@v7")],
+      ["pull_request_target in ci.yml", mutate("ci.yml", /^ {2}pull_request:$/m, "  pull_request_target:")],
+      ["workflow_run added to ci.yml", mutate("ci.yml", /^ {2}pull_request:$/m, "  pull_request:\n  workflow_run:\n    workflows: [x]")],
+      ["secret added to ci.yml", mutate("ci.yml", "      - run: pnpm lint", "      - run: echo ${{ secrets.STRIPE_SECRET_KEY }}\n      - run: pnpm lint")],
+      ["toJSON(secrets) in build-test", mutate("images.yml", "      - run: corepack enable", "      - run: echo ${{ toJSON(secrets) }}\n      - run: corepack enable")],
+      ["secret other than the token in images.yml", mutate("images.yml", "      - run: corepack enable", "      - run: echo ${{ secrets.OTHER }}\n      - run: corepack enable")],
+      ["extra pinned third-party action in push", mutate("images.yml", "      - name: Log in to GHCR", "      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830\n      - name: Log in to GHCR")],
+      ["push executes a script from the artifact", mutate("images.yml", "          docker load -i out/images.tar", "          bash out/run.sh\n          docker load -i out/images.tar")],
+      ["push no longer rebuilds the expected refs", mutate("images.yml", /(artifact is data[^\n]*\n\s*)owner="\$\{GITHUB_REPOSITORY_OWNER,,\}"/, "$1owner=x")],
       ["push job checks out the repo", mutate("images.yml", "      - name: Load the tested images", "      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\n      - name: Load the tested images")],
     ];
     it.each(cases)("%s", (_name, texts) => {

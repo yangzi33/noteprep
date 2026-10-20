@@ -64,7 +64,7 @@ jobs:
           docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target runtime -t "$WORKER" .
           docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target hosttest -t "$HOSTTEST" .
           WORKER_IMAGE="$WORKER" pnpm test:image
-          # Throwaway GitHub-hosted runner with no secrets: the only place the Docker socket may be mounted.
+          # Throwaway GitHub-hosted runner holding no credentials: the only place the Docker socket may be mounted.
           # Never do this on a self-hosted runner or a real host.
           docker run --rm --read-only --tmpfs /tmp -e LATEX_IMAGE="$LATEX" -e DOCKER_HOST=unix:///var/run/docker.sock \
             -v /var/run/docker.sock:/var/run/docker.sock --user 0 "$HOSTTEST"
@@ -101,6 +101,15 @@ jobs:
           path: out/
       - name: Load the tested images and verify their IDs
         run: |
+          # The artifact is data: the refs to push are rebuilt here, and images.txt must list exactly these three.
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          expected="$(printf '%s\n' \
+            "ghcr.io/${owner}/noteprep-hosttest:${GITHUB_SHA}" \
+            "ghcr.io/${owner}/noteprep-latex:${GITHUB_SHA}" \
+            "ghcr.io/${owner}/noteprep-worker:${GITHUB_SHA}")"
+          awk 'NF != 2 { exit 1 }' out/images.txt || { echo "malformed images.txt" >&2; exit 1; }
+          listed="$(awk '{ print $1 }' out/images.txt | sort)"
+          [ "$listed" = "$expected" ] || { echo "images.txt does not list exactly the expected images" >&2; exit 1; }
           docker load -i out/images.tar
           while read -r ref id; do
             actual="$(docker image inspect --format '{{.Id}}' "$ref")"
