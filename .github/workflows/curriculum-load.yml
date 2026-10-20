@@ -5,7 +5,7 @@ name: Load curriculum dataset
 # owner-role connection string (the runtime roles cannot write curriculum tables).
 #
 # SAMPLE datasets are invented and are only ever loaded into staging: the --allow-sample flag is passed
-# for the staging environment alone, so the loader itself refuses a sample dataset for production.
+# for the staging environment alone, and the loader itself refuses it (CURRICULUM_TARGET_ENV=production).
 on:
   workflow_dispatch:
     inputs:
@@ -45,6 +45,8 @@ jobs:
       # Passed through the environment, never interpolated into the shell command.
       DATASET_DIR: ${{ inputs.dataset }}
       TARGET_ENV: ${{ inputs.environment }}
+      # The loader refuses --allow-sample itself when this is production.
+      CURRICULUM_TARGET_ENV: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

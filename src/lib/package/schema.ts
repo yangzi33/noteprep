@@ -138,3 +138,17 @@ export const PackageSchema = z.strictObject({
   deps: z.array(z.strictObject({ from: Id, to: Id, kind: z.enum(["derives", "references"]) })),
 });
 export type LessonPackage = z.infer<typeof PackageSchema>;
+
+/**
+ * The parts of the stored curriculum snapshot that validation reads. `PackageSchema` keeps `context` opaque
+ * (the context hash covers all of it); the validator checks this shape first so stored garbage is reported, not thrown on.
+ */
+export const StoredContextShape = z.looseObject({
+  curriculum: z.looseObject({ name: z.string(), version: z.looseObject({ label: z.string(), kind: z.enum(["real", "sample", "synthetic"]) }) }),
+  objectives: z.array(
+    z.looseObject({ id: z.string(), officialCode: z.string().nullable(), label: z.string(), coverage: z.enum(["full", "partial"]), note: z.string().nullable() }),
+  ),
+  prerequisites: z.array(z.looseObject({ title: z.string() })),
+  alignmentClaimsAllowed: z.boolean(),
+  contextHash: z.string(),
+});

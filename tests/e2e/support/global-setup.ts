@@ -15,7 +15,7 @@ export default async function globalSetup() {
 
   // The labelled sample curriculum, loaded on the owner connection (the runtime roles cannot write it).
   execFileSync("pnpm", ["-s", "curriculum:load", "data/curricula/sample-math/sample-1", "--allow-sample"], {
-    env: { ...process.env, MIGRATION_DATABASE_URL: env.dbUrl },
+    env: { ...process.env, MIGRATION_DATABASE_URL: env.dbUrl, CURRICULUM_TARGET_ENV: "development" },
     stdio: "pipe",
     timeout: 60_000,
   });

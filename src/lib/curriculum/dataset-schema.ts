@@ -2,6 +2,14 @@ import { z } from "zod";
 
 /** Ids are stable, lowercase, and safe to use in URLs and file names. */
 export const ID_PATTERN = /^[a-z0-9][a-z0-9@._/-]{0,199}$/;
+
+/** True for a well-formed id whose "/"-separated segments are all non-empty and not "." or "..". */
+export function isValidId(id: string): boolean {
+  return ID_PATTERN.test(id) && id.split("/").every((segment) => segment !== "" && segment !== "." && segment !== "..");
+}
+
+/** Database bounds for ordinals (INTEGER column with a CHECK of 0..1_000_000). */
+export const ORDINAL_MAX = 1_000_000;
 const Id = z.string();
 const Text = z.string();
 
@@ -64,4 +72,13 @@ export const Dataset = z.object({
 export type DatasetMeta = z.infer<typeof DatasetMeta>;
 export type Dataset = z.infer<typeof Dataset>;
 
-export const LIMITS = { title: 120, summary: 200, label: 200, note: 300 } as const;
+export const LIMITS = {
+  title: 120,
+  summary: 200,
+  label: 200,
+  note: 300,
+  name: 200, // version label, curriculum / education system name, source title / publisher
+  licenseNote: 500,
+  scope: 300, // review scope
+  code: 60, // unit code, level kind
+} as const;

@@ -1,8 +1,12 @@
+import { canonicalJson } from "@/lib/domain/hash";
 import { verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import { validateLessonMath, VALIDATOR_VERSION, type LessonMathReport } from "@/lib/math/validate";
-import { sectionContentHash } from "./hash";
+import { LessonRequestV2 } from "@/lib/domain/lesson-request";
+import { EDGES, sectionId, sectionInputsParams } from "./build";
+import { sectionContentHash, sectionInputsHash } from "./hash";
+import { PROSE_PROMPT_VERSION } from "./prose";
 import { checkText, curriculumNames } from "./prose-rules";
-import { DOCUMENT_SECTION_KINDS, PackageSchema, type LessonPackage, type Section } from "./schema";
+import { DOCUMENT_SECTION_KINDS, PackageSchema, StoredContextShape, type LessonPackage, type Section, type SectionKind } from "./schema";
 
 export const PACKAGE_VALIDATOR_VERSION = `package/1+${VALIDATOR_VERSION}`;
 
@@ -49,10 +53,16 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
       for (const block of section.blocks) {
         if (block.type !== "alignment") continue;
         if (block.claim === "aligned" && !context.alignmentClaimsAllowed) issues.push({ code: "ALIGNMENT_CLAIM_NOT_ALLOWED", where: section.id });
-        for (const objective of block.objectives) {
-          const source = context.objectives.find((o) => o.id === objective.id);
-          if (!source || source.label !== objective.label || source.officialCode !== objective.officialCode) issues.push({ code: "ALIGNMENT_NOT_IN_DATASET", where: section.id, detail: objective.id });
-        }
+        // The whole block must equal what the snapshot says: identity, claim and every objective, in order.
+        const expected = {
+          claim: context.alignmentClaimsAllowed ? "aligned" : "none",
+          curriculumName: context.curriculum.name,
+          versionLabel: context.curriculum.version.label,
+          datasetKind: context.curriculum.version.kind,
+          objectives: context.objectives.map((o) => ({ id: o.id, officialCode: o.officialCode, label: o.label, coverage: o.coverage, note: o.note })),
+        };
+        const actual = { claim: block.claim, curriculumName: block.curriculumName, versionLabel: block.versionLabel, datasetKind: block.datasetKind, objectives: block.objectives };
+        if (canonicalJson(actual) !== canonicalJson(expected)) issues.push({ code: "ALIGNMENT_NOT_IN_DATASET", where: section.id });
       }
       continue;
     }
@@ -75,7 +85,7 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
   return { overall: issues.length === 0 ? "pass" : "fail", issues };
 }
 
-function checkStructure(pkg: LessonPackage, context: CurriculumContext): StructureReport {
+function checkStructure(pkg: LessonPackage, context: CurriculumContext, request: LessonRequestV2): StructureReport {
   const issues: Issue[] = [];
   const ids = pkg.sections.map((s) => s.id);
   if (new Set(ids).size !== ids.length) issues.push({ code: "SECTION_ID_DUPLICATE" });
@@ -101,9 +111,52 @@ function checkStructure(pkg: LessonPackage, context: CurriculumContext): Structu
   for (const edge of pkg.deps) if (!byId.has(edge.from) || !byId.has(edge.to)) issues.push({ code: "DEP_DANGLING", detail: `${edge.from}->${edge.to}` });
   if (hasCycle(pkg)) issues.push({ code: "DEP_CYCLE" });
 
+  // every section kind a requested document needs is present, and each document lists all of its kinds
+  const kinds = new Set<SectionKind>(pkg.sections.map((s) => s.kind));
+  for (const doc of pkg.documents) {
+    const listed = new Set(doc.sectionIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!.kind] : [])));
+    for (const kind of DOCUMENT_SECTION_KINDS[doc.id]) {
+      if (!kinds.has(kind)) issues.push({ code: "SECTION_KIND_MISSING", where: doc.id, detail: kind });
+      else if (!listed.has(kind)) issues.push({ code: "DOCUMENT_SECTION_UNLISTED", where: doc.id, detail: kind });
+    }
+  }
+
+  // dependency edges are exactly the canonical set the builder produces: no missing, extra, duplicate or re-typed edge
+  const edgeKey = (e: { from: string; to: string; kind: string }) => `${e.from}>${e.to}:${e.kind}`;
+  const canonicalEdges = EDGES.map((e) => edgeKey({ from: sectionId(e.from), to: sectionId(e.to), kind: e.kind })).sort();
+  const storedEdges = pkg.deps.map(edgeKey).sort();
+  if (JSON.stringify(canonicalEdges) !== JSON.stringify(storedEdges)) issues.push({ code: "DEP_EDGES_MISMATCH" });
+
   // hashes recomputed from the content and from the upstream content
   for (const section of pkg.sections) {
     if (sectionContentHash(section) !== section.contentHash) issues.push({ code: "CONTENT_HASH_MISMATCH", where: section.id });
+  }
+  const llmSource = (section: Section) => (section.provenance.method === "llm" ? { promptVersion: PROSE_PROMPT_VERSION, model: section.provenance.model ?? null } : null);
+  const countBlocks = (kind: SectionKind, type: string) => pkg.sections.filter((s) => s.kind === kind).reduce((n, s) => n + s.blocks.filter((b) => b.type === type).length, 0);
+  for (const section of pkg.sections) {
+    const minutes = pkg.outline.sections.find((o) => o.id === section.id)?.minutes;
+    const upstreamKinds = EDGES.filter((e) => e.to === section.kind).map((e) => e.from);
+    const upstream = upstreamKinds.map((kind) => pkg.sections.find((s) => s.kind === kind)?.contentHash);
+    if (minutes === undefined || upstream.some((h) => h === undefined)) {
+      issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id, detail: "inputs cannot be rebuilt" });
+      continue;
+    }
+    const params = sectionInputsParams(section.kind, {
+      seed: pkg.seed,
+      difficulty: request.difficulty,
+      exampleCount: countBlocks("worked_examples", "worked_example"),
+      exerciseCount: countBlocks("exercises", "question"),
+      llm: llmSource(section),
+    });
+    const expected = sectionInputsHash({ kind: section.kind, params: { ...params, contextHash: context.contextHash, minutes }, upstreamContentHashes: upstream as string[] });
+    if (expected !== section.inputsHash) issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id });
+  }
+
+  // a section that exists must carry its questions: an empty exercise set or answer key is not a lesson
+  for (const [kind, type] of [["exercises", "question"], ["solutions", "solution"], ["worked_examples", "worked_example"]] as const) {
+    for (const section of pkg.sections) {
+      if (section.kind === kind && !section.blocks.some((b) => b.type === type)) issues.push({ code: "SECTION_EMPTY", where: section.id });
+    }
   }
 
   // each exercise has exactly one solution, in the same order
@@ -145,8 +198,27 @@ export function validatePackage(raw: unknown): PackageReport {
     };
   }
   const pkg = parsed.data as LessonPackage;
-  const context = pkg.context as CurriculumContext;
-  const structure = checkStructure(pkg, context);
+  const failed = (code: string, detail?: string): PackageReport => ({
+    overall: "failed",
+    structure: { overall: "fail", issues: [{ code, ...(detail ? { detail } : {}) }] },
+    math: null,
+    prose: { overall: "fail", issues: [] },
+    validatorVersion: PACKAGE_VALIDATOR_VERSION,
+  });
+  // `request` and `context` are opaque to the package schema; stored garbage is reported, never thrown on.
+  const context = StoredContextShape.safeParse(pkg.context);
+  if (!context.success) return failed("CONTEXT_INVALID", context.error.issues[0]?.path.join("."));
+  const request = LessonRequestV2.safeParse(pkg.request);
+  if (!request.success) return failed("REQUEST_INVALID", request.error.issues[0]?.path.join("."));
+  try {
+    return validateParsed(pkg, pkg.context as CurriculumContext, request.data);
+  } catch {
+    return failed("VALIDATOR_ERROR");
+  }
+}
+
+function validateParsed(pkg: LessonPackage, context: CurriculumContext, request: LessonRequestV2): PackageReport {
+  const structure = checkStructure(pkg, context, request);
 
   const examples = pkg.sections.flatMap((s) => (s.kind === "worked_examples" ? s.blocks.flatMap((b) => (b.type === "worked_example" ? [{ id: b.questionId, problem: b.problem, solution: b.solution, steps: b.steps }] : [])) : []));
   const exercises = pkg.sections.flatMap((s) => (s.kind === "exercises" ? s.blocks.flatMap((b) => (b.type === "question" ? [{ id: b.questionId, problem: b.problem }] : [])) : []));

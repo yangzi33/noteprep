@@ -7,10 +7,11 @@ import { artifactPath, artifactPathV2, EDITIONS, FORMATS, MANIFEST_V2, type Mani
 import type { ClaimedJob, JobsDal } from "@/lib/server/dal/jobs";
 import type { createSettlementDal } from "@/lib/server/dal/settlement";
 import { CompileError, type Compiler, type DocumentCompiler } from "@/lib/latex/compiler";
-import { renderPackage, RenderError, TEMPLATE_VERSION } from "@/lib/latex/render";
+import { renderPackage, TEMPLATE_VERSION } from "@/lib/latex/render";
 import { renderSkeletonSource } from "@/lib/latex/skeleton";
 import type { LlmProvider } from "@/lib/llm/types";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
+import { log } from "./log";
 import { buildPackage } from "@/lib/package/build";
 import type { LessonPackage } from "@/lib/package/schema";
 import { PROSE_PROMPT_VERSION, type ProseDraft } from "@/lib/package/prose";
@@ -72,6 +73,30 @@ export interface PipelineDeps {
 }
 
 const SkeletonProse = z.object({ objectives: z.array(z.string().max(300)).min(1).max(10) });
+
+
+/**
+ * Runs the upload-and-commit part of an attempt. If the attempt fails after it may have written objects, its own
+ * prefix is deleted on a best-effort basis: a deletion error is logged (no path) and never replaces the original error.
+ * A prefix is never deleted when the commit's outcome is unknown (for example a lost database connection), because the
+ * commit may have published it; a crash before this cleanup also leaves orphans, which a later reconciler must sweep (P3).
+ */
+async function withAttemptCleanup<T>(store: ObjectStore, scope: { ownerId: string; lessonId: string; revisionId: string; attemptId: string }, jobId: string, work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    // A storage failure: the attempt failed while uploading. A domain error: settlement refused the commit and rolled back.
+    // Anything else (an unknown database error) may have come after a commit, so the prefix is left alone.
+    if (error instanceof StorageError || (error instanceof PipelineError && error.code === "storage_failed") || error instanceof DomainError) {
+      try {
+        await store.deletePrefix(`${scope.ownerId}/${scope.lessonId}/${scope.revisionId}/${scope.attemptId}`);
+      } catch (cleanupError) {
+        log("attempt_cleanup_failed", { jobId, code: cleanupError instanceof Error ? cleanupError.name : "unknown" });
+      }
+    }
+    throw error;
+  }
+}
 
 /**
  * generate -> validate -> compile -> store -> commit. Each step first renews the lease and learns
@@ -221,16 +246,20 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     let rendered;
     try {
       rendered = renderPackage(builtPackage);
-    } catch (error) {
-      if (error instanceof RenderError) throw new PipelineError("render_failed", false);
-      throw error;
+    } catch {
+      // Rendering is deterministic: whatever went wrong (a refused text, a RangeError from a view, a malformed block) will
+      // go wrong again, and a retry would repeat the paid model call first. Never retried.
+      throw new PipelineError("render_failed", false);
     }
     let compiledDocs;
     try {
       compiledDocs = await documentCompiler.compile({ documents: rendered.map((d) => ({ id: d.id, tex: d.tex })), signal });
     } catch (error) {
-      if (error instanceof CompileError) throw new PipelineError(error.code, error.retryable);
-      throw error;
+      if (signal?.aborted) throw error; // cancellation and lease loss are handled by the runner
+      // Only an unavailable sandbox is transient. The same source times out or fails again, so those (and anything the
+      // compiler did not classify) are final instead of repeating the model call.
+      if (error instanceof CompileError) throw new PipelineError(error.code, error.code === "sandbox_unavailable" && error.retryable);
+      throw new PipelineError("compile_failed", false);
     }
     // Compile everything or nothing: the compiler must return exactly the documents asked for.
     if (compiledDocs.length !== rendered.length || !rendered.every((d) => compiledDocs.some((c) => c.id === d.id))) {
@@ -241,41 +270,43 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     const revisionId = randomUUID();
     const attemptId = randomUUID(); // objects live under this attempt only; losers become orphans, never published
     const scope = { ownerId: job.ownerId, lessonId: job.lessonId, revisionId, attemptId };
-    const documents: ManifestDocument[] = [];
-    try {
-      for (const doc of rendered) {
-        const pdf = compiledDocs.find((c) => c.id === doc.id)!;
-        const put = async (format: "pdf" | "tex", data: Uint8Array) => {
-          const path = artifactPathV2(scope, doc.id, format);
-          await store.put(path, data);
-          const stored = await store.stat(path); // verify what was actually written, not what we meant to write
-          if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) throw new StorageError(true);
-          return { path, sha256: stored.sha256, bytes: stored.bytes };
-        };
-        documents.push({ document: doc.id, pdf: { ...(await put("pdf", pdf.pdf)), pages: pdf.pages }, tex: await put("tex", new TextEncoder().encode(doc.tex)) });
+    await withAttemptCleanup(store, scope, job.id, async () => {
+      const documents: ManifestDocument[] = [];
+      try {
+        for (const doc of rendered) {
+          const pdf = compiledDocs.find((c) => c.id === doc.id)!;
+          const put = async (format: "pdf" | "tex", data: Uint8Array) => {
+            const path = artifactPathV2(scope, doc.id, format);
+            await store.put(path, data);
+            const stored = await store.stat(path); // verify what was actually written, not what we meant to write
+            if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) throw new StorageError(true);
+            return { path, sha256: stored.sha256, bytes: stored.bytes };
+          };
+          documents.push({ document: doc.id, pdf: { ...(await put("pdf", pdf.pdf)), pages: pdf.pages }, tex: await put("tex", new TextEncoder().encode(doc.tex)) });
+        }
+      } catch (error) {
+        if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
+        throw error;
       }
-    } catch (error) {
-      if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
-      throw error;
-    }
-    const manifest: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion, documents };
-    await settlement.commitSuccess({
-      jobId: job.id,
-      fencingToken: job.fencingToken,
-      attemptId,
-      revisionId,
-      revision: {
-        schemaVersion: revisionSchemaVersion,
-        content,
-        contentHash,
-        validationReport: validation.report,
-        validationStatus: validation.status,
-        templateVersion,
-        validatorVersion: validation.validatorVersion,
-        generationMeta: { ...meta, compiler: documentCompiler.id, documents: documents.map((d) => ({ document: d.document, pages: d.pdf.pages })) },
-      },
-      manifest,
-      requestedDocuments: rendered.map((d) => d.id),
+      const manifest: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion, documents };
+      await settlement.commitSuccess({
+        jobId: job.id,
+        fencingToken: job.fencingToken,
+        attemptId,
+        revisionId,
+        revision: {
+          schemaVersion: revisionSchemaVersion,
+          content,
+          contentHash,
+          validationReport: validation.report,
+          validationStatus: validation.status,
+          templateVersion,
+          validatorVersion: validation.validatorVersion,
+          generationMeta: { ...meta, compiler: documentCompiler.id, documents: documents.map((d) => ({ document: d.document, pages: d.pdf.pages })) },
+        },
+        manifest,
+        requestedDocuments: rendered.map((d) => d.id),
+    });
     });
     return;
   }
@@ -305,40 +336,42 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     student: { tex: new TextEncoder().encode(renderSkeletonSource("student", spec, objectives)), pdf: compiled.student },
     teacher: { tex: new TextEncoder().encode(renderSkeletonSource("teacher", spec, objectives)), pdf: compiled.teacher },
   };
-  const manifest: ManifestEntry[] = [];
-  try {
-    for (const edition of EDITIONS) {
-      for (const format of FORMATS) {
-        const data = sources[edition][format];
-        const path = artifactPath(scope, edition, format);
-        await store.put(path, data);
-        const stored = await store.stat(path); // verify what was actually written, not what we meant to write
-        if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) {
-          throw new StorageError(true);
+  await withAttemptCleanup(store, scope, job.id, async () => {
+    const manifest: ManifestEntry[] = [];
+    try {
+      for (const edition of EDITIONS) {
+        for (const format of FORMATS) {
+          const data = sources[edition][format];
+          const path = artifactPath(scope, edition, format);
+          await store.put(path, data);
+          const stored = await store.stat(path); // verify what was actually written, not what we meant to write
+          if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) {
+            throw new StorageError(true);
+          }
+          manifest.push({ edition, format, path, sha256: stored.sha256, bytes: stored.bytes });
         }
-        manifest.push({ edition, format, path, sha256: stored.sha256, bytes: stored.bytes });
       }
+    } catch (error) {
+      if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
+      throw error;
     }
-  } catch (error) {
-    if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
-    throw error;
-  }
 
-  await settlement.commitSuccess({
-    jobId: job.id,
-    fencingToken: job.fencingToken,
-    attemptId,
-    revisionId,
-    revision: {
-      schemaVersion: revisionSchemaVersion,
-      content,
-      contentHash,
-      validationReport: validation.report,
-      validationStatus: validation.status,
-      templateVersion,
-      validatorVersion: validation.validatorVersion,
-      generationMeta: meta,
-    },
-    manifest,
+    await settlement.commitSuccess({
+      jobId: job.id,
+      fencingToken: job.fencingToken,
+      attemptId,
+      revisionId,
+      revision: {
+        schemaVersion: revisionSchemaVersion,
+        content,
+        contentHash,
+        validationReport: validation.report,
+        validationStatus: validation.status,
+        templateVersion,
+        validatorVersion: validation.validatorVersion,
+        generationMeta: meta,
+      },
+      manifest,
+  });
   });
 }

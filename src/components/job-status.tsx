@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { cancelJobAction } from "@/app/jobs/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { isRetrying, isTerminal, type JobView } from "@/lib/ui/job-view";
+import { succeededPanel } from "@/lib/ui/lesson-view";
 import { describeOutcome, stageLabel, stateLabel } from "@/lib/ui/messages";
 
 const POLL_MS = 2000;
@@ -14,7 +15,7 @@ const POLL_MS = 2000;
  * The page is server-rendered with the job's current state, so a refresh or a return visit always shows
  * the truth. While the job is unfinished this component polls the status endpoint.
  */
-export function JobStatus({ initial }: { initial: JobView }) {
+export function JobStatus({ initial, hasPreview = false }: { initial: JobView; hasPreview?: boolean }) {
   const [job, setJob] = useState<JobView>(initial);
   const [offline, setOffline] = useState(false);
   const router = useRouter();
@@ -44,6 +45,7 @@ export function JobStatus({ initial }: { initial: JobView }) {
 
   const outcome = describeOutcome(job.state, job.errorCode);
   const stage = stageLabel(job.stage);
+  const panel = succeededPanel(job, { serverConfirmed: initial.state === "succeeded", hasPreview });
 
   return (
     <section aria-live="polite" className="mt-6 rounded border p-4" data-testid="job-status" data-state={job.state}>
@@ -59,8 +61,13 @@ export function JobStatus({ initial }: { initial: JobView }) {
       {job.cancelRequested && !isTerminal(job.state) && <p className="mt-1 text-sm">Cancel requested…</p>}
       {outcome && <p className="mt-2 text-sm">{outcome}</p>}
       {job.state === "succeeded" && (
-        <p className="mt-2 text-sm">
-          The lesson pack was saved. This build only produces placeholder files; downloads arrive with real compilation.
+        <p className="mt-2 text-sm" data-testid="job-succeeded">
+          {panel.text}{" "}
+          {panel.href && (
+            <Link href={panel.href} className="underline">
+              Open the preview
+            </Link>
+          )}
         </p>
       )}
       {offline && <p className="mt-2 text-sm text-muted-foreground">Connection problem; still trying…</p>}

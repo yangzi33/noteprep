@@ -67,12 +67,45 @@ function drawQuestions(seed: string, difficulty: "basic" | "mixed" | "challenge"
 type Draft = { kind: SectionKind; title: string; blocks: Section["blocks"]; method: "deterministic" | "llm"; model?: string; minutes: number; params: Record<string, unknown> };
 
 /** Edges: `from` is upstream of `to`. Solutions are a pure function of the exercises, so they always travel together. */
-const EDGES = [
+export const EDGES = [
   { from: "objectives", to: "explanation", kind: "references" },
   { from: "objectives", to: "exercises", kind: "references" },
   { from: "explanation", to: "worked_examples", kind: "references" },
   { from: "exercises", to: "solutions", kind: "derives" },
 ] as const satisfies readonly { from: SectionKind; to: SectionKind; kind: "derives" | "references" }[];
+
+export interface InputsParamsArgs {
+  seed: string;
+  difficulty: "basic" | "mixed" | "challenge";
+  exampleCount: number;
+  exerciseCount: number;
+  /** Set when the section's wording was model-written. */
+  llm: { promptVersion: string; model: string | null } | null;
+}
+
+/**
+ * The parameters a section was made from, other than the context hash, its minutes and its upstream sections.
+ * The builder hashes them into `inputsHash`; the validator rebuilds them from the stored package to verify it.
+ */
+export function sectionInputsParams(kind: SectionKind, a: InputsParamsArgs): Record<string, unknown> {
+  const llm: Record<string, unknown> = a.llm ? { promptVersion: a.llm.promptVersion, model: a.llm.model } : {};
+  switch (kind) {
+    case "worked_examples":
+      return { seed: a.seed, exampleCount: a.exampleCount, difficulty: a.difficulty, generatorVersion: GENERATOR_VERSION, ...llm };
+    case "exercises":
+    case "solutions":
+      return { seed: a.seed, exerciseCount: a.exerciseCount, difficulty: a.difficulty, generatorVersion: GENERATOR_VERSION };
+    case "explanation":
+    case "derivation":
+    case "teaching_sequence":
+    case "common_mistakes":
+      return llm;
+    case "objectives":
+    case "prerequisites":
+    case "alignment":
+      return {};
+  }
+}
 
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
@@ -87,7 +120,8 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
 
   // Sections whose words the model wrote say so; the rest of the package is identical with or without it.
   const llmMeta = prose ? ({ method: "llm", ...(prose.model ? { model: prose.model } : {}) } as const) : ({ method: "deterministic" } as const);
-  const llmParams: Record<string, unknown> = prose ? { promptVersion: PROSE_PROMPT_VERSION, model: prose.model } : {};
+  const paramsOf = (kind: SectionKind) =>
+    sectionInputsParams(kind, { seed, difficulty: request.difficulty, exampleCount: examples.length, exerciseCount: exercises.length, llm: prose ? { promptVersion: PROSE_PROMPT_VERSION, model: prose.model } : null });
 
   const drafts: Draft[] = [
     {
@@ -99,7 +133,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       method: "deterministic",
       minutes: 0,
-      params: {},
+      params: paramsOf("objectives"),
     },
     {
       kind: "prerequisites",
@@ -113,7 +147,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
             ],
       method: "deterministic",
       minutes: 0,
-      params: {},
+      params: paramsOf("prerequisites"),
     },
     {
       kind: "explanation",
@@ -127,7 +161,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
           ],
       ...llmMeta,
       minutes: plan.explanation,
-      params: llmParams,
+      params: paramsOf("explanation"),
     },
     {
       kind: "derivation",
@@ -147,7 +181,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       ...llmMeta,
       minutes: 0,
-      params: llmParams,
+      params: paramsOf("derivation"),
     },
     {
       kind: "worked_examples",
@@ -159,7 +193,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       ...llmMeta,
       minutes: plan.examples,
-      params: { seed, exampleCount: examples.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION, ...llmParams },
+      params: paramsOf("worked_examples"),
     },
     {
       kind: "teaching_sequence",
@@ -178,7 +212,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       ...llmMeta,
       minutes: plan.review,
-      params: llmParams,
+      params: paramsOf("teaching_sequence"),
     },
     {
       kind: "common_mistakes",
@@ -199,7 +233,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       ...llmMeta,
       minutes: 0,
-      params: llmParams,
+      params: paramsOf("common_mistakes"),
     },
     {
       kind: "exercises",
@@ -213,7 +247,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       method: "deterministic",
       minutes: plan.exercises,
-      params: { seed, exerciseCount: exercises.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+      params: paramsOf("exercises"),
     },
     {
       kind: "solutions",
@@ -224,7 +258,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       method: "deterministic",
       minutes: 0,
-      params: { seed, exerciseCount: exercises.length, difficulty: request.difficulty, generatorVersion: GENERATOR_VERSION },
+      params: paramsOf("solutions"),
     },
     {
       kind: "alignment",
@@ -241,7 +275,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       ],
       method: "deterministic",
       minutes: 0,
-      params: {},
+      params: paramsOf("alignment"),
     },
   ];
 

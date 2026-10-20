@@ -478,3 +478,30 @@ describe("resolving the curriculum context", () => {
     await expect(everything.resolveCurriculumContext({ versionId: "nope", topicId: topicBoth })).rejects.toBeInstanceOf(CurriculumNotFound);
   });
 });
+
+describe("concurrent loads", () => {
+  it("two parallel loads of the same new version: one loaded, one unchanged, no raw unique violation", async () => {
+    const d = renamed(WITH_LEVELS, "synthetic-levels@race", (x) => void (x.meta.version.label = "Synthetic race"));
+    const results = await Promise.allSettled([loadDataset(ownerDb, d, { allowSynthetic: true }), loadDataset(ownerDb, d, { allowSynthetic: true })]);
+    expect(results.map((r) => r.status)).toEqual(["fulfilled", "fulfilled"]);
+    const outcomes = results.map((r) => (r as PromiseFulfilledResult<{ outcome: string }>).value.outcome).sort();
+    expect(outcomes).toEqual(["loaded", "unchanged"]);
+    expect(await count("curriculum_version", "id = $1", [d.meta.version.id])).toBe(1);
+  });
+
+  it("two successors of one parent cannot both publish", async () => {
+    const parent = renamed(WITH_LEVELS, "synthetic-levels@race-parent", (x) => void (x.meta.version.label = "Synthetic race parent"));
+    await loadDataset(ownerDb, parent, { allowSynthetic: true });
+    const mk = (id: string) => renamed(WITH_LEVELS, id, (x) => {
+        x.meta.version.supersedes = parent.meta.version.id;
+        x.meta.version.label = `Synthetic ${id}`;
+      });
+    const a = mk("synthetic-levels@race-a");
+    const b = mk("synthetic-levels@race-b");
+    const results = await Promise.allSettled([loadDataset(ownerDb, a, { allowSynthetic: true }), loadDataset(ownerDb, b, { allowSynthetic: true })]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+    expect(rejected.reason).toMatchObject({ code: "SUPERSEDES_INVALID" });
+    expect(await count("curriculum_version", "id IN ($1, $2) AND status = 'published'", [a.meta.version.id, b.meta.version.id])).toBe(1);
+  });
+});

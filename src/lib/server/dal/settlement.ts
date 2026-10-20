@@ -2,12 +2,13 @@ import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   InvariantViolation,
+  ManifestIncomplete,
   NotCompleteSuccess,
   NotFound,
   StaleOrCanceled,
 } from "@/lib/domain/errors";
 import { assertManifestComplete, assertManifestV2Complete, type ManifestEntry, type ManifestV2 } from "@/lib/domain/manifest";
-import type { DocumentKind } from "@/lib/package/schema";
+import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import type { Db } from "../db";
 import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
@@ -54,6 +55,17 @@ interface JobLockRow {
   revision_id: string | null;
 }
 
+const DOCUMENTS = new Set<string>(DOCUMENT_KINDS);
+
+/** The documents a version 2 request asked for, read from the lesson's stored request; null when it is not well formed. */
+function storedRequestedDocuments(inputSpec: unknown): DocumentKind[] | null {
+  const documents = (inputSpec as { request?: { documents?: unknown } } | null)?.request?.documents;
+  if (!Array.isArray(documents) || documents.length === 0 || !documents.every((d) => typeof d === "string" && DOCUMENTS.has(d))) return null;
+  return documents as DocumentKind[];
+}
+
+const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && new Set(a).size === a.length && a.every((x) => b.includes(x));
+
 async function lockJob(tx: Tx, jobId: string): Promise<JobLockRow> {
   const rows = await tx.$queryRaw<JobLockRow[]>`
     SELECT state::text AS state, kind::text AS kind, owner_id, lesson_id, fencing_token, cancel_requested_at, revision_id
@@ -84,8 +96,8 @@ export function createSettlementDal(db: Db) {
         if (job.kind !== "generate") throw new InvariantViolation("commitSuccess is for generate jobs");
 
         // Block publication for deleted lessons and accounts being deleted; SHARE locks wait for an in-flight delete.
-        const lesson = await tx.$queryRaw<{ deleted_at: Date | null }[]>`
-          SELECT deleted_at FROM lesson WHERE id = ${job.lesson_id}::uuid FOR SHARE`;
+        const lesson = await tx.$queryRaw<{ deleted_at: Date | null; request_version: number; input_spec: unknown }[]>`
+          SELECT deleted_at, request_version, input_spec FROM lesson WHERE id = ${job.lesson_id}::uuid FOR SHARE`;
         const profile = await tx.$queryRaw<{ status: string }[]>`
           SELECT status::text AS status FROM profile WHERE id = ${job.owner_id}::uuid FOR SHARE`;
         if (!lesson[0] || lesson[0].deleted_at || profile[0]?.status !== "active") throw new StaleOrCanceled();
@@ -94,7 +106,16 @@ export function createSettlementDal(db: Db) {
           throw new NotCompleteSuccess("only fully verified output counts as a complete generation");
         }
         const scope = { ownerId: job.owner_id, lessonId: job.lesson_id, revisionId: input.revisionId, attemptId: input.attemptId };
-        if (Array.isArray(input.manifest)) assertManifestComplete(input.manifest as readonly ManifestEntry[], scope);
+        if (lesson[0].request_version === 2) {
+          // The pack that was asked for is what the lesson stored at enqueue, never the worker's own statement of it.
+          const requested = storedRequestedDocuments(lesson[0].input_spec);
+          if (!requested) throw new InvariantViolation("the lesson has no stored document request");
+          if (input.requestedDocuments && !sameSet(input.requestedDocuments, requested)) throw new ManifestIncomplete("the documents differ from the stored request");
+          if (Array.isArray(input.manifest)) throw new ManifestIncomplete("a version 2 lesson needs a version 2 manifest");
+          const manifest = input.manifest as ManifestV2;
+          if (manifest.templateVersion !== input.revision.templateVersion) throw new ManifestIncomplete("the manifest and the revision use different templates");
+          assertManifestV2Complete(manifest, scope, requested);
+        } else if (Array.isArray(input.manifest)) assertManifestComplete(input.manifest as readonly ManifestEntry[], scope);
         else assertManifestV2Complete(input.manifest as ManifestV2, scope, input.requestedDocuments ?? []);
 
         const next = await tx.$queryRaw<{ n: number }[]>`

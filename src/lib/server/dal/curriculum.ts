@@ -4,6 +4,10 @@ import { withContextHash, type CurriculumContext } from "@/lib/curriculum/contex
 import type { Coverage, DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { CurriculumNotFound, InvalidSelection, TopicUnsupported } from "@/lib/domain/errors";
 import type { Db } from "../db";
+import type { Tx } from "./tx";
+
+/** Either the shared client or an open transaction; a caller already in a transaction passes its own. */
+export type CurriculumClient = Db | Tx;
 
 export interface CurriculumDalOptions {
   /** Sample data is visible only in development/staging (never set in production). */
@@ -60,10 +64,10 @@ const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
  * Public, read-only curriculum data. Nothing here is owner-scoped; what IS enforced is visibility: only
  * published versions, and only dataset kinds allowed in this environment.
  */
-export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) {
+export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions = {}) {
   const kinds: DatasetKind[] = ["real", ...(options.allowSample ? (["sample"] as const) : []), ...(options.allowSynthetic ? (["synthetic"] as const) : [])];
 
-  async function loadTree(versionId: string) {
+  async function loadTree(versionId: string, db: CurriculumClient = defaultDb) {
     const version = await db.curriculumVersion.findFirst({
       where: { id: versionId, status: "published", datasetKind: { in: kinds } },
       include: { curriculum: { include: { educationSystem: true } } },
@@ -106,7 +110,7 @@ export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) 
   return {
     /** Published curricula visible here, with their versions (latest first). */
     async listCurricula(): Promise<CurriculumSummary[]> {
-      const curricula = await db.curriculum.findMany({
+      const curricula = await defaultDb.curriculum.findMany({
         where: { versions: { some: { status: "published", datasetKind: { in: kinds } } } },
         include: {
           educationSystem: true,
@@ -208,8 +212,11 @@ export function createCurriculumDal(db: Db, options: CurriculumDalOptions = {}) 
      * Resolves the immutable context snapshot for a lesson. Refuses topics the engine cannot verify, so
      * an unsupported topic can never reach generation however the request was made.
      */
-    async resolveCurriculumContext(input: { versionId: string; topicId: string; objectiveIds?: string[] }): Promise<CurriculumContext> {
-      const tree = await loadTree(input.versionId);
+    async resolveCurriculumContext(
+      input: { versionId: string; topicId: string; objectiveIds?: string[] },
+      db: CurriculumClient = defaultDb,
+    ): Promise<CurriculumContext> {
+      const tree = await loadTree(input.versionId, db);
       const topic = tree.topics.find((t) => t.id === input.topicId);
       if (!topic) throw new CurriculumNotFound();
       const concepts = tree.supportedConcepts.get(topic.id) ?? [];

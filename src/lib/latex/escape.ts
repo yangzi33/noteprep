@@ -34,6 +34,12 @@ const SPECIAL: Record<string, string> = {
 /** Characters with a safe, known rendering in the pinned fonts (T1 encoding, Latin-1 and Latin Extended-A letters). */
 const PLAIN = /^[A-Za-z0-9 .,;:!?'()\-/+=@*\[\]]$/;
 const LATIN_LETTER = /^[À-ſ]$/u;
+/**
+ * Letters inside that range which the pinned T1/utf8 setup has no definition for (LaTeX stops with "Unicode character not
+ * set up"), found by compiling the whole range in the real image (tests/latex/escape-chars.test.ts): H and T with stroke,
+ * kra, the two Ls with middle dot, n with a leading apostrophe, long s.
+ */
+const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
 
 const MAX_TEXT = 5000;
 
@@ -50,7 +56,7 @@ export function escapeText(input: string): string {
   for (const ch of text) {
     const special = SPECIAL[ch];
     if (special !== undefined) out += special;
-    else if (PLAIN.test(ch) || LATIN_LETTER.test(ch)) out += ch === "[" || ch === "]" ? `{${ch}}` : ch;
+    else if (PLAIN.test(ch) || (LATIN_LETTER.test(ch) && !UNPRINTABLE_LETTERS.has(ch))) out += ch === "[" || ch === "]" ? `{${ch}}` : ch;
     else out += "?";
   }
   return out.replace(/ {2,}/g, " ").trim();

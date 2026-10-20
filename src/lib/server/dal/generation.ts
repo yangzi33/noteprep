@@ -28,7 +28,8 @@ import { toJobDto, type JobDto } from "./dto";
 import { releaseReservation } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
-export type ResolveContext = (input: { versionId: string; topicId: string; objectiveIds?: string[] }) => Promise<CurriculumContext>;
+/** Runs on the given client, so inside the enqueue transaction it uses that transaction's connection. */
+export type ResolveContext = (input: { versionId: string; topicId: string; objectiveIds?: string[] }, client?: Tx) => Promise<CurriculumContext>;
 
 export interface GenerationDeps {
   /** Resolves a v2 request's curriculum context (provided by createWebDal). Without it v2 requests are refused. */
@@ -148,7 +149,7 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
             versionId: request.curriculum.versionId,
             topicId: request.curriculum.topicId,
             objectiveIds: request.objectiveIds,
-          });
+          }, tx);
           lessonData = {
             title: context.topic.title,
             inputSpec: { requestVersion: 2, request, context } as unknown as Prisma.InputJsonValue,

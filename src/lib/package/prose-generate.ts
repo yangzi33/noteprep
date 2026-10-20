@@ -53,8 +53,11 @@ export async function generateProse(args: GenerateProseArgs): Promise<ProseResul
       limits: { timeoutMs: 45_000, maxOutputTokens: args.maxOutputTokens, maxCostMicros: 100_000 },
       signal: args.signal,
     });
-    if (result.usage) await args.charge(result.usage);
+    // Every call counts, even one that reported nothing: charge the ceiling (the full output allowance) instead of zero.
+    await args.charge(result.usage ?? { inputTokens: 0, outputTokens: args.maxOutputTokens, costMicros: 0 });
     if (!result.ok) {
+      // Cut off by the token limit: the same request would be cut off again, so go straight to the templated wording.
+      if (result.error.truncated) return { draft: null, attempts: attempt, model, rejected: ["TRUNCATED"] };
       // A refusal or unparsable answer is output we cannot use: try again once, then fall back. Everything else
       // (auth, bad request, overload, timeout) is the job's problem and follows the usual retry rules.
       if (result.error.type === "refused" || result.error.type === "invalid_output") {

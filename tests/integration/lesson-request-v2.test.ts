@@ -6,17 +6,19 @@ import { afterAll, beforeAll, describe, expect, inject, it, vi } from "vitest";
 import { verifyContextHash } from "@/lib/curriculum/context";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
-import { CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
+import { AllowanceExhausted, CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS } from "@/lib/domain/generation";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, SKELETON_MARKER, type DocumentCompiler } from "@/lib/latex/compiler";
 import { renderDocument } from "@/lib/latex/render";
 import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
 import { ManifestIncomplete } from "@/lib/domain/errors";
-import { artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
+import { artifactPath, artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
 import { FAKE_PROSE, FakeLlmProvider, type FakeStep } from "@/lib/llm/fake";
 import type { LlmProvider, StructuredRequest, StructuredResult } from "@/lib/llm/types";
 import { FsObjectStore } from "@/lib/storage/store";
@@ -24,11 +26,23 @@ import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pgErrorCode, pools, seedRevision } from "./helpers";
 
-const flags = vi.hoisted(() => ({ forceInvalid: false }));
+const flags = vi.hoisted(() => ({ forceInvalid: false, renderThrows: null as Error | null }));
 // Lets one test make the (real) package validator report a failure, to prove the job then fails and releases its allowance.
 vi.mock("@/lib/package/validate", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/package/validate")>();
   return { ...real, validatePackage: (pkg: unknown) => (flags.forceInvalid ? { ...real.validatePackage(pkg), overall: "failed" as const } : real.validatePackage(pkg)) };
+});
+
+// Lets one test make rendering fail with an unexpected (non-RenderError) error.
+vi.mock("@/lib/latex/render", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/latex/render")>();
+  return {
+    ...real,
+    renderPackage: (pkg: Parameters<typeof real.renderPackage>[0]) => {
+      if (flags.renderThrows) throw flags.renderThrows;
+      return real.renderPackage(pkg);
+    },
+  };
 });
 
 const info = inject("testDb");
@@ -179,6 +193,110 @@ describe("creating a curriculum lesson", () => {
     const lesson = (await admin.query(`SELECT l.* FROM lesson l JOIN generation_job j ON j.lesson_id = l.id WHERE j.id = $1`, [job.id])).rows[0];
     expect(lesson).toMatchObject({ request_version: 1, curriculum_version_id: null, topic_id: null, objective_ids: [] });
   });
+});
+
+// Tests that only enqueue leave queued jobs behind; cancel them so later suites that drive the worker get their own job.
+const cancelQueued = () =>
+  admin.query(
+    `UPDATE generation_job SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
+            error_code = 'test_cleanup', finished_at = now() WHERE state IN ('queued', 'running')`,
+  );
+
+const V1_REQUEST = { topic: "linear_equations_one_variable", level: "Grade 7-8 equivalent", objectives: ["Solve ax + b = c"], durationMinutes: 60, difficulty: "mixed", questionCount: 5, notes: "" };
+
+describe("one idempotency key across request formats", () => {
+  afterAll(cancelQueued);
+  const counts = async (ownerId: string) => ({
+    jobs: (await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+    reservations: (await admin.query(`SELECT count(*)::int AS n FROM usage_reservation WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+    lessons: (await admin.query(`SELECT count(*)::int AS n FROM lesson WHERE owner_id = $1`, [ownerId])).rows[0].n as number,
+  });
+  it("conflicts when a key first used for a v1 request is reused for a v2 request", async () => {
+    const ctx = await account();
+    const k = key();
+    await web.generation.createGeneration(ctx, V1_REQUEST, k);
+    await expect(web.generation.createGeneration(ctx, request(), k)).rejects.toBeInstanceOf(IdempotencyConflict);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect(await counts(ctx.userId)).toEqual({ jobs: 1, reservations: 1, lessons: 1 });
+  });
+  it("conflicts when a key first used for a v2 request is reused for a v1 request", async () => {
+    const ctx = await account();
+    const k = key();
+    await web.generation.createGeneration(ctx, request(), k);
+    await expect(web.generation.createGeneration(ctx, V1_REQUEST, k)).rejects.toBeInstanceOf(IdempotencyConflict);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect(await counts(ctx.userId)).toEqual({ jobs: 1, reservations: 1, lessons: 1 });
+  });
+});
+
+describe("the allowance invariants hold for curriculum requests", () => {
+  afterAll(cancelQueued);
+  it("allows three complete generations and rejects the fourth", async () => {
+    const ctx = await account();
+    for (let i = 1; i <= 3; i++) {
+      const { job } = await web.generation.createGeneration(ctx, request(), key());
+      expect(await runToEnd(job.id)).toMatchObject({ state: "succeeded" });
+      expect(await bucket(ctx.userId)).toEqual({ used: i, reserved: 0 });
+    }
+    const err = await web.generation.createGeneration(ctx, request(), key()).catch((e) => e);
+    expect(err).toBeInstanceOf(AllowanceExhausted);
+    expect(err).toMatchObject({ source: "trial", pending: 0 });
+    expect(await bucket(ctx.userId)).toEqual({ used: 3, reserved: 0 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(3);
+  });
+
+  it("lets exactly one of many concurrent requests take the last unit", async () => {
+    const ctx = await account();
+    await admin.query(`UPDATE usage_bucket SET used = 2 WHERE owner_id = $1`, [ctx.userId]);
+    const results = await Promise.allSettled(Array.from({ length: 12 }, () => web.generation.createGeneration(ctx, request(), key())));
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(rejected).toHaveLength(11);
+    for (const r of rejected) expect(r.reason).toBeInstanceOf(AllowanceExhausted);
+    expect(await bucket(ctx.userId)).toEqual({ used: 2, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(1);
+  });
+
+  it("collapses concurrent identical requests with one key into one job and one reservation", async () => {
+    const ctx = await account();
+    const k = key();
+    const results = await Promise.all(Array.from({ length: 8 }, () => web.generation.createGeneration(ctx, request(), k)));
+    expect(new Set(results.map((r) => r.job.id)).size).toBe(1);
+    expect(results.filter((r) => !r.replayed)).toHaveLength(1);
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM usage_reservation WHERE owner_id = $1`, [ctx.userId])).rows[0].n).toBe(1);
+  });
+
+  it("treats the same set of documents in another order as the same request", async () => {
+    const ctx = await account();
+    const k = key();
+    const first = await web.generation.createGeneration(ctx, request({ documents: ["notes", "worksheet"] }), k);
+    const again = await web.generation.createGeneration(ctx, request({ documents: ["worksheet", "notes"] }), k);
+    expect(again).toMatchObject({ replayed: true, job: { id: first.job.id } });
+    const lesson = (await admin.query(`SELECT input_spec FROM lesson WHERE owner_id = $1`, [ctx.userId])).rows[0];
+    expect(lesson.input_spec.request.documents).toEqual(["notes", "worksheet"]);
+  });
+});
+
+describe("enqueueing under connection-pool pressure", () => {
+  afterAll(cancelQueued);
+  it("does not starve itself when simultaneous submissions outnumber the pool", async () => {
+    // A pool of 3 and 12 simultaneous submissions: if the curriculum lookup needed a connection of its own while
+    // the transaction holds one, every connection would be taken by a waiting transaction and nothing could finish.
+    const smallDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: info.appUrl, max: 3 }) });
+    try {
+      const small = createWebDal(smallDb, { limits, curriculum: { allowSample: true } });
+      const ctxs = await Promise.all(Array.from({ length: 12 }, () => account()));
+      const started = Date.now();
+      const results = await Promise.allSettled(ctxs.map((c) => small.generation.createGeneration(c, request(), key())));
+      const elapsed = Date.now() - started;
+      expect(results.filter((r) => r.status === "rejected").map((r) => String((r as PromiseRejectedResult).reason))).toEqual([]);
+      expect(elapsed).toBeLessThan(8_000);
+      for (const c of ctxs) expect(await bucket(c.userId)).toEqual({ used: 0, reserved: 1 });
+    } finally {
+      await smallDb.$disconnect();
+    }
+  }, 60_000);
 });
 
 async function runToEnd(jobId: string) {
@@ -423,6 +541,53 @@ describe("the three-document pack", () => {
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
   });
 
+  describe("deterministic failures are final: a retry would repeat the paid model call for nothing", () => {
+    const calls = async (jobId: string) => (await admin.query(`SELECT calls_used FROM generation_job WHERE id = $1`, [jobId])).rows[0].calls_used as number;
+    const llmPack = (over: Partial<PipelineDeps>) => packWith({ llm: new FakeLlmProvider(), proseMode: "llm", ...over });
+
+    it("an unexpected error while rendering fails the job after one attempt and one model call", async () => {
+      flags.renderThrows = new RangeError("unknown section");
+      try {
+        const { ctx, jobId, row, rev } = await llmPack({});
+        expect(row).toMatchObject({ state: "failed", error_code: "render_failed", attempt: 1 });
+        expect(await calls(jobId)).toBe(1);
+        expect(rev).toBeUndefined();
+        expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+      } finally {
+        flags.renderThrows = null;
+      }
+    });
+
+    it("a compiler that throws an unclassified error fails the job after one attempt and one model call", async () => {
+      const broken: DocumentCompiler = { id: "broken", compile: async () => { throw new Error("boom"); } };
+      const { ctx, jobId, row } = await llmPack({ documentCompiler: broken });
+      expect(row).toMatchObject({ state: "failed", error_code: "compile_failed", attempt: 1 });
+      expect(await calls(jobId)).toBe(1);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("a compile timeout fails the job after one attempt and one model call", async () => {
+      const slow: DocumentCompiler = { id: "slow", compile: async () => { throw new CompileError("compile_timeout", true, "compiling took too long"); } };
+      const { ctx, jobId, row } = await llmPack({ documentCompiler: slow });
+      expect(row).toMatchObject({ state: "failed", error_code: "compile_timeout", attempt: 1 });
+      expect(await calls(jobId)).toBe(1);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("an unavailable sandbox is still transient: the job is retried against the same reservation", async () => {
+      let n = 0;
+      const flaky: DocumentCompiler = {
+        id: "flaky",
+        async compile(r) {
+          if (n++ === 0) throw new CompileError("sandbox_unavailable", true, "the compiler is not available");
+          return new SkeletonDocumentCompiler().compile(r);
+        },
+      };
+      const { row } = await llmPack({ documentCompiler: flaky });
+      expect(row).toMatchObject({ state: "succeeded", attempt: 2 });
+    });
+  });
+
   it("a storage failure fails the job and releases the allowance", async () => {
     const failing: ObjectStore = {
       put: async () => {
@@ -435,6 +600,66 @@ describe("the three-document pack", () => {
     expect(row).toMatchObject({ state: "failed", error_code: "storage_failed" });
     expect(rev).toBeUndefined();
     expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+  });
+
+  describe("a failed attempt removes the files it uploaded", () => {
+    const withCommit = (commit: PipelineDeps["settlement"]["commitSuccess"]): Partial<PipelineDeps> => ({ settlement: { ...worker.settlement, commitSuccess: commit } as PipelineDeps["settlement"] });
+    const lessonFiles = async (ownerId: string, lessonId: string) => (await listed(`${ownerId}/${lessonId}`)).filter((f) => f.endsWith(".pdf") || f.endsWith(".tex"));
+
+    it("when the commit is refused on every attempt: nothing stays in storage and the allowance is released", async () => {
+      const refuse = async () => {
+        throw new ManifestIncomplete("forced");
+      };
+      const { ctx, row } = await packWith(withCommit(refuse));
+      expect(row.state).toBe("failed");
+      const lessonId = (await admin.query(`SELECT id FROM lesson WHERE owner_id = $1`, [ctx.userId])).rows[0].id as string;
+      expect(await lessonFiles(ctx.userId, lessonId)).toEqual([]);
+      expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 0 });
+    });
+
+    it("a refused first attempt leaves only the successful retry's files, which the manifest names", async () => {
+      let calls = 0;
+      const once: PipelineDeps["settlement"]["commitSuccess"] = async (input) => {
+        if (calls++ === 0) throw new ManifestIncomplete("forced");
+        return worker.settlement.commitSuccess(input);
+      };
+      const { ctx, row, rev } = await packWith(withCommit(once));
+      expect(row).toMatchObject({ state: "succeeded", attempt: 2 });
+      const files = await lessonFiles(ctx.userId, rev.lesson_id);
+      const named = rev.artifact_manifest.documents.flatMap((d: { pdf: { path: string }; tex: { path: string } }) => [d.pdf.path, d.tex.path]).map((p: string) => p.split("/").slice(2).join("/"));
+      expect([...files].sort()).toEqual([...named].sort());
+      expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+    });
+
+    it("a commit refused because the job was canceled meanwhile also removes the uploaded files", async () => {
+      let jobId = "";
+      const cancelThenCommit: PipelineDeps["settlement"]["commitSuccess"] = async (input) => {
+        jobId = input.jobId;
+        await admin.query(`UPDATE generation_job SET cancel_requested_at = now() WHERE id = $1`, [input.jobId]);
+        return worker.settlement.commitSuccess(input);
+      };
+      const ctx = await account();
+      await web.generation.createGeneration(ctx, request(), key());
+      await runOnce({ ...deps, ...withCommit(cancelThenCommit) }, "w-cancel");
+      expect(jobId).not.toBe("");
+      const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [jobId])).rows[0].lesson_id as string;
+      expect(await lessonFiles(ctx.userId, lessonId)).toEqual([]);
+      expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
+    });
+
+    it("a failing cleanup never hides the original failure", async () => {
+      const failing = new FsObjectStore(storeDir);
+      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
+      const storeFails: ObjectStore = { put: async () => { throw new StorageError(false); }, stat: async () => null, deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
+      const refuse = async () => {
+        throw new ManifestIncomplete("forced");
+      };
+      const { row } = await packWith({ store, ...withCommit(refuse) });
+      expect(row.state).toBe("failed"); // retried and exhausted, exactly as without a cleanup failure
+      // A storage failure with a failing cleanup must stay storage_failed: a replaced error would be internal_error.
+      const { row: storageRow } = await packWith({ store: storeFails });
+      expect(storageRow).toMatchObject({ state: "failed", error_code: "storage_failed" });
+    });
   });
 
   it("settlement itself refuses a manifest that is not exactly the requested pack, and nothing is consumed", async () => {
@@ -451,10 +676,12 @@ describe("the three-document pack", () => {
     const full: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion: "classic/1", documents: [doc("notes"), doc("worksheet"), doc("solutions")] };
     const revision = { schemaVersion: 2, content: { x: 1 }, contentHash: `sha256:${"b".repeat(64)}`, validationReport: { overall: "verified" }, validationStatus: "verified" as const, templateVersion: "classic/1", validatorVersion: "t" };
     const base = { jobId: job.id, fencingToken: claimed.fencingToken, attemptId, revisionId, revision };
+    const legacy = (["student", "teacher"] as const).flatMap((edition) => (["tex", "pdf"] as const).map((format) => ({ edition, format, path: artifactPath(scope, edition, format), sha256: "a".repeat(64), bytes: 10 })));
     const wrong = [
       { manifest: { ...full, documents: full.documents.slice(0, 2) }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // one missing
       { manifest: full, requestedDocuments: ["notes", "worksheet"] as const }, // one extra
-      { manifest: full, requestedDocuments: undefined }, // no statement of what was requested
+      { manifest: legacy as never, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // a legacy list on a version 2 job
+      { manifest: { ...full, templateVersion: "classic/0" }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // not the revision's template
       { manifest: { ...full, documents: [doc("notes"), doc("worksheet"), { ...doc("solutions"), pdf: { ...file("solutions", "pdf"), path: `${ctx.userId}/${lessonId}/${revisionId}/${randomUUID()}/solutions.pdf`, pages: 1 } }] }, requestedDocuments: ["notes", "worksheet", "solutions"] as const }, // another attempt's file
     ];
     for (const w of wrong) await expect(worker.settlement.commitSuccess({ ...base, manifest: w.manifest, requestedDocuments: w.requestedDocuments })).rejects.toBeInstanceOf(ManifestIncomplete);
@@ -462,6 +689,30 @@ describe("the three-document pack", () => {
     expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
     await expect(worker.settlement.commitSuccess({ ...base, manifest: full, requestedDocuments: ["notes", "worksheet", "solutions"] })).resolves.toMatchObject({ replayed: false });
     expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+  });
+
+  it("settlement takes the requested documents from the stored request, not from the caller", async () => {
+    const ctx = await account();
+    const { job } = await web.generation.createGeneration(ctx, request(), key()); // asks for all three
+    const claimed = (await worker.jobs.claimNext("w-derive", 60_000))!;
+    const lessonId = (await admin.query(`SELECT lesson_id FROM generation_job WHERE id = $1`, [job.id])).rows[0].lesson_id as string;
+    const revisionId = randomUUID();
+    const attemptId = randomUUID();
+    const scope = { ownerId: ctx.userId, lessonId, revisionId, attemptId };
+    const doc = (document: "notes" | "worksheet" | "solutions") => ({
+      document,
+      pdf: { path: artifactPathV2(scope, document, "pdf"), sha256: "a".repeat(64), bytes: 10, pages: 1 },
+      tex: { path: artifactPathV2(scope, document, "tex"), sha256: "a".repeat(64), bytes: 10 },
+    });
+    // The manifest is missing the worksheet, and the caller (wrongly) says only notes and solutions were requested.
+    const missing: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion: "classic/1", documents: [doc("notes"), doc("solutions")] };
+    const revision = { schemaVersion: 2, content: { x: 1 }, contentHash: `sha256:${"b".repeat(64)}`, validationReport: { overall: "verified" }, validationStatus: "verified" as const, templateVersion: "classic/1", validatorVersion: "t" };
+    const input = { jobId: job.id, fencingToken: claimed.fencingToken, attemptId, revisionId, revision, manifest: missing };
+    await expect(worker.settlement.commitSuccess({ ...input, requestedDocuments: ["notes", "solutions"] })).rejects.toBeInstanceOf(ManifestIncomplete);
+    await expect(worker.settlement.commitSuccess(input)).rejects.toBeInstanceOf(ManifestIncomplete); // and saying nothing does not help
+    expect(await bucket(ctx.userId)).toEqual({ used: 0, reserved: 1 });
+    expect((await admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE lesson_id = $1`, [lessonId])).rows[0].n).toBe(0);
+    expect((await admin.query(`SELECT state FROM generation_job WHERE id = $1`, [job.id])).rows[0].state).toBe("running");
   });
 
   it("legacy quick-form lessons are refused when the compiler is real, and curriculum lessons are not", async () => {

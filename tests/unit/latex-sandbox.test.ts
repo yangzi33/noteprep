@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CompileError } from "@/lib/latex/compiler";
-import { diagnose, DockerLatexCompiler, hasActiveContent } from "@/lib/latex/docker-compiler";
+import { diagnose, DockerLatexCompiler, hasActiveContent, inspectPdf } from "@/lib/latex/docker-compiler";
 import { CONTAINER_PREFIX, DEFAULT_SANDBOX, dockerRunArgs, type SandboxConfig } from "@/lib/latex/sandbox";
 import { readTar, TarError, writeTar } from "@/lib/latex/tar";
 
@@ -147,9 +147,10 @@ esac
     return new DockerLatexCompiler(config);
   };
   const out = (...entries: [string, Uint8Array | string][]) => writeFileSync(path.join(dir, "out.tar"), writeTar(entries.map(([name, data]) => ({ name, data: typeof data === "string" ? bytes(data) : data }))));
-  const pdf = (extra = "") => bytes(`%PDF-1.5\n1 0 obj\n<< /Type /Catalog >>\nendobj\n${extra}\n%%EOF\n`);
+  const pdf = (extra = "", pageCount = 1) =>
+    bytes(`%PDF-1.5\n1 0 obj\n<< /Type /Catalog >>\nendobj\n${Array.from({ length: pageCount }, (_, i) => `${10 + i} 0 obj\n<< /Type /Page /Parent 1 0 R >>\nendobj\n`).join("")}${extra}\n%%EOF\n`);
   const doc = { id: "notes" as const, tex: "x" };
-  const good = () => out(["notes.pdf", pdf()], ["notes.json", '{"pages":2}\n'], ["notes.log", "ok"]);
+  const good = () => out(["notes.pdf", pdf("", 2)], ["notes.json", '{"pages":2}\n'], ["notes.log", "ok"]);
   const fails = async (p: Promise<unknown>) => (await p.then(() => null, (e) => e)) as CompileError;
 
   it("returns the PDFs and page counts when everything checks out", async () => {
@@ -213,7 +214,11 @@ esac
     ["a missing page count", () => out(["notes.pdf", pdf()]), "notes: no PDF was produced"],
     ["a garbage page count", () => out(["notes.pdf", pdf()], ["notes.json", '{"pages":"many"}']), "notes: unreadable page count"],
     ["a zero page count", () => out(["notes.pdf", pdf()], ["notes.json", '{"pages":0}']), "notes: unreadable page count"],
-    ["too many pages", () => out(["notes.pdf", pdf()], ["notes.json", '{"pages":41}']), "notes: too many pages"],
+    ["too many pages", () => out(["notes.pdf", pdf("", 41)], ["notes.json", '{"pages":41}']), "notes: too many pages"],
+    ["a container that under-reports the pages", () => out(["notes.pdf", pdf("", 3)], ["notes.json", '{"pages":1}']), "notes: the page count does not match the PDF"],
+    ["a container that over-reports the pages", () => out(["notes.pdf", pdf("", 1)], ["notes.json", '{"pages":2}']), "notes: the page count does not match the PDF"],
+    ["a PDF of 10000 pages reported as one", () => out(["notes.pdf", pdf("", 10000)], ["notes.json", '{"pages":1}']), "notes: too many pages"],
+    ["a PDF with no page at all", () => out(["notes.pdf", bytes("%PDF-1.5\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n")], ["notes.json", '{"pages":1}']), "notes: the page count does not match the PDF"],
     ["JavaScript in the PDF", () => out(["notes.pdf", pdf("2 0 obj\n<< /S /JavaScript /JS (app.alert(1)) >>\nendobj")], ["notes.json", '{"pages":1}']), "notes: the PDF contains active content"],
     ["an open action", () => out(["notes.pdf", pdf("<< /OpenAction 5 0 R >>")], ["notes.json", '{"pages":1}']), "notes: the PDF contains active content"],
     ["a launch action", () => out(["notes.pdf", pdf("<< /S /Launch /F (cmd.exe) >>")], ["notes.json", '{"pages":1}']), "notes: the PDF contains active content"],
@@ -240,10 +245,129 @@ esac
   });
 });
 
+/** A hostile-PDF toolbox: every body here is built by hand, byte for byte. */
+const raw = (body: string) => Buffer.from(`%PDF-1.5\n${body}\n%%EOF`, "latin1");
+const ok = "1 0 obj\n<< /Type /Catalog >>\nendobj\n";
+const stream = (data: string, dict = "") => `3 0 obj\n<< /Length ${data.length}${dict} >>\nstream\n${data}\nendstream\nendobj\n`;
+
+describe("the PDF scan (hostile input)", () => {
+  it("accepts a small benign PDF with a content stream", () => {
+    const benign = raw(`${ok}2 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n${stream("BT /F1 12 Tf (stream and endstream) Tj ET")}4 0 obj\n<< /Type /Page /Parent 2 0 R /Contents 3 0 R >>\nendobj`);
+    expect(inspectPdf(benign)).toEqual({ safe: true, pages: 1 });
+  });
+  it.each([
+    ["a hex-escaped OpenAction", "<< /Type /Catalog /Open#41ction 5 0 R >>"],
+    ["a hex-escaped JavaScript action", "<< /S /Java#53cript /J#53 (x) >>"],
+    ["a fully escaped name", "<< /#4Aava#53cript (x) >>"],
+    ["a Rendition action", "<< /S /Rendition >>"],
+    ["a GoToE action", "<< /S /GoToE >>"],
+    ["a Named action", "<< /S /Named /N /Print >>"],
+    ["an AcroForm", "<< /AcroForm << /Fields [] >> >>"],
+    ["XFA", "<< /XFA 5 0 R >>"],
+    ["a Sound action", "<< /S /Sound >>"],
+    ["a Movie action", "<< /S /Movie >>"],
+    ["an embedded file", "<< /Type /Filespec /EF << /F 5 0 R >> /EmbeddedFile 5 0 R >>"],
+    ["an EmbeddedFiles name tree", "<< /Names << /EmbeddedFiles 5 0 R >> >>"],
+    ["a JavaScript name tree", "<< /Names << /JavaScript 5 0 R >> >>"],
+    ["a URI action", "<< /S /URI /URI (http://x) >>"],
+    ["an additional-actions entry", "<< /AA << /O 5 0 R >> >>"],
+    ["a JS entry", "<< /JS (app.alert(1)) >>"],
+    ["a SubmitForm action", "<< /S /SubmitForm >>"],
+    ["a RichMedia annotation", "<< /Subtype /RichMedia >>"],
+    ["an object stream", "<< /Type /ObjStm >>"],
+  ])("rejects %s", (_name, dict) => {
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n${dict}\nendobj`))).toBe(true);
+  });
+  it("rejects a dictionary hidden between two string literals that look like stream and endstream", () => {
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n<< /X (stream\n) /OpenAction << /S /JavaScript /JS (x) >> /Y (endstream) >>\nendobj`))).toBe(true);
+  });
+  it("rejects a stream whose declared length does not end at endstream", () => {
+    // Declares 4 bytes; the data goes on. A viewer would read 4 bytes and then see what follows as objects.
+    expect(hasActiveContent(raw(`${ok}3 0 obj\n<< /Length 4 >>\nstream\nabcd /OpenAction\nendstream\nendobj`))).toBe(true);
+    expect(hasActiveContent(raw(`${ok}3 0 obj\n<< /Length 400 >>\nstream\nabcd\nendstream\nendobj`))).toBe(true);
+  });
+  it("rejects a stream with no direct length", () => {
+    expect(hasActiveContent(raw(`${ok}3 0 obj\n<< /Length 9 0 R >>\nstream\nabcd\nendstream\nendobj`))).toBe(true);
+    expect(hasActiveContent(raw(`${ok}3 0 obj\n<< >>\nstream\nabcd\nendstream\nendobj`))).toBe(true);
+  });
+  it("rejects a stream that never ends", () => {
+    expect(hasActiveContent(raw(`${ok}3 0 obj\n<< /Length 4 >>\nstream\nabcd`))).toBe(true);
+  });
+  it("rejects an unterminated string or hex string", () => {
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n(never closed`))).toBe(true);
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n<4142`))).toBe(true);
+  });
+  it("does not take a name inside stream data for a name in the file", () => {
+    // (A name inside a string OUTSIDE a stream is also refused now: the old literal scan runs as a second, independent check.)
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n<< /T 1 >>\nendobj\n${stream("(/OpenAction /JavaScript) Tj")}`))).toBe(false);
+  });
+  it("tokenizes a string outside a stream without mistaking it for a name (new scanner alone)", () => {
+    expect(inspectPdf(raw(`${ok}5 0 obj\n<< /T (/JavaScript /OpenAction) >>\nendobj`)).safe).toBe(true);
+  });
+  describe("a dictionary must not hide in bytes skipped as stream data (review R8-01)", () => {
+    const hidden = "\nendstream\nendobj\n6 0 obj\n<< /Type /Catalog /OpenAction << /S /JavaScript /JS (app.alert(1)) >> >>\nendobj\n7 0 obj\n<< /Length 0 >>\nstream\n";
+    const data = "abcd";
+    const L = data.length + hidden.length;
+    const body = `${data}${hidden}\nendstream\nendobj`;
+    it.each([
+      ["a length inside a string literal", `<< /X (/Length ${L}) /Length ${data.length} >>`],
+      ["a duplicate /Length", `<< /Length ${L} /Length ${data.length} >>`],
+      ["the same duplicate, other order", `<< /Length ${data.length} /Length ${L} >>`],
+      ["a length in a nested dictionary", `<< /DecodeParms << /Length ${L} >> /Length ${data.length} >>`],
+      ["a length in a comment", `<< % /Length ${L}\n/Length ${data.length} >>`],
+      ["an indirect length with a decoy in a string", `<< /Length 9 0 R /X (/Length ${L}) >>`],
+    ])("rejects %s", (_name, dict) => {
+      const pdf = raw(`${ok}3 0 obj\n${dict}\nstream\n${body}`);
+      expect(inspectPdf(pdf).safe).toBe(false);
+      expect(hasActiveContent(pdf)).toBe(true);
+    });
+    it("rejects a stream nested in another dictionary that would reuse an earlier length", () => {
+      const inner = "\nendstream /OpenAction << /S /JavaScript /JS (app.alert(1)) >> /Pad (";
+      const pre = `${ok}2 0 obj\n<< /Length ${inner.length + 4} >>\nendobj\n`;
+      const pdf = raw(`${pre}4 0 obj\n<< /Type /Catalog /X << /Length 0 >>\nstream\n${inner}xxxx\nendstream) >>\nendobj`);
+      expect(inspectPdf(pdf).safe).toBe(false);
+      expect(hasActiveContent(pdf)).toBe(true);
+    });
+    it("rejects a stream not directly preceded by a dictionary, and a non-integer length", () => {
+      expect(inspectPdf(raw(`${ok}3 0 obj\n(x)\nstream\nabcd\nendstream`)).safe).toBe(false);
+      expect(inspectPdf(raw(`${ok}3 0 obj\n<< /Length 4.0 >>\nstream\nabcd\nendstream`)).safe).toBe(false);
+      expect(inspectPdf(raw(`${ok}3 0 obj\n<< /Length -4 >>\nstream\nabcd\nendstream`)).safe).toBe(false);
+    });
+    it("takes the length from the key position of the dictionary that precedes the keyword", () => {
+      const pdf = raw(`${ok}3 0 obj\n<< /Filter [/A /B] /DecodeParms << /Length 99 >> /Parent 2 0 R /Length 4 /X (/Length 7) >>\nstream\nabcd\nendstream\nendobj\n4 0 obj\n<< /Type /Page /Contents 3 0 R >>\nendobj`);
+      expect(inspectPdf(pdf)).toEqual({ safe: true, pages: 1 });
+    });
+  });
+  describe("the scan runs in linear time on a 5 MB hostile file", () => {
+    const timed = (pdf: Buffer) => {
+      const t = Date.now();
+      hasActiveContent(pdf);
+      return Date.now() - t;
+    };
+    const MB5 = 4_900_000;
+    it("a long run of digits after /Length", () => {
+      expect(timed(raw(`${ok}3 0 obj\n<< /Length 5 ${"1".repeat(MB5)} >>\nstream\nabcde\nendstream`))).toBeLessThan(1000);
+    });
+    it("deep nesting", () => {
+      expect(timed(raw(`${ok}5 0 obj\n${"<< /K ".repeat(MB5 / 6)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}5 0 obj\n${"[".repeat(MB5)}`))).toBeLessThan(1000);
+    });
+    it("many stream keywords, in a string and as real streams", () => {
+      expect(timed(raw(`${ok}5 0 obj\n<< /K (${"stream\n".repeat(MB5 / 7)}) >>`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"<< /Length 1 >>\nstream\na\nendstream\n".repeat(MB5 / 36)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"<< >>\nstream\n".repeat(MB5 / 14)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"stream\r\n".repeat(MB5 / 8)}`))).toBeLessThan(1000);
+    });
+  });
+  it("counts page objects, not /Pages nodes, and sees escaped names", () => {
+    expect(inspectPdf(raw(`${ok}2 0 obj\n<< /Type /Pages /Count 2 >>\nendobj\n4 0 obj\n<< /Type /Page >>\nendobj\n5 0 obj\n<< /Type/Pag#65 >>\nendobj`)).pages).toBe(2);
+  });
+});
+
 describe("the PDF scan", () => {
   it("does not mistake random compressed bytes for active content", () => {
     const noise = Buffer.from("/JS /JavaScript /Launch /AA /OpenAction /ObjStm /URI ".repeat(50), "latin1");
-    const pdf = Buffer.concat([Buffer.from("%PDF-1.5\n<< /Type /Catalog >>\nstream\n"), noise, Buffer.from("\nendstream\n%%EOF")]);
+    const pdf = Buffer.concat([Buffer.from(`%PDF-1.5\n<< /Type /Catalog /Length ${noise.length} >>\nstream\n`), noise, Buffer.from("\nendstream\n%%EOF")]);
     expect(hasActiveContent(pdf)).toBe(false);
   });
   it("still finds a dictionary that sits outside a stream", () => {

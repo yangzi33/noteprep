@@ -32,7 +32,8 @@ describe("compiling a real lesson package in the sandbox", () => {
     expect(worksheet).toContain("Student Practice Worksheet");
     expect(worksheet.match(/Solve for x:/g)?.length).toBe(answers.length);
     expect(worksheet).not.toMatch(/Answer|Solutions|both sides|Subtract|Divide|Multiply/i);
-    // The answer text as it prints ("x = -3"), for every exercise, must be absent from the student's PDF and present in the key.
+    // The answer text as it prints ("x = -3") must be present in the key. This loop does NOT prove it is absent from the
+    // student's PDF: that is covered by the wording check above and, at source level, by latex-render.test.ts.
     for (const a of answers) {
       if (a.solution.kind !== "unique") continue;
       const printed = `x = ${a.solution.value!.replace("-", "−")}`; // pdftotext prints the math minus sign

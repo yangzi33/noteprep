@@ -21,6 +21,10 @@ describe("escaping text", () => {
   it("keeps ordinary words, Latin accents and typographic punctuation, mapped to what the fonts print", () => {
     expect(escapeText("Café déjà vu – “quoted” ‘single’ … naïve")).toBe("Café déjà vu -- ``quoted'' `single' \\ldots{} naïve");
   });
+  it("replaces the Latin Extended-A letters the T1/utf8 setup has no definition for (found by compiling them)", () => {
+    for (const ch of ["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]) expect(escapeText(`a${ch}b`), ch).toBe("a?b");
+    expect(escapeText("Łódź Ğ ı ž Œ")).toBe("Łódź Ğ ı ž Œ"); // neighbours that do print are kept
+  });
   it("replaces what the fonts cannot print instead of passing it through", () => {
     expect(escapeText("ok 😀 日本語 \u0000 \u202e end")).toBe("ok ? ??? ? ? end");
   });

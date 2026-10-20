@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyOperation, isOperationType, sameSolution, satisfies, solve, ZeroOperandError } from "@/lib/math/linear";
 import { NUMBER_LIMITS, Rational, withinLimits } from "@/lib/math/rational";
+import { QuestionSchema } from "@/lib/math/schema";
 import {
   contentHashOf,
   currentStatus,
@@ -223,5 +224,25 @@ describe("the validator never executes or evaluates content", () => {
     for (const junk of [null, undefined, 42, "text", [], {}]) {
       expect(validateLinearQuestion(junk).status).toBe("failed");
     }
+  });
+});
+
+describe("math schemas are strict", () => {
+  it("an extra key inside a question, problem, solution or step fails validation", () => {
+    const question = JSON.parse(readFileSync(path.join(__dirname, "../fixtures/math/questions.json"), "utf8"))[0].question;
+    expect(QuestionSchema.safeParse(question).success).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const inject = (mutate: (q: any) => void) => {
+      const q = JSON.parse(JSON.stringify(question));
+      mutate(q);
+      return QuestionSchema.safeParse(q).success;
+    };
+    expect(inject((q) => (q.extra = 1))).toBe(false);
+    expect(inject((q) => (q.problem.extra = 1))).toBe(false);
+    expect(inject((q) => (q.problem.equation.extra = 1))).toBe(false);
+    expect(inject((q) => (q.problem.equation.lhs.extra = 1))).toBe(false);
+    expect(inject((q) => (q.solution.extra = 1))).toBe(false);
+    expect(inject((q) => (q.steps[0].extra = 1))).toBe(false);
+    expect(inject((q) => (q.steps[0].op.extra = 1))).toBe(false);
   });
 });
