@@ -649,12 +649,16 @@ describe("the three-document pack", () => {
 
     it("a failing cleanup never hides the original failure", async () => {
       const failing = new FsObjectStore(storeDir);
-      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), deletePrefix: async () => { throw new Error("delete failed"); } };
+      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
+      const storeFails: ObjectStore = { put: async () => { throw new StorageError(false); }, stat: async () => null, deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
       const refuse = async () => {
         throw new ManifestIncomplete("forced");
       };
       const { row } = await packWith({ store, ...withCommit(refuse) });
       expect(row.state).toBe("failed"); // retried and exhausted, exactly as without a cleanup failure
+      // A storage failure with a failing cleanup must stay storage_failed: a replaced error would be internal_error.
+      const { row: storageRow } = await packWith({ store: storeFails });
+      expect(storageRow).toMatchObject({ state: "failed", error_code: "storage_failed" });
     });
   });
 

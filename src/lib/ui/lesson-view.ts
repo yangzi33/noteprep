@@ -26,9 +26,12 @@ export function alignmentNotice(alignment: Pick<AlignmentView, "claim" | "curric
   return `Based on the ${alignment.datasetKind === "synthetic" ? "test" : "sample"} dataset “${alignment.curriculumName}” (${alignment.versionLabel}). This is not a real curriculum and makes no claim of alignment.`;
 }
 
-/** What a finished job's status panel offers: the revision's preview when there is one, otherwise an honest note. */
-export function succeededLessonLink(job: { lessonId: string; revisionId: string | null }): { href: string | null; text: string } {
-  return job.revisionId
-    ? { href: `/lessons/${job.lessonId}?rev=${job.revisionId}`, text: "The lesson pack is ready." }
-    : { href: null, text: "The lesson pack was saved, but it has no preview." };
+/**
+ * What a succeeded job's status panel says. A link appears only when the server has confirmed that a preview exists;
+ * a succeeded state that the browser saw by polling waits for the server's answer (the page then redirects or re-renders).
+ */
+export function succeededPanel(job: { lessonId: string; revisionId: string | null }, state: { serverConfirmed: boolean; hasPreview: boolean }): { href: string | null; text: string } {
+  if (!state.serverConfirmed) return { href: null, text: "Opening your lesson…" };
+  if (state.hasPreview && job.revisionId) return { href: `/lessons/${job.lessonId}?rev=${job.revisionId}`, text: "The lesson pack is ready." };
+  return { href: null, text: "The lesson pack was saved; there is no preview for this one." };
 }

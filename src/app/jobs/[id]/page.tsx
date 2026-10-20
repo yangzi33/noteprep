@@ -15,6 +15,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     if (domainErrorCode(error) === "NOT_FOUND") notFound();
     throw error;
   }
+  let hasPreview = false;
   // A finished curriculum lesson goes straight to its preview. Legacy placeholder packs have none, and stay here.
   if (view.state === "succeeded" && view.revisionId) {
     const lesson = await webDal()
@@ -23,13 +24,14 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         if (domainErrorCode(error) === "NOT_FOUND") return null;
         throw error;
       });
+    hasPreview = lesson !== null;
     if (lesson) redirect(`/lessons/${lesson.lessonId}?rev=${lesson.revisionId}`);
   }
   return (
     <main className="mx-auto max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">Lesson generation</h1>
       {/* key: re-mount when the server-side state changes (for example after canceling) */}
-      <JobStatus key={`${view.state}-${view.attempt}-${view.cancelRequested}`} initial={view} />
+      <JobStatus key={`${view.state}-${view.attempt}-${view.cancelRequested}`} initial={view} hasPreview={hasPreview} />
     </main>
   );
 }
