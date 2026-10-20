@@ -1,0 +1,85 @@
+name: Publish images
+
+# Manual only, from main. Every image is built and tested BEFORE the registry token appears; only the login step
+# receives it (and only this job has packages: write). Images are published by digest, never as a moving tag.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, test, then push by digest
+    if: github.ref == 'refs/heads/main' # only reviewed, merged code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    services:
+      postgres:
+        # Same pinned image as the integration job; the full-chain test creates a throwaway database in it.
+        image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # throwaway service container, not reachable from outside the job
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    outputs:
+      latex_ref: ${{ steps.digests.outputs.latex_ref }}
+      worker_ref: ${{ steps.digests.outputs.worker_ref }}
+      hosttest_ref: ${{ steps.digests.outputs.hosttest_ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build and test
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          LATEX="ghcr.io/${owner}/noteprep-latex:${GITHUB_SHA}"
+          WORKER="ghcr.io/${owner}/noteprep-worker:${GITHUB_SHA}"
+          HOSTTEST="ghcr.io/${owner}/noteprep-hosttest:${GITHUB_SHA}"
+          printf 'LATEX=%s\nWORKER=%s\nHOSTTEST=%s\n' "$LATEX" "$WORKER" "$HOSTTEST" >> "$GITHUB_ENV"
+          labels=(--label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" --label "org.opencontainers.image.revision=${GITHUB_SHA}")
+          docker build --platform linux/amd64 "${labels[@]}" -t "$LATEX" docker/latex
+          LATEX_IMAGE="$LATEX" pnpm test:latex
+          docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target runtime -t "$WORKER" .
+          docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target hosttest -t "$HOSTTEST" .
+          WORKER_IMAGE="$WORKER" pnpm test:image
+          # Throwaway CI runner running this repository's own code: the only place the Docker socket may be mounted.
+          docker run --rm --read-only --tmpfs /tmp -e LATEX_IMAGE="$LATEX" -e DOCKER_HOST=unix:///var/run/docker.sock \
+            -v /var/run/docker.sock:/var/run/docker.sock --user 0 "$HOSTTEST"
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - id: digests
+        name: Push and record digests
+        run: |
+          for n in LATEX WORKER HOSTTEST; do
+            docker push "${!n}" >/dev/null
+            ref="$(docker image inspect --format '{{index .RepoDigests 0}}' "${!n}")"
+            echo "${n,,}_ref=${ref}" >> "$GITHUB_OUTPUT"
+            echo "- ${n,,}: \`${ref}\`" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - if: always()
+        run: docker logout ghcr.io
