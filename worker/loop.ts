@@ -9,6 +9,10 @@ export interface LoopOptions {
   pollMs: number;
   sweepMs: number;
   signal: AbortSignal;
+  /** Called after a successful sweep or job step: proof the worker reached the database. */
+  onAlive?: () => void;
+  /** Test seam; defaults to `runOnce`. */
+  runOnce?: (deps: PipelineDeps, workerId: string) => Promise<JobOutcome | null>;
 }
 
 /** Claims and processes at most one job. Returns what happened, or null when nothing was runnable. */
@@ -25,10 +29,11 @@ const sleep = (ms: number, signal: AbortSignal) =>
     signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
   });
 
-async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal) {
+async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal, onAlive?: () => void) {
   while (!signal.aborted) {
     try {
       const report = await jobs.sweep();
+      onAlive?.();
       if (report.requeued || report.failed || report.canceled || report.drift.length) {
         log("sweep", { requeued: report.requeued, failed: report.failed, canceled: report.canceled, drift: report.drift.length });
       }
@@ -42,10 +47,12 @@ async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal)
 /** Polls for work until `signal` aborts; an in-flight job is allowed to finish (graceful shutdown). */
 export async function runWorkerLoop(options: LoopOptions): Promise<void> {
   const { deps, workerId, pollMs, sweepMs, signal } = options;
-  const sweeper = sweepForever(deps.jobs, sweepMs, signal);
+  const step = options.runOnce ?? runOnce;
+  const sweeper = sweepForever(deps.jobs, sweepMs, signal, options.onAlive);
   while (!signal.aborted) {
     try {
-      const outcome = await runOnce(deps, workerId);
+      const outcome = await step(deps, workerId);
+      options.onAlive?.();
       if (outcome === null) await sleep(pollMs, signal);
     } catch (error) {
       log("loop_error", { code: error instanceof Error ? error.name : "unknown" });

@@ -8,6 +8,7 @@ import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FsObjectStore, type ObjectStore } from "@/lib/storage/store";
 import { SupabaseObjectStore } from "@/lib/storage/supabase-store";
 import { workerEnv } from "./env";
+import { createLiveness } from "./liveness";
 import { log } from "./log";
 import { runWorkerLoop } from "./loop";
 
@@ -65,6 +66,7 @@ async function main() {
     pollMs: config.POLL_INTERVAL_MS,
     sweepMs: config.SWEEP_INTERVAL_SECONDS * 1000,
     signal: stop.signal,
+    onAlive: createLiveness(config.WORKER_LIVENESS_FILE),
   });
   await db.$disconnect();
 }
