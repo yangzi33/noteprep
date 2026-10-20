@@ -10,7 +10,9 @@
 !worker/
 !scripts/build-worker.mjs
 !scripts/copy-externals.mjs
-!tests/
+!tests/latex/
+!tests/stubs/
+!tests/fixtures/package.ts
 !docker/latex/
 !vitest.host.config.mts
 src/generated/

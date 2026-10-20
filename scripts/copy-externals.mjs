@@ -25,9 +25,13 @@ export function copyClosure(srcRoot, destRoot, roots) {
     const pkg = JSON.parse(readFileSync(join(realDir, "package.json"), "utf8"));
     // The directory holding this package's dependency links: .../node_modules (scoped packages sit one level deeper).
     const nm = dirname(realDir).endsWith("/node_modules") ? dirname(realDir) : dirname(dirname(realDir));
-    for (const dep of Object.keys({ ...pkg.dependencies, ...pkg.optionalDependencies })) {
+    const optional = pkg.optionalDependencies ?? {};
+    for (const dep of Object.keys({ ...pkg.dependencies, ...optional })) {
       const linkPath = join(nm, dep);
-      if (!lstatSyncOrNull(linkPath)) continue; // optional dependency that was not installed
+      if (!lstatSyncOrNull(linkPath)) {
+        if (dep in optional) continue; // optional dependency that was not installed
+        throw new Error(`copy-externals: ${pkg.name} depends on "${dep}", which is not installed (and is not an optionalDependency)`);
+      }
       const real = realpathSync(linkPath);
       link(linkPath, real);
       visit(real);

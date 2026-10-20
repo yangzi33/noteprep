@@ -26,6 +26,19 @@ RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 COPY scripts/copy-externals.mjs ./scripts/copy-externals.mjs
 RUN node scripts/copy-externals.mjs node_modules /out/node_modules @prisma/client @prisma/adapter-pg pg
 
+# Declared BEFORE runtime so that a plain `docker build` (no --target) yields the runtime image; always name targets explicitly.
+# Sandbox tests to run ON THE HOST, with the worker's exact identity and mounts but no secrets (runbook section 10).
+FROM build AS hosttest
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+COPY tests/latex ./tests/latex
+COPY tests/stubs ./tests/stubs
+COPY tests/fixtures/package.ts ./tests/fixtures/package.ts
+COPY docker/latex ./docker/latex
+COPY vitest.host.config.mts ./
+ENV HOME=/tmp DOCKER_CONFIG=/tmp/.docker DOCKER_HOST=unix:///run/noteprep-runner/docker.sock
+USER 10001:10001
+ENTRYPOINT ["/app/node_modules/.bin/vitest", "run", "--config", "vitest.host.config.mts", "--configLoader", "runner"]
+
 FROM node:24.13.1-bookworm-slim@sha256:85a395c77b811fa7f5b5e4aa69cd6eb4c3b80c7f1a8e34704dc0ce061e5b404e AS runtime
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx \
       /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
@@ -39,13 +52,3 @@ USER 10001:10001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD ["node", "/app/dist/worker/healthcheck.mjs", "/run/noteprep/alive", "120"]
 ENTRYPOINT ["node", "--conditions=react-server", "--enable-source-maps", "/app/dist/worker/main.mjs"]
-
-# Sandbox tests to run ON THE HOST, with the worker's exact identity and mounts but no secrets (runbook section 10).
-FROM build AS hosttest
-COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
-COPY tests ./tests
-COPY docker/latex ./docker/latex
-COPY vitest.host.config.mts ./
-ENV HOME=/tmp DOCKER_CONFIG=/tmp/.docker DOCKER_HOST=unix:///run/noteprep-runner/docker.sock
-USER 10001:10001
-ENTRYPOINT ["/app/node_modules/.bin/vitest", "run", "--config", "vitest.host.config.mts", "--configLoader", "runner"]

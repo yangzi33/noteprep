@@ -41,6 +41,36 @@ async function docker(args: string[]): Promise<{ code: number; out: string }> {
   }
 }
 
+// Builds `target` while a secret-looking file sits in the repository root, then unpacks every layer and looks for it.
+async function scanLayersForPlantedSecret(target: string): Promise<void> {
+  await withPlantedSecret(async (value) => {
+    const tag = `noteprep-worker:secretscan-${target}-${randomBytes(4).toString("hex")}`;
+    const dir = mkdtempSync(join(tmpdir(), "save-"));
+    try {
+      const built = await docker(["build", "-q", "--platform", "linux/amd64", "-f", "docker/worker/Dockerfile", "--target", target, "-t", tag, REPO]);
+      expect(built.code).toBe(0);
+      expect((await docker(["save", "-o", join(dir, "image.tar"), tag])).code).toBe(0);
+      const root = join(dir, "x");
+      mkdirSync(root);
+      await run("tar", ["-xf", join(dir, "image.tar"), "-C", root]);
+      // Unpack every layer blob (they are tar archives, possibly compressed); non-archive blobs (config, manifests) stay as files.
+      for (const blob of await listTree(root)) {
+        const file = join(root, blob);
+        const isTar = await run("tar", ["-tf", file]).then(() => true, () => false);
+        if (isTar) { const to = `${file}.layer`; mkdirSync(to); await run("tar", ["-xf", file, "-C", to, "--no-same-owner", "--no-same-permissions"]).catch(() => {}); }
+      }
+      const files = await listTree(root);
+      expect(files.length).toBeGreaterThan(50); // the scan really looked at the layers
+      expect(files.filter((f) => /(^|\/)\.env/.test(f))).toEqual([]);
+      const hit = await run("grep", ["-rl", "--binary-files=text", "-F", "--", value, root]).then((x) => x.stdout, () => "");
+      expect(hit).toBe("");
+    } finally {
+      await docker(["rmi", tag]);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
 describe("the worker image", () => {
   it("refuses to boot without configuration", async () => {
     const r = await docker(["run", "--rm", IMAGE]);
@@ -79,38 +109,33 @@ describe("the worker image", () => {
       // Only what .dockerignore allows: no env files, VCS data, docs, host node_modules or the host-generated Prisma client.
       expect(entries.filter((e) => /(^|\/)\.env/.test(e) || /(^|\/)\.git(\/|$)/.test(e))).toEqual([]);
       const top = [...new Set(entries.map((e) => e.split("/")[0]!))].sort();
+      // tests/ is limited to what the hosttest image needs: the sandbox tests, the server-only stub and one fixture module.
+      expect(entries.filter((e) => e.startsWith("tests/") && !/^tests\/(latex\/|stubs\/|fixtures\/package\.ts$)/.test(e))).toEqual([]);
+      expect(entries.some((e) => e.startsWith("tests/latex/")) && entries.includes("tests/stubs/server-only.ts")).toBe(true);
       expect(top).toEqual([".npmrc", "docker", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "prisma", "prisma7.config.ts", "scripts", "src", "tests", "tsconfig.json", "vitest.host.config.mts", "worker"]);
       expect(entries.some((e) => e.startsWith("src/generated"))).toBe(false);
       rmSync(dir, { recursive: true, force: true });
     });
   });
-  it("bakes no .env file or secret value into any image layer", async () => {
-    await withPlantedSecret(async (value) => {
-      const tag = `noteprep-worker:secretscan-${randomBytes(4).toString("hex")}`;
-      const dir = mkdtempSync(join(tmpdir(), "save-"));
-      try {
-        const built = await docker(["build", "-q", "--platform", "linux/amd64", "-f", "docker/worker/Dockerfile", "--target", "runtime", "-t", tag, REPO]);
-        expect(built.code).toBe(0);
-        expect((await docker(["save", "-o", join(dir, "image.tar"), tag])).code).toBe(0);
-        const root = join(dir, "x");
-        mkdirSync(root);
-        await run("tar", ["-xf", join(dir, "image.tar"), "-C", root]);
-        // Unpack every layer blob (they are tar archives, possibly compressed); non-archive blobs (config, manifests) stay as files.
-        for (const blob of await listTree(root)) {
-          const file = join(root, blob);
-          const isTar = await run("tar", ["-tf", file]).then(() => true, () => false);
-          if (isTar) { const to = `${file}.layer`; mkdirSync(to); await run("tar", ["-xf", file, "-C", to, "--no-same-owner", "--no-same-permissions"]).catch(() => {}); }
-        }
-        const files = await listTree(root);
-        expect(files.length).toBeGreaterThan(50); // the scan really looked at the layers
-        expect(files.filter((f) => /(^|\/)\.env/.test(f))).toEqual([]);
-        const hit = await run("grep", ["-rl", "--binary-files=text", "-F", "--", value, root]).then((x) => x.stdout, () => "");
-        expect(hit).toBe("");
-      } finally {
-        await docker(["rmi", tag]);
-        rmSync(dir, { recursive: true, force: true });
-      }
+  for (const target of ["runtime", "hosttest"]) {
+    it(`bakes no .env file or secret value into any ${target} image layer`, async () => {
+      await scanLayersForPlantedSecret(target);
     });
+  }
+  it("builds the runtime image when no --target is given", async () => {
+    const tag = `noteprep-worker:default-${randomBytes(4).toString("hex")}`;
+    try {
+      const built = await docker(["build", "-q", "--platform", "linux/amd64", "-f", "docker/worker/Dockerfile", "-t", tag, REPO]);
+      expect(built.code).toBe(0);
+      const info = JSON.parse((await docker(["image", "inspect", "--format", "{{json .Config}}", tag])).out) as { User: string; Entrypoint: string[] };
+      expect(info.User).toBe("10001:10001");
+      expect(info.Entrypoint.at(-1)).toBe("/app/dist/worker/main.mjs");
+      expect(info.Entrypoint.join(" ")).not.toContain("vitest");
+      const probe = await docker(["run", "--rm", "--entrypoint", "sh", tag, "-c", "ls -d /app/node_modules/vitest /app/tests /app/vitest.host.config.mts 2>/dev/null; echo done"]);
+      expect(probe.out.trim()).toBe("done");
+    } finally {
+      await docker(["rmi", tag]);
+    }
   });
   it("boots against a real database, turns healthy, and stops cleanly on SIGTERM", async () => {
     const name = `noteprep-worker-test-${randomBytes(4).toString("hex")}`;

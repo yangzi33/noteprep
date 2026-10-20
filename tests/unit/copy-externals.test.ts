@@ -40,4 +40,39 @@ describe("copyClosure", () => {
     expect(readFileSync(join(dest, ".pnpm/a@1/node_modules/b/index.js"), "utf8")).toBe("b");
     expect(realpathSync(join(dest, ".pnpm/a@1/node_modules/@s/c"))).toBe(realpathSync(join(dest, ".pnpm/@s+c@1/node_modules/@s/c")));
   });
+
+  it("skips a missing dependency only when it is a declared optionalDependency", () => {
+    const base = mkdtempSync(join(tmpdir(), "closure-opt-"));
+    const src = join(base, "src", "node_modules");
+    pkg(src, "a@1", "a", {}, { optionalDependencies: { native: "1" } });
+    link(join(src, "a"), ".pnpm/a@1/node_modules/a");
+    expect(copyClosure(src, join(base, "dest", "node_modules"), ["a"])).toEqual([".pnpm/a@1/node_modules/a"]);
+  });
+
+  it("throws naming the package and dependency when a required dependency is missing", () => {
+    const base = mkdtempSync(join(tmpdir(), "closure-req-"));
+    const src = join(base, "src", "node_modules");
+    pkg(src, "a@1", "a", { gone: "1" });
+    link(join(src, "a"), ".pnpm/a@1/node_modules/a");
+    expect(() => copyClosure(src, join(base, "dest", "node_modules"), ["a"])).toThrow(/a.*gone|gone.*a/);
+    expect(() => copyClosure(src, join(base, "dest", "node_modules"), ["a"])).toThrow(/"gone"/);
+  });
+});
+
+describe("worker external package list", () => {
+  it("is the same in scripts/build-worker.mjs and the Dockerfile copy-externals line", () => {
+    const build = readFileSync("scripts/build-worker.mjs", "utf8");
+    const external = /external:\s*\[([^\]]*)\]/.exec(build);
+    if (!external) throw new Error("scripts/build-worker.mjs: no external: [...] list found");
+    const fromBuild = [...external[1]!.matchAll(/"([^"]+)"/g)].map((m) => m[1]!);
+    const line = /node scripts\/copy-externals\.mjs\s+\S+\s+\S+\s+([^\n]+)/.exec(readFileSync("docker/worker/Dockerfile", "utf8"));
+    if (!line) throw new Error("docker/worker/Dockerfile: no copy-externals invocation found");
+    const fromDockerfile = line[1]!.trim().split(/\s+/);
+    // pg-native is an optional peer of pg that is deliberately not installed, so it is external for esbuild but not copied.
+    const expected = fromBuild.filter((n) => n !== "pg-native").sort();
+    expect(
+      fromDockerfile.sort(),
+      `external list diverged: build-worker.mjs has [${fromBuild.join(", ")}] (minus pg-native), Dockerfile copies [${fromDockerfile.join(", ")}]`,
+    ).toEqual(expected);
+  });
 });
