@@ -1,0 +1,22 @@
+# Install to /etc/systemd/system/noteprep-block-metadata.service (root:root 0644), then: systemctl enable --now noteprep-block-metadata
+# Containers on the default bridge must not reach (a) the cloud metadata endpoint or (b) the host's own sshd via the bridge
+# address. Both were REACHABLE from the worker container on a DigitalOcean Droplet (2026-10-20) until these rules were added.
+#   (a) is forwarded traffic, so it goes in DOCKER-USER; (b) targets the host itself, so it goes in INPUT, scoped to docker0
+#       and port 22 only (a blanket docker0 drop could break container DNS, which was not tested).
+# iptables rules do not survive a reboot, so this oneshot re-applies them (idempotently: -C checks before -I) after Docker has
+# created DOCKER-USER and before the worker starts. A DROP shows up as a connection timeout from inside the container.
+# This protects the worker container only; the rootless runner's own network is a separate, recorded gap (runbook §9).
+[Unit]
+Description=Block container access to the cloud metadata endpoint
+After=docker.service
+Requires=docker.service
+Before=noteprep-worker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'iptables -C DOCKER-USER -d 169.254.169.254 -j DROP 2>/dev/null || iptables -I DOCKER-USER -d 169.254.169.254 -j DROP'
+ExecStart=/bin/sh -c 'iptables -C INPUT -i docker0 -p tcp --dport 22 -j DROP 2>/dev/null || iptables -I INPUT -i docker0 -p tcp --dport 22 -j DROP'
+
+[Install]
+WantedBy=multi-user.target
