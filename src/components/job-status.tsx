@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cancelJobAction } from "@/app/jobs/[id]/actions";
-import { Button } from "@/components/ui/button";
-import { isRetrying, isTerminal, type JobView } from "@/lib/ui/job-view";
+import { JobStatusView } from "@/components/job-status-view";
+import { isTerminal, type JobView } from "@/lib/ui/job-view";
 import { succeededPanel } from "@/lib/ui/lesson-view";
-import { describeOutcome, stageLabel, stateLabel } from "@/lib/ui/messages";
 
 const POLL_MS = 2000;
 
@@ -43,53 +41,7 @@ export function JobStatus({ initial, hasPreview = false }: { initial: JobView; h
     return () => clearInterval(timer);
   }, [job.id, job.state]);
 
-  const outcome = describeOutcome(job.state, job.errorCode);
-  const stage = stageLabel(job.stage);
   const panel = succeededPanel(job, { serverConfirmed: initial.state === "succeeded", hasPreview });
 
-  return (
-    <section aria-live="polite" className="mt-6 rounded border p-4" data-testid="job-status" data-state={job.state}>
-      <p className="text-lg font-medium" data-testid="job-state">
-        {isRetrying(job) ? "Waiting to retry" : stateLabel(job.state)}
-      </p>
-      {stage && job.state === "running" && <p className="mt-1 text-sm">{stage}…</p>}
-      {job.attempt > 1 && !isTerminal(job.state) && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          Attempt {job.attempt} of {job.maxAttempts}
-        </p>
-      )}
-      {job.cancelRequested && !isTerminal(job.state) && <p className="mt-1 text-sm">Cancel requested…</p>}
-      {outcome && <p className="mt-2 text-sm">{outcome}</p>}
-      {job.state === "succeeded" && (
-        <p className="mt-2 text-sm" data-testid="job-succeeded">
-          {panel.text}{" "}
-          {panel.href && (
-            <Link href={panel.href} className="underline">
-              Open the preview
-            </Link>
-          )}
-        </p>
-      )}
-      {offline && <p className="mt-2 text-sm text-muted-foreground">Connection problem; still trying…</p>}
-
-      {!isTerminal(job.state) && !job.cancelRequested && (
-        <form action={cancelJobAction} className="mt-4">
-          <input type="hidden" name="jobId" value={job.id} />
-          <Button type="submit" variant="outline" size="sm">
-            Cancel
-          </Button>
-        </form>
-      )}
-      {isTerminal(job.state) && (
-        <p className="mt-4 flex gap-4 text-sm">
-          <Link href="/lessons" className="underline">
-            History
-          </Link>
-          <Link href="/prepare" className="underline">
-            New lesson
-          </Link>
-        </p>
-      )}
-    </section>
-  );
+  return <JobStatusView job={job} offline={offline} panel={panel} cancelAction={cancelJobAction} />;
 }
