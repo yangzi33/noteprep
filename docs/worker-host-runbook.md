@@ -253,7 +253,7 @@ docker run --rm --init --read-only \
 # 期望: vitest 全部通过,退出码 0
 ```
 
-Task 5/5b 在本机 Docker 上用 `--read-only --tmpfs /tmp`(Docker 默认的 tmpfs 选项含 `noexec`)跑过 hosttest 镜像(41 个测试通过);GitHub Actions 上的 `ci.yml` hosttest 步骤尚未运行(UNVERIFIED)。所以 `/tmp` 的 `noexec` 不是可能的失败原因。在真实主机上**真正没测过**的是:`/tmp` 的 64m 容量上限、`--memory 1g`、`--pids-limit 256`、`--cap-drop ALL`、uid 10001,以及真实的 runner socket 目录挂载。若在这些限制下出现磁盘空间不足或内存不足,这是一个**需要记录的结果**(开 issue 或写入 decisions 并按证据调整配置),**不是**放松隔离参数的理由。[主机上验证]
+Task 5/5b 在本机 Docker 上用 `--read-only --tmpfs /tmp`(Docker 默认的 tmpfs 选项含 `noexec`)跑过 hosttest 镜像(41 个测试通过);GitHub Actions 上的 `ci.yml` hosttest 步骤已在 PR #10 的 `LaTeX sandbox` 作业里通过(2026-10-20);真实主机上的行为仍是 UNVERIFIED。所以 `/tmp` 的 `noexec` 不是可能的失败原因。在真实主机上**真正没测过**的是:`/tmp` 的 64m 容量上限、`--memory 1g`、`--pids-limit 256`、`--cap-drop ALL`、uid 10001,以及真实的 runner socket 目录挂载。若在这些限制下出现磁盘空间不足或内存不足,这是一个**需要记录的结果**(开 issue 或写入 decisions 并按证据调整配置),**不是**放松隔离参数的理由。[主机上验证]
 
 - 此命令是 root 守护进程运行的容器,socket **目录**被挂入;**不要**挂 `/var/run/docker.sock`(仓库里 CI 为一次性 runner 这样做,生产主机永远不)。
 - 反向检查:`-e LATEX_IMAGE=noteprep-latex:dev` 带 `HOST_SANDBOX_STRICT=1` 必须立即失败(`pinned by digest`)。
