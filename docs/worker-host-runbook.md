@@ -162,7 +162,7 @@ sudo -u noteprep-runner ls /etc/noteprep                 # 期望: Permission de
   # 在你的开发机上对你手里的新密钥做同样的哈希(read -rs 输入,不回显),两个 12 位值应一致
   ```
 
-- **`storage_failed` 排错**(2026-10-20):worker 目前只记录 `job_failed code=storage_failed` 与 `attempt_cleanup_failed code=StorageError`,**不记录** HTTP 状态与消息,所以上传、读回校验和清理的失败在日志里长得一样(计划:让 worker 记录状态码与消息,见 `fix/storage-error-detail`;合并前这里仍是现状)。如果连 `attempt_cleanup_failed` 也出现,说明列目录/删除也失败,多半是密钥、`SUPABASE_URL` 或网络;没有它时才轮到路径、大小或桶设置。区分密钥问题与桶问题,在开发机上用**同一个** supabase-js(版本见 `package.json`)直接测,而不是手写 curl:新式 `sb_secret_…` 密钥不是 JWT,裸 curl 要么缺 `Authorization`(`headers must have required property 'authorization'`),要么把它当 JWT 解析(`Invalid Compact JWS`),这两种 400/403 都**不**能说明密钥好坏:
+- **`storage_failed` 排错**(2026-10-20):worker 原来只记录 `job_failed code=storage_failed` 与 `attempt_cleanup_failed code=StorageError`,**不记录** HTTP 状态与消息,所以上传、读回校验和清理的失败在日志里长得一样。现在 `job_failed`、`job_requeued` 与 `attempt_cleanup_failed` 还带 `storageOp`(`put`/`stat`/`list`/`remove`/`verify`/`path`)、`storageStatus`(HTTP 状态)与 `storageMessage`(清洗过的短消息,单行、至多 200 字符,不含类似密钥或 JWT 的文本,也不含对象路径)。**这些字段只在发布并部署包含 `fix/storage-error-detail` 的新 worker 镜像(§6)之后才会出现**;之前运行的镜像仍是旧行为。如果连 `attempt_cleanup_failed` 也出现,说明列目录/删除也失败,多半是密钥、`SUPABASE_URL` 或网络;没有它时才轮到路径、大小或桶设置。区分密钥问题与桶问题,在开发机上用**同一个** supabase-js(版本见 `package.json`)直接测,而不是手写 curl:新式 `sb_secret_…` 密钥不是 JWT,裸 curl 要么缺 `Authorization`(`headers must have required property 'authorization'`),要么把它当 JWT 解析(`Invalid Compact JWS`),这两种 400/403 都**不**能说明密钥好坏:
 
   ```sh
   read -rs SB_KEY; export SB_KEY

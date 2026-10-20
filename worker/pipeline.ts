@@ -10,7 +10,7 @@ import { CompileError, type Compiler, type DocumentCompiler } from "@/lib/latex/
 import { renderPackage, TEMPLATE_VERSION } from "@/lib/latex/render";
 import { renderSkeletonSource } from "@/lib/latex/skeleton";
 import type { LlmProvider } from "@/lib/llm/types";
-import { sha256Of, StorageError, type ObjectStore } from "@/lib/storage/store";
+import { sha256Of, StorageError, storageLogFields, type ObjectStore, type StorageErrorDetail } from "@/lib/storage/store";
 import { log } from "./log";
 import { buildPackage } from "@/lib/package/build";
 import type { LessonPackage } from "@/lib/package/schema";
@@ -24,6 +24,8 @@ export class PipelineError extends Error {
   constructor(
     readonly code: string,
     readonly retryable: boolean,
+    /** For storage_failed only: which storage call failed and what it reported (no path or key); logged, never shown to users. */
+    readonly storage?: StorageErrorDetail,
   ) {
     super(code);
     this.name = "PipelineError";
@@ -91,7 +93,11 @@ async function withAttemptCleanup<T>(store: ObjectStore, scope: { ownerId: strin
       try {
         await store.deletePrefix(`${scope.ownerId}/${scope.lessonId}/${scope.revisionId}/${scope.attemptId}`);
       } catch (cleanupError) {
-        log("attempt_cleanup_failed", { jobId, code: cleanupError instanceof Error ? cleanupError.name : "unknown" });
+        log("attempt_cleanup_failed", {
+          jobId,
+          code: cleanupError instanceof Error ? cleanupError.name : "unknown",
+          ...storageLogFields(cleanupError instanceof StorageError ? cleanupError.detail : undefined),
+        });
       }
     }
     throw error;
@@ -279,13 +285,13 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
             const path = artifactPathV2(scope, doc.id, format);
             await store.put(path, data);
             const stored = await store.stat(path); // verify what was actually written, not what we meant to write
-            if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) throw new StorageError(true);
+            if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) throw new StorageError(true, { op: "verify", message: "stored object differs from what was written" });
             return { path, sha256: stored.sha256, bytes: stored.bytes };
           };
           documents.push({ document: doc.id, pdf: { ...(await put("pdf", pdf.pdf)), pages: pdf.pages }, tex: await put("tex", new TextEncoder().encode(doc.tex)) });
         }
       } catch (error) {
-        if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
+        if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable, error.detail);
         throw error;
       }
       const manifest: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion, documents };
@@ -346,13 +352,13 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
           await store.put(path, data);
           const stored = await store.stat(path); // verify what was actually written, not what we meant to write
           if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) {
-            throw new StorageError(true);
+            throw new StorageError(true, { op: "verify", message: "stored object differs from what was written" });
           }
           manifest.push({ edition, format, path, sha256: stored.sha256, bytes: stored.bytes });
         }
       }
     } catch (error) {
-      if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable);
+      if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable, error.detail);
       throw error;
     }
 

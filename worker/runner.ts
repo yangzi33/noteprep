@@ -1,5 +1,6 @@
 import { StaleOrCanceled } from "@/lib/domain/errors";
 import type { ClaimedJob } from "@/lib/server/dal/jobs";
+import { storageLogFields } from "@/lib/storage/store";
 import { log } from "./log";
 import { CancelRequested, LostLease, PipelineError, runPipeline, type PipelineDeps } from "./pipeline";
 
@@ -46,13 +47,13 @@ export async function processJob(job: ClaimedJob, deps: PipelineDeps): Promise<J
       }
       if (error instanceof PipelineError && !error.retryable) {
         await settlement.finishJob({ jobId: job.id, fencingToken: job.fencingToken, outcome: "failed", errorCode: error.code });
-        log("job_failed", { ...fields, code: error.code });
+        log("job_failed", { ...fields, code: error.code, ...storageLogFields(error.storage) });
         return "failed";
       }
       // Retryable pipeline errors and anything unexpected: bounded retry against the same reservation.
       const code = error instanceof PipelineError ? error.code : "internal_error";
       const result = await jobs.retryOrFail(job.id, job.fencingToken, code);
-      log(result === "requeued" ? "job_requeued" : "job_failed", { ...fields, code });
+      log(result === "requeued" ? "job_requeued" : "job_failed", { ...fields, code, ...(error instanceof PipelineError ? storageLogFields(error.storage) : {}) });
       return result;
     } catch (settleError) {
       if (settleError instanceof StaleOrCanceled) {
