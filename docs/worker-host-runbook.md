@@ -31,7 +31,7 @@
 
 - systemd 版本满足当时 Docker rootless 官方文档的要求(以 <https://docs.docker.com/engine/security/rootless/> 为准;本文不写死版本号)。
 - **无入站端口**(仅 SSH 管理;worker 轮询数据库)。云防火墙默认拒绝所有入站,仅放行来自你的管理地址的 SSH。
-- 自动安全更新已开启(例如 Debian/Ubuntu 的 `unattended-upgrades`);内核更新后需要重启并重跑 §10(共享内核是 D-52 的已知限制)。
+- 自动安全更新已开启(例如 Debian/Ubuntu 的 `unattended-upgrades`);内核更新后需要重启并重跑 §7(共享内核是 D-52 的已知限制)。
 - 磁盘占用告警阈值(建议 80%);时间同步(`timedatectl show -p NTPSynchronized` 为 `yes`)。租约和 webhook 容差依赖时钟。
 - 主机没有云实例角色/元数据凭据,或元数据端点被封(见 §9)。
 
@@ -251,7 +251,7 @@ docker run --rm --init --read-only \
 # 期望: vitest 全部通过,退出码 0
 ```
 
-注意 `/tmp` 的 `noexec` 可能与 vitest 的运行方式冲突;若因此失败,先记录现象再决定(不要为了通过而去掉其他隔离参数)。[主机上验证]
+CI 与 Task 5 已用 `--read-only --tmpfs /tmp`(Docker 默认的 tmpfs 选项含 `noexec`)跑过 hosttest 镜像并通过 41 个测试,所以 `/tmp` 的 `noexec` 不是可能的失败原因。在真实主机上**真正没测过**的是:`/tmp` 的 64m 容量上限、`--memory 1g`、`--pids-limit 256`、`--cap-drop ALL`、uid 10001,以及真实的 runner socket 目录挂载。若在这些限制下出现磁盘空间不足或内存不足,这是一个**需要记录的结果**(开 issue 或写入 decisions 并按证据调整配置),**不是**放松隔离参数的理由。[主机上验证]
 
 - 此命令是 root 守护进程运行的容器,socket **目录**被挂入;**不要**挂 `/var/run/docker.sock`(仓库里 CI 为一次性 runner 这样做,生产主机永远不)。
 - 反向检查:`-e LATEX_IMAGE=noteprep-latex:dev` 带 `HOST_SANDBOX_STRICT=1` 必须立即失败(`pinned by digest`)。
