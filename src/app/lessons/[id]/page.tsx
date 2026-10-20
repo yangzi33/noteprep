@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { Notice } from "@/components/ui/notice";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
@@ -46,9 +47,9 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
         Created {utc.format(lesson.createdAt)} UTC
         {!lesson.isCurrent && " · an earlier version"}
       </p>
-      <p className="mt-3 rounded border p-3 text-sm" data-testid="review-reminder">
+      <Notice intent="info" className="mt-3" data-testid="review-reminder">
         AI-assisted material can contain mistakes. Read everything before you use it with a student.
-      </p>
+      </Notice>
 
       <nav aria-label="Documents" className="mt-6 flex flex-wrap gap-2" data-testid="document-tabs">
         {lesson.documents.map((d) => (

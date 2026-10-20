@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/notice";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { DOCUMENT_IDS } from "@/lib/domain/lesson-request";
 import { requireAccount } from "@/lib/server/auth/require-user";
@@ -45,9 +46,9 @@ function Crumbs({ path, params }: { path: SelectionPath; params: PrepareParams }
 
 function SampleBanner() {
   return (
-    <p role="note" className="mt-4 rounded border border-dashed p-3 text-sm" data-testid="sample-banner">
+    <Notice intent="info" className="mt-4" data-testid="sample-banner">
       Sample data, not a real curriculum. No curriculum alignment is claimed for lessons made from it.
-    </p>
+    </Notice>
   );
 }
 
@@ -67,9 +68,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
           : "Your account is being set up."}
       </p>
       {params.error && (
-        <p role="alert" className="mt-4 rounded border border-destructive p-3 text-sm">
+        <Notice intent="error" className="mt-4">
           {generationErrorMessage(params.error)}
-        </p>
+        </Notice>
       )}
     </>
   );
@@ -118,12 +119,12 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
     return (
       <main className="mx-auto max-w-3xl p-8">
         {header}
-        <p role="alert" className="mt-4 rounded border border-destructive p-3 text-sm" data-testid="bad-selection">
+        <Notice intent="error" className="mt-4" data-testid="bad-selection">
           {generationErrorMessage(code)}{" "}
           <Link href="/prepare" className="underline">
             Start again
           </Link>
-        </p>
+        </Notice>
       </main>
     );
   }
@@ -136,12 +137,12 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         <main className="mx-auto max-w-3xl p-8">
           {header}
           <Crumbs path={path} params={params} />
-          <p role="alert" className="mt-4 rounded border border-destructive p-3 text-sm" data-testid="unsupported-topic">
+          <Notice intent="error" className="mt-4" data-testid="unsupported-topic">
             {generationErrorMessage("TOPIC_UNSUPPORTED")}{" "}
             <Link href={prepareHref(upTo(params, "unit"))} className="underline">
               Back to the topics
             </Link>
-          </p>
+          </Notice>
         </main>
       );
     }
@@ -153,9 +154,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         <Crumbs path={path} params={params} />
         {sample && <SampleBanner />}
         {exhausted && (
-          <p role="status" className="mt-4 rounded border p-3 text-sm">
+          <Notice intent="info" role="status" className="mt-4">
             You have used all of your free generations. Subscriptions are not available yet (they arrive in a later phase).
-          </p>
+          </Notice>
         )}
 
         <section className="mt-6" data-testid="topic-summary">

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/notice";
 import { signIn, signUp } from "./actions";
 
 const MESSAGES: Record<string, string> = {
@@ -15,9 +16,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="mx-auto max-w-sm p-8">
       <h1 className="text-2xl font-semibold">Sign in</h1>
       {message && (
-        <p role="status" className="mt-4 text-sm">
+        <Notice intent="info" role="status" className="mt-4">
           {message}
-        </p>
+        </Notice>
       )}
       <form className="mt-6 flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm">
