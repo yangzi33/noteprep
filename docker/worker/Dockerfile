@@ -21,13 +21,17 @@ RUN pnpm worker:build
 
 FROM base AS prod-deps
 RUN pnpm install --prod --frozen-lockfile --ignore-scripts
+# Keep only the closure of the packages the bundle leaves external (see scripts/build-worker.mjs); the rest of the web app's
+# dependencies (next, shadcn, ...) are not needed by the worker.
+COPY scripts/copy-externals.mjs ./scripts/copy-externals.mjs
+RUN node scripts/copy-externals.mjs node_modules /out/node_modules @prisma/client @prisma/adapter-pg pg
 
 FROM node:24.13.1-bookworm-slim@sha256:85a395c77b811fa7f5b5e4aa69cd6eb4c3b80c7f1a8e34704dc0ce061e5b404e AS runtime
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx \
       /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-*
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /app
-COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=prod-deps /out/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 ENV NODE_ENV=production HOME=/tmp DOCKER_CONFIG=/tmp/.docker \
     DOCKER_HOST=unix:///run/noteprep-runner/docker.sock WORKER_LIVENESS_FILE=/run/noteprep/alive

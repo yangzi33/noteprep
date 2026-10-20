@@ -9,6 +9,7 @@
 !src/
 !worker/
 !scripts/build-worker.mjs
+!scripts/copy-externals.mjs
 !tests/
 !docker/latex/
 !vitest.host.config.mts

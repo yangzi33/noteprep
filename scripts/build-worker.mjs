@@ -11,7 +11,9 @@ await build({
   platform: "node",
   target: "node24",
   format: "esm",
-  packages: "external",
+  // Only these stay external (installed from the frozen lockfile and copied by scripts/copy-externals.mjs): the Prisma runtime
+  // loads wasm and driver files from its own package directory. Everything else is bundled.
+  external: ["@prisma/client", "@prisma/adapter-pg", "pg", "pg-native"],
   conditions: ["react-server"],
   tsconfig: "tsconfig.json",
   sourcemap: true,

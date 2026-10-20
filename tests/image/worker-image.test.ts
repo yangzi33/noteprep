@@ -1,5 +1,8 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterAll, describe, expect, inject, it } from "vitest";
 
@@ -8,7 +11,24 @@ const IMAGE = process.env.WORKER_IMAGE;
 if (!IMAGE) throw new Error("set WORKER_IMAGE (build it with pnpm worker:image)"); // never skip
 const PIN = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
 const SENTINEL = `sentinel-${randomBytes(8).toString("hex")}`;
+const REPO = process.cwd();
 const started: string[] = [];
+
+// A secret-looking file in the repository root for the duration of one check. It is git-ignored (.env*) and always removed.
+async function withPlantedSecret(fn: (value: string) => Promise<void>): Promise<void> {
+  const file = join(REPO, ".env.image-sentinel");
+  const value = `planted-${randomBytes(12).toString("hex")}`;
+  writeFileSync(file, `PLANTED_SECRET=${value}\n`);
+  try { await fn(value); } finally { rmSync(file, { force: true }); }
+}
+async function listTree(root: string, prefix = ""): Promise<string[]> {
+  const out: string[] = [];
+  for (const e of readdirSync(join(root, prefix), { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${e.name}` : e.name;
+    if (e.isDirectory()) out.push(...(await listTree(root, rel))); else out.push(rel);
+  }
+  return out;
+}
 afterAll(async () => { for (const n of started) await run("docker", ["rm", "-f", n]).catch(() => {}); });
 
 const envArgs = (vars: Record<string, string>) => Object.entries(vars).flatMap(([k, v]) => ["--env", `${k}=${v}`]);
@@ -36,19 +56,61 @@ describe("the worker image", () => {
       expect(r.out).not.toContain(SENTINEL);
     }
   });
-  it("runs as 10001 with no dev tooling, no package managers, no .env and no secrets baked in", async () => {
+  it("runs as 10001 with no dev tooling, no package managers and no .env", async () => {
+    // pnpm keeps packages under node_modules/.pnpm/<name>@<version>, so check there as well as at the top level.
     const r = await docker(["run", "--rm", "--entrypoint", "sh", IMAGE, "-c",
-      "id -u; test ! -e /app/.env && echo noenv; test ! -e /app/node_modules/vitest && test ! -e /app/node_modules/tsx && test ! -e /app/node_modules/prisma && echo nodev; command -v npm || command -v pnpm || echo nopm"]);
-    expect(r.out.trim().split("\n")).toEqual(["10001", "noenv", "nodev", "nopm"]);
-    const env = JSON.parse((await docker(["image", "inspect", "--format", "{{json .Config.Env}}", IMAGE])).out) as string[];
-    expect(env.filter((e) => /KEY|SECRET|PASSWORD|TOKEN|DATABASE_URL/.test(e.split("=")[0]!))).toEqual([]);
+      `id -u; test ! -e /app/.env && echo noenv;
+       ls -d /app/node_modules/vitest /app/node_modules/tsx /app/node_modules/prisma /app/node_modules/.pnpm/node_modules/.bin 2>/dev/null;
+       cd /app/node_modules/.pnpm 2>/dev/null && ls -d prisma@* typescript@* playwright* @playwright* vitest@* tsx@* esbuild@* shadcn@* next@* 2>/dev/null;
+       echo checked; command -v npm || command -v pnpm || echo nopm`]);
+    expect(r.out.trim().split("\n")).toEqual(["10001", "noenv", "checked", "nopm"]);
+    const info = JSON.parse((await docker(["image", "inspect", "--format", "{{json .Config}}", IMAGE])).out) as { User: string; Env: string[] };
+    expect(info.User).toBe("10001:10001");
+    expect(info.Env.filter((e) => /KEY|SECRET|PASSWORD|TOKEN|DATABASE_URL/.test(e.split("=")[0]!))).toEqual([]);
   });
-  it("contains no .env file and no copy of a runtime secret anywhere in the image filesystem", async () => {
-    // The sentinel only exists in this container's environment; finding it on disk would mean the image (or the entrypoint) wrote it.
-    const r = await docker(["run", "--rm", "--entrypoint", "sh", ...envArgs({ LLM_API_KEY: SENTINEL }), IMAGE, "-c",
-      'find / -xdev \\( -name ".env" -o -name ".env.*" \\) -not -path "/proc/*" 2>/dev/null; grep -rIl --exclude-dir=proc --exclude-dir=sys --exclude-dir=dev -- "$LLM_API_KEY" / 2>/dev/null; echo done']);
-    expect(r.out.trim()).toBe("done");
-    expect(r.out).not.toContain(SENTINEL);
+  it("keeps a planted .env file out of the build context", async () => {
+    await withPlantedSecret(async () => {
+      const dir = mkdtempSync(join(tmpdir(), "ctx-"));
+      writeFileSync(join(dir, "Dockerfile"), "FROM scratch\nCOPY . /ctx\n");
+      const out = join(dir, "out");
+      const r = await docker(["build", "-q", "-f", join(dir, "Dockerfile"), "--output", `type=local,dest=${out}`, REPO]);
+      expect(r.code).toBe(0);
+      const entries = await listTree(join(out, "ctx"));
+      // Only what .dockerignore allows: no env files, VCS data, docs, host node_modules or the host-generated Prisma client.
+      expect(entries.filter((e) => /(^|\/)\.env/.test(e) || /(^|\/)\.git(\/|$)/.test(e))).toEqual([]);
+      const top = [...new Set(entries.map((e) => e.split("/")[0]!))].sort();
+      expect(top).toEqual([".npmrc", "docker", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "prisma", "prisma7.config.ts", "scripts", "src", "tests", "tsconfig.json", "worker"]);
+      expect(entries.some((e) => e.startsWith("src/generated"))).toBe(false);
+      rmSync(dir, { recursive: true, force: true });
+    });
+  });
+  it("bakes no .env file or secret value into any image layer", async () => {
+    await withPlantedSecret(async (value) => {
+      const tag = `noteprep-worker:secretscan-${randomBytes(4).toString("hex")}`;
+      const dir = mkdtempSync(join(tmpdir(), "save-"));
+      try {
+        const built = await docker(["build", "-q", "--platform", "linux/amd64", "-f", "docker/worker/Dockerfile", "--target", "runtime", "-t", tag, REPO]);
+        expect(built.code).toBe(0);
+        expect((await docker(["save", "-o", join(dir, "image.tar"), tag])).code).toBe(0);
+        const root = join(dir, "x");
+        mkdirSync(root);
+        await run("tar", ["-xf", join(dir, "image.tar"), "-C", root]);
+        // Unpack every layer blob (they are tar archives, possibly compressed); non-archive blobs (config, manifests) stay as files.
+        for (const blob of await listTree(root)) {
+          const file = join(root, blob);
+          const isTar = await run("tar", ["-tf", file]).then(() => true, () => false);
+          if (isTar) { const to = `${file}.layer`; mkdirSync(to); await run("tar", ["-xf", file, "-C", to, "--no-same-owner", "--no-same-permissions"]).catch(() => {}); }
+        }
+        const files = await listTree(root);
+        expect(files.length).toBeGreaterThan(50); // the scan really looked at the layers
+        expect(files.filter((f) => /(^|\/)\.env/.test(f))).toEqual([]);
+        const hit = await run("grep", ["-rl", "--binary-files=text", "-F", "--", value, root]).then((x) => x.stdout, () => "");
+        expect(hit).toBe("");
+      } finally {
+        await docker(["rmi", tag]);
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
   });
   it("boots against a real database, turns healthy, and stops cleanly on SIGTERM", async () => {
     const name = `noteprep-worker-test-${randomBytes(4).toString("hex")}`;
