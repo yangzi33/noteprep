@@ -1,4 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
@@ -70,6 +72,15 @@ export function audit(texts: Record<string, string>): string[] {
     for (const t of trig) if (t === "pull_request_target" || t === "workflow_run") bad.push(`${file}: forbidden trigger ${t}`);
 
     if (file === "images.yml") {
+      // A final line without a trailing newline must still be processed.
+      for (const [name, job] of Object.entries(jobs)) {
+        const steps = isObj(job) && Array.isArray(job.steps) ? (job.steps as Doc[]) : [];
+        for (const st of steps) {
+          for (const m of typeof st.run === "string" ? st.run.matchAll(/while read [^\n]*/g) : []) {
+            if (!/\|\| \[ -n "\$ref" \]; do/.test(m[0])) bad.push(`images.yml: job ${name} has a while read loop without the last-line guard`);
+          }
+        }
+      }
       const on = (doc as Doc).on ?? (doc as Doc)["true" as string];
       const triggers = typeof on === "string" ? [on] : Array.isArray(on) ? on.map(String) : isObj(on) ? Object.keys(on) : [];
       if (triggers.join() !== "workflow_dispatch") bad.push(`images.yml: triggers are [${triggers.join()}]`);
@@ -133,12 +144,26 @@ describe("workflows", () => {
     expect(steps).toContain("WORKER_IMAGE=noteprep-worker:dev pnpm test:image");
   });
 
+  it("the push loops process an images.txt with no trailing newline", () => {
+    const push = (parse(real["images.yml"]!) as { jobs: { push: { steps: Array<{ run?: string }> } } }).jobs.push;
+    const loops = push.steps.flatMap((st) => [...(st.run ?? "").matchAll(/while read [^\n]*/g)].map((m) => m[0]));
+    expect(loops).toHaveLength(2);
+    const dir = mkdtempSync(join(tmpdir(), "images-txt-"));
+    writeFileSync(join(dir, "images.txt"), "a:1 id1\nb:1 id2\nc:1 id3"); // no final newline
+    for (const header of loops) {
+      const script = `${header}\n echo "$ref"\ndone < images.txt`;
+      const out = execFileSync("bash", ["-c", script], { cwd: dir, encoding: "utf8" });
+      expect(out.trim().split("\n")).toEqual(["a:1", "b:1", "c:1"]);
+    }
+  });
+
   describe("mutations are caught", () => {
     const cases: Array<[string, Record<string, string>]> = [
       ["contents: write with a trailing comment", mutate("ci.yml", /^permissions:\n {2}contents: read/m, "permissions:\n  contents: write # x")],
       ["quoted 'write'", mutate("images.yml", /^ {6}packages: write$/m, "      packages: 'write'\n      contents: 'write'")],
       ["write-all at job level", mutate("ci.yml", /^ {4}timeout-minutes: 15$/m, "    timeout-minutes: 15\n    permissions: write-all")],
       ["flow-style { packages: write } in ci.yml", mutate("ci.yml", /^ {4}timeout-minutes: 15$/m, "    timeout-minutes: 15\n    permissions: { packages: write }")],
+      ["while read loop without the last-line guard", mutate("images.yml", 'while read -r ref id || [ -n "$ref" ]; do', "while read -r ref id; do")],
       ["extra id-token: write in the push job", mutate("images.yml", /^ {6}packages: write$/m, "      packages: write\n      id-token: write")],
       ["commented-out guard", mutate("images.yml", /^ {4}if: github\.ref == 'refs\/heads\/main'\n( {4}runs-on: ubuntu-24\.04\n {4}timeout-minutes: 30)/m, "    # if: github.ref == 'refs/heads/main'\n$1")],
       ["added release trigger", mutate("images.yml", "  workflow_dispatch:\n", "  workflow_dispatch:\n  release:\n    types: [published]\n")],

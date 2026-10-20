@@ -111,7 +111,7 @@ jobs:
           listed="$(awk '{ print $1 }' out/images.txt | sort)"
           [ "$listed" = "$expected" ] || { echo "images.txt does not list exactly the expected images" >&2; exit 1; }
           docker load -i out/images.tar
-          while read -r ref id; do
+          while read -r ref id || [ -n "$ref" ]; do
             actual="$(docker image inspect --format '{{.Id}}' "$ref")"
             [ "$actual" = "$id" ] || { echo "image ID mismatch for ${ref##*/}" >&2; exit 1; }
           done < out/images.txt
@@ -122,7 +122,7 @@ jobs:
       - id: digests
         name: Push and record digests read back from the registry
         run: |
-          while read -r ref _; do
+          while read -r ref _ || [ -n "$ref" ]; do
             docker push "$ref" >/dev/null
             digest="$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq -r .digest)"
             [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "no digest read back for ${ref##*/}" >&2; exit 1; }
