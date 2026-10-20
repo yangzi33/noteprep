@@ -76,8 +76,9 @@ jobs:
       - run: pnpm latex:image
       - run: pnpm test:latex
       # Host-level test image: the worker's docker runner against the real daemon and kernel-applied cgroup limits.
-      # Mounting the Docker socket is acceptable ONLY here: a throwaway CI runner executing this repository's own
-      # code. Never do this on a real host.
+      # Mounting the Docker socket is acceptable ONLY here. This job also runs fork PR code, which is tolerable only
+      # because GitHub-hosted runners are ephemeral, already give passwordless sudo and docker, and no secrets exist
+      # in this job. It must never run on a self-hosted runner, and never on a real host.
       - run: pnpm worker:hosttest-image
       - name: Run the host test image
         run: >-
