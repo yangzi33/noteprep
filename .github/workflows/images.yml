@@ -1,0 +1,135 @@
+name: Publish images
+
+# Manual only, and only from main. Two jobs so the registry token never meets repository code:
+#   build-test  contents: read only. Checks out the repo, builds and TESTS all three images, saves them as an artifact.
+#   push        packages: write only. NO checkout, NO install, NO repository code runs; it loads the saved images,
+#               verifies their IDs, logs in, pushes, and reads the digests back from the registry.
+# The main-only `if` is a guard against mistakes, NOT an access control: anyone who can push a branch can dispatch
+# this workflow from it with an edited copy of this file. The real boundary is repository write access (plus branch
+# protection / environment rules on the repository). Images are referenced by digest, never by a moving tag.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images
+  cancel-in-progress: false
+
+jobs:
+  build-test:
+    name: Build and test all images
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    services:
+      postgres:
+        # Same pinned image as the integration job; the full-chain test creates a throwaway database in it.
+        image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # throwaway service container, not reachable from outside the job
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build and test
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          LATEX="ghcr.io/${owner}/noteprep-latex:${GITHUB_SHA}"
+          WORKER="ghcr.io/${owner}/noteprep-worker:${GITHUB_SHA}"
+          HOSTTEST="ghcr.io/${owner}/noteprep-hosttest:${GITHUB_SHA}"
+          labels=(--label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" --label "org.opencontainers.image.revision=${GITHUB_SHA}")
+          docker build --platform linux/amd64 "${labels[@]}" -t "$LATEX" docker/latex
+          LATEX_IMAGE="$LATEX" pnpm test:latex
+          docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target runtime -t "$WORKER" .
+          docker build --platform linux/amd64 "${labels[@]}" -f docker/worker/Dockerfile --target hosttest -t "$HOSTTEST" .
+          WORKER_IMAGE="$WORKER" pnpm test:image
+          # Throwaway GitHub-hosted runner holding no credentials: the only place the Docker socket may be mounted.
+          # Never do this on a self-hosted runner or a real host.
+          docker run --rm --read-only --tmpfs /tmp -e LATEX_IMAGE="$LATEX" -e DOCKER_HOST=unix:///var/run/docker.sock \
+            -v /var/run/docker.sock:/var/run/docker.sock --user 0 "$HOSTTEST"
+          mkdir -p out
+          : > out/images.txt
+          for ref in "$LATEX" "$WORKER" "$HOSTTEST"; do
+            printf '%s %s\n' "$ref" "$(docker image inspect --format '{{.Id}}' "$ref")" >> out/images.txt
+          done
+          docker save -o out/images.tar "$LATEX" "$WORKER" "$HOSTTEST"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: images
+          path: out/
+          compression-level: 0 # layers are already compressed
+          retention-days: 1
+          if-no-files-found: error
+
+  push:
+    name: Push the tested images by digest
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      packages: write
+    outputs:
+      latex_ref: ${{ steps.digests.outputs.latex_ref }}
+      worker_ref: ${{ steps.digests.outputs.worker_ref }}
+      hosttest_ref: ${{ steps.digests.outputs.hosttest_ref }}
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: images
+          path: out/
+      - name: Load the tested images and verify their IDs
+        run: |
+          # The artifact is data: the refs to push are rebuilt here, and images.txt must list exactly these three.
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          expected="$(printf '%s\n' \
+            "ghcr.io/${owner}/noteprep-hosttest:${GITHUB_SHA}" \
+            "ghcr.io/${owner}/noteprep-latex:${GITHUB_SHA}" \
+            "ghcr.io/${owner}/noteprep-worker:${GITHUB_SHA}")"
+          awk 'NF != 2 { exit 1 }' out/images.txt || { echo "malformed images.txt" >&2; exit 1; }
+          listed="$(awk '{ print $1 }' out/images.txt | sort)"
+          [ "$listed" = "$expected" ] || { echo "images.txt does not list exactly the expected images" >&2; exit 1; }
+          docker load -i out/images.tar
+          while read -r ref id || [ -n "$ref" ]; do
+            actual="$(docker image inspect --format '{{.Id}}' "$ref")"
+            [ "$actual" = "$id" ] || { echo "image ID mismatch for ${ref##*/}" >&2; exit 1; }
+          done < out/images.txt
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - id: digests
+        name: Push and record digests read back from the registry
+        run: |
+          while read -r ref _ || [ -n "$ref" ]; do
+            docker push "$ref" >/dev/null
+            digest="$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq -r .digest)"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "no digest read back for ${ref##*/}" >&2; exit 1; }
+            name="${ref##*/}"; name="${name%%:*}"; name="${name#noteprep-}"
+            pinned="${ref%%:*}@${digest}"
+            echo "${name}_ref=${pinned}" >> "$GITHUB_OUTPUT"
+            echo "- ${name}: \`${pinned}\`" >> "$GITHUB_STEP_SUMMARY"
+          done < out/images.txt
+      - if: always()
+        run: docker logout ghcr.io

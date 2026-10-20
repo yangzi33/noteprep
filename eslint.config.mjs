@@ -41,14 +41,14 @@ const eslintConfig = defineConfig([
   },
   {
     // Tooling and tests configure themselves from the environment.
-    files: ["tests/**", "scripts/**", "prisma7.config.ts", "*.config.mts", "playwright.config.ts"],
+    files: ["tests/**", "scripts/**", "prisma7.config.ts", "*.config.mts", "playwright.config.ts", "playwright.smoke.config.ts"],
     rules: { "no-restricted-properties": "off" },
   },
   {
     files: ENV_FILES,
     rules: { "no-restricted-properties": "off" },
   },
-  globalIgnores(["src/generated/**", ".next/**", "out/**", "build/**", "coverage/**", "next-env.d.ts"]),
+  globalIgnores(["src/generated/**", ".next/**", "out/**", "build/**", "coverage/**", "dist/**", "next-env.d.ts"]),
 ]);
 
 export default eslintConfig;

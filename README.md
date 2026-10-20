@@ -59,7 +59,7 @@ pnpm supabase:stop
 
 ## CI
 
-`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
+`.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/images.yml` 手动发布 worker/LaTeX/hosttest 镜像(见"Worker 打包与 staging 主机")。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。
 
 ## 产品方向调整(2026-10-19)
 
@@ -116,6 +116,15 @@ pnpm supabase:stop
 - **Storage RLS 的边界**:策略只检查"路径首段等于自己的 `auth.uid()`"和 `.pdf` 扩展名;它**不知道**课包是否已删除或修订是否已发布。这些由应用的 Route Handler 强制(账号为 active、课包未删除、修订已完成且清单列出该文件);已记录为课包删除功能上线时要补上的已知限制(D-48)。私有 PDF 现在以 `Cache-Control: max-age=0`(每次重新验证)上传;此改动之前上传的文件仍是 `max-age=3600`;托管环境里签名路由实际返回的响应头尚未观察过(本地签名路由不带该头,已观察到的是对象自身的头)。
 - **未验证/已知限制**:预览用浏览器自带 PDF 查看器——移动端兼容性没有在真机上测过(因此有降级链接);下载的"请求频率限制"尚未接入(CLAUDE.md 要求,P3);服务端不在每次发放前重新校验文件哈希(worker 写入时已校验);无版面视觉回归;调整与更正是 M6。
 
+## Worker 打包与 staging 主机(设计与文件已完成;**未在任何真实主机上运行过**)
+
+- **脚本**:`pnpm worker:build`(esbuild 打包到 `dist/worker/`)、`pnpm worker:start`(运行打包产物)、`pnpm worker:image`(构建 worker 镜像 `noteprep-worker:dev`,linux/amd64)、`pnpm worker:hosttest-image`(构建在主机上跑沙箱测试的 `noteprep-hosttest:dev`)、`pnpm smoke:staging`(对 staging 的冒烟,见下)。构建镜像需要 Docker。**本机(开发机)上做过**:`pnpm worker:image`、`test:image`(6–8 个测试通过)和 hosttest 容器(41 个测试通过)。**没有发生过**:GitHub Actions 上的任何运行(包括 `images.yml` 与 `ci.yml` 的 hosttest 步骤)、任何真实主机、任何向 GHCR 的推送。
+- **镜像**:`docker/worker/Dockerfile`(运行时镜像不含秘密,uid 10001,基础镜像按摘要固定;`hosttest` 目标含 devDependencies 与 `tests/latex`)。发布:手动工作流 `.github/workflows/images.yml`(仅 main,先测试再推送,输出**摘要**到 Step Summary);主机只按摘要拉取。
+- **主机**:[docs/worker-host-runbook.md](docs/worker-host-runbook.md) 是逐步的安装、验证与演练清单;主机文件在 [deploy/host/](deploy/host/)(systemd 单元、runner 的 rootless Docker drop-in、tmpfiles、`worker.env.example`、`worker.image.example`)。拓扑与取舍见 decisions D-52..D-56。
+- **冒烟**:`read -rs SMOKE_PASSWORD; export SMOKE_PASSWORD`,然后 `SMOKE_TARGET=staging SMOKE_EMAIL=… pnpm smoke:staging`,结束后 `unset SMOKE_PASSWORD`(先 `pnpm exec playwright install chromium`)。目标只允许 `https://noteprep.app`;走真实登录表单;**每次运行消耗该一次性测试账户的 1 次免费生成**。
+- **新的 worker 环境变量**:`DOCKER_HOST`(生产必须是 runner 的 unix socket,不能是宿主 rootful socket)、`WORKER_LIVENESS_FILE`(存活文件,供健康检查);二者在镜像里已设置,见 `.env.example`。
+- **未验证**:以上全部在真实主机上的行为(rootless 守护进程与 socket 组映射、主机沙箱测试、重启/整机重启演练)、托管 Actions 上的 `images.yml`、对真实 staging 的冒烟。**没有 gVisor(共享内核),runner 账户无出站防火墙,无镜像签名,无告警系统**;这不是生产就绪声明。
+
 ## 排查"作业为什么失败了"
 
 作业失败时页面只显示一句话,原因在三个地方:
@@ -157,6 +166,7 @@ pnpm supabase:stop
 | [docs/architecture.md](docs/architecture.md) | 系统图、数据模型与约束、额度/任务事务伪代码、内容 schema 示例、数学验证、Stripe 权益、LaTeX 沙箱与部署 |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Phase 1–4 依赖顺序、任务、验收证据、退出条件、风险 |
 | [docs/test-plan.md](docs/test-plan.md) | 数学 fixtures、并发额度、故障恢复、权限隔离、Stripe 事件矩阵、沙箱负面测试、E2E;各层能证明什么 |
+| [docs/worker-host-runbook.md](docs/worker-host-runbook.md) | staging worker 主机的安装、验证、更新/回滚、告警查询与演练清单(**全部未在真实主机上验证**) |
 | [docs/security-and-privacy.md](docs/security-and-privacy.md) | 威胁模型、信任边界、数据清单、最小权限、删除与保留、未确定事项 |
 | [docs/decisions.md](docs/decisions.md) | 已定约束、可逆默认、待决策事项、已核对的官方资料 |
 | [docs/database-roles.md](docs/database-roles.md) | 数据库运行时角色、授权与登录用户创建 |

@@ -32,6 +32,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "dotenv": "18.0.8",
+    "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.2",
     "prisma": "7.10.1",
@@ -39,7 +40,8 @@
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "yaml": "2.9.1"
   },
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
@@ -60,12 +62,19 @@
     "supabase:status": "supabase status",
     "db:dev-roles": "bash scripts/dev-roles.sh",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
+    "worker:build": "node scripts/build-worker.mjs",
+    "worker:image": "docker build --platform linux/amd64 -f docker/worker/Dockerfile --target runtime -t noteprep-worker:dev .",
+    "worker:hosttest-image": "docker build --platform linux/amd64 -f docker/worker/Dockerfile --target hosttest -t noteprep-hosttest:dev .",
+    "worker:start": "node --conditions=react-server --enable-source-maps dist/worker/main.mjs",
     "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts",
     "test:e2e": "playwright test",
+    "smoke:staging": "playwright test --config playwright.smoke.config.ts",
     "curriculum:validate": "tsx scripts/curriculum-validate.ts",
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
     "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",
     "latex:image": "docker build -t noteprep-latex:dev docker/latex",
-    "test:latex": "vitest run --config vitest.latex.config.mts"
+    "test:latex": "vitest run --config vitest.latex.config.mts",
+    "test:latex:host": "vitest run --config vitest.host.config.mts --configLoader runner",
+    "test:image": "vitest run --config vitest.image.config.mts"
   }
 }

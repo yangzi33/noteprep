@@ -75,6 +75,18 @@ jobs:
       # docker/latex/packages.lock) and runs the sandbox tests against it: Dockerfile text alone proves nothing.
       - run: pnpm latex:image
       - run: pnpm test:latex
+      # Host-level test image: the worker's docker runner against the real daemon and kernel-applied cgroup limits.
+      # Mounting the Docker socket is acceptable ONLY here. This job also runs fork PR code, which is tolerable only
+      # because GitHub-hosted runners are ephemeral, already give passwordless sudo and docker, and no secrets exist
+      # in this job. It must never run on a self-hosted runner, and never on a real host.
+      - run: pnpm worker:hosttest-image
+      - name: Run the host test image
+        run: >-
+          docker run --rm --read-only --tmpfs /tmp
+          -e LATEX_IMAGE=noteprep-latex:dev
+          -e DOCKER_HOST=unix:///var/run/docker.sock
+          -v /var/run/docker.sock:/var/run/docker.sock
+          --user 0 noteprep-hosttest:dev
 
   integration:
     name: Integration tests (real Postgres)
@@ -108,6 +120,41 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:integration
+
+  worker-image:
+    name: Worker image (build, boot and security tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        # Same pinned image as compose.yaml (PostgreSQL 17.11).
+        image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres # throwaway service container, not reachable from outside the job
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: corepack enable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm worker:image
+      - name: Test the worker image
+        run: WORKER_IMAGE=noteprep-worker:dev pnpm test:image
 
   supabase:
     name: Auth and Data API boundary (local Supabase stack)
