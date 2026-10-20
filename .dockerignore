@@ -1,0 +1,16 @@
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.npmrc
+!prisma/
+!prisma7.config.ts
+!tsconfig.json
+!src/
+!worker/
+!scripts/build-worker.mjs
+!tests/
+!docker/latex/
+!vitest.host.config.mts
+src/generated/
+**/.env*

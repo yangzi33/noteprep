@@ -62,6 +62,7 @@
     "db:dev-roles": "bash scripts/dev-roles.sh",
     "test:supabase": "vitest run --config vitest.supabase.config.mts",
     "worker:build": "node scripts/build-worker.mjs",
+    "worker:image": "docker build --platform linux/amd64 -f docker/worker/Dockerfile --target runtime -t noteprep-worker:dev .",
     "worker:start": "node --conditions=react-server --enable-source-maps dist/worker/main.mjs",
     "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts",
     "test:e2e": "playwright test",
@@ -69,6 +70,7 @@
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
     "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",
     "latex:image": "docker build -t noteprep-latex:dev docker/latex",
-    "test:latex": "vitest run --config vitest.latex.config.mts"
+    "test:latex": "vitest run --config vitest.latex.config.mts",
+    "test:image": "vitest run --config vitest.image.config.mts"
   }
 }
