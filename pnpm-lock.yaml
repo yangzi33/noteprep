@@ -78,6 +78,9 @@ importers:
       dotenv:
         specifier: 18.0.8
         version: 18.0.8
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       eslint:
         specifier: 9.39.5
         version: 9.39.5(jiti@2.7.0)
