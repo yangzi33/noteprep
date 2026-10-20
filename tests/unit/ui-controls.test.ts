@@ -56,6 +56,18 @@ describe("SelectField", () => {
   });
 });
 
+describe("SelectField controlled value", () => {
+  it("selects the option matching value", () => {
+    const html = render(createElement(SelectField, { label: "L", name: "l", options, value: "a", onChange: () => {} }));
+    expect(html).toMatch(/<option[^>]*\sselected=""[^>]*>Alpha</);
+  });
+  it("ignores defaultValue when value is given", () => {
+    const html = render(createElement(SelectField, { label: "L", name: "l", options, value: "a", defaultValue: "b", onChange: () => {} }));
+    expect(html).toMatch(/<option[^>]*\sselected=""[^>]*>Alpha</);
+    expect(html).not.toMatch(/<option[^>]*\sselected=""[^>]*>Beta</);
+  });
+});
+
 describe("CheckboxRow", () => {
   it("wraps a native checkbox and its label text in one label", () => {
     const html = render(createElement(CheckboxRow, { name: "documents", value: "notes", label: "Tutor Lesson Notes", defaultChecked: true }));
@@ -150,6 +162,9 @@ describe("SelectionFields", () => {
     const html = render(createElement(SelectionFields, { fields, params: { v: "ver2" } }));
     expect(html).toMatch(/<option[^>]*\sselected=""[^>]*>Two</);
     expect(html).not.toMatch(/<option[^>]*\sselected=""[^>]*>One</);
+  });
+  it("does not mark hydration on the server-rendered markup", () => {
+    expect(render(createElement(SelectionFields, { fields, params: {} }))).not.toContain("data-hydrated");
   });
   it("uses 3 columns with a level field and 2 without", () => {
     const withLevel: SelectFieldView[] = [

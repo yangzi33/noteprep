@@ -23,7 +23,7 @@ export function PackageOption({ id, name, value, label, description, defaultChec
         defaultChecked={defaultChecked}
         disabled={disabled}
         aria-describedby={descId}
-        className="peer mt-0.5 size-4 shrink-0 accent-primary focus-visible:outline-none"
+        className="peer relative z-10 mt-0.5 size-4 shrink-0 accent-primary focus-visible:outline-none"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <label

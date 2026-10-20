@@ -15,6 +15,7 @@ test("choose a curriculum topic with the dropdowns, generate, and see the lesson
   try {
     await signIn(page, user);
     await page.goto("/prepare");
+    await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
     await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
 
     await expect(page.getByTestId("select-v")).toHaveValue(""); // nothing is chosen yet
@@ -28,7 +29,8 @@ test("choose a curriculum topic with the dropdowns, generate, and see the lesson
     await expect(page.getByTestId("select-course")).toBeEnabled();
     await expect(page.getByTestId("select-unit")).toBeDisabled();
 
-    await page.getByTestId("select-course").selectOption(COURSE) // label is "Sample Course 1 (SAMPLE-1)";
+    await page.getByTestId("select-course").selectOption(COURSE); // label is "Sample Course 1 (SAMPLE-1)"
+    await expect(page.getByTestId("select-course").locator("option:checked")).toHaveText(/Sample Course 1/);
     await expect(page).toHaveURL(/course=/);
     await expect(page.getByTestId("select-unit")).toBeEnabled();
     await expect(page.getByTestId("select-topic")).toBeDisabled();
@@ -91,6 +93,7 @@ test("refreshing and going back keep the selection where it was, because the URL
   const user = await createUser();
   await signIn(page, user);
   await page.goto("/prepare");
+  await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
   await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
   await expect(page.getByTestId("select-level")).toBeEnabled();
   await page.getByTestId("select-level").selectOption({ label: "Sample Level A" });

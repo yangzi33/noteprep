@@ -8,6 +8,8 @@ type SelectFieldProps = {
   name: string;
   options: SelectOption[];
   defaultValue?: string;
+  /** Controlled value; when given, defaultValue is ignored. */
+  value?: string;
   hint?: string;
   error?: string;
   id?: string;
@@ -18,7 +20,7 @@ type SelectFieldProps = {
   placeholder?: string;
 };
 
-export function SelectField({ label, name, options, defaultValue, hint, error, id, className, onChange, disabled, testId, placeholder }: SelectFieldProps) {
+export function SelectField({ label, name, options, defaultValue, value, hint, error, id, className, onChange, disabled, testId, placeholder }: SelectFieldProps) {
   const generatedId = React.useId();
   const selectId = id ?? generatedId;
   const hintId = hint ? `${selectId}-hint` : undefined;
@@ -33,7 +35,7 @@ export function SelectField({ label, name, options, defaultValue, hint, error, i
       <select
         id={selectId}
         name={name}
-        defaultValue={defaultValue}
+        {...(value !== undefined ? { value } : { defaultValue })}
         onChange={onChange}
         disabled={disabled}
         data-testid={testId}

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { GenerateButtonView } from "@/components/app/generate-button";
 import { PackageOption } from "@/components/app/package-option";
 import { StepIndicator } from "@/components/app/step-indicator";
 
@@ -38,11 +39,33 @@ describe("PackageOption", () => {
     expect(html).toMatch(/<input[^>]*aria-describedby="doc-notes-desc"/);
     expect(html).toMatch(/<p[^>]*id="doc-notes-desc"[^>]*>For you<\/p>/);
   });
+  it("stacks the real checkbox above the label overlay", () => {
+    expect(html).toMatch(/<input[^>]*class="[^"]*\brelative\b[^"]*"/);
+    expect(html).toMatch(/<input[^>]*class="[^"]*\bz-10\b/);
+  });
   it("honours defaultChecked and disabled", () => {
     expect(html).toMatch(/<input[^>]*checked=""/);
     const plain = render(createElement(PackageOption, props));
     expect(plain).not.toMatch(/<input[^>]*checked/);
     expect(plain).not.toMatch(/<input[^>]*disabled/);
     expect(render(createElement(PackageOption, { ...props, disabled: true }))).toMatch(/<input[^>]*disabled=""/);
+  });
+});
+
+describe("GenerateButtonView", () => {
+  const view = (props: { exhausted: boolean; pending: boolean }) => render(createElement(GenerateButtonView, props));
+  it("is an enabled submit button with the exact text", () => {
+    const html = view({ exhausted: false, pending: false });
+    expect(html).toMatch(/<button[^>]*\stype="submit"[^>]*>Generate lesson<\/button>/);
+    expect(html).not.toMatch(/<button[^>]*\sdisabled=""/);
+    expect(html).not.toMatch(/aria-busy/);
+  });
+  it("is disabled when the allowance is exhausted", () => {
+    expect(view({ exhausted: true, pending: false })).toMatch(/<button[^>]*\sdisabled=""/);
+  });
+  it("is disabled and busy while a selection navigation is pending", () => {
+    const html = view({ exhausted: false, pending: true });
+    expect(html).toMatch(/<button[^>]*\sdisabled=""/);
+    expect(html).toMatch(/<button[^>]*\saria-busy="true"/);
   });
 });

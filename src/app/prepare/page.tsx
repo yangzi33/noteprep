@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { GenerateButton } from "@/components/app/generate-button";
 import { PackageOption } from "@/components/app/package-option";
+import { PreparePendingProvider } from "@/components/app/prepare-pending";
 import { SelectionFields } from "@/components/app/selection-fields";
 import { StepIndicator } from "@/components/app/step-indicator";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { SelectField } from "@/components/ui/select-field";
@@ -124,6 +125,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   return frame(
     <div className={context ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" : "grid gap-6"}>
       <Card className="flex flex-col gap-6 p-6">
+        <PreparePendingProvider>
         <h2 className="font-heading text-xl">Start with your teaching context</h2>
         {sample && (
           <Notice intent="info" data-testid="sample-banner">
@@ -169,11 +171,10 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
               </div>
             </div>
             <p className="text-[13px] text-muted-foreground">Choosing fewer documents still uses one generation.</p>
-            <Button type="submit" disabled={exhausted} className="w-full">
-              Generate lesson
-            </Button>
+            <GenerateButton exhausted={exhausted} />
           </form>
         )}
+        </PreparePendingProvider>
       </Card>
       {context && (
         <aside className="flex flex-col gap-4">
