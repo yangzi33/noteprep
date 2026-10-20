@@ -144,3 +144,20 @@
 | D-49 | 预览用浏览器自带 PDF 查看器(`<iframe>`),始终附"新标签页打开/下载"降级链接;不引入 PDF.js 等新依赖 | 已实现;移动端未实测 |
 | D-50 | worker 的对象存储用 `OBJECT_STORE=fs|supabase` 选择,默认 `fs`(测试/最小本地),**生产必须 `supabase`**;Supabase 适配器持有 secret key,仅 worker 使用 | 已实现 |
 | D-51 | 所有预览/下载/标签链接显式带 `rev`,服务端只接受"属于该课包且属于该所有者的已完成修订";对象路径只取自该修订的清单 | 已实现 |
+
+## 11. 2026-10-20 Worker 部署的决定(staging)
+
+> 状态说明:"已实现(未在主机验证)" = 文件、脚本和仓库内测试已存在;**没有任何一项在真实 Linux 主机上运行过**。操作步骤见 [worker-host-runbook.md](worker-host-runbook.md)。
+
+| ID | 决定 | 状态 |
+|---|---|---|
+| D-52 | **主机拓扑**。比较过:① 把 `/var/run/docker.sock` 挂进 worker 容器 = 等同 root,**拒绝**;② systemd 服务 + 账户在 `docker` 组 = 等同 root,**拒绝**;③ worker 与 rootless Docker 同一账户:沙箱逃逸会落在持有全部秘密的账户上(同 uid 可读 `/proc/<pid>/environ`),违背"runner 无秘密",**拒绝**;④ **选用**:worker 容器(uid 10001、只读根、无能力)由宿主 rootful Docker 运行;沙箱由 `noteprep-runner`(nologin、无 sudo、不在 docker 组)的 rootless Docker 运行,socket 放在 `/run/noteprep-runner/`(0750,组 `noteprep-runner`),仅该**目录**以只读方式挂进 worker 容器并 `--group-add` 该组(挂目录而不是 socket 文件,使 runner 守护进程重启后无需重启 worker)。worker 容器的秘密由 root 守护进程持有,runner 读不到。rootless 守护进程的 drop-in 由 root 拥有、安装在 `/etc/systemd/user/docker.service.d/`,runner 不能改自己的守护进程参数。runner 不持有任何注册表凭据:root 拉取镜像,LaTeX 镜像经 `docker save \| docker load` 送入 runner 的守护进程(或把该镜像设为公开);worker 镜像只按摘要引用(单元用 `--pull never` + `ExecStartPre` 摘要守卫强制)。日志只走 `journalctl -u noteprep-worker`(容器 `--log-driver none`)。**它保护什么**:worker 被攻破 ≠ 宿主 root;沙箱逃逸落在无秘密的 runner 账户。**它不保护什么**:① 共享内核(内核漏洞可从沙箱或 worker 直达宿主 root,没有 gVisor);② worker 被攻破时攻击者拥有全部 worker 秘密(worker DB 角色、Storage secret key、LLM key),并能用 runner 守护进程消耗资源、篡改其他正在编译的作业产物、经 rootless 网络出站;③ 逃逸到 runner 的攻击者同样能篡改并发作业的 PDF(宿主只检查格式与活动内容)、占满磁盘;④ runner 账户没有出站防火墙;⑤ 宿主 root 可经 `docker inspect` 看到 worker 秘密(只限管理员)。**生产还需要(不在本计划内)**:在目标主机上评估 gVisor `runsc`(与 rootless 的兼容性未验证)或 Firecracker(D-03/D-20);runner uid 的 nftables 出站拒绝;镜像签名/来源证明;告警系统;在生产主机重跑 `test:latex`(D-44) | 已实现(未在主机验证) |
+| D-53 | **镜像内容**。esbuild 打包 `worker/main.ts` 与 `worker/healthcheck.ts`(`packages: "external"`、`conditions: ["react-server"]`),运行时 `node --conditions=react-server`;生产依赖 `pnpm install --prod --frozen-lockfile --ignore-scripts`(Prisma 客户端已打进包,不需要 postinstall);删除 npm/corepack/yarn;`USER 10001:10001`;镜像不含任何秘密。基础镜像按 linux/amd64 清单摘要固定(查询日期 2026-10-20,`docker buildx imagetools inspect`):`node:24.13.1-bookworm-slim` → `sha256:85a395c77b811fa7f5b5e4aa69cd6eb4c3b80c7f1a8e34704dc0ce061e5b404e`;`docker:29.8.2-cli` → `sha256:d329fa64f42e03248f9a6cb2e21b6d4aa4d76f5a80aa2ad7946d81fbf1860602`(值与 `docker/worker/Dockerfile` 头部一致)。同一 Dockerfile 的 `hosttest` 目标随 worker 镜像一起按摘要发布,用于在主机上跑沙箱测试 | 已实现(未在主机验证) |
+| D-54 | **发布**。手动工作流 `images.yml`(仅 main)只用 runner 自带的 docker CLI 与 `GITHUB_TOKEN`(只在测试之后的 push 作业里出现,该作业不 checkout、不运行仓库代码),不引入新的第三方 Action;镜像以 git SHA 打标签,输出并写入 Step Summary 的是**摘要**,主机只按摘要拉取。`main` 限定只是防误操作,不是访问控制;真正的边界是仓库写权限与分支/环境保护 | 已实现;**托管 Actions 上的真实运行未验证** |
+| D-55 | **存活与停止**。worker 在每次成功的 sweep(每 `SWEEP_INTERVAL_SECONDS`,访问数据库)和每次成功的轮询后 `touch` `WORKER_LIVENESS_FILE`;`healthcheck` 检查文件新于 120 s。SIGTERM:停止领取新作业,**让在途作业完成**;宿主停止超时 180 s,超过则 SIGKILL,由租约过期 + sweeper 接管(不扣额度)。Docker 不会因 unhealthy 自动重启:健康状态只用于告警 | 已实现(未在主机验证) |
+| D-56 | **staging 冒烟**。Playwright 走**真实登录表单**(而不是脚本里用 Supabase 密码流程伪造 `@supabase/ssr` 的 Cookie,也不调用 Server Action):不依赖库的内部 Cookie 格式、不需要任何 key,测的就是用户路径。目标是白名单(只允许 `https://noteprep.app`),trace/截图/视频关闭。每次运行消耗测试账户 1 次免费生成;账户为一次性 staging 用户,额度用完就换新用户(额度绝不重置) | 已实现;**对真实 staging 的运行未验证** |
+
+**已推迟的限制(诚实清单,均为 UNVERIFIED 或未做)**:
+- 没有 gVisor;沙箱与 worker 共享宿主内核。
+- worker 被攻破 = 暴露全部 worker 秘密;runner 账户没有出站防火墙;没有镜像签名/来源证明;没有告警系统。
+- 以下**均未验证**:托管 Actions 上的 `images.yml` 发布工作流、`imagetools` 的摘要输出读取、`hosttest` 以 uid 10001 在真实主机上的行为(含 socket 组映射)、cgroup v1 主机、`docker save | docker load` 后按摘要引用 LaTeX 镜像是否可解析。

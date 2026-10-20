@@ -49,21 +49,15 @@ Phase 3 才接入。届时:在测试模式创建一个月度价格,把价格 ID 
 
 这是 architecture §11 里"可信 worker + 无秘密 runner + 每任务一次性沙箱"的运行位置,**不是 Vercel 能承担的**(Vercel Functions 有最长运行时间、无法提供 TeX 镜像和隔离控制)。
 
-**何时需要**:Phase 1 的 worker 骨架在本机运行即可;**Phase 2 的沙箱 spike 之前需要一台真实 Linux 机器**(见 implementation-plan P2-T6)。
+**已定(D-52..D-56)**:staging 主机拓扑、镜像、发布、存活/停止与冒烟已有设计和仓库内实现:worker 容器由宿主 Docker 运行,LaTeX 沙箱由独立账户 `noteprep-runner` 的 rootless Docker 运行。**具体的主机搭建、秘密、拉取、验证与演练步骤全部在 [worker-host-runbook.md](worker-host-runbook.md)**;这里不再重复。主机文件在 [deploy/host/](../deploy/host/)。**这些都没有在真实主机上运行过(UNVERIFIED)**。
 
-**最低要求(待 spike 实测确认,以下规格是假设,不是结论)**:
+**主机的最低要求(摘要;细则见 runbook §1)**:x86_64 Linux、cgroup v2、systemd、**不需要任何入站端口**(只需出站访问 Supabase 数据库与 Storage、LLM 供应商、Stripe API 和镜像注册表)、自动安全更新、磁盘与时间同步监控。规格先用小规格通用 VM,以真实编译耗时与并发数为依据再定(不在此臆测)。
 
-| 项 | 要求 |
-|---|---|
-| 系统 | x86_64 Linux(Ubuntu LTS 之类),可装 Docker 或 Podman,并能安装 gVisor `runsc` |
-| 网络 | 只需**出站**:Supabase 数据库与 Storage、LLM 供应商、Stripe API。**不需要任何入站端口**(worker 轮询数据库领取任务) |
-| 隔离 | 沙箱容器 `--network none`、只读根、非 root、丢弃全部能力、资源限制;runner 使用没有任何凭据的独立 OS 账户(机制由 spike 决定) |
-| 规格 | 先用小规格通用 VM 起步,以真实编译耗时与并发数为依据再定(不在此臆测) |
-| 运维 | 内核/OS 补丁、容器运行时与 gVisor 升级、TeX 镜像重建后重跑沙箱测试、日志与告警、磁盘清理 |
+**仍未决定**:
+- gVisor/Firecracker 是否需要(D-44/D-52:首版没有 gVisor,与 rootless 的兼容性未验证);
+- 运维责任:内核/OS 补丁、容器运行时升级、TeX 镜像重建后重跑沙箱测试、日志与告警(目前只有可检索日志和只读 SQL,没有告警系统)、磁盘清理。
 
-**候选**:任何能满足以上要求的普通云 VM(通用 VPS 或云厂商实例)。gVisor 是否需要 KVM/嵌套虚拟化取决于所选平台(其文档页未明确,**待验证**);若 gVisor 与 TeX 不兼容或负面测试不过,备选是 Firecracker 微虚拟机(需要 KVM 或裸金属,选型会随之改变)。
-
-**需要你决定**:托管商与规格(decisions D-20)。建议等 Phase 2 的 spike 在任意一台临时 Linux 机器上跑通后再定,以免选错平台。
+**需要你决定**:托管商与规格(decisions D-20)。主机购买、DNS、注册表访问令牌等都由你操作;runbook 不包含任何创建付费资源的命令。
 
 ## 6. 首次部署前的检查
 
