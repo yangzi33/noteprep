@@ -12,9 +12,13 @@ type SelectFieldProps = {
   error?: string;
   id?: string;
   className?: string;
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  disabled?: boolean;
+  testId?: string;
+  placeholder?: string;
 };
 
-export function SelectField({ label, name, options, defaultValue, hint, error, id, className }: SelectFieldProps) {
+export function SelectField({ label, name, options, defaultValue, hint, error, id, className, onChange, disabled, testId, placeholder }: SelectFieldProps) {
   const generatedId = React.useId();
   const selectId = id ?? generatedId;
   const hintId = hint ? `${selectId}-hint` : undefined;
@@ -30,10 +34,14 @@ export function SelectField({ label, name, options, defaultValue, hint, error, i
         id={selectId}
         name={name}
         defaultValue={defaultValue}
+        onChange={onChange}
+        disabled={disabled}
+        data-testid={testId}
         aria-invalid={error ? "true" : undefined}
         aria-describedby={describedBy}
         className="min-h-11 rounded-control border border-input bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-action-disabled disabled:text-text-disabled"
       >
+        {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (
           <option key={option.value} value={option.value} disabled={option.disabled}>
             {option.label}
