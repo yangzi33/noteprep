@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CompileError } from "@/lib/latex/compiler";
+import { DEFAULT_SANDBOX } from "@/lib/latex/sandbox";
 import { readTar, TarError, writeTar } from "@/lib/latex/tar";
 import { compileRaw, compiler, config, leftoverContainers, minimalTex, pdfText, probe } from "./helpers";
 
@@ -40,6 +41,16 @@ describe("what code inside the sandbox cannot do", () => {
     expect(resolve.stdout).not.toContain("exit=0");
     const interfaces = await probe("ls /sys/class/net");
     expect(interfaces.stdout.trim()).toBe("lo");
+  });
+
+  it("has its limits applied by the kernel, not just requested (rootless Docker without cgroup delegation drops them)", async () => {
+    const p = await probe("cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.swap.max /sys/fs/cgroup/pids.max /sys/fs/cgroup/cpu.max");
+    expect(p.exitCode, p.stderr).toBe(0);
+    const [memory, swap, pids, cpu] = p.stdout.trim().split("\n");
+    expect(Number(memory)).toBe(DEFAULT_SANDBOX.memoryMb * 1024 * 1024);
+    expect(swap).toBe("0");
+    expect(Number(pids)).toBe(DEFAULT_SANDBOX.pidsLimit);
+    expect(cpu).toBe(`${DEFAULT_SANDBOX.cpus * 100_000} 100000`);
   });
 
   it("cannot write anywhere except its small scratch directory, and cannot run anything from it", async () => {

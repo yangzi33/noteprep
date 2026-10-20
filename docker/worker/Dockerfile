@@ -39,3 +39,13 @@ USER 10001:10001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD ["node", "/app/dist/worker/healthcheck.mjs", "/run/noteprep/alive", "120"]
 ENTRYPOINT ["node", "--conditions=react-server", "--enable-source-maps", "/app/dist/worker/main.mjs"]
+
+# Sandbox tests to run ON THE HOST, with the worker's exact identity and mounts but no secrets (runbook section 10).
+FROM build AS hosttest
+COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
+COPY tests ./tests
+COPY docker/latex ./docker/latex
+COPY vitest.host.config.mts ./
+ENV HOME=/tmp DOCKER_CONFIG=/tmp/.docker DOCKER_HOST=unix:///run/noteprep-runner/docker.sock
+USER 10001:10001
+ENTRYPOINT ["/app/node_modules/.bin/vitest", "run", "--config", "vitest.host.config.mts", "--configLoader", "runner"]

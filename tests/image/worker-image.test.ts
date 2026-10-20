@@ -79,7 +79,7 @@ describe("the worker image", () => {
       // Only what .dockerignore allows: no env files, VCS data, docs, host node_modules or the host-generated Prisma client.
       expect(entries.filter((e) => /(^|\/)\.env/.test(e) || /(^|\/)\.git(\/|$)/.test(e))).toEqual([]);
       const top = [...new Set(entries.map((e) => e.split("/")[0]!))].sort();
-      expect(top).toEqual([".npmrc", "docker", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "prisma", "prisma7.config.ts", "scripts", "src", "tests", "tsconfig.json", "worker"]);
+      expect(top).toEqual([".npmrc", "docker", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "prisma", "prisma7.config.ts", "scripts", "src", "tests", "tsconfig.json", "vitest.host.config.mts", "worker"]);
       expect(entries.some((e) => e.startsWith("src/generated"))).toBe(false);
       rmSync(dir, { recursive: true, force: true });
     });
