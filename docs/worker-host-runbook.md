@@ -214,6 +214,8 @@ systemctl start noteprep-worker; systemctl is-active noteprep-worker   # 期望:
 
 回滚:把 `worker.env` 与 `worker.image` 写回 `releases.log` 上一行的旧摘要 → `systemctl restart noteprep-worker` → 确认日志出现 `worker_started`。新版本验证通过之前不删除旧镜像。迁移只做向后兼容的 expand,回滚代码不需要回滚数据库。
 
+启动限制:300 s 内连续启动失败达到 10 次后,systemd 会拒绝再启动(`start-limit-hit`)。修好原因后先 `systemctl reset-failed noteprep-worker`,再 `systemctl start noteprep-worker`。
+
 ## 7. 主机沙箱测试(阻断上线的闸门)
 
 用 `hosttest` 镜像在主机上以**与 worker 完全相同的身份与挂载**运行 `tests/latex`(无 env-file、无秘密;只排除需要数据库的 `pipeline.test.ts`)。`HOST_SANDBOX_STRICT=1` 要求 `LATEX_IMAGE` 是摘要,否则测试在启动时就报错:

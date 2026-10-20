@@ -12,8 +12,8 @@ StartLimitBurst=10
 # Foreground output is the single log: journalctl -u noteprep-worker (container log driver is none).
 # Non-secret: WORKER_IMAGE (pinned by digest) and RUNNER_GID. Secrets live only in /etc/noteprep/worker.env.
 EnvironmentFile=/etc/noteprep/worker.image
-# Refuse to start unless the image is pinned by digest (name@sha256:<64 lowercase hex>). $$ is systemd's escape for a literal $.
-ExecStartPre=/bin/sh -c 'case "$$WORKER_IMAGE" in *[!A-Za-z0-9._:/@-]*) exit 1;; esac; printf %%s "$$WORKER_IMAGE" | grep -Eq "^[^@]+@sha256:[0-9a-f]{64}$$"'
+# Refuse to start unless WORKER_IMAGE is name@sha256:<64 lowercase hex> (no leading '-') and RUNNER_GID is a positive integer. $$ and %% are systemd escapes.
+ExecStartPre=/bin/sh -c 'case "$$WORKER_IMAGE" in -*|*[!A-Za-z0-9._:/@-]*) exit 1;; esac; printf %%s "$$WORKER_IMAGE" | grep -Eq "^[^@]+@sha256:[0-9a-f]{64}$$" || exit 1; case "$$RUNNER_GID" in ""|0*|*[!0-9]*) exit 1;; esac'
 ExecStartPre=-/usr/bin/docker rm -f noteprep-worker
 ExecStart=/usr/bin/docker run --rm --name noteprep-worker --init --read-only --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m --tmpfs /run/noteprep:rw,noexec,nosuid,nodev,size=1m,uid=10001,gid=10001 --user 10001:10001 --group-add ${RUNNER_GID} --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --memory-swap 1g --cpus 1 --pull never --env-file /etc/noteprep/worker.env --mount type=bind,source=/run/noteprep-runner,target=/run/noteprep-runner,readonly --stop-timeout 180 --log-driver none ${WORKER_IMAGE}
 ExecStop=/usr/bin/docker stop --time 180 noteprep-worker
