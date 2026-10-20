@@ -297,8 +297,67 @@ describe("the PDF scan (hostile input)", () => {
     expect(hasActiveContent(raw(`${ok}5 0 obj\n(never closed`))).toBe(true);
     expect(hasActiveContent(raw(`${ok}5 0 obj\n<4142`))).toBe(true);
   });
-  it("does not take a name inside a string or stream data for a name in the file", () => {
-    expect(hasActiveContent(raw(`${ok}5 0 obj\n<< /T (/JavaScript /OpenAction) >>\nendobj\n${stream("/OpenAction /JavaScript")}`))).toBe(false);
+  it("does not take a name inside stream data for a name in the file", () => {
+    // (A name inside a string OUTSIDE a stream is also refused now: the old literal scan runs as a second, independent check.)
+    expect(hasActiveContent(raw(`${ok}5 0 obj\n<< /T 1 >>\nendobj\n${stream("(/OpenAction /JavaScript) Tj")}`))).toBe(false);
+  });
+  it("tokenizes a string outside a stream without mistaking it for a name (new scanner alone)", () => {
+    expect(inspectPdf(raw(`${ok}5 0 obj\n<< /T (/JavaScript /OpenAction) >>\nendobj`)).safe).toBe(true);
+  });
+  describe("a dictionary must not hide in bytes skipped as stream data (review R8-01)", () => {
+    const hidden = "\nendstream\nendobj\n6 0 obj\n<< /Type /Catalog /OpenAction << /S /JavaScript /JS (app.alert(1)) >> >>\nendobj\n7 0 obj\n<< /Length 0 >>\nstream\n";
+    const data = "abcd";
+    const L = data.length + hidden.length;
+    const body = `${data}${hidden}\nendstream\nendobj`;
+    it.each([
+      ["a length inside a string literal", `<< /X (/Length ${L}) /Length ${data.length} >>`],
+      ["a duplicate /Length", `<< /Length ${L} /Length ${data.length} >>`],
+      ["the same duplicate, other order", `<< /Length ${data.length} /Length ${L} >>`],
+      ["a length in a nested dictionary", `<< /DecodeParms << /Length ${L} >> /Length ${data.length} >>`],
+      ["a length in a comment", `<< % /Length ${L}\n/Length ${data.length} >>`],
+      ["an indirect length with a decoy in a string", `<< /Length 9 0 R /X (/Length ${L}) >>`],
+    ])("rejects %s", (_name, dict) => {
+      const pdf = raw(`${ok}3 0 obj\n${dict}\nstream\n${body}`);
+      expect(inspectPdf(pdf).safe).toBe(false);
+      expect(hasActiveContent(pdf)).toBe(true);
+    });
+    it("rejects a stream nested in another dictionary that would reuse an earlier length", () => {
+      const inner = "\nendstream /OpenAction << /S /JavaScript /JS (app.alert(1)) >> /Pad (";
+      const pre = `${ok}2 0 obj\n<< /Length ${inner.length + 4} >>\nendobj\n`;
+      const pdf = raw(`${pre}4 0 obj\n<< /Type /Catalog /X << /Length 0 >>\nstream\n${inner}xxxx\nendstream) >>\nendobj`);
+      expect(inspectPdf(pdf).safe).toBe(false);
+      expect(hasActiveContent(pdf)).toBe(true);
+    });
+    it("rejects a stream not directly preceded by a dictionary, and a non-integer length", () => {
+      expect(inspectPdf(raw(`${ok}3 0 obj\n(x)\nstream\nabcd\nendstream`)).safe).toBe(false);
+      expect(inspectPdf(raw(`${ok}3 0 obj\n<< /Length 4.0 >>\nstream\nabcd\nendstream`)).safe).toBe(false);
+      expect(inspectPdf(raw(`${ok}3 0 obj\n<< /Length -4 >>\nstream\nabcd\nendstream`)).safe).toBe(false);
+    });
+    it("takes the length from the key position of the dictionary that precedes the keyword", () => {
+      const pdf = raw(`${ok}3 0 obj\n<< /Filter [/A /B] /DecodeParms << /Length 99 >> /Parent 2 0 R /Length 4 /X (/Length 7) >>\nstream\nabcd\nendstream\nendobj\n4 0 obj\n<< /Type /Page /Contents 3 0 R >>\nendobj`);
+      expect(inspectPdf(pdf)).toEqual({ safe: true, pages: 1 });
+    });
+  });
+  describe("the scan runs in linear time on a 5 MB hostile file", () => {
+    const timed = (pdf: Buffer) => {
+      const t = Date.now();
+      hasActiveContent(pdf);
+      return Date.now() - t;
+    };
+    const MB5 = 4_900_000;
+    it("a long run of digits after /Length", () => {
+      expect(timed(raw(`${ok}3 0 obj\n<< /Length 5 ${"1".repeat(MB5)} >>\nstream\nabcde\nendstream`))).toBeLessThan(1000);
+    });
+    it("deep nesting", () => {
+      expect(timed(raw(`${ok}5 0 obj\n${"<< /K ".repeat(MB5 / 6)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}5 0 obj\n${"[".repeat(MB5)}`))).toBeLessThan(1000);
+    });
+    it("many stream keywords, in a string and as real streams", () => {
+      expect(timed(raw(`${ok}5 0 obj\n<< /K (${"stream\n".repeat(MB5 / 7)}) >>`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"<< /Length 1 >>\nstream\na\nendstream\n".repeat(MB5 / 36)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"<< >>\nstream\n".repeat(MB5 / 14)}`))).toBeLessThan(1000);
+      expect(timed(raw(`${ok}${"stream\r\n".repeat(MB5 / 8)}`))).toBeLessThan(1000);
+    });
   });
   it("counts page objects, not /Pages nodes, and sees escaped names", () => {
     expect(inspectPdf(raw(`${ok}2 0 obj\n<< /Type /Pages /Count 2 >>\nendobj\n4 0 obj\n<< /Type /Page >>\nendobj\n5 0 obj\n<< /Type/Pag#65 >>\nendobj`)).pages).toBe(2);
