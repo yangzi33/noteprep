@@ -1,0 +1,20 @@
+# Install to /etc/systemd/system/noteprep-worker.service (root:root 0644).
+# The worker container reaches ONLY the sandbox runner's socket directory; it never gets the host daemon's socket.
+[Unit]
+Description=Noteprep worker container
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+# Non-secret: WORKER_IMAGE (pinned by digest) and RUNNER_GID. Secrets live only in /etc/noteprep/worker.env.
+EnvironmentFile=/etc/noteprep/worker.image
+ExecStartPre=-/usr/bin/docker rm -f noteprep-worker
+ExecStart=/usr/bin/docker run --rm --name noteprep-worker --init --read-only --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m --tmpfs /run/noteprep:rw,noexec,nosuid,nodev,size=1m,uid=10001,gid=10001 --user 10001:10001 --group-add ${RUNNER_GID} --cap-drop ALL --security-opt no-new-privileges --pids-limit 256 --memory 1g --env-file /etc/noteprep/worker.env -v /run/noteprep-runner:/run/noteprep-runner --stop-timeout 180 --log-driver journald ${WORKER_IMAGE}
+ExecStop=/usr/bin/docker stop --time 180 noteprep-worker
+TimeoutStopSec=200
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
