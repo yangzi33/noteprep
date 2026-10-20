@@ -15,6 +15,28 @@ function isRetryable(error: unknown): boolean {
   return status >= 500 || status === 429 || status === 408;
 }
 
+/** Anything shaped like a Supabase API key or a JWT; a message is never logged with one in it. */
+const SECRET_SHAPES = [/sb_[A-Za-z]+_[A-Za-z0-9_-]+/g, /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g];
+
+/** A short, single-line message with key- and JWT-shaped text removed, meant for the worker log. */
+function scrubbed(message: string): string {
+  let out = message.replace(/\s+/g, " ").trim();
+  for (const shape of SECRET_SHAPES) out = out.replace(shape, "[redacted]");
+  return out.slice(0, 200);
+}
+
+/** A StorageError that keeps the operation, the HTTP status and a scrubbed message, so a failure can be told apart in the log. */
+export function storageErrorFrom(op: string, error: unknown): StorageError {
+  const e = error as { status?: unknown; statusCode?: unknown; message?: unknown } | null;
+  const status = Number(e?.statusCode ?? e?.status);
+  const message = typeof e?.message === "string" && e.message.length > 0 ? scrubbed(e.message) : undefined;
+  return new StorageError(isRetryable(error), {
+    op,
+    ...(Number.isFinite(status) && status >= 100 ? { status } : {}),
+    ...(message ? { message } : {}),
+  });
+}
+
 function isNotFound(error: unknown): boolean {
   const e = error as { status?: unknown; statusCode?: unknown; message?: unknown } | null;
   const status = Number(e?.statusCode ?? e?.status);
@@ -35,7 +57,7 @@ export class SupabaseObjectStore implements ObjectStore {
 
   private checked(objectPath: string): string {
     if (objectPath.length === 0 || objectPath.startsWith("/") || objectPath.split("/").some((part) => part === "" || part === "." || part === "..")) {
-      throw new StorageError(false);
+      throw new StorageError(false, { op: "path", message: "object path refused" });
     }
     return objectPath;
   }
@@ -44,14 +66,14 @@ export class SupabaseObjectStore implements ObjectStore {
     const { error } = await this.client.storage
       .from(this.bucket)
       .upload(this.checked(objectPath), data, { contentType: contentTypeFor(objectPath), upsert: true, cacheControl: "0" });
-    if (error) throw new StorageError(isRetryable(error));
+    if (error) throw storageErrorFrom("put", error);
   }
 
   async stat(objectPath: string): Promise<StoredObjectInfo | null> {
     const { data, error } = await this.client.storage.from(this.bucket).download(this.checked(objectPath));
     if (error) {
       if (isNotFound(error)) return null;
-      throw new StorageError(isRetryable(error));
+      throw storageErrorFrom("stat", error);
     }
     const bytes = new Uint8Array(await data.arrayBuffer());
     return { bytes: bytes.byteLength, sha256: sha256Of(bytes) };
@@ -61,17 +83,17 @@ export class SupabaseObjectStore implements ObjectStore {
     const files = await this.listFiles(this.checked(prefix.replace(/\/+$/, "")), 0);
     for (let i = 0; i < files.length; i += 100) {
       const { error } = await this.client.storage.from(this.bucket).remove(files.slice(i, i + 100));
-      if (error) throw new StorageError(isRetryable(error));
+      if (error) throw storageErrorFrom("remove", error);
     }
   }
 
   /** Every object under a prefix. Folders come back without an id; a depth limit keeps a hostile layout from looping. */
   private async listFiles(prefix: string, depth: number): Promise<string[]> {
-    if (depth > 6) throw new StorageError(false);
+    if (depth > 6) throw new StorageError(false, { op: "list", message: "listing too deep" });
     const out: string[] = [];
     for (let offset = 0; ; offset += 100) {
       const { data, error } = await this.client.storage.from(this.bucket).list(prefix, { limit: 100, offset });
-      if (error) throw new StorageError(isRetryable(error));
+      if (error) throw storageErrorFrom("list", error);
       for (const entry of data) {
         if (entry.id) out.push(`${prefix}/${entry.name}`);
         else out.push(...(await this.listFiles(`${prefix}/${entry.name}`, depth + 1)));

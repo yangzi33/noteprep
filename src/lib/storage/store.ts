@@ -15,11 +15,31 @@ export interface ObjectStore {
   deletePrefix(prefix: string): Promise<void>;
 }
 
+/** What a storage call reported, kept for operators. It never holds a path, key or URL: `message` is short, single-line and scrubbed. */
+export interface StorageErrorDetail {
+  op: string;
+  status?: number;
+  message?: string;
+}
+
 export class StorageError extends Error {
-  constructor(readonly retryable: boolean) {
+  constructor(
+    readonly retryable: boolean,
+    readonly detail?: StorageErrorDetail,
+  ) {
     super("storage_failed");
     this.name = "StorageError";
   }
+}
+
+/** The detail as flat log fields (the worker log accepts only primitives). */
+export function storageLogFields(detail: StorageErrorDetail | undefined): Record<string, string | number> {
+  if (!detail) return {};
+  return {
+    storageOp: detail.op,
+    ...(detail.status === undefined ? {} : { storageStatus: detail.status }),
+    ...(detail.message === undefined ? {} : { storageMessage: detail.message }),
+  };
 }
 
 export function sha256Of(data: Uint8Array): string {
