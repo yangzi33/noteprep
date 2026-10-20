@@ -22,7 +22,7 @@ export function hostCacheDir(tmp: string, uid: number, pid: number): string {
 assertHostSandboxEnv(process.env);
 const cache = hostCacheDir(tmpdir(), process.getuid?.() ?? 0, process.pid);
 
-// Sandbox tests that run ON THE WORKER HOST inside the hosttest image (runbook section 10), with the worker's identity and
+// Sandbox tests that run ON THE WORKER HOST inside the hosttest image (runbook section 7), with the worker's identity and
 // docker socket mount but no secrets. There is no globalSetup because there is no database on the host. The full-chain test
 // (tests/latex/pipeline.test.ts) needs Postgres, so it is excluded here and covered by CI and the staging smoke test.
 // Mounting the host's /var/run/docker.sock and running with --user 0 (as ci.yml does) is a LOCAL/CI-only convenience on a

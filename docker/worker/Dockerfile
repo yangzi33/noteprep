@@ -27,7 +27,7 @@ COPY scripts/copy-externals.mjs ./scripts/copy-externals.mjs
 RUN node scripts/copy-externals.mjs node_modules /out/node_modules @prisma/client @prisma/adapter-pg pg
 
 # Declared BEFORE runtime so that a plain `docker build` (no --target) yields the runtime image; always name targets explicitly.
-# Sandbox tests to run ON THE HOST, with the worker's exact identity and mounts but no secrets (runbook section 10).
+# Sandbox tests to run ON THE HOST, with the worker's exact identity and mounts but no secrets (runbook section 7).
 FROM build AS hosttest
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 COPY tests/latex ./tests/latex

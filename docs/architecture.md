@@ -604,7 +604,7 @@ sequenceDiagram
 - 超时:对整个进程组/容器 `kill`,并以标签(`noteprep-job=<id>`)在 worker 启动与 sweeper 中清理残留。
 - **成本结构与运维责任**:一台常驻小型主机(规格与价格**待依据真实编译耗时和并发实测后确定**,不在此臆测);运维责任:OS/内核补丁、容器运行时与 gVisor 升级、TeX 镜像定期重建与重跑沙箱测试、日志与告警、磁盘清理。需要 gVisor 的平台兼容性(例如 systrap 平台是否可用、TeX 所需系统调用)**待实测**。
 
-**staging 状态(D-52..D-56)**:staging 采用 D-52 的拓扑,runner 机制**已定**——不是受限 sudoers 或本地 socket 服务,而是 `noteprep-runner` 账户的 **rootless Docker**,socket 目录以只读方式挂进 worker 容器(worker 容器由宿主 rootful Docker 运行,uid 10001、只读根、无能力;宿主 Docker socket 永远不挂入)。这是一个**没有 gVisor** 的 runc 容器方案(共享内核),按上面的"替代 A"处理:**不作为上线隔离结论**。gVisor/Firecracker 的取舍**仍待定**(D-03/D-20/D-44),也尚未验证与 rootless 的兼容性。上面的"必须实测的能力清单"在真实主机上**尚未实测**;步骤见 [worker-host-runbook.md](worker-host-runbook.md)。
+**staging 状态(D-52..D-56)**:staging 采用 D-52 的拓扑,runner 机制**已定**——不是受限 sudoers 或本地 socket 服务,而是 `noteprep-runner` 账户的 **rootless Docker**,socket 目录以只读方式挂进 worker 容器(worker 容器由宿主 rootful Docker 运行,uid 10001、只读根、无能力;宿主 Docker socket 永远不挂入)。这是一个**没有 gVisor** 的 runc 容器方案(共享内核),按下面的"替代 A"处理:**不作为上线隔离结论**。gVisor/Firecracker 的取舍**仍待定**(D-03/D-20/D-44),也尚未验证与 rootless 的兼容性。下面的"必须实测的能力清单"在真实主机上**尚未实测**;步骤见 [worker-host-runbook.md](worker-host-runbook.md)。
 
 **替代 A:普通 runc 容器(强化配置)。** 实现更简单;但 Docker 官方文档指出容器隔离依赖共享内核,默认能力与挂载在与内核漏洞结合时可能隔离不完整。可作 Phase 2 开发期过渡,**不作为上线隔离结论**。
 
