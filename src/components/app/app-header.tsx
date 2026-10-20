@@ -18,7 +18,7 @@ export function AppHeader({ email }: { email: string }) {
         >
           {initial}
         </span>
-        <span className="hidden max-w-[240px] truncate text-sm sm:inline">{email}</span>
+        <span className="sr-only max-w-[240px] truncate text-sm sm:not-sr-only sm:inline">{email}</span>
         <form>
           <Button type="submit" variant="outline" size="sm" formAction={signOut}>
             Sign out

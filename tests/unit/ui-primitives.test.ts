@@ -65,6 +65,9 @@ describe("Button", () => {
     expect(render(createElement(Button, { variant: "outline" }, "x"))).toContain("border-input");
   });
   it("renders the disabled attribute", () => {
-    expect(render(createElement(Button, { disabled: true }, "x"))).toContain("disabled");
+    expect(render(createElement(Button, { disabled: true }, "x"))).toMatch(/<button[^>]*\sdisabled=""/);
+  });
+  it("omits the disabled attribute when not disabled", () => {
+    expect(render(createElement(Button, null, "x"))).not.toMatch(/<button[^>]*\sdisabled=""/);
   });
 });
