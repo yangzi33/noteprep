@@ -85,6 +85,8 @@ systemctl --user enable --now docker
 exit
 ```
 
+[主机上验证] `dockerd-rootless-setuptool.sh install` 末尾的就绪探测可能检查 `$XDG_RUNTIME_DIR/docker.sock`,而我们的 drop-in 把 socket 移到了 `/run/noteprep-runner`,所以它的最终检查可能报错,即使 `systemctl --user enable --now docker` 实际工作正常;权威检查是下一步的 `stat` 与 `docker info`。
+
 [主机上验证] 两种方式都只是按文档推断,哪一种在你的主机上可用要实测;`dockerd-rootless-setuptool.sh` 的路径与 `PATH` 同理。
 
 **检查 dockerd-rootless.sh 的位置**:`runner-docker.conf` 中写的是 `/usr/bin/dockerd-rootless.sh`,以实际安装位置为准(`command -v dockerd-rootless.sh`;`rpm`/`dpkg -L docker-ce-rootless-extras` 也可),并确认它接受 `-H` 与 `--group`(`dockerd-rootless.sh --help` 会转发给 dockerd)。位置不同就改 drop-in 里的路径(root 编辑),再让 runner 的用户管理器重载并重启:`systemctl --user -M noteprep-runner@ daemon-reload && systemctl --user -M noteprep-runner@ restart docker`。[主机上验证]
@@ -251,7 +253,7 @@ docker run --rm --init --read-only \
 # 期望: vitest 全部通过,退出码 0
 ```
 
-CI 与 Task 5 已用 `--read-only --tmpfs /tmp`(Docker 默认的 tmpfs 选项含 `noexec`)跑过 hosttest 镜像并通过 41 个测试,所以 `/tmp` 的 `noexec` 不是可能的失败原因。在真实主机上**真正没测过**的是:`/tmp` 的 64m 容量上限、`--memory 1g`、`--pids-limit 256`、`--cap-drop ALL`、uid 10001,以及真实的 runner socket 目录挂载。若在这些限制下出现磁盘空间不足或内存不足,这是一个**需要记录的结果**(开 issue 或写入 decisions 并按证据调整配置),**不是**放松隔离参数的理由。[主机上验证]
+Task 5/5b 在本机 Docker 上用 `--read-only --tmpfs /tmp`(Docker 默认的 tmpfs 选项含 `noexec`)跑过 hosttest 镜像(41 个测试通过);GitHub Actions 上的 `ci.yml` hosttest 步骤尚未运行(UNVERIFIED)。所以 `/tmp` 的 `noexec` 不是可能的失败原因。在真实主机上**真正没测过**的是:`/tmp` 的 64m 容量上限、`--memory 1g`、`--pids-limit 256`、`--cap-drop ALL`、uid 10001,以及真实的 runner socket 目录挂载。若在这些限制下出现磁盘空间不足或内存不足,这是一个**需要记录的结果**(开 issue 或写入 decisions 并按证据调整配置),**不是**放松隔离参数的理由。[主机上验证]
 
 - 此命令是 root 守护进程运行的容器,socket **目录**被挂入;**不要**挂 `/var/run/docker.sock`(仓库里 CI 为一次性 runner 这样做,生产主机永远不)。
 - 反向检查:`-e LATEX_IMAGE=noteprep-latex:dev` 带 `HOST_SANDBOX_STRICT=1` 必须立即失败(`pinned by digest`)。
@@ -309,6 +311,8 @@ worker 容器在默认 bridge 上,可以出站(它需要访问 Supabase、LLM �
 
 ## 11. 日志与告警
 
+**健康检查的局限(D-55)**:容器 `HEALTHCHECK` 只证明 worker 能访问数据库(存活文件在成功的 sweep/轮询后更新)。如果 runner 的 socket 或组映射坏了,worker 仍然显示 `healthy`,而每次编译都会以 `sandbox_unavailable` 失败。所以告警**必须同时**监控失败作业数(见下面的 SQL)。另外 Dockerfile 的 `HEALTHCHECK` 写死了 `/run/noteprep/alive`,因此 **不要** 在 `worker.env` 里覆盖 `WORKER_LIVENESS_FILE`。
+
 [主机上验证] 下面的 `jq` 过滤与 `docker inspect` 输出格式需要在真实日志上确认。
 
 `journalctl -u noteprep-worker` 是**唯一权威日志**(容器 `--log-driver none`)。日志是 JSON 行,不含课程内容。
@@ -335,6 +339,8 @@ select count(*) from generation_job where state = 'running' and lease_expires_at
 select count(*) filter (where state = 'failed')::float
        / nullif(count(*) filter (where state in ('succeeded', 'failed')), 0)
 from generation_job where finished_at > now() - interval '1 hour';
+-- 沙箱不可用(socket/组映射/runner 守护进程坏了;持续非零 = 告警,即使容器是 healthy)
+select count(*) from generation_job where state = 'failed' and error_code = 'sandbox_unavailable' and finished_at > now() - interval '15 minutes';
 -- 近 1 天错误分布
 select error_code, count(*) from generation_job where finished_at > now() - interval '1 day' group by 1;
 ```

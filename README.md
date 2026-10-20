@@ -118,7 +118,7 @@ pnpm supabase:stop
 
 ## Worker 打包与 staging 主机(设计与文件已完成;**未在任何真实主机上运行过**)
 
-- **脚本**:`pnpm worker:build`(esbuild 打包到 `dist/worker/`)、`pnpm worker:start`(运行打包产物)、`pnpm worker:image`(构建 worker 镜像 `noteprep-worker:dev`,linux/amd64)、`pnpm worker:hosttest-image`(构建在主机上跑沙箱测试的 `noteprep-hosttest:dev`)、`pnpm smoke:staging`(对 staging 的冒烟,见下)。构建镜像需要 Docker(`pnpm latex:image` 同理);**本机没有运行过这些 Docker 构建**,镜像构建与镜像内测试只在 CI/发布工作流里定义。
+- **脚本**:`pnpm worker:build`(esbuild 打包到 `dist/worker/`)、`pnpm worker:start`(运行打包产物)、`pnpm worker:image`(构建 worker 镜像 `noteprep-worker:dev`,linux/amd64)、`pnpm worker:hosttest-image`(构建在主机上跑沙箱测试的 `noteprep-hosttest:dev`)、`pnpm smoke:staging`(对 staging 的冒烟,见下)。构建镜像需要 Docker。**本机(开发机)上做过**:`pnpm worker:image`、`test:image`(6–8 个测试通过)和 hosttest 容器(41 个测试通过)。**没有发生过**:GitHub Actions 上的任何运行(包括 `images.yml` 与 `ci.yml` 的 hosttest 步骤)、任何真实主机、任何向 GHCR 的推送。
 - **镜像**:`docker/worker/Dockerfile`(运行时镜像不含秘密,uid 10001,基础镜像按摘要固定;`hosttest` 目标含 devDependencies 与 `tests/latex`)。发布:手动工作流 `.github/workflows/images.yml`(仅 main,先测试再推送,输出**摘要**到 Step Summary);主机只按摘要拉取。
 - **主机**:[docs/worker-host-runbook.md](docs/worker-host-runbook.md) 是逐步的安装、验证与演练清单;主机文件在 [deploy/host/](deploy/host/)(systemd 单元、runner 的 rootless Docker drop-in、tmpfiles、`worker.env.example`、`worker.image.example`)。拓扑与取舍见 decisions D-52..D-56。
 - **冒烟**:`read -rs SMOKE_PASSWORD; export SMOKE_PASSWORD`,然后 `SMOKE_TARGET=staging SMOKE_EMAIL=… pnpm smoke:staging`,结束后 `unset SMOKE_PASSWORD`(先 `pnpm exec playwright install chromium`)。目标只允许 `https://noteprep.app`;走真实登录表单;**每次运行消耗该一次性测试账户的 1 次免费生成**。
