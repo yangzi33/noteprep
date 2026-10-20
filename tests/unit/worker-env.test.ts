@@ -8,6 +8,8 @@ import { workerEnv } from "../../worker/env";
 
 const base = { WORKER_DATABASE_URL: "postgresql://worker_login:x@127.0.0.1:5432/db", ALLOW_FAKE_COMPILER: "1" };
 
+const RUNNER = "unix:///run/noteprep-runner/docker.sock";
+
 describe("worker configuration", () => {
   it("accepts the local skeleton setup and applies defaults", () => {
     const config = workerEnv({ ...base, NODE_ENV: "development" });
@@ -33,7 +35,19 @@ describe("worker configuration", () => {
     expect(() => workerEnv({ ...prod, COMPILER: "docker" })).toThrow(/pinned by digest/);
     expect(() => workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: "noteprep-latex:latest" })).toThrow(/pinned by digest/);
     const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
-    expect(workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: digest }).LATEX_IMAGE).toBe(digest);
+    expect(workerEnv({ ...prod, COMPILER: "docker", LATEX_IMAGE: digest, DOCKER_HOST: RUNNER }).LATEX_IMAGE).toBe(digest);
+  });
+  it("in production the compiler must talk to the runner's own socket, never the host's rootful daemon", () => {
+    const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
+    const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production", COMPILER: "docker", LATEX_IMAGE: digest, OBJECT_STORE: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SECRET_KEY: "k" };
+    for (const bad of [undefined, "unix:///var/run/docker.sock", "unix:///run/docker.sock", "tcp://127.0.0.1:2375"]) {
+      expect(() => workerEnv({ ...prod, DOCKER_HOST: bad }), String(bad)).toThrow(/DOCKER_HOST must name the sandbox runner's unix socket/);
+    }
+    expect(workerEnv({ ...prod, DOCKER_HOST: RUNNER }).dockerClientEnv.DOCKER_HOST).toBe(RUNNER);
+  });
+  it("accepts only an absolute liveness file path", () => {
+    expect(workerEnv({ ...base, WORKER_LIVENESS_FILE: "/run/noteprep/alive" }).WORKER_LIVENESS_FILE).toBe("/run/noteprep/alive");
+    expect(() => workerEnv({ ...base, WORKER_LIVENESS_FILE: "alive" })).toThrow();
   });
   it("keeps files on local disk by default, and the Supabase store needs its URL and secret key", () => {
     expect(workerEnv(base).OBJECT_STORE).toBe("fs");
@@ -45,7 +59,7 @@ describe("worker configuration", () => {
     const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
     const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production", COMPILER: "docker", LATEX_IMAGE: digest };
     expect(() => workerEnv(prod)).toThrow(/OBJECT_STORE must be supabase/);
-    expect(workerEnv({ ...prod, OBJECT_STORE: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SECRET_KEY: "k" }).OBJECT_STORE).toBe("supabase");
+    expect(workerEnv({ ...prod, DOCKER_HOST: RUNNER, OBJECT_STORE: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SECRET_KEY: "k" }).OBJECT_STORE).toBe("supabase");
   });
   it("rejects an unknown compiler and out-of-range limits", () => {
     expect(() => workerEnv({ ...base, COMPILER: "latex" })).toThrow();

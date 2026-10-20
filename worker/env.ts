@@ -12,6 +12,10 @@ const WorkerEnv = z
     ALLOW_FAKE_COMPILER: z.enum(["0", "1"]).default("0"),
     /** The compilation image. Production must pin a digest (name@sha256:...). */
     LATEX_IMAGE: z.string().min(1).max(300).default("noteprep-latex:dev"),
+    /** The Docker client's daemon address. In production it must be the sandbox runner's rootless socket (D-52). */
+    DOCKER_HOST: z.string().max(200).optional(),
+    /** Touched while the worker can reach the database; read by worker/healthcheck.ts (D-55). */
+    WORKER_LIVENESS_FILE: z.string().startsWith("/").max(200).optional(),
     LATEX_WALL_CLOCK_SECONDS: z.coerce.number().int().min(5).max(600).default(90),
     POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
     LEASE_SECONDS: z.coerce.number().int().min(5).max(300).default(30),
@@ -57,6 +61,11 @@ const WorkerEnv = z
     }
     if (env.NODE_ENV === "production" && env.COMPILER === "docker" && !/@sha256:[0-9a-f]{64}$/.test(env.LATEX_IMAGE)) {
       ctx.addIssue({ code: "custom", message: "LATEX_IMAGE must be pinned by digest (name@sha256:...) in production" });
+    }
+    // A tripwire against misconfiguration, not a security boundary.
+    const ROOTFUL_SOCKETS = new Set(["unix:///var/run/docker.sock", "unix:///run/docker.sock"]);
+    if (env.NODE_ENV === "production" && env.COMPILER === "docker" && (!env.DOCKER_HOST?.startsWith("unix:///") || ROOTFUL_SOCKETS.has(env.DOCKER_HOST))) {
+      ctx.addIssue({ code: "custom", message: "DOCKER_HOST must name the sandbox runner's unix socket in production (never the host's rootful daemon)" });
     }
   });
 
