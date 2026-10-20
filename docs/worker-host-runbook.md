@@ -155,6 +155,20 @@ sudo -u noteprep-runner ls /etc/noteprep                 # 期望: Permission de
 
 - `worker_login` 数据库角色按 [database-roles.md](database-roles.md) 创建;worker 只用它,不用迁移凭据。
 - 轮换:密码管理器里换新值 → 改 `/etc/noteprep/worker.env` → `systemctl restart noteprep-worker` →(必要时)在提供方吊销旧值。
+- **改完 `worker.env` 必须重启单元才生效**:`docker run --env-file` 只在容器启动时读取文件。2026-10-20 实测:改了文件没有重启,worker 一直用旧的 `SUPABASE_SECRET_KEY`,每次生成都以 `storage_failed` 失败;重启后第一次生成成功。核对运行中的容器拿到的是哪把密钥,用**指纹**而不是打印值(哈希前 12 位不可逆推出密钥):
+
+  ```sh
+  docker exec noteprep-worker node -e "console.log(require('crypto').createHash('sha256').update(process.env.SUPABASE_SECRET_KEY||'').digest('hex').slice(0,12))"
+  # 在你的开发机上对你手里的新密钥做同样的哈希(read -rs 输入,不回显),两个 12 位值应一致
+  ```
+
+- **`storage_failed` 排错**(2026-10-20):worker 目前只记录 `job_failed code=storage_failed` 与 `attempt_cleanup_failed code=StorageError`,**不记录** HTTP 状态与消息,所以上传、读回校验和清理的失败在日志里长得一样(计划:让 worker 记录状态码与消息,见 `fix/storage-error-detail`;合并前这里仍是现状)。如果连 `attempt_cleanup_failed` 也出现,说明列目录/删除也失败,多半是密钥、`SUPABASE_URL` 或网络;没有它时才轮到路径、大小或桶设置。区分密钥问题与桶问题,在开发机上用**同一个** supabase-js(版本见 `package.json`)直接测,而不是手写 curl:新式 `sb_secret_…` 密钥不是 JWT,裸 curl 要么缺 `Authorization`(`headers must have required property 'authorization'`),要么把它当 JWT 解析(`Invalid Compact JWS`),这两种 400/403 都**不**能说明密钥好坏:
+
+  ```sh
+  read -rs SB_KEY; export SB_KEY
+  node -e "const {createClient}=require('@supabase/supabase-js');createClient('https://<project-ref>.supabase.co',process.env.SB_KEY,{auth:{persistSession:false}}).storage.from('lesson-artifacts').list('',{limit:1}).then(r=>console.log(r.error?{status:r.error.status??r.error.statusCode,message:r.error.message}:'ok, '+r.data.length+' items'))"
+  unset SB_KEY
+  ```
 - **禁止**把秘密放进 runner 的家目录、镜像、命令行参数或 shell 历史。
 - `LATEX_IMAGE`(在 `worker.env` 里)与 §7 的主机沙箱测试使用同一个摘要。
 - 首次演练用 `LLM_PROVIDER=fake`、`LESSON_PROSE=template`(样例文件默认),不产生模型费用。
@@ -405,7 +419,7 @@ hosttest 摘要:`ghcr.io/yangzi33/noteprep-hosttest@sha256:6414bdc1b00c50ec7c7f9
 - [ ] **整机重启演练**:`reboot` 后不做任何手工操作,期望:runner 的 rootless 守护进程(linger)、`/run/noteprep-runner`(tmpfiles)与 `noteprep-worker` 单元都自动起来,`stat` 的 socket 属性不变,再跑一次冒烟成功。**2026-10-20 已验证"自动起来"部分**:重启后 socket 为 `660 noteprep-runner noteprep-runner`、rootless + cgroup v2 无警告、`docker`/`noteprep-block-metadata`/`noteprep-worker` 都是 `active`、两条 iptables 规则都在、一个 `worker_started`、容器 `healthy`。**"再跑一次冒烟成功"仍未做**,所以整项不打勾
 - [ ] 回滚演练一次(§6)
 
-**2026-10-20 的状态**:上表里打勾的是在那台主机上亲眼看到输出的;没打勾的(§4 的权限检查输出、数据库迁移与课程数据集工作流、冒烟、生成进行中的重启、runner 守护进程重启后的冒烟、回滚演练,以及整机重启后的冒烟)**仍是 UNVERIFIED**。另外 §6 的"更新顺序"、§10 的在途作业优雅停止、§11 的日志与告警、`images.yml` 的 Step Summary 核对,都没有演练过。**不要因为这张表的进度就认为 staging 可用于真实用户。**
+**2026-10-20 的状态**:上表里打勾的是在那台主机上亲眼看到输出的;没打勾的(§4 的权限检查输出、数据库迁移与课程数据集工作流、冒烟、生成进行中的重启、runner 守护进程重启后的冒烟、回滚演练,以及整机重启后的冒烟)**仍是 UNVERIFIED**。另外 §6 的"更新顺序"、§10 的在途作业优雅停止、§11 的日志与告警、`images.yml` 的 Step Summary 核对,都没有演练过。另外:2026-10-20 在 `https://noteprep.app` 上**手动**生成成功了一次(`fake` LLM、`template` 文稿,生成者查看了结果,有小的排版优化项留到后面);这**不是**脚本化的 `pnpm smoke:staging`,所以冒烟那一项仍不打勾。**不要因为这张表的进度就认为 staging 可用于真实用户。**
 
 ## 13. 生产前还需要(D-52 原文,不在本计划内)
 
