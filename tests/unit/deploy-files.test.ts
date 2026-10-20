@@ -204,11 +204,24 @@ describe("host deployment files", () => {
     const dropin = read("deploy/host/runner-docker.conf");
     expect(dropin).toMatch(/^ExecStart=$/m);
     expect(dropin).toContain("-H unix:///run/noteprep-runner/docker.sock");
-    expect(dropin).toContain("--group noteprep-runner");
+    // Namespace gid 0 maps to the runner's own gid on the host; `--group noteprep-runner` leaves the socket group "nogroup".
+    expect(dropin).toMatch(/^ExecStart=.* --group 0$/m);
+    expect(dropin).not.toMatch(/^ExecStart=.*--group noteprep-runner/m);
     expect(dropin).toContain("/etc/systemd/user/docker.service.d/noteprep.conf");
     expect(dropin.split("\n")[0]).not.toContain(".config/systemd");
     expect(read("deploy/host/noteprep-runner.tmpfiles.conf")).toMatch(/^d \/run\/noteprep-runner 0750 noteprep-runner noteprep-runner -$/m);
     expect(read("deploy/host/user-delegate.conf")).toMatch(/^Delegate=cpu cpuset io memory pids$/m);
     for (const f of deployFiles) expect(read(f), f).not.toMatch(/usermod .*docker|\/var\/run\/docker\.sock|\/run\/docker\.sock/);
+  });
+
+  it("containers are kept off the metadata endpoint and the host's sshd, before the worker starts", () => {
+    const unit = read("deploy/host/noteprep-block-metadata.service");
+    expect(unit).toMatch(/^Before=noteprep-worker\.service$/m);
+    expect(unit).toMatch(/^After=docker\.service$/m);
+    expect(unit).toMatch(/^Type=oneshot$/m);
+    expect(unit).toContain("iptables -I DOCKER-USER -d 169.254.169.254 -j DROP");
+    expect(unit).toContain("iptables -I INPUT -i docker0 -p tcp --dport 22 -j DROP");
+    // Idempotent: each insert is guarded by a -C check, so a restart does not stack duplicate rules.
+    expect(unit.match(/iptables -C /g)).toHaveLength(2);
   });
 });

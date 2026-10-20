@@ -2,13 +2,13 @@
 
 > 相关:[decisions D-52..D-56](decisions.md) · [architecture §11](architecture.md) · [staging-setup §5](staging-setup.md) · [database-roles](database-roles.md) · 主机文件:[deploy/host/](../deploy/host/)
 >
-> **标记约定**:`[主机上验证]` = 只能在真实 Linux 主机上验证,本仓库没有任何一台主机的运行证据;在你于主机上亲自执行并记录之前,这类说明全部是 **UNVERIFIED**。本文的命令来自对 Docker/systemd 文档的阅读与仓库内的单元测试,**没有在主机上执行过**。
+> **标记约定**:`[主机上验证]` = 只能在真实 Linux 主机上验证,本仓库没有任何一台主机的运行证据;在你于主机上亲自执行并记录之前,这类说明全部是 **UNVERIFIED**。本文的命令来自对 Docker/systemd 文档的阅读与仓库内的单元测试。**2026-10-20 起**,其中一部分已在一台 DigitalOcean Droplet(Ubuntu 24.04、Docker 29.9.1、4 GB / 2 vCPU)上逐项执行;已验证的项在 §12 里打了勾并标注日期,**没有标注的仍是 UNVERIFIED**。这是 staging 的一次演练记录,不是生产就绪声明。
 >
 > 本文不包含任何创建付费资源的命令(购买主机、注册表、DNS 等由你决定,见 D-20)。
 
 ## 0. 范围
 
-- 仅 **staging**。这**不是**生产就绪声明;没有任何东西在真实主机上跑过(见 §12)。
+- 仅 **staging**。这**不是**生产就绪声明;在一台真实主机上执行过的项见 §12(2026-10-20),其余仍是 UNVERIFIED。
 - 拓扑见 D-52:worker 容器(uid 10001、只读根、无能力)由宿主 rootful Docker 运行;LaTeX 沙箱由独立账户 `noteprep-runner` 的 **rootless** Docker 运行,socket 在 `/run/noteprep-runner/`,仅该目录以只读方式挂进 worker 容器。
 - **它保护什么**:worker 被攻破 ≠ 宿主 root(只能以 runner 身份启动容器);沙箱逃逸落在无秘密的 runner 账户(rootless 守护进程下还要再跨一层用户命名空间)。
 - **它不保护什么**(D-52 原文):
@@ -23,6 +23,7 @@
 ## 1. 主机清单(与提供商无关)
 
 - x86_64(镜像只构建 linux/amd64)。
+- **内存至少 4 GB、2 vCPU**(实测,2026-10-20)。在 512 MB 的 Droplet 上,内核的全局 OOM 杀掉了 runner 的 `dockerd`,§7 的 41 个测试里 9 个失败(真实编译在约 90 ms 内失败、并发与"全新容器"测试超时)。原因是 hosttest 容器(1 GB 上限)、沙箱容器(1 GB 上限)与两个 Docker 守护进程同时运行。改为 4 GB / 2 vCPU(仅 CPU 与 RAM,磁盘不变)后 41 个测试全部通过。`dmesg -T | grep -c global_oom` 应为 0。磁盘:8.7 GB 的根盘在拉取 worker、hosttest(root 守护进程)与 LaTeX(runner 守护进程)三个镜像后还剩约 3.5 GB;镜像更新(§6 不删旧镜像)会占用更多,留意 §11 的磁盘告警。
 - cgroup v2:
 
   ```sh
@@ -39,7 +40,7 @@
 
 ## 2. 安装 Docker
 
-按 Docker 官方文档的 apt 仓库方式安装 Engine,并额外安装 `docker-ce-rootless-extras` 与 `uidmap`(官方步骤见 <https://docs.docker.com/engine/install/>;不要用 `curl | sh` 便捷脚本)。**不要把任何人加入 `docker` 组**:
+按 Docker 官方文档的 apt 仓库方式安装 Engine,并额外安装 `docker-ce-rootless-extras` 与 `uidmap`(官方步骤见 <https://docs.docker.com/engine/install/>;不要用 `curl | sh` 便捷脚本)。另外建议安装 `dbus-user-session`(Docker 的 rootless 文档要求用户级 D-Bus)与 `systemd-container`(提供 §3 方式一用的 `machinectl`)。2026-10-20 的实测只确认了:这台主机上 `machinectl shell noteprep-runner@ /bin/sh` 可用;**没有**单独验证过缺少 `dbus-user-session` 时 rootless 守护进程会不会起不来,所以"必须安装"这一点仍是 UNVERIFIED。**不要把任何人加入 `docker` 组**:
 
 ```sh
 getent group docker               # 期望: 成员列表为空,形如 docker:x:999:
@@ -85,7 +86,7 @@ systemctl --user enable --now docker
 exit
 ```
 
-[主机上验证] `dockerd-rootless-setuptool.sh install` 末尾的就绪探测可能检查 `$XDG_RUNTIME_DIR/docker.sock`,而我们的 drop-in 把 socket 移到了 `/run/noteprep-runner`,所以它的最终检查可能报错,即使 `systemctl --user enable --now docker` 实际工作正常;权威检查是下一步的 `stat` 与 `docker info`。
+`dockerd-rootless-setuptool.sh install` 末尾的就绪探测检查 `$XDG_RUNTIME_DIR/docker.sock`,而我们的 drop-in 把 socket 移到了 `/run/noteprep-runner`,所以它的最终检查**会**报错(2026-10-20 实测:`failed to connect to the docker API at unix:///run/user/999/docker.sock … no such file or directory`),但此时守护进程已是 `active (running)`,drop-in 已生效。这个报错无害;权威检查是下一步的 `stat` 与 `docker info`。另外 `systemctl --user enable --now docker` 要单独执行(粘贴在同一行会被当作 setuptool 的参数);执行后用 `systemctl --user -M noteprep-runner@ is-enabled docker` 确认为 `enabled`。
 
 [主机上验证] 两种方式都只是按文档推断,哪一种在你的主机上可用要实测;`dockerd-rootless-setuptool.sh` 的路径与 `PATH` 同理。
 
@@ -103,7 +104,14 @@ sudo -u noteprep-runner env DOCKER_HOST=unix:///run/noteprep-runner/docker.sock 
 # 期望: 含 "rootless" 与 "Cgroup Version: 2";不得出现 "No memory limit support" / "No cpu cfs quota support" 之类警告 [主机上验证]
 ```
 
-**socket 组不对怎么办**(UNVERIFIED):rootless 守护进程在用户命名空间里运行,`--group noteprep-runner` 可能映射成未映射的 gid,socket 的组变成 `nogroup`。此时按 `deploy/host/runner-docker.conf` 里的注释改为 `--group 0`(命名空间 root,对应宿主上 runner 自己的 gid),重新 `daemon-reload`、重启,再检查一遍 `stat -c '%a %G'`。组必须是 runner 自己的主组,**不要**换成 `docker` 组。[主机上验证]
+**socket 组**(已在 DigitalOcean / Ubuntu 24.04 / Docker 29.9.1 上验证,2026-10-20):rootless 守护进程在用户命名空间里运行,`--group noteprep-runner` 在命名空间里是未映射的 gid,socket 的组显示为 `UNKNOWN`(即 `nogroup`):`660 noteprep-runner UNKNOWN`。仓库里的 `deploy/host/runner-docker.conf` 现在已经用 `--group 0`(命名空间 root,对应宿主上 runner 自己的主组 gid),实测 `stat -c '%a %U %G'` 为 `660 noteprep-runner noteprep-runner`,`stat -c '%u:%g'` 为 `999:987`,整机重启后不变。如果你的 drop-in 还是旧的 `--group noteprep-runner`,按下面改:
+
+```sh
+sed -i 's/--group noteprep-runner$/--group 0/' /etc/systemd/user/docker.service.d/noteprep.conf
+systemctl --user -M noteprep-runner@ daemon-reload && systemctl --user -M noteprep-runner@ restart docker
+```
+
+然后再检查 `stat -c '%a %G'`。组必须是 runner 自己的主组,**不要**换成 `docker` 组。其他发行版/Docker 版本上的行为仍是 UNVERIFIED。
 
 `worker.image` 里的 `RUNNER_GID` 必须等于 runner 组的 gid:
 
@@ -147,6 +155,20 @@ sudo -u noteprep-runner ls /etc/noteprep                 # 期望: Permission de
 
 - `worker_login` 数据库角色按 [database-roles.md](database-roles.md) 创建;worker 只用它,不用迁移凭据。
 - 轮换:密码管理器里换新值 → 改 `/etc/noteprep/worker.env` → `systemctl restart noteprep-worker` →(必要时)在提供方吊销旧值。
+- **改完 `worker.env` 必须重启单元才生效**:`docker run --env-file` 只在容器启动时读取文件。2026-10-20 实测:改了文件没有重启,worker 一直用旧的 `SUPABASE_SECRET_KEY`,每次生成都以 `storage_failed` 失败;重启后第一次生成成功。核对运行中的容器拿到的是哪把密钥,用**指纹**而不是打印值(哈希前 12 位不可逆推出密钥):
+
+  ```sh
+  docker exec noteprep-worker node -e "console.log(require('crypto').createHash('sha256').update(process.env.SUPABASE_SECRET_KEY||'').digest('hex').slice(0,12))"
+  # 在你的开发机上对你手里的新密钥做同样的哈希(read -rs 输入,不回显),两个 12 位值应一致
+  ```
+
+- **`storage_failed` 排错**(2026-10-20):worker 目前只记录 `job_failed code=storage_failed` 与 `attempt_cleanup_failed code=StorageError`,**不记录** HTTP 状态与消息,所以上传、读回校验和清理的失败在日志里长得一样(计划:让 worker 记录状态码与消息,见 `fix/storage-error-detail`;合并前这里仍是现状)。如果连 `attempt_cleanup_failed` 也出现,说明列目录/删除也失败,多半是密钥、`SUPABASE_URL` 或网络;没有它时才轮到路径、大小或桶设置。区分密钥问题与桶问题,在开发机上用**同一个** supabase-js(版本见 `package.json`)直接测,而不是手写 curl:新式 `sb_secret_…` 密钥不是 JWT,裸 curl 要么缺 `Authorization`(`headers must have required property 'authorization'`),要么把它当 JWT 解析(`Invalid Compact JWS`),这两种 400/403 都**不**能说明密钥好坏:
+
+  ```sh
+  read -rs SB_KEY; export SB_KEY
+  node -e "const {createClient}=require('@supabase/supabase-js');createClient('https://<project-ref>.supabase.co',process.env.SB_KEY,{auth:{persistSession:false}}).storage.from('lesson-artifacts').list('',{limit:1}).then(r=>console.log(r.error?{status:r.error.status??r.error.statusCode,message:r.error.message}:'ok, '+r.data.length+' items'))"
+  unset SB_KEY
+  ```
 - **禁止**把秘密放进 runner 的家目录、镜像、命令行参数或 shell 历史。
 - `LATEX_IMAGE`(在 `worker.env` 里)与 §7 的主机沙箱测试使用同一个摘要。
 - 首次演练用 `LLM_PROVIDER=fake`、`LESSON_PROSE=template`(样例文件默认),不产生模型费用。
@@ -260,7 +282,13 @@ Task 5/5b 在本机 Docker 上用 `--read-only --tmpfs /tmp`(Docker 默认的 tm
 - **任何失败 → 阻断上线,不降级**(architecture §11.2)。不要通过放松沙箱参数、改成 root、或跳过某条测试来"修复"。
 - 以 runner 身份读不到 worker 秘密(§4 已检查,此处复查):`sudo -u noteprep-runner cat /etc/noteprep/worker.env` 被拒绝。
 
-[主机上验证] 全部(尤其是 hosttest 以 uid 10001 在真实主机上能否连上 socket;cgroup v1 主机上的行为也没有验证)。
+**实测记录(2026-10-20,DigitalOcean、Ubuntu 24.04、Docker 29.9.1、4 GB / 2 vCPU)**:41 个测试全部通过(约 10 分钟,退出码 0);hosttest 以 uid 10001 + 附加组 987 能连上 runner 的 socket 目录。反向检查(`LATEX_IMAGE=noteprep-latex:dev`)立即失败,退出码 1,信息含 `requires LATEX_IMAGE pinned by digest`。注意:
+
+- `RUNNER_GID` 是 shell 变量;在新会话(例如重启后)里它是空的,`--group-add ""` 会报 `unable to find group : no matching entries in group file`。每次先 `RUNNER_GID=$(getent group noteprep-runner | cut -d: -f3)`。
+- 在 512 MB 主机上这一步会失败(见 §1 的内存要求),不要把那种失败当成沙箱参数的问题。
+- 运行期间 `dmesg` 里可能出现一条 `CONSTRAINT_MEMCG` 的 `perl` 被杀(容器自己的内存上限生效);它与"cannot use more memory than its limit"测试的时间相符,但我们没有逐条对应过。区别于全局 OOM:`dmesg -T | grep -c global_oom` 应为 0。
+
+仍未验证:cgroup v1 主机。
 
 ## 8. 检查运行中的 worker
 
@@ -286,6 +314,17 @@ worker 容器在默认 bridge 上,可以出站(它需要访问 Supabase、LLM �
   docker exec noteprep-worker node -e "fetch('http://169.254.169.254/',{signal:AbortSignal.timeout(3000)}).then(r=>console.log('REACHABLE',r.status)).catch(()=>console.log('blocked'))"
   # 期望: blocked(若云厂商没有元数据端点则同样 blocked)。输出 REACHABLE 时先封端点或去掉实例角色,再继续
   ```
+
+  **DigitalOcean 实测(2026-10-20)**:默认**可达**(`REACHABLE 404`),宿主 sshd 也能经桥地址 `172.17.0.1:22` 从容器连上(`SSH REACHABLE`,sshd 监听 `0.0.0.0:22` 与 `[::]:22`)。修复是 `deploy/host/noteprep-block-metadata.service`:元数据端点的流量是转发流量,所以放在 `DOCKER-USER` 链;容器到宿主自身的 sshd 走 `INPUT` 链,只限 `-i docker0` 与端口 22(没有整体封 docker0,因为容器 DNS 等是否受影响没有测过)。它在 Docker 启动后、worker 启动前重新套用(iptables 规则重启即丢)。安装:
+
+  ```sh
+  install -m 0644 -o root -g root noteprep-block-metadata.service /etc/systemd/system/noteprep-block-metadata.service
+  systemctl daemon-reload && systemctl enable --now noteprep-block-metadata
+  iptables -L DOCKER-USER -v -n --line-numbers      # 期望: 一行 DROP 到 169.254.169.254
+  iptables -L INPUT -v -n --line-numbers            # 期望: in 列为 docker0 的 tcp dpt:22 DROP(不能是 *,否则会把你自己的 SSH 也封掉)
+  ```
+
+  验证:元数据检查输出 `blocked`;SSH 检查因为是 DROP 而不是 REJECT,表现为**连接超时**而不是 `closed`,两者都算通过,只有 `SSH REACHABLE` 是失败(用带 3 秒超时的版本:`const s=require('net').connect({port:22,host:'172.17.0.1'});s.setTimeout(3000);…`)。整机重启后两条规则都自动回来了(见 §12)。这只保护 worker 容器,不保护 runner 的 rootless 网络(下面第三条仍是未检查)。
 
 - 主机上没有任何服务监听在 docker0 网桥地址(容器能访问它),包括 IPv6 通配监听:
 
@@ -349,18 +388,22 @@ select error_code, count(*) from generation_job where finished_at > now() - inte
 
 ## 12. staging 演练清单(逐项打勾,记录日期与摘要)
 
-演练日期:______  worker 摘要:______  latex 摘要:______  hosttest 摘要:______
+演练日期:2026-10-20(第一次,部分完成;DigitalOcean、Ubuntu 24.04、4 GB / 2 vCPU)  
+worker 摘要:`ghcr.io/yangzi33/noteprep-worker@sha256:18662c994ebcc05c2404a71f8092fd4168e471b64b39b3005c2b2b7015454840`  
+latex 摘要:`ghcr.io/yangzi33/noteprep-latex@sha256:6a0aa483856e90be750e9c76919699e76050fc513e26793b6b220c69548dff20`  
+hosttest 摘要:`ghcr.io/yangzi33/noteprep-hosttest@sha256:6414bdc1b00c50ec7c7f9ef3990ff09748ba691da45742d0db8c1efa47b7d677`  
+(摘要由 GitHub API 读取,commit `7c207fa`;Step Summary 未逐项核对。)
 
-- [ ] §1 主机清单全部满足(`cgroup2fs`、无入站端口、时间同步)
-- [ ] §3 runner 账户体检通过;`stat -c '%a %G'` socket = `660 noteprep-runner`;`docker info` 显示 rootless、cgroup v2、无资源限制警告;rootless drop-in 由 root 拥有
-- [ ] §4 `/etc/noteprep` = `750 root root`,`worker.env` = `600 root root`;runner 读不到
-- [ ] §5 镜像按摘要拉取并核对;runner 家目录没有凭据;LaTeX 镜像已进入 runner 的守护进程
+- [x] §1 主机清单全部满足(`cgroup2fs`、x86_64、systemd 255、时间同步、`unattended-upgrades` 已装)(2026-10-20)。"云防火墙只放行你的 IP 的 SSH"由你在控制台确认,这里没有看到规则内容;`ss -ltn` 只看到 sshd 与回环上的 DNS 桩。**内存要求见 §1:512 MB 不够。**
+- [x] §3 runner 账户体检通过(2026-10-20):`stat` socket = `660 noteprep-runner noteprep-runner`(需要 `--group 0`,见 §3);`docker info` 显示 rootless、cgroup v2、无警告;nologin、无 sudo、不在 docker 组(`docker` 组成员为空)、`getent passwd 10001` 无输出、家目录里没有凭据。rootless drop-in 由 root 拥有。
+- [ ] §4 `/etc/noteprep` = `750 root root`,`worker.env` = `600 root root`;runner 读不到。**这几条 `stat` 与 `Permission denied` 检查的输出没有被记录**,所以不打勾。已验证的只有:`worker.env` 的变量名齐全(曾因 `COMPLIER` 拼写错误使 worker 拒绝启动,见 D-57)、以 `worker_login` 身份用其连接串能连库(`current_user` = `worker_login`;第一次用错了 `postgres` 所有者连接串,已改)。
+- [x] §5 镜像按摘要拉取并核对(`docker image inspect` 的 RepoDigests 与上面一致);worker 与 hosttest 由 root 用只读 PAT 拉取后已 `docker logout`;runner 家目录没有 `config.json`;LaTeX 镜像按**做法 B**(包设为公开)由 runner 的守护进程直接按摘要拉取,没有走 `save | load`,所以做法 A 的摘要保留问题**仍是 UNVERIFIED**(2026-10-20)
 - [ ] 数据库迁移:`Database migrations` 工作流(status → deploy),见 [staging-setup §1](staging-setup.md)
 - [ ] 课程数据集:`Load curriculum dataset` 工作流(validate → load sample-1)
-- [ ] §7 主机沙箱测试全绿(`HOST_SANDBOX_STRICT=1`、摘要固定的 `LATEX_IMAGE`)
-- [ ] 启动 worker:`journalctl -u noteprep-worker -o cat | grep worker_started` 的行含 `"compiler":"docker-latex"` 与 `"store":"supabase"`
-- [ ] §8 对运行中的 worker 的检查全部符合预期;`docker exec noteprep-worker ls /var/run/docker.sock` 失败
-- [ ] §9 元数据端点被封、docker0 上无监听
+- [x] §7 主机沙箱测试全绿(`HOST_SANDBOX_STRICT=1`、摘要固定的 `LATEX_IMAGE`):41/41,退出码 0,反向检查失败如预期(2026-10-20;第一次在 512 MB 主机上 9 个失败,原因是内存不足,见 §1)
+- [x] 启动 worker:`worker_started` 行含 `"compiler":"docker-latex"` 与 `"store":"supabase"`(`llm: fake`、`prose: template`)(2026-10-20)。§6 的两个负面检查也做了:带标签的 `WORKER_IMAGE` 与 `RUNNER_GID=0` 都被 `ExecStartPre` 拒绝(`exit=1`,无容器),恢复后正常启动
+- [x] §8 对运行中的 worker 的检查全部符合预期(2026-10-20):只有 `/run/noteprep-runner` 一个只读挂载、bridge、`Privileged=false`、`CapDrop=[ALL]`;`/var/run/docker.sock` 不存在;`uid=10001 gid=10001 groups=10001,987`;日志驱动 `none`、根文件系统只读;`docker logs` 报错
+- [x] §9 元数据端点被封、docker0 上无监听(2026-10-20,**需要** `noteprep-block-metadata.service`,见 §9:修复前两者都可达)。runner 的 rootless 网络出站**未检查**
 - [ ] 在你的开发机上运行冒烟(每次消耗该测试账户 1 次免费生成,额度绝不重置;账户是一次性 staging 用户):
 
   ```sh
@@ -373,10 +416,10 @@ select error_code, count(*) from generation_job where finished_at > now() - inte
   期望:Notes、Worksheet、Solutions 三份均 `ok`。
 - [ ] 重启演练:生成进行中 `systemctl restart noteprep-worker`;期望作业仍成功,且该账户额度只被消耗 1 次(用只读 SQL 核对用量记录,不手改数据)
 - [ ] runner 守护进程重启:`systemctl --user -M noteprep-runner@ restart docker`(以 root 执行)后再跑一次冒烟(验证挂载的是目录而不是 socket 文件,worker 不必重启)
-- [ ] **整机重启演练**:`reboot` 后不做任何手工操作,期望:runner 的 rootless 守护进程(linger)、`/run/noteprep-runner`(tmpfiles)与 `noteprep-worker` 单元都自动起来,`stat` 的 socket 属性不变,再跑一次冒烟成功
+- [ ] **整机重启演练**:`reboot` 后不做任何手工操作,期望:runner 的 rootless 守护进程(linger)、`/run/noteprep-runner`(tmpfiles)与 `noteprep-worker` 单元都自动起来,`stat` 的 socket 属性不变,再跑一次冒烟成功。**2026-10-20 已验证"自动起来"部分**:重启后 socket 为 `660 noteprep-runner noteprep-runner`、rootless + cgroup v2 无警告、`docker`/`noteprep-block-metadata`/`noteprep-worker` 都是 `active`、两条 iptables 规则都在、一个 `worker_started`、容器 `healthy`。**"再跑一次冒烟成功"仍未做**,所以整项不打勾
 - [ ] 回滚演练一次(§6)
 
-[主机上验证] 上表每一项。没有任何一项已经被执行过。
+**2026-10-20 的状态**:上表里打勾的是在那台主机上亲眼看到输出的;没打勾的(§4 的权限检查输出、数据库迁移与课程数据集工作流、冒烟、生成进行中的重启、runner 守护进程重启后的冒烟、回滚演练,以及整机重启后的冒烟)**仍是 UNVERIFIED**。另外 §6 的"更新顺序"、§10 的在途作业优雅停止、§11 的日志与告警、`images.yml` 的 Step Summary 核对,都没有演练过。另外:2026-10-20 在 `https://noteprep.app` 上**手动**生成成功了一次(`fake` LLM、`template` 文稿,生成者查看了结果,有小的排版优化项留到后面);这**不是**脚本化的 `pnpm smoke:staging`,所以冒烟那一项仍不打勾。**不要因为这张表的进度就认为 staging 可用于真实用户。**
 
 ## 13. 生产前还需要(D-52 原文,不在本计划内)
 
