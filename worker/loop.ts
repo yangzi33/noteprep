@@ -25,6 +25,7 @@ export async function runOnce(deps: PipelineDeps, workerId: string): Promise<Job
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
+    if (signal.aborted) return resolve(); // abort may have landed while a sweep/claim was awaiting
     const timer = setTimeout(resolve, ms);
     signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
   });
@@ -52,7 +53,8 @@ export async function runWorkerLoop(options: LoopOptions): Promise<void> {
   while (!signal.aborted) {
     try {
       const outcome = await step(deps, workerId);
-      options.onAlive?.();
+      // An abandoned job means settlement failed, so the database was not demonstrably reachable.
+      if (outcome !== "abandoned") options.onAlive?.();
       if (outcome === null) await sleep(pollMs, signal);
     } catch (error) {
       log("loop_error", { code: error instanceof Error ? error.name : "unknown" });
