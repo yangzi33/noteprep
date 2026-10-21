@@ -8,7 +8,7 @@ import { Rational } from "@/lib/math/rational";
 import { validateLinearQuestion } from "@/lib/math/validate";
 import { adjustmentSeed, applyAdjustment, packageContentHash, planAdjustment, type ApplicableChange } from "@/lib/package/adjust";
 import { effectiveSettings } from "@/lib/package/effective";
-import type { LessonPackage, Section } from "@/lib/package/schema";
+import { PackageSchema, type LessonPackage, type Section } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
 import { documentView } from "@/lib/package/views";
 import { testPackage } from "../fixtures/package";
@@ -320,5 +320,56 @@ describe("determinism and purity", () => {
     const context = source.context as CurriculumContext;
     expect(() => applyAdjustment(source, { action: "add_worked_example" }, { seed: "s", context })).toThrow(/not implemented/);
     expect(() => applyAdjustment(source, { action: "change_duration", durationMinutes: 90 }, { seed: "s", context })).toThrow(/not implemented/);
+  });
+});
+
+describe("duplicate detection does not depend on JSON key order", () => {
+  // A package read back from storage has canonical (sorted) keys, not the generator's {x, c} order.
+  const roundTrip = (pkg: LessonPackage): LessonPackage => JSON.parse(canonicalJson(pkg)) as LessonPackage;
+  const allEquations = (pkg: LessonPackage) => [...examples(pkg), ...questions(pkg)].map((b) => canonicalJson(b.problem.equation));
+  const expectNoRepeatedEquation = (pkg: LessonPackage, label: string) => {
+    const eqs = allEquations(pkg);
+    expect(new Set(eqs).size, label).toBe(eqs.length);
+  };
+
+  it("the same source in memory, canonically re-serialized, or re-parsed by the schema gives the same result", () => {
+    const changes: ApplicableChange[] = [{ action: "make_harder" }, { action: "make_easier" }, { action: "add_exercises", count: 1 }, { action: "add_exercises", count: 3 }, { action: "add_exercises", count: 6 }];
+    for (const [i, difficulty] of (["basic", "mixed", "challenge"] as const).entries()) {
+      const source = testPackage({ difficulty, durationMinutes: 90 }, `order-${i}`);
+      const deliveries = [source, roundTrip(source), PackageSchema.parse(JSON.parse(canonicalJson(source))) as LessonPackage];
+      for (const change of changes) {
+        if ((difficulty === "basic" && change.action === "make_easier") || (difficulty === "challenge" && change.action === "make_harder")) continue;
+        const [a, b, c] = deliveries.map((pkg) => canonicalJson(apply(pkg, change)));
+        expect(b, `${difficulty} ${change.action}`).toBe(a);
+        expect(c, `${difficulty} ${change.action}`).toBe(a);
+      }
+    }
+  });
+
+  // Found by review and by a search with the old key-order-sensitive fingerprint: each appended a repeat of a worked example.
+  const KNOWN: [Difficulty, number, string][] = [
+    ["mixed", 167, "seed-40"],
+    ["basic", 167, "seed-0"],
+    ["challenge", 167, "seed-7"],
+    ["basic", 45, "seed-11"],
+    ["basic", 180, "seed-12"],
+    ["basic", 180, "seed-27"],
+  ];
+  it.each(KNOWN)("%s / %i min / %s: add_exercises 6 after a canonical round trip repeats no equation", (difficulty, durationMinutes, seed) => {
+    const source = roundTrip(testPackage({ difficulty, durationMinutes }, seed));
+    const result = apply(source, { action: "add_exercises", count: 6 });
+    expectNoRepeatedEquation(result, `${difficulty}/${durationMinutes}/${seed}`);
+    expect(validatePackage(result).overall).toBe("verified");
+  });
+
+  it("over many seeds, no adjustment of a stored package repeats an equation across examples and exercises", () => {
+    for (let i = 0; i < 100; i++) {
+      for (const difficulty of ["basic", "mixed", "challenge"] as const) {
+        const durationMinutes = [45, 90, 167, 180][i % 4]!;
+        const source = roundTrip(testPackage({ difficulty, durationMinutes }, `many-${i}`));
+        const changes: ApplicableChange[] = [{ action: "add_exercises", count: 6 }, { action: difficulty === "challenge" ? "make_easier" : "make_harder" }];
+        for (const change of changes) expectNoRepeatedEquation(apply(source, change), `${difficulty}/${durationMinutes}/many-${i}/${change.action}`);
+      }
+    }
   });
 });

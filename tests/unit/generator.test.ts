@@ -283,9 +283,14 @@ describe("exercise sets for quick adjustments (optional startIndex, exclude, ram
     expect(ramped.map((q) => q.meta.difficulty)).toEqual(difficultyRamp(6, "mixed"));
     expect(generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "challenge", ramp: false })).toEqual(generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "challenge" }));
   });
-  it("questionFingerprint is the equation, for a generated question and for a stored block alike", () => {
+  it("questionFingerprint is the equation, for a generated question and for a stored block alike, in any key order", () => {
     const q = generateLinearQuestion({ id: "q", difficulty: "mixed", seed: "fp" });
-    expect(questionFingerprint(q)).toBe(JSON.stringify(q.problem.equation));
     expect(questionFingerprint({ problem: { equation: q.problem.equation } })).toBe(questionFingerprint(q));
+    const { lhs, rhs } = q.problem.equation;
+    const reordered = { rhs: { c: rhs.c, x: rhs.x }, lhs: { c: lhs.c, x: lhs.x } };
+    expect(JSON.stringify(reordered)).not.toBe(JSON.stringify(q.problem.equation));
+    expect(questionFingerprint({ problem: { equation: reordered } })).toBe(questionFingerprint(q));
+    const other = generateLinearQuestion({ id: "q", difficulty: "mixed", seed: "fp-2" });
+    expect(questionFingerprint(other)).not.toBe(questionFingerprint(q));
   });
 });

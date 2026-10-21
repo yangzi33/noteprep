@@ -284,8 +284,14 @@ const solutionBlocksOf = (qs: readonly GeneratedQuestion[]): SolutionBlock[] => 
  * question of the source (exercises or worked examples), and the solutions are re-derived from them.
  *
  * add_exercises: the existing exercise and solution blocks stay byte-identical; the new questions continue the ids
- * (ex-(n+1), ...), are drawn at the current effective difficulty (mixed means the mixed level for each new question,
- * the existing ramp is not re-laid), and repeat no question already in the package.
+ * (ex-(n+1), ...), are drawn at the current effective difficulty, and repeat no question already in the package.
+ *
+ * Product-visible behaviours (owner decisions recorded here; do not change without one):
+ *  - add_exercises on a MIXED set appends every new question at the mixed level; the existing easy-to-hard ramp is
+ *    not redone, so the set no longer ends on its hardest questions.
+ *  - A regenerated exercises / solutions section keeps its title, its intro paragraphs and its `edited` flag: a tutor's
+ *    correction to that wording survives make_easier, make_harder and add_exercises. Only the questions, writing spaces
+ *    and solutions are replaced or appended.
  */
 export function applyAdjustment(pkg: LessonPackage, change: ApplicableChange, opts: { seed: string; context: CurriculumContext }): LessonPackage {
   if (change.action === "add_worked_example" || change.action === "change_duration") {

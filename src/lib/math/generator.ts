@@ -1,3 +1,4 @@
+import { canonicalJson } from "@/lib/domain/hash";
 import { Rng } from "./rng";
 import { Rational } from "./rational";
 import type { Equation, Problem, Question, Step } from "./schema";
@@ -214,9 +215,13 @@ export function difficultyRamp(count: number, difficulty: Difficulty): Difficult
   return Array.from({ length: count }, (_, i) => (i < third ? "basic" : i < 2 * third ? "mixed" : "challenge"));
 }
 
-/** What makes two questions the same for de-duplication: the equation as written. Works on stored blocks too. */
+/**
+ * What makes two questions the same for de-duplication: the equation as written. Canonical JSON (sorted keys), so a
+ * stored block read back with another key order has the same fingerprint as the freshly generated question. Inside
+ * one set every equation has the generator's own key order, so de-duplication there is exactly as before.
+ */
 export function questionFingerprint(q: { problem: { equation: unknown } }): string {
-  return JSON.stringify(q.problem.equation);
+  return canonicalJson(q.problem.equation);
 }
 
 /** Thrown by `generateExerciseSet` when no distinct question can be drawn for a position. */
