@@ -100,6 +100,7 @@ function run(pkg: LessonPackage, change: AdjustmentChange): LessonPackage {
 const DOCUMENTED_REASONS = new Set([
   "at_hardest", "at_easiest", "unsupported_difficulty", "max_exercises", "max_examples", "same_duration",
   "target_not_found", "not_editable", "no_distinct_questions", "max_adjustments",
+  "unexpected_no_solution_block",
 ]);
 
 function planOrReason(pkg: LessonPackage, change: AdjustmentChange): AdjustmentPlan | string {

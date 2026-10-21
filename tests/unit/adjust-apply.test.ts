@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import type { AdjustmentChange } from "@/lib/domain/adjustment";
+import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { AdjustmentNotApplicable } from "@/lib/domain/errors";
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { difficultyRamp, GENERATOR_VERSION, questionFingerprint, type Difficulty } from "@/lib/math/generator";
@@ -8,9 +9,10 @@ import { Rational } from "@/lib/math/rational";
 import { validateLinearQuestion } from "@/lib/math/validate";
 import { Rng } from "@/lib/math/rng";
 import { adjustmentSeed, applyAdjustment, MAX_EXAMPLES, packageContentHash, planAdjustment, type ApplicableChange } from "@/lib/package/adjust";
-import { planOutline } from "@/lib/package/build";
+import { degenerateExample, planOutline, workedExampleBlock } from "@/lib/package/build";
 import { applyCorrections, checkCorrections } from "@/lib/package/correct";
 import { effectiveSettings } from "@/lib/package/effective";
+import { rehashPackage } from "@/lib/package/inputs";
 import { PackageSchema, type LessonPackage, type Section } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
 import { documentView } from "@/lib/package/views";
@@ -679,6 +681,71 @@ describe("change_duration", () => {
   it("covers the extremes of the duration range", () => {
     checkDuration(testPackage({ difficulty: "mixed", durationMinutes: 15 }, "dur-15"), 180);
     checkDuration(testPackage({ difficulty: "basic", durationMinutes: 180 }, "dur-180"), 15);
+  });
+
+  describe("the no-solution example is copied and renumbered, never drawn again", () => {
+    const noSolution = (pkg: LessonPackage) => examples(pkg).filter((b) => b.solution.kind !== "unique");
+    /** The block with only its ids changed: what change_duration must produce from `block` under `id`. */
+    const renamed = (block: ExampleBlock, id: string): ExampleBlock => ({ ...block, questionId: id, steps: block.steps.map((st, i) => ({ ...st, id: `${id}.s${i + 1}` })) });
+
+    it("on today's packs the copy equals the builder's block under the new id (what the old regeneration made)", () => {
+      for (const difficulty of ["mixed", "challenge"] as const) {
+        for (const [from, to] of [[60, 90], [90, 30], [30, 120]] as const) {
+          for (let i = 0; i < 4; i++) {
+            const label = `${difficulty} ${from}->${to} ${i}`;
+            const source = testPackage({ difficulty, durationMinutes: from }, `deg-grid-${difficulty}-${from}-${i}`);
+            const result = apply(source, { action: "change_duration", durationMinutes: to });
+            const [before] = noSolution(source);
+            const [after] = noSolution(result);
+            const id = `we-${uniqueExamples(result).length + 1}`;
+            expect(after!.questionId, label).toBe(id);
+            // The old path's output, recomputed locally: the builder's no-solution example for the package seed.
+            expect(canonicalJson(after), label).toBe(canonicalJson(workedExampleBlock(degenerateExample(source.seed, id))));
+            expect(canonicalJson(after), label).toBe(canonicalJson(renamed(before!, id)));
+            expect(after!.problem, label).toEqual(before!.problem);
+            expect(after!.solution, label).toEqual(before!.solution);
+          }
+        }
+      }
+    });
+
+    it("keeps a stored no-solution example that today's builder would not make (equation unchanged, ids renamed)", () => {
+      const built = testPackage({ difficulty: "mixed", durationMinutes: 60 }, "deg-foreign");
+      const section = sectionOf(built, "worked_examples");
+      const [old] = noSolution(built);
+      // Another valid no-solution example, as the builder would make it for another seed (an older generator, say).
+      const foreign = workedExampleBlock(degenerateExample("some-other-seed", old!.questionId));
+      expect(canonicalJson(foreign.problem.equation)).not.toBe(canonicalJson(old!.problem.equation));
+      const swapped = structuredClone(built);
+      const target = swapped.sections.find((s) => s.id === section.id)!;
+      target.blocks = (target.blocks as Block[]).map((b) => (b.type === "worked_example" && b.solution.kind !== "unique" ? foreign : b)) as typeof target.blocks;
+      const source = rehashPackage(swapped, built.request as Pick<LessonRequestV2, "difficulty">, built.context as CurriculumContext);
+      expect(validatePackage(source).overall).toBe("verified");
+
+      const result = apply(source, { action: "change_duration", durationMinutes: 90 });
+      const [after] = noSolution(result);
+      expect(after!.questionId).toBe("we-4");
+      expect(canonicalJson(after)).toBe(canonicalJson(renamed(foreign, "we-4")));
+      expect(after!.problem).toEqual(foreign.problem);
+      expect(after!.steps.map((st) => [st.op, st.result])).toEqual(foreign.steps.map((st) => [st.op, st.result]));
+      expect(after!.steps.map((st) => st.id)).toEqual(foreign.steps.map((_, i) => `we-4.s${i + 1}`));
+      expect(validatePackage(result).overall).toBe("verified");
+    });
+
+    it("refuses a block that is not a no-solution worked example with steps (unexpected_no_solution_block)", () => {
+      const built = testPackage({ difficulty: "mixed", durationMinutes: 60 }, "deg-malformed");
+      const mutations: ((b: ExampleBlock) => unknown)[] = [
+        (b) => ({ ...b, solution: { kind: "identity" } }),
+        (b) => ({ ...b, steps: [] }),
+        (b) => ({ ...b, steps: "none" }),
+      ];
+      for (const [i, mutate] of mutations.entries()) {
+        const source = structuredClone(built);
+        const target = sectionOf(source, "worked_examples");
+        target.blocks = (target.blocks as Block[]).map((b) => (b.type === "worked_example" && b.solution.kind !== "unique" ? mutate(b) : b)) as typeof target.blocks;
+        expect(reasonOf(() => apply(source, { action: "change_duration", durationMinutes: 90 })), `mutation ${i}`).toBe("unexpected_no_solution_block");
+      }
+    });
   });
 });
 

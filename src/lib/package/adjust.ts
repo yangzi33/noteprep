@@ -4,7 +4,7 @@ import { AdjustmentNotApplicable } from "@/lib/domain/errors";
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { DRAW_EXHAUSTED, GENERATOR_VERSION, generateExerciseSet, questionFingerprint, type Difficulty, type GeneratedQuestion } from "@/lib/math/generator";
-import { degenerateExample, exampleLevel, LINEAR_CONCEPT_ID, planOutline, sectionMinutes, timingBlock, workedExampleBlock } from "./build";
+import { exampleLevel, LINEAR_CONCEPT_ID, planOutline, sectionMinutes, timingBlock, workedExampleBlock } from "./build";
 import { resolveEditTarget } from "./editable";
 import { effectiveSettings } from "./effective";
 import { rehashPackage } from "./inputs";
@@ -303,15 +303,17 @@ function redrawExercises(source: LessonPackage, seed: string, count: number, dif
 }
 
 /**
- * The no-solution example under a new id, drawn again through the builder's own code path. Its equation depends only
- * on the package seed, so the result is the same example renumbered; anything else means the block is not the
- * builder's and is refused rather than rewritten.
+ * The stored no-solution example under a new id: the block is copied and only its ids change (`questionId` and the
+ * step ids `<id>.s1`, `<id>.s2`, ...); its equation, answer, step operations and results stay exactly as stored, so a
+ * package built by an older generator keeps its own example. A block that is not a no-solution worked example with
+ * steps is refused rather than rewritten.
  */
-function renumberedDegenerate(pkg: LessonPackage, block: ExampleBlock, id: string): ExampleBlock {
-  if (canonicalJson(workedExampleBlock(degenerateExample(pkg.seed, block.questionId))) !== canonicalJson(block)) {
-    throw new Error("applyAdjustment: the no-solution example is not the one the builder made");
+function renumberedDegenerate(block: ExampleBlock, id: string): ExampleBlock {
+  const shape = block as { type?: unknown; solution?: { kind?: unknown } | null; steps?: unknown };
+  if (shape.type !== "worked_example" || shape.solution?.kind !== "no_solution" || !Array.isArray(shape.steps) || shape.steps.length === 0) {
+    notApplicable("unexpected_no_solution_block");
   }
-  return workedExampleBlock(degenerateExample(pkg.seed, id));
+  return { ...block, questionId: id, steps: block.steps.map((step, i) => ({ ...step, id: `${id}.s${i + 1}` })) };
 }
 
 /** add_worked_example: one new unique-solution example after the last one, before the no-solution example and note. */
@@ -337,7 +339,8 @@ function addWorkedExample(source: LessonPackage, seed: string, taken: ReadonlySe
  *  - teaching_sequence: only its timing block is replaced (the builder's, for the new outline);
  *  - worked_examples, when the number of unique-solution examples differs from the new outline's: the unique examples
  *    are drawn again (we-1..we-k, the builder's draw at the section's difficulty); the intro paragraph, the
- *    no-solution example (renumbered we-(k+1), as the builder numbers it) and its note keep their places;
+ *    no-solution example (copied as stored, renumbered we-(k+1) as the builder numbers it) and its note keep their
+ *    places;
  *  - exercises + solutions, when the number of exercises differs: the whole set is drawn again at the current
  *    effective difficulty.
  * Owner-visible: the comparison uses the package's actual counts, so examples or exercises added earlier by
@@ -368,7 +371,7 @@ function changeDuration(source: LessonPackage, durationMinutes: number, plan: Ad
     for (const q of fresh) taken.add(questionFingerprint(q));
     const degenerate = examples.blocks.filter((b): b is ExampleBlock => isExample(b) && !isUniqueExample(b));
     if (degenerate.length > 1) throw new Error("applyAdjustment: more than one example without a unique solution");
-    const kept = degenerate.map((b) => renumberedDegenerate(source, b, `we-${fresh.length + 1}`));
+    const kept = degenerate.map((b) => renumberedDegenerate(b, `we-${fresh.length + 1}`));
     const first = examples.blocks.findIndex(isUniqueExample);
     if (first < 0) throw new Error("applyAdjustment: the worked examples section has no unique-solution example");
     const rest = examples.blocks.filter((b) => !isUniqueExample(b)).map((b) => (b === degenerate[0] ? kept[0]! : b));
