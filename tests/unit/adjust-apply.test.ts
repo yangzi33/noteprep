@@ -9,6 +9,7 @@ import { validateLinearQuestion } from "@/lib/math/validate";
 import { Rng } from "@/lib/math/rng";
 import { adjustmentSeed, applyAdjustment, MAX_EXAMPLES, packageContentHash, planAdjustment, type ApplicableChange } from "@/lib/package/adjust";
 import { planOutline } from "@/lib/package/build";
+import { applyCorrections, checkCorrections } from "@/lib/package/correct";
 import { effectiveSettings } from "@/lib/package/effective";
 import { PackageSchema, type LessonPackage, type Section } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
@@ -745,6 +746,56 @@ function independentCheck(id: string, problem: { equation: Eq }, solution: { kin
   if (!sameQ(flx, frx)) return `${id}: x not cancelled in the last step`;
   return null;
 }
+
+describe("the adjustments record cap (schema: at most 200 records)", () => {
+  /** The package with `n` adjustment records (copies of a plausible record; only their number matters here). */
+  function withRecords(pkg: LessonPackage, n: number): LessonPackage {
+    const out = structuredClone(pkg);
+    const record = { action: "make_harder", method: "deterministic" as const, seed: `${pkg.seed}:adj:0000000000000000`, sourceContentHash: packageContentHash(pkg) };
+    out.adjustments = Array.from({ length: n }, () => ({ ...record }));
+    return out;
+  }
+  const ALL_ACTIONS = (pkg: LessonPackage): AdjustmentChange[] => [
+    { action: "make_easier" },
+    { action: "make_harder" },
+    { action: "add_exercises", count: 1 },
+    { action: "add_worked_example" },
+    { action: "change_duration", durationMinutes: 90 },
+    { action: "correct_text", edits: [{ sectionId: sectionOf(pkg, "explanation").id, target: { field: "title" }, text: "Better words" }] },
+    { action: "reduce_theory" },
+  ];
+
+  it("at 200 records every action is refused with max_adjustments", () => {
+    const source = withRecords(testPackage({ difficulty: "mixed", durationMinutes: 60 }, "cap-200"), 200);
+    expect(() => PackageSchema.parse(source)).not.toThrow();
+    for (const change of ALL_ACTIONS(source)) {
+      let reason: string | null = null;
+      try {
+        planAdjustment(source, change);
+      } catch (e) {
+        expect(e).toBeInstanceOf(AdjustmentNotApplicable);
+        reason = (e as AdjustmentNotApplicable).reason;
+      }
+      expect(reason, change.action).toBe("max_adjustments");
+    }
+    expect(() => apply(source, { action: "add_exercises", count: 1 })).toThrow(AdjustmentNotApplicable);
+    // checkCorrections only judges the edits; applying them consults the planner, which refuses at the cap.
+    const edits = [{ sectionId: sectionOf(source, "explanation").id, target: { field: "title" as const }, text: "Better words" }];
+    expect(checkCorrections(source, edits, source.context as CurriculumContext)).toEqual({ ok: true });
+    expect(() => applyCorrections(source, edits, source.context as CurriculumContext)).toThrow(AdjustmentNotApplicable);
+  });
+
+  it("at 199 records an action is accepted and the result holds 200 records and verifies", () => {
+    const source = withRecords(testPackage({ difficulty: "mixed", durationMinutes: 60 }, "cap-199"), 199);
+    for (const change of ALL_ACTIONS(source)) expect(() => planAdjustment(source, change), change.action).not.toThrow();
+    for (const change of [{ action: "make_harder" }, { action: "add_exercises", count: 2 }, { action: "add_worked_example" }, { action: "change_duration", durationMinutes: 90 }] as ApplicableChange[]) {
+      const result = apply(source, change);
+      expect(result.adjustments, change.action).toHaveLength(200);
+      expect(() => PackageSchema.parse(result), change.action).not.toThrow();
+      expect(validatePackage(result).overall, change.action).toBe("verified");
+    }
+  });
+});
 
 describe("independent exact re-check over random adjustment chains", () => {
   // ADJUST_SWEEP_N raises the number of random sources for a one-off larger sweep; the default keeps the suite quick.

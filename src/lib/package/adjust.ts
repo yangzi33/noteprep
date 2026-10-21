@@ -14,6 +14,8 @@ import type { ExercisesSection, LessonPackage, Section, SectionKind, SolutionsSe
 export const MAX_EXERCISES = 20;
 /** Most unique-solution worked examples a package may hold. */
 export const MAX_EXAMPLES = 4;
+/** Most `adjustments` records a package may hold (the schema's cap): at the cap every further change is refused. */
+export const MAX_ADJUSTMENTS = 200;
 
 /** unchanged: the whole section is kept; rehash: only inputsHash is recomputed; regenerate: the section is rebuilt. */
 export type Disposition = "unchanged" | "rehash" | "regenerate";
@@ -127,6 +129,8 @@ export function planAdjustment(pkg: LessonPackage, change: AdjustmentChange): Ad
 }
 
 function draftFor(pkg: LessonPackage, change: AdjustmentChange): Draft {
+  // Another record would make the package fail its schema, so no action is applicable at the cap.
+  if ((pkg.adjustments?.length ?? 0) >= MAX_ADJUSTMENTS) notApplicable("max_adjustments");
   switch (change.action) {
     case "make_easier":
     case "make_harder": {
