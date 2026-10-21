@@ -1,4 +1,5 @@
 import type { CurriculumSummary, SelectionOption, SelectionStep } from "@/lib/server/dal/curriculum";
+import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { prepareHref, upTo, type PrepareParams } from "@/lib/ui/prepare-url";
 
 export type FieldKey = "v" | "level" | "course" | "unit" | "topic";
@@ -28,6 +29,12 @@ function toOption(key: FieldKey, o: SelectionOption): SelectFieldView["options"]
 }
 
 /** The cascading selects for the prepare form. A field is disabled until every field before it has a value. */
+/** Which dataset notice the Prepare page shows: sample and test data, unofficial suggested topics, or none for real data. */
+export function datasetBanner(kind: DatasetKind): "sample" | "suggested" | null {
+  if (kind === "sample" || kind === "synthetic") return "sample";
+  return kind === "suggested" ? "suggested" : null;
+}
+
 export function buildSelectFields(input: {
   curricula: Pick<CurriculumSummary, "id" | "name" | "latestVersionId">[];
   params: PrepareParams;
