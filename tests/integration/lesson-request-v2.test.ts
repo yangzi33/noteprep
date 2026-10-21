@@ -771,12 +771,20 @@ describe("viewing a finished pack", () => {
       ["owner, file of own other lesson's revision", () => web.lessons.getArtifact(a.ctx, a.rev.lesson_id, a2.rev.revision_id, "notes")],
       ["unknown lesson", () => web.lessons.getLessonView(a.ctx, randomUUID())],
       ["unknown revision", () => web.lessons.getLessonView(a.ctx, a.rev.lesson_id, randomUUID())],
+      ["package as another user", () => web.lessons.getLessonPackage(mallory, a.rev.lesson_id)],
+      ["package revision as another user", () => web.lessons.getLessonPackage(mallory, a.rev.lesson_id, a.rev.revision_id)],
+      ["package, owner, another lesson's revision", () => web.lessons.getLessonPackage(a.ctx, a.rev.lesson_id, b.rev.revision_id)],
+      ["package, owner, own other lesson's revision", () => web.lessons.getLessonPackage(a.ctx, a.rev.lesson_id, a2.rev.revision_id)],
+      ["package, unknown lesson", () => web.lessons.getLessonPackage(a.ctx, randomUUID())],
+      ["package, unknown revision", () => web.lessons.getLessonPackage(a.ctx, a.rev.lesson_id, randomUUID())],
     ];
     for (const [name, attack] of attacks) await expect(attack(), name).rejects.toBeInstanceOf(NotFound);
 
     await admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [a.rev.lesson_id]);
     await expect(web.lessons.getLessonView(a.ctx, a.rev.lesson_id)).rejects.toBeInstanceOf(NotFound);
     await expect(web.lessons.getArtifact(a.ctx, a.rev.lesson_id, a.rev.revision_id, "notes")).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getLessonPackage(a.ctx, a.rev.lesson_id)).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getLessonPackage(a.ctx, a.rev.lesson_id, a.rev.revision_id)).rejects.toBeInstanceOf(NotFound);
   });
 
   it("a legacy placeholder pack, or a damaged manifest, has nothing to preview", async () => {
@@ -787,6 +795,7 @@ describe("viewing a finished pack", () => {
     await admin.query(`UPDATE lesson SET current_revision_id = $1 WHERE id = $2`, [revisionId, lessonId]);
     await expect(web.lessons.getLessonView(legacy.ctx, lessonId)).rejects.toBeInstanceOf(NotFound);
     await expect(web.lessons.getArtifact(legacy.ctx, lessonId, revisionId, "notes")).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getLessonPackage(legacy.ctx, lessonId)).rejects.toBeInstanceOf(NotFound);
   });
 
   it("an unfinished (draft) revision is not viewable", async () => {
@@ -794,6 +803,7 @@ describe("viewing a finished pack", () => {
     const lessonId = (await admin.query(`INSERT INTO lesson (owner_id, title, input_spec) VALUES ($1, 'Draft', '{}') RETURNING id`, [ctx.userId])).rows[0].id as string;
     const revisionId = await seedRevision(admin, { lessonId, ownerId: ctx.userId, status: "draft" });
     await expect(web.lessons.getLessonView(ctx, lessonId, revisionId)).rejects.toBeInstanceOf(NotFound);
+    await expect(web.lessons.getLessonPackage(ctx, lessonId, revisionId)).rejects.toBeInstanceOf(NotFound);
   });
 });
 
