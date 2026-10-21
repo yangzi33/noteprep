@@ -291,13 +291,13 @@ function redrawExercises(source: LessonPackage, seed: string, count: number, dif
   const exercises = sectionOfKind(source, "exercises");
   const solutions = sectionOfKind(source, "solutions");
   const fresh = drawNewQuestions(seed, { count, difficulty }, exclude);
-  // Solutions derive from the exercises, so both record the same seed and difficulty.
-  const provenance = { method: "deterministic" as const, seed, difficulty, generatorVersion: GENERATOR_VERSION };
+  // Solutions derive from the exercises, so both record the same seed and difficulty; each keeps its own method (a
+  // tutor-edited intro stays tutor_edit).
   return {
     drawn: fresh,
     sections: [
-      { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, false, exerciseBlocksOf(fresh)), provenance } as Section,
-      { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, false, solutionBlocksOf(fresh)), provenance } as Section,
+      { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, false, exerciseBlocksOf(fresh)), provenance: regeneratedProvenance(exercises, seed, difficulty) } as Section,
+      { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, false, solutionBlocksOf(fresh)), provenance: regeneratedProvenance(solutions, seed, difficulty) } as Section,
     ],
   };
 }
@@ -403,10 +403,9 @@ function exerciseChange(source: LessonPackage, change: Extract<ApplicableChange,
   // After add_exercises the section mixes questions drawn from earlier seeds with new ones and `seed` is only the
   // latest: the recomputed inputsHash is then a self-consistency tag for the stored package, not proof that these
   // inputs alone reproduce the section.
-  const provenance = { method: "deterministic" as const, seed, difficulty: current, generatorVersion: GENERATOR_VERSION };
   return [
-    { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, true, exerciseBlocksOf(added)), provenance } as Section,
-    { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, true, solutionBlocksOf(added)), provenance } as Section,
+    { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, true, exerciseBlocksOf(added)), provenance: regeneratedProvenance(exercises, seed, current) } as Section,
+    { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, true, solutionBlocksOf(added)), provenance: regeneratedProvenance(solutions, seed, current) } as Section,
   ];
 }
 
@@ -438,9 +437,10 @@ const withoutInputsHash = (s: Section | undefined) => (s ? Object.fromEntries(Ob
  * Product-visible behaviours (owner decisions recorded here; do not change without one):
  *  - add_exercises on a MIXED set appends every new question at the mixed level; the existing easy-to-hard ramp is
  *    not redone, so the set no longer ends on its hardest questions.
- *  - A regenerated exercises / solutions / worked examples section keeps its title, its intro paragraphs and its
- *    `edited` flag: a tutor's correction to that wording survives the adjustment. Only the questions, writing spaces
- *    and solutions are replaced or appended.
+ *  - A regenerated exercises / solutions / worked examples section keeps its title, its intro paragraphs, its
+ *    `edited` flag and its provenance method (and model / prompt version): a tutor's correction to that wording
+ *    survives the adjustment and the section stays `tutor_edit`; only seed, difficulty and generator version are
+ *    updated. Only the questions, writing spaces and solutions are replaced or appended.
  *  - change_duration discards examples / exercises added earlier when the new duration's count differs.
  */
 export function applyAdjustment(pkg: LessonPackage, change: ApplicableChange, opts: { seed: string; context: CurriculumContext }): LessonPackage {

@@ -7,9 +7,11 @@ import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { difficultyRamp, GENERATOR_VERSION, questionFingerprint, type Difficulty } from "@/lib/math/generator";
 import { Rational } from "@/lib/math/rational";
 import { validateLinearQuestion } from "@/lib/math/validate";
+import { FAKE_PROSE } from "@/lib/llm/fake";
+import type { ProseDraft } from "@/lib/package/prose";
 import { Rng } from "@/lib/math/rng";
 import { adjustmentSeed, applyAdjustment, MAX_EXAMPLES, packageContentHash, planAdjustment, type ApplicableChange } from "@/lib/package/adjust";
-import { degenerateExample, planOutline, workedExampleBlock } from "@/lib/package/build";
+import { buildPackage, degenerateExample, planOutline, workedExampleBlock } from "@/lib/package/build";
 import { applyCorrections, checkCorrections } from "@/lib/package/correct";
 import { effectiveSettings } from "@/lib/package/effective";
 import { rehashPackage } from "@/lib/package/inputs";
@@ -813,6 +815,75 @@ function independentCheck(id: string, problem: { equation: Eq }, solution: { kin
   if (!sameQ(flx, frx)) return `${id}: x not cancelled in the last step`;
   return null;
 }
+
+describe("provenance of a regenerated section keeps its method (tutor_edit stays tutor_edit)", () => {
+  const ctx = (pkg: LessonPackage) => pkg.context as CurriculumContext;
+  /** The package with the intro paragraph (block 0) of each named section corrected by a tutor. */
+  function editIntros(pkg: LessonPackage, kinds: ("exercises" | "solutions")[]): LessonPackage {
+    const edits = kinds.map((kind) => ({ sectionId: sectionOf(pkg, kind).id, target: { field: "block_text" as const, blockIndex: 0 }, text: `Work carefully and show your ${kind === "exercises" ? "working" : "reasoning"}.` }));
+    return applyCorrections(pkg, edits, ctx(pkg));
+  }
+  const CHANGES: ApplicableChange[] = [{ action: "make_harder" }, { action: "add_exercises", count: 2 }, { action: "change_duration", durationMinutes: 90 }];
+
+  it("a tutor-edited exercises and solutions pair keeps edited:true, method tutor_edit and its intros after a redraw", () => {
+    const source = editIntros(testPackage({ difficulty: "mixed", durationMinutes: 60 }, "prov-both"), ["exercises", "solutions"]);
+    for (const change of CHANGES) {
+      const result = apply(source, change);
+      const seed = seedFor(source, change);
+      const difficulty = effectiveSettings(result).difficulty;
+      for (const kind of ["exercises", "solutions"] as const) {
+        const s = sectionOf(result, kind);
+        expect(s.edited, `${change.action} ${kind}`).toBe(true);
+        expect(s.provenance, `${change.action} ${kind}`).toEqual({ ...sectionOf(source, kind).provenance, method: "tutor_edit", seed, difficulty, generatorVersion: GENERATOR_VERSION });
+        expect(blocksOf(result, kind)[0], `${change.action} ${kind}`).toEqual(blocksOf(source, kind)[0]);
+      }
+      // Solutions derive from the exercises: same seed and difficulty.
+      expect(sectionOf(result, "solutions").provenance.seed).toBe(sectionOf(result, "exercises").provenance.seed);
+      expect(sectionOf(result, "solutions").provenance.difficulty).toBe(sectionOf(result, "exercises").provenance.difficulty);
+      expect(validatePackage(result).overall, change.action).toBe("verified");
+    }
+  });
+
+  it("only the edited section keeps tutor_edit: an unedited solutions section stays deterministic", () => {
+    const source = editIntros(testPackage({ difficulty: "mixed", durationMinutes: 60 }, "prov-ex"), ["exercises"]);
+    for (const change of CHANGES) {
+      const result = apply(source, change);
+      expect(sectionOf(result, "exercises").provenance.method, change.action).toBe("tutor_edit");
+      expect(sectionOf(result, "exercises").edited, change.action).toBe(true);
+      expect(sectionOf(result, "solutions").provenance.method, change.action).toBe("deterministic");
+      expect(sectionOf(result, "solutions").edited, change.action).toBe(sectionOf(source, "solutions").edited);
+      expect(sectionOf(result, "solutions").provenance.seed).toBe(sectionOf(result, "exercises").provenance.seed);
+      expect(sectionOf(result, "solutions").provenance.difficulty).toBe(sectionOf(result, "exercises").provenance.difficulty);
+      expect(validatePackage(result).overall, change.action).toBe("verified");
+    }
+  });
+
+  it("an unedited deterministic section records exactly method, seed, difficulty and generator version", () => {
+    const source = testPackage({ difficulty: "mixed", durationMinutes: 60 }, "prov-det");
+    for (const change of CHANGES) {
+      const result = apply(source, change);
+      const expected = { method: "deterministic", seed: seedFor(source, change), difficulty: effectiveSettings(result).difficulty, generatorVersion: GENERATOR_VERSION };
+      for (const kind of ["exercises", "solutions"] as const) expect(sectionOf(result, kind).provenance, `${change.action} ${kind}`).toEqual(expected);
+    }
+  });
+
+  it("on a pack with model-written prose the model and prompt version stay on every regenerated section", () => {
+    const request = { ...(testPackage().request as LessonRequestV2), difficulty: "mixed" as const, durationMinutes: 60 };
+    const source = buildPackage({ request, context: testPackage().context as CurriculumContext, seed: "prov-llm", prose: { draft: FAKE_PROSE as unknown as ProseDraft, model: "m-1" } });
+    expect(validatePackage(source).overall).toBe("verified");
+    for (const change of [...CHANGES, { action: "add_worked_example" } as const]) {
+      const result = apply(source, change);
+      for (const s of result.sections) {
+        const before = sectionOf(source, s.kind).provenance;
+        expect(s.provenance.method, `${change.action} ${s.kind}`).toBe(before.method);
+        expect(s.provenance.model, `${change.action} ${s.kind}`).toBe(before.model);
+        expect(s.provenance.promptVersion, `${change.action} ${s.kind}`).toBe(before.promptVersion);
+      }
+      expect(sectionOf(result, "worked_examples").provenance.model).toBe("m-1");
+      expect(validatePackage(result).overall, change.action).toBe("verified");
+    }
+  });
+});
 
 describe("the adjustments record cap (schema: at most 200 records)", () => {
   /** The package with `n` adjustment records (copies of a plausible record; only their number matters here). */
