@@ -13,6 +13,8 @@ import {
 import { Rational, withinLimits } from "@/lib/math/rational";
 import { Rng } from "@/lib/math/rng";
 import { validateLinearQuestion, validateLessonMath } from "@/lib/math/validate";
+import { createHash } from "node:crypto";
+import { DRAW_EXHAUSTED, questionFingerprint } from "@/lib/math/generator";
 
 const toQuestion = (g: GeneratedQuestion) => ({ id: g.id, role: "exercise" as const, problem: g.problem, solution: g.solution, steps: g.steps });
 const num = (text: string) => Rational.parse(text);
@@ -222,5 +224,68 @@ describe("exercise sets", () => {
       expect(report.overall, JSON.stringify(report.items.filter((i) => i.status !== "verified"))).toBe("verified");
       expect(report.setChecks.every((c) => c.result === "pass")).toBe(true);
     }
+  });
+});
+
+describe("exercise sets for quick adjustments (optional startIndex, exclude, ramp)", () => {
+  // Recorded from generateExerciseSet before startIndex/exclude/ramp existed (commit 70b2725): calls without the new
+  // options must keep producing exactly these sets, so packages built before and after stay byte-identical.
+  const GOLDEN_SETS_SHA256 = "7523390853e8ed1ec1eb26005efc4d41ead686bf637fcaec9cd90ba99dc1993b";
+  const goldenMatrix = (extra: Record<string, unknown>) => {
+    const out: Record<string, string> = {};
+    for (const difficulty of ["basic", "mixed", "challenge"] as const)
+      for (const count of [1, 3, 7, 12, 20])
+        for (const [jobSeed, idPrefix] of [["golden-a", undefined], ["golden-b:exercises:0", "ex"], ["golden-c:examples", "we"]] as const) {
+          const set = generateExerciseSet({ jobSeed, count, difficulty, ...(idPrefix ? { idPrefix } : {}), ...extra });
+          out[`${difficulty}|${count}|${jobSeed}|${idPrefix ?? ""}`] = JSON.stringify(set);
+        }
+    return createHash("sha256").update(JSON.stringify(out)).digest("hex");
+  };
+
+  it("without the new options, output is byte-identical to the recorded sets", () => {
+    expect(goldenMatrix({})).toBe(GOLDEN_SETS_SHA256);
+  });
+  it("the defaults spelled out (startIndex 1, empty exclude, ramp on) are the same sets", () => {
+    expect(goldenMatrix({ startIndex: 1, exclude: new Set<string>(), ramp: true })).toBe(GOLDEN_SETS_SHA256);
+  });
+  it("startIndex continues the ids and the per-question seeds from that number", () => {
+    const set = generateExerciseSet({ jobSeed: "job-S", count: 3, difficulty: "basic", startIndex: 10 });
+    expect(set.map((q) => q.id)).toEqual(["ex-10", "ex-11", "ex-12"]);
+    expect(set.flatMap((q) => q.steps.map((st) => st.id)).every((id) => /^ex-1[012]\.s\d+$/.test(id))).toBe(true);
+    // ex-10 is drawn exactly as the tenth question of a full set at the same level would be
+    const full = generateExerciseSet({ jobSeed: "job-S", count: 12, difficulty: "basic" });
+    expect(set[0]).toEqual(full[9]);
+    for (const q of set) expect(validateLinearQuestion(toQuestion(q)).status).toBe("verified");
+  });
+  it("never returns a question whose fingerprint is excluded", () => {
+    const first = generateExerciseSet({ jobSeed: "job-X", count: 8, difficulty: "basic" });
+    const exclude = new Set(first.slice(0, 4).map(questionFingerprint));
+    for (let job = 0; job < 200; job++) {
+      const set = generateExerciseSet({ jobSeed: job === 0 ? "job-X" : `job-X-${job}`, count: 8, difficulty: "basic", exclude });
+      expect(set.some((q) => exclude.has(questionFingerprint(q)))).toBe(false);
+      expect(new Set(set.map(questionFingerprint)).size).toBe(8);
+    }
+    // the same seed re-draws only the excluded positions; the others are unchanged
+    const again = generateExerciseSet({ jobSeed: "job-X", count: 8, difficulty: "basic", exclude });
+    expect(again.slice(4)).toEqual(first.slice(4));
+    expect(again.slice(0, 4).map(questionFingerprint).some((f) => exclude.has(f))).toBe(false);
+  });
+  it("gives up with DRAW_EXHAUSTED when every candidate is excluded", () => {
+    const pool = new Set<string>();
+    // a seed whose 50 retries at one id are all collected beforehand
+    for (let retry = 0; retry < 50; retry++) pool.add(questionFingerprint(generateLinearQuestion({ id: "ex-1", difficulty: "basic", seed: `job-E:ex-1:${retry}` })));
+    expect(() => generateExerciseSet({ jobSeed: "job-E", count: 1, difficulty: "basic", exclude: pool })).toThrow(DRAW_EXHAUSTED);
+  });
+  it("ramp: false keeps every question at the given level, also for mixed", () => {
+    const set = generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "mixed", ramp: false });
+    expect(set.map((q) => q.meta.difficulty)).toEqual(Array(6).fill("mixed"));
+    const ramped = generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "mixed" });
+    expect(ramped.map((q) => q.meta.difficulty)).toEqual(difficultyRamp(6, "mixed"));
+    expect(generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "challenge", ramp: false })).toEqual(generateExerciseSet({ jobSeed: "job-R", count: 6, difficulty: "challenge" }));
+  });
+  it("questionFingerprint is the equation, for a generated question and for a stored block alike", () => {
+    const q = generateLinearQuestion({ id: "q", difficulty: "mixed", seed: "fp" });
+    expect(questionFingerprint(q)).toBe(JSON.stringify(q.problem.equation));
+    expect(questionFingerprint({ problem: { equation: q.problem.equation } })).toBe(questionFingerprint(q));
   });
 });
