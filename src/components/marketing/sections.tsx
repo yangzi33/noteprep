@@ -140,12 +140,15 @@ export function ShowcaseSection() {
         </div>
         <div className="grid items-center gap-8 md:grid-cols-2">
           <Card className="order-2 flex flex-col gap-3 p-5 md:order-1" aria-hidden="true">
-            <div className="flex flex-wrap gap-2 text-[13px] font-medium">
-              <span className="rounded-control bg-accent px-3 py-1.5 text-text-accent">Easier</span>
-              <span className="rounded-control border border-input px-3 py-1.5 text-foreground">Harder</span>
-              <span className="rounded-control border border-input px-3 py-1.5 text-foreground">More practice</span>
-            </div>
-            <div className="rounded-notice bg-surface p-3 text-[13px] text-muted-foreground">Draft preview: check the PDF you export.</div>
+            <div className="rounded-notice bg-surface p-3 text-[13px] text-muted-foreground">Draft preview: the exported PDF is the final version.</div>
+            <ul className="flex flex-col gap-2 text-[13px] font-medium text-foreground">
+              {documents.map((d) => (
+                <li key={d.name} className="flex items-center justify-between gap-2 rounded-control border border-input px-3 py-2">
+                  <span>{d.name}</span>
+                  <span className="text-text-accent">PDF</span>
+                </li>
+              ))}
+            </ul>
           </Card>
           <div className="order-1 flex flex-col gap-3 md:order-2">
             <h3 className={h2}>{showcase.reviewTitle}</h3>
@@ -197,7 +200,7 @@ export function PricingSection() {
 export function FaqSection() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="border-t bg-card">
-      <div className={`${wrap} ${sectionPad} max-w-3xl`}>
+      <div className={`mx-auto w-full max-w-3xl px-4 md:px-8 ${sectionPad}`}>
         <h2 id="faq-title" className={h2}>
           Questions
         </h2>

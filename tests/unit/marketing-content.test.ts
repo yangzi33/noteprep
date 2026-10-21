@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LandingFooter, LandingPage } from "@/components/marketing/landing-page";
+import { PricingSection } from "@/components/marketing/sections";
 import { landingContent } from "@/lib/marketing/content";
+
+const FORBIDDEN =
+  /zero errors|error[- ]free|errorless|flawless|guarantee|perfectly accurate|100\s?%|no mistakes|always correct|certif|accredit|complian|curriculum-aligned|aligned to|students can log in|team workspace|schedul|trusted by|save \d+ hours|\b(USD|GBP|CAD|EUR)\b|£|€|\$\s?\d|\d\s*\/\s*(month|mo)\b|\.tex\b/i;
+const NOT_YET_BUILT = /quick adjust|adjustments|correct a line|easier|harder|more practice|in minutes/i;
+
+function visibleText(html: string): string[] {
+  return html
+    .replace(/<svg[\s\S]*?<\/svg>/g, " ")
+    .split(/<[^>]+>/)
+    .map((t) => t.replace(/&#x27;/g, "'").replace(/&amp;/g, "&").trim())
+    .filter(Boolean);
+}
 
 function strings(value: unknown): string[] {
   if (typeof value === "string") return [value];
@@ -12,8 +28,27 @@ describe("landing content", () => {
   const all = strings(landingContent);
 
   it("contains no forbidden claims, prices or .tex offers", () => {
-    const forbidden = /zero errors|error[- ]free|guarantee|certified|complian|£|\$\d|€|\.tex\b/i;
-    for (const s of all) expect(s, s).not.toMatch(forbidden);
+    for (const s of all) expect(s, s).not.toMatch(FORBIDDEN);
+  });
+
+  it("does not advertise adjustments or corrections that do not exist yet", () => {
+    for (const s of all) expect(s, s).not.toMatch(NOT_YET_BUILT);
+  });
+
+  it("rendered landing text (including strings hard-coded in components) has no forbidden claims", () => {
+    const html = renderToStaticMarkup(createElement(LandingPage)) + renderToStaticMarkup(createElement(LandingFooter));
+    const text = visibleText(html);
+    expect(text.length).toBeGreaterThan(30);
+    for (const t of text) {
+      expect(t, t).not.toMatch(FORBIDDEN);
+      expect(t, t).not.toMatch(NOT_YET_BUILT);
+    }
+  });
+
+  it("pricing shows exactly two plan cards and no amounts", () => {
+    const html = renderToStaticMarkup(createElement(PricingSection));
+    expect(html.match(/<h3[ >]/g)).toHaveLength(2);
+    expect(visibleText(html).join(" ")).not.toMatch(/\d\s*[£€$]|[£€$]\s*\d|\d+\s*(usd|gbp|cad|eur)/i);
   });
 
   it("does not promise student accounts, live teaching or team features", () => {
