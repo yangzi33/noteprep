@@ -105,9 +105,9 @@ function headerTex(view: DocumentView, pkg: LessonPackage): string {
  * ^^ notation, no stray `#`, bounded size. It never replaces the sandbox; it makes a rendering defect fail loudly
  * before anything is compiled.
  */
-export function assertTexIsSafe(tex: string, document: DocumentKind): void {
+export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitle: string): void {
   if (Buffer.byteLength(tex, "utf8") > MAX_SOURCE_BYTES) throw new RenderError("source_too_large");
-  const head = preamble(document);
+  const head = preamble(document, runningTitle);
   if (!tex.startsWith(head)) throw new RenderError("preamble_changed");
   const body = tex.slice(head.length);
   for (const match of body.matchAll(/\\([A-Za-z@]+|.)/gs)) {
@@ -150,8 +150,9 @@ export function renderDocument(pkg: LessonPackage, id: DocumentKind): RenderedDo
     const body = parts.join("\n");
     return `${heading}${body}`;
   });
-  const tex = [preamble(id), "\\begin{document}", headerTex(view, pkg), ...sections, "\\end{document}", ""].join("\n");
-  assertTexIsSafe(tex, id);
+  const runningTitle = (pkg.context as CurriculumContext).topic.title;
+  const tex = [preamble(id, runningTitle), "\\begin{document}", headerTex(view, pkg), ...sections, "\\end{document}", ""].join("\n");
+  assertTexIsSafe(tex, id, runningTitle);
   return { id, tex, templateVersion: TEMPLATE_VERSION };
 }
 

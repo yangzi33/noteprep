@@ -44,3 +44,8 @@ export function testRequest(overrides: Partial<LessonRequestV2> = {}): LessonReq
 export function testPackage(overrides: Partial<LessonRequestV2> = {}, seed = "seed-1", kind: "real" | "sample" = "sample", context?: CurriculumContext): LessonPackage {
   return buildPackage({ request: testRequest(overrides), context: context ?? testContext(kind), seed });
 }
+
+/** The topic title a package's documents use as their running header. */
+export function topicTitleOf(pkg: { context: unknown }): string {
+  return (pkg.context as { topic: { title: string } }).topic.title;
+}

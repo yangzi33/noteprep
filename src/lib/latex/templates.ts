@@ -1,10 +1,12 @@
 import type { DocumentKind } from "@/lib/package/schema";
+import { escapeText } from "./escape";
 
 /**
  * The only preamble that ever reaches the compiler. It lives in version control; neither model output nor user input
  * can add a package, change a path, or define a macro. Bump the version when the output for a given package changes.
+ * classic/2: the running header's left field is the selected topic's title (classic/1 printed a fixed "NotePrep").
  */
-export const TEMPLATE_VERSION = "classic/1";
+export const TEMPLATE_VERSION = "classic/2";
 
 export const DOCUMENT_TITLES: Record<DocumentKind, string> = {
   notes: "Tutor Lesson Notes",
@@ -26,7 +28,24 @@ export const ALLOWED_BODY_COMMANDS: ReadonlySet<string> = new Set([
 /** Control symbols (a backslash and one non-letter) that may appear. */
 export const ALLOWED_CONTROL_SYMBOLS: ReadonlySet<string> = new Set(["\\", "{", "}", "$", "&", "#", "_", "%", "[", "]", ";", ","]);
 
-export function preamble(document: DocumentKind): string {
+/** Longest running title, in characters, ellipsis included. */
+export const MAX_RUNNING_TITLE = 60;
+/** Used when the topic title is empty (the same for all three documents of a package). */
+export const DEFAULT_RUNNING_TITLE = "NotePrep";
+
+/**
+ * The left header field as safe LaTeX. Dataset text: normalized, cut to MAX_RUNNING_TITLE characters (57 + "...", counted in
+ * code points) BEFORE escaping, then passed through escapeText like every other text. Spaces become ordinary spaces so the
+ * parbox in the header can wrap; no other character of the escaped text is changed.
+ */
+export function runningTitleTex(topicTitle: string): string {
+  const chars = Array.from(topicTitle.normalize("NFC").replace(/\s+/g, " ").trim());
+  if (chars.length === 0) return escapeText(DEFAULT_RUNNING_TITLE);
+  const cut = chars.length > MAX_RUNNING_TITLE ? `${chars.slice(0, MAX_RUNNING_TITLE - 3).join("").trimEnd()}...` : chars.join("");
+  return escapeText(cut).replaceAll("~", " ");
+}
+
+export function preamble(document: DocumentKind, runningTitle: string): string {
   return [
     // Object compression off: every PDF dictionary stays readable text, so the host can scan for active content (an
     // object stream would hide dictionaries inside compressed bytes) and reject any PDF that has one.
@@ -42,7 +61,8 @@ export function preamble(document: DocumentKind): string {
     "\\setlength{\\parskip}{0.6em}",
     "\\pagestyle{fancy}",
     "\\fancyhf{}",
-    `\\fancyhead[L]{NotePrep}`,
+    // escapeText turns a space into "~", and runningTitleTex turns it back; "~" is otherwise never emitted bare.
+    `\\fancyhead[L]{\\parbox[b]{0.6\\textwidth}{\\raggedright ${runningTitleTex(runningTitle)}}}`,
     `\\fancyhead[R]{${DOCUMENT_TITLES[document].replace("/", "\\textbar{}")}}`,
     "\\fancyfoot[C]{\\thepage}",
     "\\renewcommand{\\headrulewidth}{0.3pt}",

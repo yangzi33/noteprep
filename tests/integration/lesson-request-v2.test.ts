@@ -486,9 +486,9 @@ describe("the three-document pack", () => {
   it("renders, compiles, stores both the PDF and the source of every document, and publishes a version 2 manifest", async () => {
     const { ctx, row, rev } = await packWith({});
     expect(row).toMatchObject({ state: "succeeded", error_code: null });
-    expect(rev.template_version).toBe("classic/1");
+    expect(rev.template_version).toBe("classic/2");
     const manifest = rev.artifact_manifest;
-    expect(manifest).toMatchObject({ manifestVersion: 2, templateVersion: "classic/1" });
+    expect(manifest).toMatchObject({ manifestVersion: 2, templateVersion: "classic/2" });
     expect(manifest.documents.map((d: { document: string }) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
     for (const d of manifest.documents) {
       expect(d.pdf.path).toBe(`${ctx.userId}/${rev.lesson_id}/${rev.revision_id}/${d.pdf.path.split("/")[3]}/${d.document}.pdf`);
@@ -732,7 +732,7 @@ describe("viewing a finished pack", () => {
   it("shows the owner their pack: documents, pages, the revision, and the dataset's alignment statement", async () => {
     const { ctx, rev } = await packWith({});
     const view = await web.lessons.getLessonView(ctx, rev.lesson_id);
-    expect(view).toMatchObject({ lessonId: rev.lesson_id, revisionId: rev.revision_id, isCurrent: true, templateVersion: "classic/1", validationStatus: "verified" });
+    expect(view).toMatchObject({ lessonId: rev.lesson_id, revisionId: rev.revision_id, isCurrent: true, templateVersion: "classic/2", validationStatus: "verified" });
     expect(view.documents.map((d) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
     expect(view.documents.every((d) => d.pages === 1 && d.bytes > 0)).toBe(true);
     // the sample dataset never produces an alignment claim
