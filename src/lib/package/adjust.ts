@@ -5,6 +5,7 @@ import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { DRAW_EXHAUSTED, GENERATOR_VERSION, generateExerciseSet, questionFingerprint, type Difficulty, type GeneratedQuestion } from "@/lib/math/generator";
 import { degenerateExample, exampleLevel, LINEAR_CONCEPT_ID, planOutline, sectionMinutes, timingBlock, workedExampleBlock } from "./build";
+import { resolveEditTarget } from "./editable";
 import { effectiveSettings } from "./effective";
 import { rehashPackage } from "./inputs";
 import type { ExercisesSection, LessonPackage, Section, SectionKind, SolutionsSection } from "./schema";
@@ -83,26 +84,10 @@ const uniqueExamples = (pkg: LessonPackage) =>
   countBlocks(pkg, "worked_examples", (b) => b.type === "worked_example" && b.solution.kind === "unique");
 const exerciseCount = (pkg: LessonPackage) => countBlocks(pkg, "exercises", (b) => b.type === "question");
 
-/** Is `edit` allowed on this package? Throws `target_not_found` or `not_editable` (plan section 2.6). */
+/** Is `edit` allowed on this package? Throws `target_not_found` or `not_editable` (EDITABLE_BLOCKS, plan section 2.6). */
 function checkEditTarget(pkg: LessonPackage, edit: TextEdit): void {
-  const section = pkg.sections.find((s) => s.id === edit.sectionId);
-  if (!section) return notApplicable("target_not_found");
-  const { target } = edit;
-  if (target.field === "title") {
-    if (section.kind === "alignment") notApplicable("not_editable");
-    return;
-  }
-  const block = (section.blocks as Section["blocks"])[target.blockIndex];
-  if (!block) return notApplicable("target_not_found");
-  if (target.field === "block_text") {
-    if (block.type !== "paragraph" && block.type !== "note") notApplicable("not_editable");
-    return;
-  }
-  // block_item: only the lists and step lists that hold prose; the dataset's objective and prerequisite lists are fixed.
-  if (block.type !== "list" && block.type !== "step_list") return notApplicable("not_editable");
-  if (section.kind === "objectives" || section.kind === "prerequisites") return notApplicable("not_editable");
-  const items = block.type === "list" ? block.items : block.steps;
-  if (target.itemIndex >= items.length) notApplicable("target_not_found");
+  const resolved = resolveEditTarget(pkg, edit.sectionId, edit.target);
+  if (!resolved.ok) notApplicable(resolved.reason);
 }
 
 interface Draft {
