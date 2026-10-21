@@ -1,57 +1,72 @@
-# 分析事件设计(草案,D-84;**未批准实现**,需先确认)
+# Analytics event design, v2 (proposal for approval; **no implementation yet**)
 
-状态:设计草案。不含迁移与代码。依据:D-84(两层:GA4 + 一方事件)、CLAUDE.md §9(日志与指标不含课程内容、学生信息、JWT、签名 URL)。
+Status: proposal. No migration and no code until the owner approves this document. It replaces the first draft and applies the owner's six revisions of 2026-10-21 (strict structured allowlist, 90-day provisional retention, purpose classes, B0 scope, baseline security not postponed, no optional collection before legal review). Third-party analytics (GA4), the consent banner and their CSP additions wait for [B4](beta-roadmap.md#b4). The legal classification of every event below is **pending qualified privacy review**; nothing here is a legal conclusion.
 
-## 1. 先区分:哪些指标不需要新表
-下列指标可由**现有表**直接查询得到,不需要事件表,也不受同意横幅影响(它们是服务运行记录):
-- 激活:每个账户的首个成功生成时间(`generation_job` / `lesson_revision`)。
-- 回访:账户在不同日期/周产生的作业数。
-- 每课成本与耗时:作业的 token/成本字段与阶段耗时(若已记录;**待核对**哪些字段已存在)。
-- 额度消耗:`usage_bucket` / `usage_reservation`。
-- 调整次数(B2 之后):调整记录。
+## 1. Scope of B0 ([B0](beta-roadmap.md#b0))
+In: the event table, a validated server-side `track()`, a minimal set of operational events, purpose classification, access restrictions, retention and deletion enforcement, tests.
+Out: GA4 and any third-party analytics, the consent banner, anonymous (signed-out) events, free-text feedback, any event not listed in section 3.
 
-**只有现有表没有的信号才需要事件**:界面行为(打开预览、下载了哪份 PDF、点击"申请此主题"、提交反馈、横幅选择)和营销站流量。
-
-## 2. 表 `analytics_event`(仅用于上面的界面信号)
-| 列 | 类型 | 说明 |
+## 2. Purpose classes
+| Purpose | Meaning | Default |
 |---|---|---|
-| id | uuid pk | 默认随机 |
-| occurred_at | timestamptz | UTC |
-| owner_id | uuid null | 已登录用户的 profile id;匿名事件为空。随账户删除一并删除 |
-| name | text | 白名单内的事件名(见 §3),CHECK 约束 |
-| params | jsonb | 仅白名单键,值为短字符串/数字/布尔;CHECK 大小上限 |
-| consent | text | 记录时的同意级别:`all` / `essential` |
+| `operational` | Necessary for service delivery, reliability, security or billing (abuse detection, audit of signed-URL issuance, rate-limit enforcement) | Written |
+| `analytics` | Optional product analytics (how the product is used) | **Disabled.** Written only when the optional-analytics switch is on |
 
-要点:
-- 不存邮箱、IP、User-Agent、URL、课程/作业/修订 ID。`params` 里的主题与级别用稳定的主题 ID(来自数据集,非用户输入)。
-- `deny` 级别**不写入**任何此类事件。
-- 数据保留期:默认 13 个月(`TEST VALUE`,待隐私声明确定),定期清理作业。
-- 运行时角色只能 INSERT 自己的行、不能读取他人数据;读取仅限管理账户/脚本。RLS 与授权需像其他业务表一样单独测试。
+Rules:
+- Operational events are **never reused for product analytics** unless the privacy notice discloses that purpose.
+- Product metrics that come from existing service records (jobs, lessons, allowance) are queries over those tables, not events. Whether analysing them for product decisions needs a disclosed purpose is part of the pending review.
+- Enabling optional analytics in production requires a config value that names the privacy-review reference; the app refuses to start with optional analytics on in production without it. In development, tests and staging it can be switched on, and on staging only for tutors whose consent email covers analytics ([data note](concierge/tutor-data-note.md) must list it first).
+- No consent UI in B0; the consent banner and per-user consent record arrive in B4, and optional events then also require the user's recorded choice.
 
-## 3. 事件白名单(初版,可增删)
-`topic_requested`(topic_text 已截断并清洗、可选课程标签)、`pdf_downloaded`(document=notes|worksheet|solutions)、`preview_opened`(view=pdf|draft)、`feedback_submitted`(无正文,正文走反馈通道)、`consent_chosen`(level)、`signup_started`。每个事件的允许参数键写在一个 TypeScript 常量里,`track()` 对其余一律丢弃。
+## 3. Exact event allowlist (version 1)
+Every event requires a signed-in user. There are no anonymous events. Property values are closed enumerations or dataset-validated ids. **No free text anywhere.**
 
-注意:`topic_requested` 的自由文本可能含个人信息 → 只存**选自列表**的主题 ID 或经长度限制的文本,并在界面提示"不要填写学生姓名";是否保留自由文本待定。
+| Event | Purpose | Properties (all required unless noted) | Why it exists |
+|---|---|---|---|
+| `document_download_issued` | operational | `document` in {notes, worksheet, solutions}; `disposition` in {inline, attachment} | Audit of signed-URL issuance; abuse and incident investigation |
+| `rate_limit_rejected` | operational | `scope` in {generation, adjustment, download}; `limiter` in {user, ip} | Detect abuse and tune limits. The IP address itself is never stored |
+| `preview_opened` | analytics | `view` in {pdf, draft}; `document` in {notes, worksheet, solutions} | Which preview tabs get used |
+| `topic_requested` | analytics | `topic_id`: an id that exists in the loaded topic dataset, max 200 characters, validated server-side; `course_tag` (optional) in {ON, BC, AB, IB, AP, OTHER} (closed list, owner confirms) | Demand signal for unavailable topics, without free text |
 
-## 4. `track()` 封装
-- 单一入口:`track(name, params)`(客户端)→ 服务器端接口校验后写入;服务器端动作直接调用同一校验函数。
-- 校验:名称在白名单;参数键在该事件的允许集合;值类型与长度;超出即丢弃(开发环境抛错)。
-- 同意:服务器读取 `np_consent` Cookie(`all`/`essential`/`deny`);缺失按 `deny`。`deny` 不写入;`essential` 写入 `consent='essential'`;`all` 另外允许 GA。
-- 速率限制与请求大小上限,防止被刷表。
-- 开发/测试/CI 由环境开关关闭 GA;一方写入在测试中可用。
+Not allowed: free text, URLs, titles, lesson/job/revision ids, emails, IP addresses, User-Agent strings, numbers other than bounded enumerations. Free-text feature requests, if needed, get a **separate feedback flow** with its own privacy notice and retention, designed on its own.
 
-## 5. GA4(B4)
-- 仅在 `np_consent=all` 后动态加载;`anonymize`/不设 `user_id`;不发送邮箱;页面路径清洗为路由模式(`/lessons/:id`);事件走同一个 `track()`,白名单子集转发。
-- CSP:新增响应头,仅在启用时放行 Google 脚本与连接域名(**域名与限额需对照官方文档核实,此处未核实**)。
+## 4. Table `analytics_event`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | random |
+| occurred_at | timestamptz | UTC, set by the server |
+| schema_version | smallint | allowlist version |
+| purpose | enum (`operational`, `analytics`) | fixed per event name; a CHECK ties names to purposes |
+| name | text | CHECK constraint lists the allowed names; adding an event needs a migration |
+| owner_id | uuid not null | signed-in user's profile id |
+| props | jsonb | CHECK: an object, at most 512 bytes; keys and values validated by `track()` against the per-event schema |
 
-## 6. 同意横幅(B4)
-三个按钮:全部接受 / 仅必要 / 全部拒绝;选择写入 `np_consent` Cookie(一年,SameSite=Lax)并记录一次 `consent_chosen`(deny 时不记录);页脚"Cookie 设置"可更改。
+Access: browsers and the Data API get no grants and RLS denies everything to `anon` and `authenticated`; the web runtime role can INSERT only; reading is limited to an admin role and scripts. These grants are tested in the Supabase boundary suite like other business tables.
 
-## 7. 需要你确认
-1. 初版事件白名单是否合适(§3),尤其 `topic_requested` 是否允许自由文本。
-2. 保留期 13 个月是否可接受。
-3. 一方"界面信号"事件在 `essential` 级别是否记录(D-84 的假设;需有资质的人核对是否算"必要")。
-4. 是否先只做本文件的表与 `track()`(B0),GA4/横幅/CSP 留到 B4。
+## 5. `track()`
+- Server-side only. Client interactions call a Server Action that checks the session, origin (CSRF), request size and a rate limit, then calls the same validation function that server code calls directly.
+- Validation: name in the allowlist; props keys exactly match the event's schema; values are in their enumerations or pass the dataset check; otherwise the event is dropped (throws in development and tests). Nothing unknown is ever stored.
+- `purpose = analytics` events are dropped unless the optional-analytics switch is on (section 2).
+- Errors in `track()` never break the user action.
 
-## 8. 验证计划
-单元:白名单与参数校验拒绝禁用键、超长值;`deny` 不写入。集成(真实 Postgres):RLS/角色权限、账户删除级联、保留期清理。E2E:无同意时无任何分析请求;下载 PDF 产生一条事件且不含 ID。
+## 6. Retention and deletion
+| Data | Retention |
+|---|---|
+| Raw events, both purposes | **90 days, provisional**, then deleted |
+| Daily aggregates (`analytics_daily`: day, name, props, event count, distinct-user count; no `owner_id`) | Kept longer, period to be set in the privacy notice. With 10 to 30 Beta users, small counts can still be identifying, so aggregates are labelled aggregate, **not** anonymised in a legal sense, and cells below 5 users are suppressed |
+| Account deletion | Raw events for that `owner_id` are deleted in the deletion flow; aggregates remain. Delayed erasure from backups is documented |
+
+Enforcement: the worker's existing periodic sweep runs a purge that first rolls expired days into `analytics_daily`, then deletes raw rows older than 90 days. Tested against a real Postgres: purge removes only expired rows; deletion removes exactly one owner's rows; aggregates carry no identifiers.
+
+## 7. Verification plan
+Unit: allowlist and property validation reject unknown names, extra keys, free text, out-of-enum values and unknown topic ids; `analytics` events are dropped when the switch is off; the production start-up guard refuses optional analytics without a review reference. Integration (real Postgres): grants and RLS, purpose/name CHECKs, purge and aggregate rollup, owner-deletion. E2E: downloading a PDF writes exactly one `document_download_issued` row with only its two properties; with the switch off, previewing writes nothing.
+
+## 8. Separate item: baseline CSP (not analytics, not postponed)
+The app sends no Content-Security-Policy header today. A baseline CSP is a launch security control independent of analytics. Proposal: add it as its own small task in B0: first `Content-Security-Policy-Report-Only`, checked against the real pages (Next.js, KaTeX, fonts, Supabase, PDF viewer), then enforced. It contains no Google domains. This needs your approval as a separate item.
+
+## 9. Decisions for the owner
+1. Approve or change the four events and their properties (section 3), including the `course_tag` list.
+2. Approve the purpose classes and the optional-analytics default-off rule with the production guard (section 2).
+3. Approve 90 days provisional retention, the aggregate rule, and deletion on account removal (section 6).
+4. Approve the baseline CSP as a separate B0 task (section 8).
+5. Confirm that B0 builds only sections 3 to 7; GA4, the banner and consent records stay in [B4](beta-roadmap.md#b4).
