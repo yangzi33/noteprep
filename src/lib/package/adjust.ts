@@ -1,10 +1,13 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import { methodOf, type AdjustmentChange, type AdjustmentMethod, type TextEdit } from "@/lib/domain/adjustment";
 import { AdjustmentNotApplicable } from "@/lib/domain/errors";
-import type { Difficulty } from "@/lib/math/generator";
+import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
+import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
+import { DRAW_EXHAUSTED, GENERATOR_VERSION, generateExerciseSet, questionFingerprint, type Difficulty, type GeneratedQuestion } from "@/lib/math/generator";
 import { LINEAR_CONCEPT_ID, planOutline } from "./build";
 import { effectiveSettings } from "./effective";
-import type { LessonPackage, Section, SectionKind } from "./schema";
+import { rehashPackage } from "./inputs";
+import type { ExercisesSection, LessonPackage, Section, SectionKind, SolutionsSection } from "./schema";
 
 /** Most exercises a package may hold (the block cap is 60 and each exercise takes two blocks: 1 + 2n <= 60). */
 export const MAX_EXERCISES = 20;
@@ -193,4 +196,151 @@ function draftFor(pkg: LessonPackage, change: AdjustmentChange): Draft {
     case "reduce_theory":
       return { changed: [idOf(pkg, "explanation"), idOf(pkg, "derivation")], changedMethod: "llm" };
   }
+}
+
+// --- applying an adjustment ------------------------------------------------------------------------------
+
+/** The changes `applyAdjustment` executes (correct_text has its own path, reduce_theory needs the model). */
+export type ApplicableChange = Exclude<AdjustmentChange, { action: "correct_text" | "reduce_theory" }>;
+
+/** The content hash of a revision holding this package: sha256 of its canonical JSON (as the worker stores it). */
+export function packageContentHash(pkg: LessonPackage): string {
+  return `sha256:${sha256Hex(canonicalJson(pkg))}`;
+}
+
+/**
+ * The seed for one adjustment: derived from the source revision's content hash and the canonical change, so a retried
+ * job regenerates byte-identical questions and another source (or another change) gets other questions.
+ */
+export function adjustmentSeed(pkg: LessonPackage, sourceContentHash: string, change: AdjustmentChange): string {
+  return `${pkg.seed}:adj:${sha256Hex(canonicalJson({ source: sourceContentHash, change })).slice(0, 16)}`;
+}
+
+/** Seeds tried (`<seed>:exercises:<attempt>`) before giving up on drawing questions that are all new. */
+const DRAW_ATTEMPTS = 20;
+/** The writing space under each exercise, as the builder lays it out. */
+const WRITING_SPACE_LINES = 4;
+
+type Block = Section["blocks"][number];
+type ExerciseBlock = ExercisesSection["blocks"][number];
+type SolutionBlock = SolutionsSection["blocks"][number];
+
+/** Fingerprints of every question in the package: worked examples and exercises. */
+function takenFingerprints(pkg: LessonPackage): Set<string> {
+  const out = new Set<string>();
+  for (const section of pkg.sections) {
+    for (const block of section.blocks as Block[]) {
+      if (block.type === "question" || block.type === "worked_example") out.add(questionFingerprint(block));
+    }
+  }
+  return out;
+}
+
+/** Questions that repeat nothing in `exclude`, trying `<seed>:exercises:0..19`; otherwise not applicable. */
+function drawNewQuestions(seed: string, args: { count: number; difficulty: Difficulty; startIndex?: number; ramp?: boolean }, exclude: ReadonlySet<string>): GeneratedQuestion[] {
+  for (let attempt = 0; attempt < DRAW_ATTEMPTS; attempt++) {
+    try {
+      const set = generateExerciseSet({ jobSeed: `${seed}:exercises:${attempt}`, idPrefix: "ex", exclude, ...args });
+      if (set.length === args.count && set.every((q) => !exclude.has(questionFingerprint(q)))) return set;
+    } catch (e) {
+      if (!(e instanceof Error && e.message === DRAW_EXHAUSTED)) throw e;
+    }
+  }
+  return notApplicable("no_distinct_questions");
+}
+
+/**
+ * The blocks with new math blocks placed after the last existing one. `keep: false` drops the existing math blocks
+ * (the prose around them stays, in order); `keep: true` keeps them exactly as they are.
+ */
+function placeMath<B extends { type: string }>(blocks: readonly B[], isMath: (b: B) => boolean, keep: boolean, added: readonly B[]): B[] {
+  let last = -1;
+  blocks.forEach((b, i) => {
+    if (isMath(b)) last = i;
+  });
+  if (last < 0) throw new Error("adjustment: the section has no question blocks");
+  const head = blocks.slice(0, last + 1);
+  return [...(keep ? head : head.filter((b) => !isMath(b))), ...added, ...blocks.slice(last + 1)];
+}
+
+const isExerciseMath = (b: ExerciseBlock) => b.type === "question" || b.type === "writing_space";
+const isSolutionMath = (b: SolutionBlock) => b.type === "solution";
+const exerciseBlocksOf = (qs: readonly GeneratedQuestion[]): ExerciseBlock[] =>
+  qs.flatMap((q) => [
+    { type: "question" as const, questionId: q.id, problem: q.problem },
+    { type: "writing_space" as const, lines: WRITING_SPACE_LINES },
+  ]);
+const solutionBlocksOf = (qs: readonly GeneratedQuestion[]): SolutionBlock[] => qs.map((q) => ({ type: "solution" as const, questionId: q.id, solution: q.solution, steps: q.steps }));
+
+/**
+ * Executes a deterministic adjustment and returns the new package, already rehashed and with one more `adjustments`
+ * record. Pure: no clock, no randomness beyond `seed`, no I/O, and `pkg` is never modified. Throws
+ * `AdjustmentNotApplicable` when the planner refuses the change or no new distinct questions can be drawn.
+ *
+ * make_easier / make_harder: every exercise is drawn again, same count, one step down or up basic < mixed < challenge,
+ * exactly as the generator lays out a set at that difficulty. Moving to mixed (basic -> harder, challenge -> easier)
+ * gives the generator's thirds ramp: the first third basic, the next mixed, the rest challenge. Moving away from mixed
+ * gives one level throughout: mixed -> harder is all challenge, mixed -> easier all basic. New questions repeat no
+ * question of the source (exercises or worked examples), and the solutions are re-derived from them.
+ *
+ * add_exercises: the existing exercise and solution blocks stay byte-identical; the new questions continue the ids
+ * (ex-(n+1), ...), are drawn at the current effective difficulty (mixed means the mixed level for each new question,
+ * the existing ramp is not re-laid), and repeat no question already in the package.
+ */
+export function applyAdjustment(pkg: LessonPackage, change: ApplicableChange, opts: { seed: string; context: CurriculumContext }): LessonPackage {
+  if (change.action === "add_worked_example" || change.action === "change_duration") {
+    throw new Error(`applyAdjustment: ${change.action} is not implemented yet`);
+  }
+  const plan = planAdjustment(pkg, change); // throws AdjustmentNotApplicable
+  if ((pkg.context as { contextHash?: unknown }).contextHash !== opts.context.contextHash) {
+    throw new Error("applyAdjustment: the context is not the package's curriculum snapshot");
+  }
+  const source = structuredClone(pkg);
+  const { seed } = opts;
+  const current = effectiveSettings(source).difficulty;
+  const exercises = source.sections.find((s): s is ExercisesSection => s.kind === "exercises")!;
+  const solutions = source.sections.find((s): s is SolutionsSection => s.kind === "solutions");
+  if (!solutions) throw new Error("applyAdjustment: the package has no solutions section");
+  const count = exercises.blocks.filter((b) => b.type === "question").length;
+  const taken = takenFingerprints(source);
+
+  let difficulty: Difficulty;
+  let exerciseBlocks: ExerciseBlock[];
+  let solutionBlocks: SolutionBlock[];
+  if (change.action === "add_exercises") {
+    difficulty = current;
+    const added = drawNewQuestions(seed, { count: change.count, difficulty, startIndex: count + 1, ramp: false }, taken);
+    const ids = new Set(exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : [])));
+    if (added.some((q) => ids.has(q.id))) throw new Error("applyAdjustment: a new question id is already taken");
+    exerciseBlocks = placeMath(exercises.blocks, isExerciseMath, true, exerciseBlocksOf(added));
+    solutionBlocks = placeMath(solutions.blocks, isSolutionMath, true, solutionBlocksOf(added));
+  } else {
+    difficulty = LADDER[LADDER.indexOf(current) + (change.action === "make_harder" ? 1 : -1)]!;
+    const fresh = drawNewQuestions(seed, { count, difficulty }, taken);
+    exerciseBlocks = placeMath(exercises.blocks, isExerciseMath, false, exerciseBlocksOf(fresh));
+    solutionBlocks = placeMath(solutions.blocks, isSolutionMath, false, solutionBlocksOf(fresh));
+  }
+
+  // Solutions derive from the exercises, so both record the same seed and difficulty. After add_exercises the section
+  // mixes questions drawn from earlier seeds with new ones and `seed` is only the latest: the recomputed inputsHash is
+  // then a self-consistency tag for the stored package, not proof that these inputs alone reproduce the section.
+  const provenance = { method: "deterministic" as const, seed, difficulty, generatorVersion: GENERATOR_VERSION };
+  const next: LessonPackage = {
+    ...source,
+    sections: source.sections.map((s) => {
+      if (s.id === exercises.id) return { ...s, blocks: exerciseBlocks, provenance } as Section;
+      if (s.id === solutions.id) return { ...s, blocks: solutionBlocks, provenance } as Section;
+      return s;
+    }),
+    adjustments: [...(source.adjustments ?? []), { action: change.action, method: "deterministic", seed, sourceContentHash: packageContentHash(pkg) }],
+  };
+  const result = rehashPackage(next, source.request as Pick<LessonRequestV2, "difficulty">, opts.context);
+
+  // The plan is the contract: a section it keeps must come back byte for byte.
+  for (const id of plan.unchanged) {
+    const before = pkg.sections.find((s) => s.id === id);
+    const after = result.sections.find((s) => s.id === id);
+    if (canonicalJson(before) !== canonicalJson(after)) throw new Error(`applyAdjustment: section ${id} changed but the plan keeps it`);
+  }
+  return result;
 }
