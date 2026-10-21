@@ -17,7 +17,7 @@
 
 ## 2. 命令顺序(运行所有尚未运行的测试)
 
-以下脚本名均已对照 `package.json` 核实。前提:Node 24.13.1、pnpm 10.33.0、Docker 可用。**先停掉自己的 `pnpm worker:dev`**:E2E 与它共用同一个数据库,会互相抢作业。
+以下脚本名均已对照 `package.json` 核实。前提:Node 24.13.1、pnpm 10.33.0、Docker 可用。**建议(未验证)先停掉自己的 `pnpm worker:dev`**:E2E 与它共用同一个数据库,会互相抢作业。
 
 ```bash
 # 0. 在 feat/ui-lesson(栈顶)上;它包含 U1–U4 的全部提交
@@ -26,7 +26,7 @@ pnpm install --frozen-lockfile
 # 1. 已在 WSL 里跑过的静态检查与单元测试(复核即可)
 pnpm lint
 pnpm typecheck
-pnpm test            # 最近一次记录:39 个文件 / 861 个测试通过
+pnpm test            # U4 修复轮报告记录 39 个文件 / 861 个测试通过(未在本文档提交中重跑)
 pnpm build           # 应产出 katex 的 CSS chunk 与 woff2 字体(见 §4 检查项)
 
 # 2. 集成测试(真实 Postgres)——U4 的 ownership 与 getLessonPackage 用例在此
@@ -53,7 +53,7 @@ pnpm db:down
 ```
 
 说明:
-- 每个 U 分支自己的提交都可以单独检出验证;如果 E2E 失败,先在失败测试所属的最早分支上复现,再向上叠加,这样能定位到是哪个里程碑引入的。
+- 建议(未验证):每个 U 分支自己的提交都可以单独检出验证;如果 E2E 失败,先在失败测试所属的最早分支上复现,再向上叠加,这样能定位到是哪个里程碑引入的。
 - `pnpm test:latex` 与本次 UI 改动无关(未触碰 worker/渲染),无需为 U1–U4 单独运行。
 
 ## 3. 改过或新增、但**未被执行**的测试
@@ -64,11 +64,16 @@ pnpm db:down
 |---|---|---|---|
 | U1 | `tests/e2e/skeleton-path.spec.ts`(约 108 行) | 选择器 `p[role=alert]` → `main [role=alert]`(Notice 渲染的是 `div`,不再是 `p`) | 额度用尽时第 4 次生成被页面拒绝:该选择器在页面上恰好匹配一个元素,断言含义不变。审阅者只通过阅读核对过 |
 | U2 | `tests/e2e/prepare.spec.ts`(整体重写) | 旧的"点链接逐步选择"改为"用下拉框选择";新增对 `selection-fields` 的 `data-hydrated="true"` 等待(第一次 `selectOption` 之前);修复分号和课程文字断言。5 个测试:下拉选择→生成→完成;不可验证主题灰显且改 URL 也选不中;不一致选择被礼貌拒绝;刷新/后退保持选择(URL 即状态);未登录被送去登录 | 级联 `router.push` 在真实浏览器里工作、Next 16.4.2 下挂起语义、URL 为状态、不支持主题的两层拒绝。**每个 pass/fail 判断都只来自阅读** |
-| U2 | `tests/e2e/lesson-preview.spec.ts`(既有测试,依赖 U2 的 PackageOption) | 其中的 `uncheck()` 需要点击落在 checkbox 上;U2 修复把输入置于 `z-10` 之上 | 复选卡片的标签覆盖层不会挡住真实 checkbox(Playwright `uncheck()` 不超时) |
 | U3 | `tests/e2e/skeleton-path.spec.ts`(未改源码,但依赖的页面标记变了) | 作业页断言(`job-status` 的 `data-state`、`job-state` 文案、"Cancel generation" 按钮、"did not use one of your generations"、"took too long")经阅读核对仍被满足 | 成功/失败/取消/超时四种终态在新进度卡片上仍然正确显示且额度返还文案未丢。**只经阅读追踪,从未执行** |
 | U4 | `tests/integration/ownership.test.ts`(51 行) | `lessons` 的 DAL 键集合改为 `["getArtifact", "getLessonPackage", "getLessonView"]` | 新增的 DAL 方法被纳入越权测试范围:没有"未被攻击的方法"悄悄多出来 |
-| U4 | `tests/integration/lesson-request-v2.test.ts`(约 744–757、793–825 行) | 新增:所有者正例(`revisionId`、精确键集合、节数 > 0、输出中无 manifest/存储路径;显式 revision id 返回同一修订);攻击用例(他人的课包、他人的修订、所有者用别的课包的修订、所有者用自己另一个课包的修订、未知课包、未知修订、已删除课包、旧占位/legacy 课包、草稿状态修订)均期望 `NotFound` | `getLessonPackage` 对真实流水线产物可用(正例),且在所有越权/错配组合下一律 `NotFound`。**已知缺口**:"同一课包较早的已完成修订"子用例被跳过,因为 `seedRevision` 写死 `schema_version 1`,无法造出第二个课包修订;"draft"用例命中的是 schemaVersion 检查而不是状态过滤(单元测试 `tests/unit/lessons-package-dal.test.ts` 固定了状态过滤) |
+| U4 | `tests/integration/lesson-request-v2.test.ts`(约 742–760 与 793–825 行,已重新 grep 核对) | 新增:所有者正例(`revisionId`、精确键集合、节数 > 0、输出中无 manifest/存储路径;显式 revision id 返回同一修订);攻击用例(他人的课包、他人的修订、所有者用别的课包的修订、所有者用自己另一个课包的修订、未知课包、未知修订、已删除课包、旧占位/legacy 课包、草稿状态修订)均期望 `NotFound` | `getLessonPackage` 对真实流水线产物可用(正例),且在所有越权/错配组合下一律 `NotFound`。**已知缺口**:"同一课包较早的已完成修订"子用例被跳过,因为 `seedRevision` 写死 `schema_version 1`,无法造出第二个课包修订;"draft"用例命中的是 schemaVersion 检查而不是状态过滤(单元测试 `tests/unit/lessons-package-dal.test.ts` 固定了状态过滤) |
 | U4 | `tests/e2e/lesson-preview.spec.ts`(约 132 行,新增) | 测试名:"the draft preview shows the same revision as an HTML view, without a PDF frame, and answers only in the solutions"(`?view=draft`、无 `pdf-frame`、下载链接带同一 revisionId、三个标签页链接都带 `view=draft`、Worksheet 不含 "Answer:"、Solutions 含 "Answer:") | D-60:草稿预览与 PDF 同一 revision;答案只出现在答案册。定位器经阅读 `page.tsx`、`lesson-draft.tsx` 核对,**未执行** |
+
+**有风险的既有测试(未修改,但依赖本次 UI 改动,同样未运行)**:
+
+| 里程碑 | 文件 | 风险点 | 通过时证明什么 |
+|---|---|---|---|
+| U2 | `tests/e2e/lesson-preview.spec.ts`(116–117 行的 `uncheck()`) | 需要点击落在真实 checkbox 上;U2 修复把输入置于 `z-10` 之上,避免被标签覆盖层挡住 | 复选卡片的覆盖层不会挡住 checkbox(`uncheck()` 不超时) |
 
 已经运行过的:`tests/unit/*`(含 `ui-*.test.ts`、`prepare-*.test.ts`、`job-*.test.ts`、`html-view.test.ts`、`math-html.test.ts`、`lesson-draft.test.ts`、`lessons-package-dal.test.ts`)在 `pnpm test` 中通过。注意:`lessons-package-dal.test.ts` 用的是假 DB,不能代替上面的集成测试。
 
@@ -119,9 +124,9 @@ pnpm db:down
 - [ ] 复选卡片的 `has-[:focus-visible]` 焦点环对比度(已知未检查)。
 - [ ] 禁用态的 CheckboxRow 文字颜色(依赖 `cn`/tailwind-merge 解析 `text-foreground` 与 `text-text-disabled`,已知需目检)。
 
-## 5. 已知延期项(摘自各里程碑的 SDD 账本,未增删)
+## 5. 已知延期项(摘自各里程碑的 SDD 账本,略有精简)
 
-以下来自 `.superpowers/sdd/*/progress.md`(本地、被 gitignore 的草稿文件)。按里程碑原样转录,**不代表已决定要修**。
+以下来自 `.superpowers/sdd/*/progress.md`(本地、被 gitignore 的草稿文件)。按里程碑转录并略有精简,**不代表已决定要修**。
 
 ### U1 基础
 - `.dark` 块缺少新增的 9 个变量(暗色模式未使用,计划是保持 `.dark` 不动);ui-tokens 测试是精确字符串比较,没有测试字体接线(构建覆盖)。
@@ -159,7 +164,17 @@ pnpm db:down
 - `getLessonPackage`:"draft"集成用例命中的是 schemaVersion 检查而非状态过滤;非 UUID id 会到达 Prisma(页面必须用 zod 校验 `rev`/`view`);包内含答案与原始请求/上下文——**绝不能把整个包传给 Client Component 或序列化进 props**(只传派生的 HTML 视图树给服务端组件)。
 - `DIFFICULTY_LABEL` 重复(有防漂移测试);hostile 测试用的是每种块的第一个。
 - Task 5(页面)没有单独的任务审阅,由最终整分支审阅覆盖。
+- 草稿 E2E 缺少:notes 草稿里的 "Answer:" 检查,以及非草稿视图下没有 `draft-notice` 的检查。
+- `getLessonPackage` 没有针对 schema 不匹配/无效内容的 NotFound 路径的集成测试。
+- `view-tabs` 没有可访问性断言。
+- `pnpm lint` 会扫描 `.claude/worktrees/**`;worktree 清理后需要加 eslint ignore 与 `.gitignore` 条目。
 - **未决风险**:KaTeX CSS/字体打包与路由使用已在构建中看到产出(一个 CSS chunk、20 个 woff2),但从未在浏览器里确认;`ownership.test.ts` 与 `lesson-request-v2.test.ts` 未运行;新的草稿 E2E 未运行。
+
+### U5 仪表盘(进行中的分支 `feat/ui-dashboard`,审阅发现,均为"修复中,见 feat/ui-dashboard")
+- 各卡片的仪表盘链接名称相同(修复中,见 feat/ui-dashboard)。
+- "Recent documents" 措辞,正改名为 "Recent activity"(修复中,见 feat/ui-dashboard)。
+- 缺少 failed/canceled 且带 revisionId 的卡片测试用例(修复中,见 feat/ui-dashboard)。
+- 缺少已有数据的仪表盘 E2E(修复中,见 feat/ui-dashboard)。
 
 ## 6. 合并顺序
 
