@@ -14,6 +14,7 @@ export function MaterialCard({ card }: { card: MaterialCardModel }) {
       <p className="text-sm text-muted-foreground">{card.date}</p>
       <Link
         href={card.href}
+        aria-label={`${card.action}: ${card.title}`}
         className="mt-auto inline-flex min-h-11 items-center text-[13px] font-semibold text-text-accent hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         {card.action}

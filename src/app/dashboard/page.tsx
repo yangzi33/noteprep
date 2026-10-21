@@ -41,7 +41,7 @@ export default async function DashboardPage() {
       <section aria-labelledby="recent-heading" className="mt-10">
         <div className="flex items-center justify-between gap-4">
           <h2 id="recent-heading" className="font-heading text-2xl">
-            Recent documents
+            Recent activity
           </h2>
           {cards.length > 0 && <TextAction href="/lessons">See all materials</TextAction>}
         </div>

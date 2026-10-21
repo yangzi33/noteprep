@@ -45,6 +45,11 @@ describe("recentCards", () => {
     }
     expect(recentCards([item({ revisionId: null })], 6)[0]!.href).toBe("/jobs/job-1");
   });
+  it("links failed and canceled jobs to the status page even with a revision", () => {
+    for (const state of ["failed", "canceled"] as const) {
+      expect(recentCards([item({ state, revisionId: "rev-1" })], 6)[0]).toMatchObject({ href: "/jobs/job-1", action: "View status" });
+    }
+  });
   it("caps the list", () => {
     const many = Array.from({ length: 9 }, (_, i) => item({ jobId: `j${i}` }));
     expect(recentCards(many, 6)).toHaveLength(6);
@@ -62,6 +67,17 @@ describe("MaterialCard", () => {
     expect(html).toContain(card.label);
     expect(html).toContain("Linear equations");
     expect(html).toContain("Mar 5, 2026, 2:30 PM UTC");
+  });
+});
+
+describe("MaterialCard link name", () => {
+  const render = (title: string, jobId: string) =>
+    renderToStaticMarkup(createElement(MaterialCard, { card: recentCards([item({ title, jobId })], 6)[0]! }));
+  it("is unique per title and keeps the visible text", () => {
+    const a = render("Linear equations", "j1");
+    const b = render("Quadratics", "j2");
+    expect(a).toMatch(/<a[^>]*aria-label="Open: Linear equations"[^>]*>Open<\/a>/);
+    expect(b).toMatch(/<a[^>]*aria-label="Open: Quadratics"[^>]*>Open<\/a>/);
   });
 });
 
