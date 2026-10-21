@@ -721,6 +721,35 @@ describe("mutation sentinels", () => {
     expect(examples(result)).toEqual(examples(source));
   });
 
+  it("change_duration's exercise redraw refuses a first draw that repeats an example drawn in the same change", () => {
+    // mixed 60 min -> 90 min: both sets are redrawn (2 -> 3 examples, 6 -> 8 exercises); the examples come first, so
+    // the exercises must also avoid the examples just drawn, not only the source's questions.
+    const source = testPackage({ difficulty: "mixed", durationMinutes: 60 }, "sentinel-cd-both");
+    const change = { action: "change_duration", durationMinutes: 90 } as const;
+    expect(planAdjustment(source, change).changed).toEqual([sectionOf(source, "worked_examples").id, sectionOf(source, "teaching_sequence").id, sectionOf(source, "exercises").id]);
+    // The example draw is not forced, so the plain result shows which examples this change draws.
+    const plain = run(source, change);
+    const donor = donorOf(uniqueExamples(plain)[0]!);
+    const donorEquation = canonicalJson((donor.problem as { equation: unknown }).equation);
+    expect(allEquations(source)).not.toContain(donorEquation); // a fresh example, not one of the source
+    forced.kind = "exercises";
+    forced.donor = donor;
+    forced.seeds = [];
+    let result: LessonPackage;
+    try {
+      result = run(source, change);
+    } finally {
+      forced.kind = null;
+      forced.donor = null;
+    }
+    const seed = seedFor(source, change);
+    expect(forced.seeds).toContain(`${seed}:exercises:1`); // the colliding first draw was refused and drawn again
+    expect(canonicalJson(examples(result))).toBe(canonicalJson(examples(plain)));
+    const eqs = allEquations(result);
+    expect(new Set(eqs).size, "repeated equation").toBe(eqs.length);
+    expect(validatePackage(result).overall).toBe("verified");
+  });
+
   /** The generator's readability rule for a level, on a worked example (see src/lib/math/generator.ts). */
   function fits(b: ExampleBlock, level: Difficulty): boolean {
     const [n, d] = parseQ(b.solution.value!);
