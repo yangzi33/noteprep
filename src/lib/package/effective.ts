@@ -1,6 +1,5 @@
+import type { Difficulty } from "@/lib/math/generator";
 import type { LessonPackage } from "./schema";
-
-export type Difficulty = "basic" | "mixed" | "challenge";
 
 /**
  * The difficulty and duration a package actually has, which can differ from the original request once a quick
@@ -10,6 +9,6 @@ export type Difficulty = "basic" | "mixed" | "challenge";
 export function effectiveSettings(pkg: LessonPackage): { difficulty: Difficulty; durationMinutes: number } {
   const request = pkg.request as { difficulty: Difficulty };
   const exercises = pkg.sections.find((s) => s.kind === "exercises");
-  const fromSection = (exercises?.provenance as { difficulty?: Difficulty } | undefined)?.difficulty;
+  const fromSection = exercises?.provenance.difficulty;
   return { difficulty: fromSection ?? request.difficulty, durationMinutes: pkg.outline.totalMinutes };
 }

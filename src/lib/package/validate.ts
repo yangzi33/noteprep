@@ -2,13 +2,13 @@ import { canonicalJson } from "@/lib/domain/hash";
 import { verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import { validateLessonMath, VALIDATOR_VERSION, type LessonMathReport } from "@/lib/math/validate";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
-import { EDGES, sectionId, sectionInputsParams } from "./build";
-import { sectionContentHash, sectionInputsHash } from "./hash";
-import { PROSE_PROMPT_VERSION } from "./prose";
+import { EDGES, sectionId } from "./build";
+import { sectionContentHash } from "./hash";
+import { expectedInputsHash } from "./inputs";
 import { checkText, curriculumNames } from "./prose-rules";
 import { DOCUMENT_SECTION_KINDS, PackageSchema, StoredContextShape, type LessonPackage, type Section, type SectionKind } from "./schema";
 
-export const PACKAGE_VALIDATOR_VERSION = `package/1+${VALIDATOR_VERSION}`;
+export const PACKAGE_VALIDATOR_VERSION = `package/2+${VALIDATOR_VERSION}`;
 
 export interface Issue {
   code: string;
@@ -66,6 +66,8 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
       }
       continue;
     }
+    // titles are wording too: the same rules as the body text (the alignment title above is fixed by the builder)
+    for (const code of checkText(section.title, names)) issues.push({ code, where: section.id });
     if (section.kind === "objectives" || section.kind === "prerequisites") {
       // dataset text, repeated verbatim; the framing paragraph is still prose-checked below
       const expected = section.kind === "objectives" ? context.objectives.map((o) => o.label) : context.prerequisites.map((p) => p.title);
@@ -131,25 +133,10 @@ function checkStructure(pkg: LessonPackage, context: CurriculumContext, request:
   for (const section of pkg.sections) {
     if (sectionContentHash(section) !== section.contentHash) issues.push({ code: "CONTENT_HASH_MISMATCH", where: section.id });
   }
-  const llmSource = (section: Section) => (section.provenance.method === "llm" ? { promptVersion: PROSE_PROMPT_VERSION, model: section.provenance.model ?? null } : null);
-  const countBlocks = (kind: SectionKind, type: string) => pkg.sections.filter((s) => s.kind === kind).reduce((n, s) => n + s.blocks.filter((b) => b.type === type).length, 0);
   for (const section of pkg.sections) {
-    const minutes = pkg.outline.sections.find((o) => o.id === section.id)?.minutes;
-    const upstreamKinds = EDGES.filter((e) => e.to === section.kind).map((e) => e.from);
-    const upstream = upstreamKinds.map((kind) => pkg.sections.find((s) => s.kind === kind)?.contentHash);
-    if (minutes === undefined || upstream.some((h) => h === undefined)) {
-      issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id, detail: "inputs cannot be rebuilt" });
-      continue;
-    }
-    const params = sectionInputsParams(section.kind, {
-      seed: pkg.seed,
-      difficulty: request.difficulty,
-      exampleCount: countBlocks("worked_examples", "worked_example"),
-      exerciseCount: countBlocks("exercises", "question"),
-      llm: llmSource(section),
-    });
-    const expected = sectionInputsHash({ kind: section.kind, params: { ...params, contextHash: context.contextHash, minutes }, upstreamContentHashes: upstream as string[] });
-    if (expected !== section.inputsHash) issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id });
+    const expected = expectedInputsHash(pkg, section, request, context);
+    if (expected === null) issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id, detail: "inputs cannot be rebuilt" });
+    else if (expected !== section.inputsHash) issues.push({ code: "INPUTS_HASH_MISMATCH", where: section.id });
   }
 
   // a section that exists must carry its questions: an empty exercise set or answer key is not a lesson

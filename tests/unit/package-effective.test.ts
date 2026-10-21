@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderDocument } from "@/lib/latex/render";
 import { effectiveSettings } from "@/lib/package/effective";
 import { htmlDocument } from "@/lib/package/html-view";
-import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
+import { PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
 import { testPackage } from "../fixtures/package";
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -64,11 +64,11 @@ describe("effectiveSettings", () => {
 
   function adjusted(): LessonPackage {
     const base = testPackage({ difficulty: "basic", durationMinutes: 45 });
-    return {
+    return PackageSchema.parse({
       ...base,
       outline: { ...base.outline, totalMinutes: 90 },
       sections: base.sections.map((s) => (s.kind === "exercises" ? { ...s, provenance: { ...s.provenance, difficulty: "challenge" } } : s)),
-    } as unknown as LessonPackage;
+    });
   }
 
   it("reads difficulty from the exercises provenance and minutes from the outline", () => {
