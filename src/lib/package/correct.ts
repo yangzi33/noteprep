@@ -49,8 +49,7 @@ const URL_LIKE = /\p{L}:(?=[\p{L}/])/u;
  * "honestly", "none" are fine. Words are runs of letters, so a hyphen or space separates them ("twenty-one").
  * An UPPERCASE word of two or more letters that is a valid roman numeral is banned too ("II", "XIX", "MMXXVI"; this
  * also catches the shouted word "MIX"; "I", "DIM", "CIVIC" are not numerals and pass).
- * Deliberately allowed: "one" (a pronoun in "no one", "each one", "one of the", "one way"; banned only as a value or
- * operand, see ONE_AS_VALUE), "first", "second" (also a unit), "next", "last", "once", "score" and "gross" (ordinary
+ * Deliberately allowed: "one" only in the whitelisted idioms (see ONE_ALLOWED_BEFORE; ONE_AS_VALUE is a second net), "first", "second" (also a unit), "next", "last", "once", "score" and "gross" (ordinary
  * words far more often than numbers), "brace" ("braces" are brackets in algebra), and words that only contain a
  * number word ("someone", "thirdly", "halfway", "doubly"). "third(s)" stays banned as a fraction.
  */
@@ -118,7 +117,33 @@ const ONE_AS_VALUE = new RegExp(
   "iu",
 );
 
-/** Does the text state a number in words? (see CARDINAL_STEMS) */
+/**
+ * The only contexts in which the word "one" may appear (a whitelist: a list of forbidden contexts kept leaking values
+ * such as "x is just one", "answer: one", "number one"). "one" is allowed only
+ *  - right after no, each, this, that, which, any, every (a space or hyphen between): "no one", "each one", "which one";
+ *  - right before of, way, another, side, "at a time": "one of the ideas", "one way", "one another", "from one side to
+ *    the other", "one at a time";
+ *  - in "one by one".
+ * Every other "one" is refused, including idioms that state no value ("the right one", "pick one example", "more than
+ * one method", "the one that works"): an accepted cost (owner decision list). Words that contain "one" ("someone",
+ * "anyone", "everyone", "none", "alone", "phone", "stone", "bone") are other words and are not affected.
+ */
+const ONE_ALLOWED_BEFORE = new Set(["no", "each", "this", "that", "which", "any", "every"]);
+const ONE_ALLOWED_AFTER = /^[\s-]+(?:of|way|another|side|at a time)(?![\p{L}\p{N}])/iu;
+const ONE_WORD = /(?<![\p{L}\p{N}])one(?![\p{L}\p{N}])/giu;
+
+function hasUnapprovedOne(text: string): boolean {
+  const t = text.replace(/(?<![\p{L}\p{N}])one by one(?![\p{L}\p{N}])/giu, "in turn");
+  for (const match of t.matchAll(ONE_WORD)) {
+    const before = /(\p{L}+)[\s-]+$/u.exec(t.slice(0, match.index))?.[1]?.toLowerCase();
+    if (before !== undefined && ONE_ALLOWED_BEFORE.has(before)) continue;
+    if (ONE_ALLOWED_AFTER.test(t.slice(match.index + match[0].length))) continue;
+    return true;
+  }
+  return false;
+}
+
+/** Does the text state a number in words? (see CARDINAL_STEMS and ONE_ALLOWED_BEFORE) */
 export function hasNumberWord(text: string): boolean {
   const words = text.match(/\p{L}+/gu) ?? [];
   for (const word of words) {
@@ -126,7 +151,8 @@ export function hasNumberWord(text: string): boolean {
     if (NUMBER_WORDS.has(lower) || isGluedNumber(lower)) return true;
     if (word.length >= 2 && /^[MDCLXVI]+$/.test(word) && ROMAN.test(word)) return true;
   }
-  return ONE_AS_VALUE.test(text.replace(/\bone by one\b/giu, "in turn"));
+  // The operand/value patterns stay as a second net: they also refuse "equals one way" and the like.
+  return hasUnapprovedOne(text) || ONE_AS_VALUE.test(text.replace(/\bone by one\b/giu, "in turn"));
 }
 
 /**

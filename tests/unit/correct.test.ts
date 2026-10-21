@@ -703,9 +703,6 @@ describe("fix round 2: number words", () => {
     "One of the ideas is balance.",
     "Move terms from one side to the other.",
     "Check them one by one.",
-    "There is more than one method.",
-    "Pick one example.",
-    "Is this the right one?",
     "Which one is easier?",
     "I think the CIVIC centre and the DIM light are fine.",
     "Mix the terms, then dim the lights.",
@@ -791,5 +788,56 @@ describe("fix round 2: folded look-alike letters in curriculum names", () => {
     "NØRTHWIND ALGEBRA PATH",
   ])("refuses %j", (text) => {
     expect(codesOf(pkg, para(text))).toContain("PROSE_NAMES_CURRICULUM");
+  });
+});
+
+describe("fix round 3: the word one is whitelisted", () => {
+  const pkg = testPackage();
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+
+  it.each([
+    "x is just one",
+    "x is exactly one",
+    "x is simply one",
+    "x is only one",
+    "x is always one",
+    "answer: one",
+    "number one",
+    "the opposite of one",
+    "sum of x and one",
+    "to the power of one",
+    "x is one apple",
+    "ONE",
+    "One.",
+    "The answer is one.",
+    "x equals one way",
+    // the accepted cost: idioms outside the whitelist
+    "There is more than one method.",
+    "Pick one example.",
+    "Is this the right one?",
+    "The one that works is best.",
+    "One is enough.",
+  ])("refuses %j", (text) => {
+    expect(codesOf(pkg, para(text))).toContain("number_word");
+  });
+
+  it.each([
+    "No one is perfect.",
+    "No-one is perfect.",
+    "Each one counts.",
+    "Choose this one, not that one.",
+    "Which one is easier?",
+    "Any one of them works.",
+    "Every one of the learners should try.",
+    "One of the ideas is balance.",
+    "Check them one by one.",
+    "Work one at a time.",
+    "This is one way to do it.",
+    "Learners help one another.",
+    "Move terms from one side to the other.",
+    "Someone, anyone or everyone can do it; none of it is hard.",
+    "Once alone, phone a friend; a stone or a bone is fine.",
+  ])("accepts %j", (text) => {
+    expect(codesOf(pkg, para(text))).toEqual([]);
   });
 });
