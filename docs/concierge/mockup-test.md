@@ -2,11 +2,9 @@
 
 Purpose: find out whether a curriculum dropdown with many greyed-out topics reads as "they know my course" or as "unfinished" (decision D-75).
 
-## Prepare (no code needed)
-Make one static image or a clickable design in Figma showing:
-- a curriculum dropdown (for example Ontario, BC, Alberta, IB, AP)
-- after selecting one, a list of about 30 suggested topics where only 4 are active and the rest are greyed with "not available yet" and a "request this" button, plus a count such as "4 of 30 topics available"
-- a note "Suggested topics, unofficial, not endorsed by any curriculum authority"
+## Prepare (nothing to build)
+No image or prototype. Describe the screen out loud, in your own words, roughly like this:
+"Imagine you open the tool and pick your curriculum from a list: Ontario, BC, Alberta, IB, AP. Once you pick one, you see about 30 suggested topics for that course. Only 4 of them work today. The rest are greyed out and say 'not available yet', with a button to request them. At the top it says '4 of 30 topics available'. The list is an unofficial guide, not endorsed by any curriculum authority."
 
 ## Ask (read exactly, then stay silent)
 1. "What do you think this screen is telling you?"
