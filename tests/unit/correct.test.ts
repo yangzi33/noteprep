@@ -13,7 +13,7 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { rehashPackage } from "@/lib/package/inputs";
 import { PackageSchema, type LessonPackage, type Section, type SectionKind } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
-import { testContext, testPackage } from "../fixtures/package";
+import { testContext, testPackage, topicTitleOf } from "../fixtures/package";
 import { checkText, curriculumNames } from "@/lib/package/prose-rules";
 
 type Block = Section["blocks"][number];
@@ -452,7 +452,7 @@ describe("applyCorrections: the result", () => {
     const words = "Don't rush: check the \"sign\" (carefully) — then move on!";
     const out = applyCorrections(pkg, [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text: words }, { sectionId: ID.mistakes, target: { field: "title" }, text: "Slips and traps" }], ctx);
     const docs = renderPackage(out);
-    for (const doc of docs) expect(() => assertTexIsSafe(doc.tex, doc.id)).not.toThrow();
+    for (const doc of docs) expect(() => assertTexIsSafe(doc.tex, doc.id, topicTitleOf(out))).not.toThrow();
     const notes = docs.find((d) => d.id === "notes")!.tex;
     expect(notes).toContain(escapeText(words));
     expect(notes).toContain("\\textquotedbl{}sign\\textquotedbl{}");

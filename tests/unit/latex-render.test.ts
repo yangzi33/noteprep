@@ -3,12 +3,12 @@ import { FAKE_PROSE } from "@/lib/llm/fake";
 import { escapeText, RenderError } from "@/lib/latex/escape";
 import { equationTex, numberTex, operationText, solutionText } from "@/lib/latex/math";
 import { assertTexIsSafe, renderDocument, renderPackage, TEMPLATE_VERSION } from "@/lib/latex/render";
-import { ALLOWED_BODY_COMMANDS, preamble } from "@/lib/latex/templates";
+import { ALLOWED_BODY_COMMANDS, DEFAULT_RUNNING_TITLE, MAX_RUNNING_TITLE, preamble, runningTitleTex } from "@/lib/latex/templates";
 import { buildPackage } from "@/lib/package/build";
 import type { ProseDraft } from "@/lib/package/prose";
 import type { LessonPackage } from "@/lib/package/schema";
 import { Rng } from "@/lib/math/rng";
-import { testContext, testPackage, testRequest } from "../fixtures/package";
+import { testContext, testPackage, testRequest, topicTitleOf } from "../fixtures/package";
 
 /** What may remain once every escape sequence the escaper emits is removed. */
 const ESCAPES = /\\(?:textbackslash|textasciitilde|textasciicircum|textless|textgreater|textbar|textquotedbl|ldots)\{\}|\\[{}$&#_%]|\{[[\]]\}/g;
@@ -155,7 +155,7 @@ describe("rendering a package", () => {
     for (const difficulty of ["basic", "mixed", "challenge"] as const) {
       for (const kind of ["sample", "real"] as const) {
         for (const doc of renderPackage(testPackage({ difficulty, durationMinutes: 120 }, `used-${difficulty}`, kind))) {
-          for (const m of doc.tex.slice(preamble(doc.id).length).matchAll(/\\([A-Za-z@]+)/g)) used.add(m[1]!);
+          for (const m of doc.tex.slice(preamble(doc.id, topicTitleOf(pkg)).length).matchAll(/\\([A-Za-z@]+)/g)) used.add(m[1]!);
         }
       }
     }
@@ -169,7 +169,7 @@ describe("rendering a package", () => {
       for (const durationMinutes of [15, 45, 90, 180]) {
         for (const kind of ["sample", "real"] as const) {
           const p = testPackage({ difficulty, durationMinutes }, `all-${difficulty}-${durationMinutes}-${kind}`, kind);
-          for (const doc of renderPackage(p)) expect(() => assertTexIsSafe(doc.tex, doc.id), `${difficulty}/${durationMinutes}/${kind}/${doc.id}`).not.toThrow();
+          for (const doc of renderPackage(p)) expect(() => assertTexIsSafe(doc.tex, doc.id, topicTitleOf(p)), `${difficulty}/${durationMinutes}/${kind}/${doc.id}`).not.toThrow();
         }
       }
     }
@@ -211,10 +211,11 @@ describe("curriculum statements in the documents", () => {
 });
 
 describe("the final safety check", () => {
+  const TITLE = topicTitleOf(testPackage());
   const good = renderDocument(testPackage(), "notes").tex;
   const withBody = (extra: string) => good.replace("\\end{document}", `${extra}\n\\end{document}`);
   it("accepts a rendered document", () => {
-    expect(() => assertTexIsSafe(good, "notes")).not.toThrow();
+    expect(() => assertTexIsSafe(good, "notes", TITLE)).not.toThrow();
   });
   it.each([
     ["an \\input", "\\input{/etc/passwd}"],
@@ -228,17 +229,108 @@ describe("the final safety check", () => {
     ["a parameter sign", "#1"],
     ["an unknown control symbol", "\\@x \\^a"],
   ])("rejects %s", (_name, extra) => {
-    expect(() => assertTexIsSafe(withBody(extra), "notes")).toThrow(RenderError);
+    expect(() => assertTexIsSafe(withBody(extra), "notes", TITLE)).toThrow(RenderError);
   });
   it("rejects a changed preamble and an oversized source", () => {
-    expect(() => assertTexIsSafe(good.replace("\\usepackage{amsmath}", "\\usepackage{amsmath}\\usepackage{verbatim}"), "notes")).toThrow(RenderError);
-    expect(() => assertTexIsSafe(good + "a".repeat(300_001), "notes")).toThrow(RenderError);
+    expect(() => assertTexIsSafe(good.replace("\\usepackage{amsmath}", "\\usepackage{amsmath}\\usepackage{verbatim}"), "notes", TITLE)).toThrow(RenderError);
+    expect(() => assertTexIsSafe(good + "a".repeat(300_001), "notes", TITLE)).toThrow(RenderError);
   });
   it("a worksheet checked as a different document fails (the header is part of the fixed preamble)", () => {
-    expect(() => assertTexIsSafe(good, "worksheet")).toThrow(RenderError);
-    expect(preamble("notes")).not.toBe(preamble("worksheet"));
+    expect(() => assertTexIsSafe(good, "worksheet", TITLE)).toThrow(RenderError);
+    expect(preamble("notes", TITLE)).not.toBe(preamble("worksheet", TITLE));
   });
 });
+
+describe("the running header title", () => {
+  const withTitle = (title: string) => {
+    const base = testPackage();
+    return { ...base, context: { ...(base.context as object), topic: { id: "t1", title } } } as LessonPackage;
+  };
+  const left = (tex: string) => /\\fancyhead\[L\]\{(.*)\}\}$/m.exec(tex.split("\n").find((l) => l.startsWith("\\fancyhead[L]"))!)![1]!;
+  const leftOf = (tex: string) => tex.split("\n").find((l) => l.startsWith("\\fancyhead[L]"))!;
+
+  it("is the selected topic's title, not the fixed product name", () => {
+    const tex = renderDocument(testPackage(), "notes").tex;
+    expect(leftOf(tex)).toBe("\\fancyhead[L]{\\parbox[b]{0.6\\textwidth}{\\raggedright Solving with one unknown}}");
+    expect(leftOf(tex)).not.toContain("NotePrep");
+    expect(left(tex)).toContain("Solving with one unknown");
+  });
+  it("keeps the document type at the top right and the page-1 title block unchanged", () => {
+    const tex = renderDocument(testPackage(), "worksheet").tex;
+    expect(tex).toContain("\\fancyhead[R]{Student Practice Worksheet}");
+    expect(tex).toContain("{\\Large \\textbf{Student Practice Worksheet}}\\par\\medskip");
+    expect(tex).toContain("{\\large Solving with one unknown}\\par");
+  });
+  it("escapes special characters and accents like any other dataset text", () => {
+    const title = "A&B 50% x_1 #2 $3 \\ {a} ~ ^ \"q\" Café";
+    const tex = renderDocument(withTitle(title), "notes").tex;
+    const line = leftOf(tex);
+    expect(line).toContain("A\\&B 50\\% x\\_1 \\#2 \\$3 \\textbackslash{} \\{a\\} \\textasciitilde{} \\textasciicircum{} \\textquotedbl{}q\\textquotedbl{} Café");
+    // nothing but the fixed wrapper and escapeText output remains
+    const inner = left(tex).replace("\\parbox[b]{0.6\\textwidth}{\\raggedright ", "");
+    expect(inner.replace(ESCAPES, "").replace(/\}$/, "")).not.toMatch(DANGEROUS);
+    expect(() => assertTexIsSafe(tex, "notes", title)).not.toThrow();
+  });
+  it("neutralizes an injection attempt in the title and replaces characters the fonts cannot print", () => {
+    const tex = renderDocument(withTitle("\\input{/etc/passwd} \\write18{id} 😀 日本"), "notes").tex;
+    const line = leftOf(tex);
+    expect(line).not.toMatch(/\\input|\\write18/);
+    expect(line).toContain("\\textbackslash{}input\\{/etc/passwd\\}");
+    expect(line).toContain("? ??");
+  });
+  it("is cut to 60 characters, ellipsis included, before escaping", () => {
+    const long = "Solving linear equations with one unknown variable using inverse operations";
+    const tex = runningTitleTex(long);
+    expect(tex).toBe("Solving linear equations with one unknown variable using...");
+    expect(Array.from(tex).length).toBeLessThanOrEqual(MAX_RUNNING_TITLE);
+    expect(runningTitleTex("x".repeat(60))).toBe("x".repeat(60)); // exactly 60 is kept whole
+    expect(runningTitleTex("x".repeat(61))).toBe(`${"x".repeat(57)}...`);
+    expect(Array.from(runningTitleTex("x".repeat(61))).length).toBe(MAX_RUNNING_TITLE);
+    // cut first, escape second: 100 special characters never produce more than 57 escapes plus the dots
+    expect(runningTitleTex("%".repeat(100))).toBe(`${"\\%".repeat(57)}...`);
+    // code points, not UTF-16 units; a trailing space before the dots is dropped
+    expect(runningTitleTex(`${"é".repeat(56)} ${"z".repeat(10)}`)).toBe(`${"é".repeat(56)}...`);
+    expect(() => runningTitleTex("a".repeat(100_000))).not.toThrow();
+    const tex2 = renderDocument(withTitle(long), "notes").tex;
+    expect(leftOf(tex2)).toContain("variable using...}}");
+  });
+  it("falls back to the product name when the topic title is empty or blank", () => {
+    for (const title of ["", "   ", "\n\t "]) {
+      const tex = renderDocument(withTitle(title), "notes").tex;
+      expect(leftOf(tex)).toBe(`\\fancyhead[L]{\\parbox[b]{0.6\\textwidth}{\\raggedright ${DEFAULT_RUNNING_TITLE}}}`);
+    }
+  });
+  it("differs per document type (right field) and per title, while the three documents of a package share the left field", () => {
+    const docs = renderPackage(testPackage());
+    expect(new Set(docs.map((d) => leftOf(d.tex))).size).toBe(1);
+    expect(new Set(docs.map((d) => preamble(d.id, "T"))).size).toBe(3);
+    expect(preamble("notes", "One")).not.toBe(preamble("notes", "Two"));
+    expect(leftOf(renderDocument(withTitle("One"), "notes").tex)).not.toBe(leftOf(renderDocument(withTitle("Two"), "notes").tex));
+  });
+  it("the preamble holds no control sequence beyond the fixed ones and the escapes of the title", () => {
+    const fixed = new Set([...preamble("notes", "x").matchAll(/\\([A-Za-z@]+)/g)].map((m) => m[1]));
+    const hostile = preamble("notes", "\\input{x} \\write18 %&_#$~^{}<>|\" é");
+    for (const m of hostile.matchAll(/\\([A-Za-z@]+)/g)) {
+      expect(fixed.has(m[1]!) || ALLOWED_BODY_COMMANDS.has(m[1]!), m[1]).toBe(true);
+    }
+    expect(hostile).not.toMatch(/\\input|\\write18/);
+    expect(preamble("worksheet", "answerline Answer")).not.toMatch(/\\newcommand\{\\answerline\}/);
+  });
+  it("a body cannot alter the header: the fixed text, another title or a second fancyhead is rejected", () => {
+    const tex = renderDocument(testPackage(), "notes").tex;
+    expect(() => assertTexIsSafe(tex, "notes", "A different title")).toThrow(RenderError);
+    expect(() => assertTexIsSafe(tex.replace("Solving with one unknown}}", "Changed}}"), "notes", TITLE_FOR_BODY)).toThrow(RenderError);
+    expect(() => assertTexIsSafe(tex.replace("\\begin{document}", "\\fancyhead[L]{X}\n\\begin{document}"), "notes", TITLE_FOR_BODY)).toThrow(RenderError);
+    expect(() => assertTexIsSafe(tex.replace("\\end{document}", "\\fancyhead[L]{X}\n\\end{document}"), "notes", TITLE_FOR_BODY)).toThrow(RenderError);
+  });
+  it("a title cannot put the answer macro or its word into a worksheet's source", () => {
+    const ws = renderDocument(testPackage(), "worksheet").tex;
+    expect(ws).not.toContain("answerline");
+    expect(ws).not.toMatch(/Answer/i);
+    expect(renderDocument(testPackage(), "solutions").tex).toContain("\\newcommand{\\answerline}");
+  });
+});
+const TITLE_FOR_BODY = "Solving with one unknown";
 
 // type-level: the helper must hand back a real LessonPackage
 const _typed: LessonPackage = testPackage();

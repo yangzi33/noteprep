@@ -7,6 +7,8 @@ import { PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/pack
 import { testPackage } from "../fixtures/package";
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+/** classic/2 changed only the left header field and headheight (14pt -> 28pt); the goldens below were taken with classic/1. */
+const asClassic1 = (tex: string) => tex.replace(/^\\fancyhead\[L\]\{.*\}$/m, "\\fancyhead[L]{NotePrep}").replace("headheight=28pt", "headheight=14pt");
 
 /** sha256 of renderDocument().tex and of JSON(htmlDocument()), computed on the code BEFORE effectiveSettings existed. */
 const GOLDEN: Record<string, { tex: string; html: string }> = {
@@ -57,7 +59,7 @@ describe("effectiveSettings", () => {
         for (const doc of DOCS) {
           const pkg = testPackage({ difficulty, durationMinutes });
           const want = GOLDEN[`${difficulty}/${durationMinutes}/${doc}`]!;
-          expect(sha(renderDocument(pkg, doc).tex), `tex ${difficulty}/${durationMinutes}/${doc}`).toBe(want.tex);
+          expect(sha(asClassic1(renderDocument(pkg, doc).tex)), `tex ${difficulty}/${durationMinutes}/${doc}`).toBe(want.tex);
           expect(sha(JSON.stringify(htmlDocument(pkg, doc))), `html ${difficulty}/${durationMinutes}/${doc}`).toBe(want.html);
         }
   });

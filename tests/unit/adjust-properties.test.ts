@@ -30,7 +30,7 @@ import { htmlDocument, type HtmlBlock } from "@/lib/package/html-view";
 import { PackageSchema, type DocumentKind, type LessonPackage, type Section } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
 import { documentView } from "@/lib/package/views";
-import { testPackage } from "../fixtures/package";
+import { testPackage, topicTitleOf } from "../fixtures/package";
 
 // The mutation sentinels below force the generator's first draw of an adjustment to repeat an equation already in the
 // package. Everything else (including the builder) sees the real generator unchanged: `forced.kind` is null.
@@ -463,7 +463,7 @@ function checkRender(label: string, pkg: LessonPackage): Map<DocumentKind, strin
   const effective = effectiveSettings(pkg);
   const out = new Map<DocumentKind, string>();
   for (const doc of docs) {
-    expect(() => assertTexIsSafe(doc.tex, doc.id), `${label} ${doc.id}`).not.toThrow();
+    expect(() => assertTexIsSafe(doc.tex, doc.id, topicTitleOf(pkg)), `${label} ${doc.id}`).not.toThrow();
     const html = htmlDocument(pkg, doc.id);
     if (doc.id === "worksheet") expect(html.meta, label).toBeNull();
     else {

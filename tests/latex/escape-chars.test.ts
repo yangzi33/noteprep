@@ -25,7 +25,7 @@ describe("the characters the escaper admits all compile in the real image (audit
     const chars = admittedCharacters();
     const lines: string[] = [];
     for (let i = 0; i < chars.length; i += 20) lines.push(escapeText(chars.slice(i, i + 20).join("")) + "\n");
-    const tex = [preamble("notes"), "\\begin{document}", ...lines.map((l) => `${l}\n`), "\\end{document}", ""].join("\n");
+    const tex = [preamble("notes", "Escape test"), "\\begin{document}", ...lines.map((l) => `${l}\n`), "\\end{document}", ""].join("\n");
     const r = await compileRaw({ "notes.tex": tex });
     const log = Buffer.from(r.byName.get("notes.log") ?? new Uint8Array()).toString("utf8");
     const bad = log.split("\n").filter((l) => /not set up for use with LaTeX|Missing character|Undefined control|Illegal character/.test(l));

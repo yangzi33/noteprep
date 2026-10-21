@@ -64,7 +64,7 @@ describe("a lesson from request to compiled PDFs, with everything real except th
     expect(row).toMatchObject({ state: "succeeded", error_code: null, calls_used: 1 });
 
     const rev = (await admin.query(`SELECT r.* FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
-    expect(rev).toMatchObject({ schema_version: 2, validation_status: "verified", template_version: "classic/1", status: "finalized" });
+    expect(rev).toMatchObject({ schema_version: 2, validation_status: "verified", template_version: "classic/2", status: "finalized" });
     expect(verifyContextHash(rev.content.context)).toBe(true);
     const manifest = rev.artifact_manifest;
     expect(manifest.documents.map((d: { document: string }) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
