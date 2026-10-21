@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { LessonDraft } from "@/components/app/lesson-draft";
-import { Math as MathView } from "@/components/app/math";
+import { MathView } from "@/components/app/math";
 import { htmlDocument, type HtmlBlock, type HtmlDocument } from "@/lib/package/html-view";
 import { testPackage } from "../fixtures/package";
 

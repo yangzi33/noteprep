@@ -167,5 +167,49 @@ describe("htmlDocument", () => {
     expect(alignment.curriculumName).toBe("Fictional Mathematics Programme");
     expect(alignment.datasetKind).toBe("sample");
     expect(alignment.objectives.map((o) => o.partial)).toEqual([false, true]);
+    expect(alignment.objectives.map((o) => o.officialCode)).toEqual(["FIC-E.1", "FIC-E.2"]);
+    expect(alignment.objectives.map((o) => o.note)).toEqual([null, "substitution only"]);
+  });
+
+  it("throws RangeError when the worksheet document lists a solutions section", () => {
+    const broken = structuredClone(pkg);
+    const solutions = broken.sections.find((s) => s.kind === "solutions");
+    if (!solutions) throw new Error("fixture has no solutions section");
+    const worksheet = broken.documents.find((d) => d.id === "worksheet");
+    if (!worksheet) throw new Error("fixture has no worksheet document");
+    (worksheet.sectionIds as string[]).push(solutions.id);
+    expect(() => htmlDocument(broken, "worksheet")).toThrow(RangeError);
+  });
+
+  it("restarts numbering in every section that has numbered blocks", () => {
+    const two = structuredClone(pkg);
+    const source = two.sections.find((s) => s.blocks.some((b) => b.type === "worked_example"));
+    if (!source) throw new Error("fixture has no worked example");
+    const moved = (source.blocks as Block[]).filter((b) => b.type === "worked_example");
+    expect(moved.length).toBeGreaterThan(0);
+    const copy = structuredClone(source);
+    copy.id = `${source.id}-second`;
+    const kept = (source.blocks as Block[]).filter((b) => b.type !== "worked_example");
+    source.blocks = [...kept, moved[0]!] as typeof source.blocks;
+    copy.blocks = [moved[moved.length - 1]!] as typeof copy.blocks;
+    const notes = two.documents.find((d) => d.id === "notes")!;
+    (notes.sectionIds as string[]).splice(notes.sectionIds.indexOf(source.id) + 1, 0, copy.id);
+    two.sections.splice(two.sections.indexOf(source) + 1, 0, copy);
+    const doc = htmlDocument(two, "notes");
+    const per = doc.sections.map((s) => s.blocks.filter(numbered).map((b) => (b as { number: number }).number)).filter((n) => n.length > 0);
+    expect(per.length).toBeGreaterThanOrEqual(2);
+    for (const nums of per) expect(nums).toEqual(nums.map((_, i) => i + 1));
+    expect(per[per.length - 1]).toEqual([1]);
+  });
+
+  it("keeps a paragraph that contains $x$ as one plain string, with no math part", () => {
+    const p = structuredClone(pkg);
+    for (const s of p.sections) for (const b of s.blocks) if (b.type === "paragraph") b.text = "Say $x$ aloud.";
+    const paragraphs = blocksOf(htmlDocument(p, "notes")).filter((b) => b.type === "paragraph");
+    expect(paragraphs.length).toBeGreaterThan(0);
+    for (const b of paragraphs) {
+      expect(b).toEqual({ type: "paragraph", text: "Say $x$ aloud." });
+      expect(typeof (b as { text: unknown }).text).toBe("string");
+    }
   });
 });

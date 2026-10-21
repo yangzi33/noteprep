@@ -44,6 +44,28 @@ describe("renderMathHtml", () => {
     }
   });
 
+  // These pin the KaTeX options: each fails if the matching option is removed from renderMathHtml.
+  it("caps explicit sizes at maxSize (20em), so \\rule cannot cover the page", () => {
+    const r = renderMathHtml("\\rule{1000em}{1000em}", "inline");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.html).toContain("height:20em");
+    expect(r.html).toContain("border-right-width:20em");
+    // The annotation echoes the source text, so check only rendered size attributes.
+    expect(r.html).toContain('width="20em" height="20em"');
+    expect(r.html).not.toMatch(/(?:width|height)[:=]"?1000em/);
+  });
+
+  it("emits MathML next to the HTML (output: htmlAndMathml)", () => {
+    const r = renderMathHtml("x = 3", "inline");
+    expect(r.ok && r.html.includes("<math")).toBe(true);
+  });
+
+  it("is strict: input KaTeX accepts only with strict:ignore is refused", () => {
+    // A non-Latin character in math mode is a LaTeX-incompatible input; strict:"error" throws, strict:"ignore" renders.
+    expect(renderMathHtml("\u00e9", "inline")).toEqual({ ok: false });
+  });
+
   it("returns ok:false for the macro bomb, the overlong input and the unclosed group", () => {
     for (const tex of ["\\def\\a{\\a\\a}\\a", "x".repeat(501), "\\frac{1"]) {
       expect(renderMathHtml(tex, "inline")).toEqual({ ok: false });

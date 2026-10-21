@@ -1,4 +1,4 @@
-import { Inlines, Math as MathView } from "@/components/app/math";
+import { Inlines, MathView } from "@/components/app/math";
 import type { HtmlBlock, HtmlDocument } from "@/lib/package/html-view";
 
 type Alignment = Extract<HtmlBlock, { type: "alignment" }>;
@@ -87,7 +87,10 @@ function Block({ block, compact }: { block: HtmlBlock; compact: boolean }) {
     case "question":
       return (
         <p>
-          <strong>{block.number}.</strong> Solve for <MathView tex="x" mode="inline" />: <MathView tex={block.tex} mode="display" />
+          <strong>{block.number}.</strong> Solve for <MathView tex="x" mode="inline" />:
+          <span className="block overflow-x-auto">
+            <MathView tex={block.tex} mode="display" />
+          </span>
         </p>
       );
     case "worked":
@@ -123,7 +126,7 @@ export function LessonDraft({ doc }: { doc: HtmlDocument }) {
     <article
       data-testid="lesson-draft"
       data-document={doc.document}
-      className="mx-auto w-full max-w-[794px] space-y-6 rounded-notice border border-border bg-white p-8 text-[15px] leading-relaxed text-neutral-900 shadow-sm"
+      className="mx-auto w-full max-w-[794px] space-y-6 rounded-notice border border-border bg-white p-4 sm:p-8 text-[15px] leading-relaxed text-neutral-900 shadow-sm"
     >
       <header className="space-y-1 text-center">
         <p className="font-heading text-2xl font-semibold">{doc.title}</p>

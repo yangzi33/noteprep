@@ -739,6 +739,25 @@ describe("viewing a finished pack", () => {
     expect(JSON.stringify(view)).not.toContain(ctx.userId); // no storage paths reach the page
   });
 
+  it("gives the owner the validated package of the revision, and nothing from the manifest", async () => {
+    const { ctx, rev } = await packWith({});
+    const result = await web.lessons.getLessonPackage(ctx, rev.lesson_id);
+    expect(result.revisionId).toBe(rev.revision_id);
+    expect(result.lessonId).toBe(rev.lesson_id);
+    expect(Object.keys(result).sort()).toEqual(["lessonId", "package", "revisionId"]);
+    expect(result.package.sections.length).toBeGreaterThan(0);
+    const json = JSON.stringify(result);
+    expect(json).not.toContain("artifact_manifest");
+    expect(json).not.toContain("artifactManifest");
+    for (const d of rev.artifact_manifest.documents) {
+      expect(json).not.toContain(d.pdf.path);
+      expect(json).not.toContain(d.tex.path);
+    }
+    // naming the revision explicitly returns that same revision
+    expect((await web.lessons.getLessonPackage(ctx, rev.lesson_id, rev.revision_id)).revisionId).toBe(rev.revision_id);
+    // Not covered: an OLDER finalized revision. seedRevision hard-codes schema_version 1, so a second package revision cannot be seeded with these helpers.
+  });
+
   it("a pack of fewer documents lists only those", async () => {
     const { ctx, rev } = await packWith({}, { documents: ["worksheet"] });
     expect((await web.lessons.getLessonView(ctx, rev.lesson_id)).documents.map((d) => d.document)).toEqual(["worksheet"]);

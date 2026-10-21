@@ -85,10 +85,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
             ))}
           </nav>
           <nav aria-label="Preview type" className="mt-2 flex flex-wrap gap-2" data-testid="view-tabs">
-            <Link href={tabUrl(active, "pdf")} aria-current={!draftView ? "page" : undefined} className={`${linkBase} ${!draftView ? linkActive : ""}`}>
+            <Link href={tabUrl(active, "pdf")} aria-current={!draftView ? "true" : undefined} className={`${linkBase} ${!draftView ? linkActive : ""}`}>
               PDF preview
             </Link>
-            <Link href={tabUrl(active, "draft")} aria-current={draftView ? "page" : undefined} className={`${linkBase} ${draftView ? linkActive : ""}`}>
+            <Link href={tabUrl(active, "draft")} aria-current={draftView ? "true" : undefined} className={`${linkBase} ${draftView ? linkActive : ""}`}>
               Draft preview
             </Link>
           </nav>
@@ -96,7 +96,8 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           <section className="mt-4" data-testid="document-panel" data-document={active} data-revision={lesson.revisionId}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted-foreground">
-                {DOCUMENT_PURPOSE[active]} · {activeDoc.pages} {activeDoc.pages === 1 ? "page" : "pages"}
+                {DOCUMENT_PURPOSE[active]}
+                {draftView ? null : ` · ${activeDoc.pages} ${activeDoc.pages === 1 ? "page" : "pages"}`}
               </p>
               <p className="flex gap-4 text-sm">
                 <a href={fileUrl(active)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center underline" data-testid="open-pdf">
