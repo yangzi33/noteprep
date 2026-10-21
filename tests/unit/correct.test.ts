@@ -8,7 +8,7 @@ import { escapeText, printsLiterally } from "@/lib/latex/escape";
 import { assertTexIsSafe, renderPackage } from "@/lib/latex/render";
 import { Rng } from "@/lib/math/rng";
 import { packageContentHash, planAdjustment } from "@/lib/package/adjust";
-import { applyCorrections, checkCorrections, EDITABLE_BLOCKS } from "@/lib/package/correct";
+import { applyCorrections, CARDINAL_STEMS, checkCorrections, correctionTextProblems, curriculumSkeletons, EDITABLE_BLOCKS, hasNumberWord, nameSkeleton, NUMBER_SUFFIXES } from "@/lib/package/correct";
 import { htmlDocument } from "@/lib/package/html-view";
 import { rehashPackage } from "@/lib/package/inputs";
 import { PackageSchema, type LessonPackage, type Section, type SectionKind } from "@/lib/package/schema";
@@ -641,5 +641,155 @@ describe("fix round 1: characters", () => {
   it("letters are checked with the renderer's own table", () => {
     for (const ch of ["Ħ", "ŉ", "ſ", "Ω", "ж", "q\u0301"]) expect(codesOf(pkg, para(`Word ${ch} here`)), ch).toContain("unprintable_characters");
     for (const ch of ["é", "Ž", "ő", "ç"]) expect(codesOf(pkg, para(`Word ${ch} here`)), ch).toEqual([]);
+  });
+});
+
+describe("fix round 2: number words", () => {
+  const pkg = testPackage();
+  const ctx = ctxOf(pkg);
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+
+  it("the banned set is generated from stems and suffixes", () => {
+    expect(CARDINAL_STEMS).toContain("trillion");
+    expect(NUMBER_SUFFIXES).toEqual(["s", "es", "th", "ths", "fold", "folds", "some", "ish"]);
+    for (const w of ["sevens", "sixes", "zeros", "zeroes", "zeroth", "eleventh", "thirteenths", "hundredth", "millionth", "billionths", "twentieth", "ninetieths", "nineties", "tenfold", "hundredfold", "twofold", "twosome", "tenish", "dozens", "googol", "myriad", "trillion"]) {
+      expect(hasNumberWord(w), w).toBe(true);
+    }
+  });
+
+  it.each([
+    "The answer is one.",
+    "x is one",
+    "The value is one",
+    "x equals one",
+    "Divide both sides by one.",
+    "It is one more than the other",
+    "Take one less than that",
+    "Take one.",
+    "The result was one, so check it",
+    "x is one and y is not",
+    "The answer is nought.",
+    "It came to naught",
+    "The score was nil",
+    "Start at the zeroth step",
+    "Write the zeros",
+    "The eleventh example",
+    "The twentieth step",
+    "Quadruple the value",
+    "Quintupled",
+    "It grew tenfold",
+    "A hundredfold increase",
+    "A trio of examples",
+    "Work as a duo",
+    "A quartet of steps",
+    "Both twain",
+    "Over a decade",
+    "For a century",
+    "Look at step II",
+    "Example XIX",
+    "Written in MMXXVI",
+    "twenty one",
+    "twentyone",
+    "sevenhundred",
+    "Twenty-First is fine but twenty is not",
+  ])("refuses %j", (text) => {
+    expect(codesOf(pkg, para(text))).toContain("number_word");
+  });
+
+  it.each([
+    "This is one way to do it.",
+    "No one is perfect.",
+    "Each one counts.",
+    "One of the ideas is balance.",
+    "Move terms from one side to the other.",
+    "Check them one by one.",
+    "There is more than one method.",
+    "Pick one example.",
+    "Is this the right one?",
+    "Which one is easier?",
+    "I think the CIVIC centre and the DIM light are fine.",
+    "Mix the terms, then dim the lights.",
+    "Score each answer; a gross error is rare.",
+    "Remove the braces first.",
+  ])("accepts %j", (text) => {
+    expect(codesOf(pkg, para(text))).toEqual([]);
+  });
+
+  it("refuses MIX in capitals (a valid roman numeral): a documented false positive", () => {
+    expect(codesOf(pkg, para("MIX the terms"))).toContain("number_word");
+  });
+
+  /** Ordinary teaching words, including ones that contain number words as substrings. None may be refused. */
+  const CORPUS = `
+    honestly often stone tone canon bone none money someone phone alone thirdly halfway once first second next last anyone
+    everyone gone done lonely tenet tender attend content listen tense intent sentence potential mention attention
+    oneself ones lesson question answer equation unknown variable value balance method step steps check substitute
+    substitution solve solution solving side sides both left right term terms like collect expand bracket brackets
+    braces factor factors common mistake mistakes error errors sign signs positive negative inverse operation operations
+    add adding subtract subtracting multiply multiplying divide dividing product sum difference quotient result results
+    equal equals equality expression expressions simplify simplified coefficient constant number numbers whole fraction
+    fractions decimal decimals ratio rate graph line slope point points axis origin table pattern patterns rule rules
+    example examples exercise exercises practice practise review revise recap explain explanation describe reason
+    reasoning justify prove proof show shows work working workings clear clearly careful carefully slowly quickly neat
+    neatly learner learners student students tutor teacher class group partner pairing together alone independent
+    independently discuss discussion question questions ask asking hint hints idea ideas concept concepts picture
+    diagram model scales weigh weight heavy light keep kept same different change changes changed move moving moved
+    undo undoing reverse order sequence before after then now later begin beginning start end finish final finally
+    goal goals aim aims plan planning time timing minute minutes seconds pace warm cool down up quiz test score scores
+    gross mark marks grade feedback praise effort confidence curious curiosity careful accuracy accurate correct
+    correctly wrong mistake reflect reflection notice noticing compare comparing contrast similar similarity
+    opposite opposites remain remains stay stays true false always never sometimes usually often rarely each every
+    any some many few most more less fewer least greater smaller larger bigger same both either neither other another
+    whole part parts piece pieces share shared sharing split group grouping sort sorting list listing name naming
+    write writing written read reading spoken speak say tell telling hear listen draw drawing sketch label labelling
+    highlight underline circle box arrow mark tick cross space spaces gap gaps fill blank blanks complete completing
+    attempt attempts try trying tried again repeat repeating practise practising master mastery progress steady
+    simple simpler simplest harder hardest easy easier easiest challenge challenging basic mixed level levels topic
+    topics unit lesson lessons notes worksheet homework classwork task tasks activity activities game games puzzle
+    puzzles story stories context real everyday shop shopping money price prices cost costs change coins bus train
+    distance speed travel journey recipe recipes ingredient ingredients garden fence area perimeter length width height
+    tonight attendant pennant tenant tension extend extension content contents often oftentimes stoneware
+    Mix mix dim civic Vivid Livid I Dim Civic
+  `.split(/\s+/).filter(Boolean);
+
+  it("an allow-regression corpus of ordinary teaching words (at least 300) is never refused", () => {
+    expect(CORPUS.length).toBeGreaterThanOrEqual(300);
+    const refused = CORPUS.filter((w) => correctionTextProblems(w, "text", curriculumNames(ctx), curriculumSkeletons(ctx)).length > 0);
+    expect(refused).toEqual([]);
+    expect(codesOf(pkg, para(`${CORPUS.slice(0, 80).join(" ")}.`))).toEqual([]);
+  });
+});
+
+describe("fix round 2: folded look-alike letters in curriculum names", () => {
+  const northwind = testContext("sample", {
+    curriculum: {
+      id: "northwind",
+      name: "Northwind Algebra Path",
+      educationSystem: { id: "nw", name: "Invented system", regionCode: "XX" },
+      version: { id: "northwind@r", label: "Maestro Oeuvre Strasse", kind: "sample", source: { title: "Invented", url: null, publisher: null, retrievedAt: null } },
+    },
+  });
+  const pkg = testPackage({}, "seed-nw2", "sample", northwind);
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+
+  it("folds the letters NFD does not split", () => {
+    expect(nameSkeleton("ıøłđðæœßþŋħŧ")).toBe("iolddaeoessthnht");
+    expect(nameSkeleton("İSTANBUL Øre")).toBe("istanbulore");
+  });
+
+  it.each([
+    "Northwınd Algebra Path",
+    "Nørthwind Algebra Path",
+    "Northwind Ałgebra Path",
+    "Northwinđ Algebra Path",
+    "Northwinð Algebra Path",
+    "Norþwind Algebra Paþ",
+    "Northwiŋd Algebra Path",
+    "Norħhwind Algebra Path".replace("ħh", "tħ"),
+    "Norŧhwind Algebra Path",
+    "Mæstro Œuvre Straße",
+    "NØRTHWIND ALGEBRA PATH",
+  ])("refuses %j", (text) => {
+    expect(codesOf(pkg, para(text))).toContain("PROSE_NAMES_CURRICULUM");
   });
 });

@@ -37,38 +37,112 @@ export function normalizeEditText(raw: string): string {
 const URL_LIKE = /\p{L}:(?=[\p{L}/])/u;
 
 /**
- * Words that state a quantity (plan 2.6: a tutor cannot type any number, "step two" included; D-65). Banned as whole
- * words, case-insensitively; a hyphen is a word boundary, so "twenty-one" and "one-half" are caught.
- *  - cardinals: zero, two..twenty, thirty, forty, fifty, sixty, seventy, eighty, ninety, hundred(s), thousand(s),
- *    million(s), billion(s), dozen(s);
- *  - fractions and ordinals from third on: half, halves, halve(d), quarter(s), third(s), fourth(s) .. tenth(s);
- *  - multiplicative and counting words: twice, thrice, double(s/d), triple(s/d), single, couple(s), pair(s).
- * Deliberately allowed: "one" (also a pronoun: "no one", "each one", "one way"; it is refused only as an operand, see
- * ONE_AS_OPERAND), "first" and "second" (ordinary sequencing; "second" is also a unit), "next", "last", "once", and
- * words that merely contain a number word ("someone", "often", "thirdly", "halfway", "doubly").
+ * Words that state a quantity (plan 2.6: a tutor cannot type any number, "step two" included; D-65). The banned set is
+ * generated, not hand-listed:
+ *  - CARDINAL_STEMS, each as is and with every NUMBER_SUFFIXES ending ("sevens", "sixes", "zeroes", "tenth",
+ *    "hundredths", "tenfold", "twosome", "tenish"); a stem ending in "y" also gets "-ieth", "-ieths", "-ies"
+ *    ("twentieth", "nineties");
+ *  - IRREGULAR_NUMBER_WORDS: ordinals and fractions that do not follow the suffix rule, multiplicatives, counting and
+ *    collective words.
+ * A word is banned when it is in that set, or when it is glued from two or more number words ("twentyone",
+ * "sevenhundred"), checked by splitting the whole word into parts, never by substring: "often", "stone", "money",
+ * "honestly", "none" are fine. Words are runs of letters, so a hyphen or space separates them ("twenty-one").
+ * An UPPERCASE word of two or more letters that is a valid roman numeral is banned too ("II", "XIX", "MMXXVI"; this
+ * also catches the shouted word "MIX"; "I", "DIM", "CIVIC" are not numerals and pass).
+ * Deliberately allowed: "one" (a pronoun in "no one", "each one", "one of the", "one way"; banned only as a value or
+ * operand, see ONE_AS_VALUE), "first", "second" (also a unit), "next", "last", "once", "score" and "gross" (ordinary
+ * words far more often than numbers), "brace" ("braces" are brackets in algebra), and words that only contain a
+ * number word ("someone", "thirdly", "halfway", "doubly"). "third(s)" stays banned as a fraction.
  */
-const NUMBER_WORD_LIST = [
+export const CARDINAL_STEMS = [
   "zero", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
   "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
-  "hundreds?", "thousands?", "millions?", "billions?", "dozens?",
-  "half", "halves", "halved?", "quarters?", "thirds?", "fourths?", "fifths?", "sixths?", "sevenths?", "eighths?", "ninths?", "tenths?",
-  "twice", "thrice", "doubles?", "doubled", "triples?", "tripled", "single", "couples?", "pairs?",
-];
-const NUMBER_WORD = new RegExp(`(?<![\\p{L}\\p{N}])(?:${NUMBER_WORD_LIST.join("|")})(?![\\p{L}\\p{N}])`, "iu");
-/** "one" used as a number: an operand of an operation ("add one to", "divide both sides by one", "minus one", "one plus x"). */
-const ONE_AS_OPERAND = new RegExp(
+  "hundred", "thousand", "million", "billion", "trillion", "dozen", "myriad", "googol",
+] as const;
+export const NUMBER_SUFFIXES = ["s", "es", "th", "ths", "fold", "folds", "some", "ish"] as const;
+export const IRREGULAR_NUMBER_WORDS = [
+  "fifth", "fifths", "eighth", "eighths", "ninth", "ninths", "twelfth", "twelfths", "third", "thirds",
+  "nought", "noughts", "naught", "nil",
+  "half", "halves", "halve", "halved", "halving", "quarter", "quarters", "quartered",
+  "twice", "thrice",
+  ...["double", "triple", "quadruple", "quintuple", "sextuple", "septuple", "octuple", "nonuple", "decuple"].flatMap((w) => [w, `${w}s`, `${w}d`]),
+  "doubling", "tripling", "single", "couple", "couples", "pair", "pairs",
+  "duo", "duos", "trio", "trios", "quartet", "quartets", "quintet", "quintets", "sextet", "sextets", "octet", "octets", "twain",
+  "decade", "decades", "century", "centuries",
+] as const;
+
+function numberWordSet(): ReadonlySet<string> {
+  const out = new Set<string>(IRREGULAR_NUMBER_WORDS);
+  for (const stem of CARDINAL_STEMS) {
+    out.add(stem);
+    for (const suffix of NUMBER_SUFFIXES) out.add(stem + suffix);
+    if (stem.endsWith("y")) for (const end of ["ieth", "ieths", "ies"]) out.add(stem.slice(0, -1) + end);
+  }
+  return out;
+}
+const NUMBER_WORDS = numberWordSet();
+/** The parts a glued compound may be split into: every number word, and "one". */
+const COMPOUND_PARTS = new Set([...NUMBER_WORDS, "one"]);
+const LONGEST_PART = Math.max(...[...COMPOUND_PARTS].map((p) => p.length));
+
+/** True when `word` is two or more number words glued together ("twentyone", "sevenhundred"). */
+function isGluedNumber(word: string): boolean {
+  // parts[i]: the most parts the first i letters split into (null: they do not split into number words)
+  const parts: (number | null)[] = [0, ...Array<number | null>(word.length).fill(null)];
+  for (let i = 0; i < word.length; i++) {
+    if (parts[i] === null) continue;
+    for (let len = 1; len <= LONGEST_PART && i + len <= word.length; len++) {
+      if (COMPOUND_PARTS.has(word.slice(i, i + len))) parts[i + len] = Math.max(parts[i + len] ?? 0, parts[i]! + 1);
+    }
+  }
+  return (parts[word.length] ?? 0) >= 2;
+}
+
+const ROMAN = /^M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$/;
+
+/**
+ * "one" as a number: an operand ("add one to", "divide both sides by one", "minus one", "one plus x", "one more than"),
+ * or a value: after is/are/be/was/were/equals/by/than/to/from/over/take/make/give/get when nothing but punctuation, the
+ * end, or a joining or comparing word follows ("The answer is one.", "x is one and y is not"). "This is one way",
+ * "one of the ideas", "from one side to the other" and "one by one" stay allowed.
+ */
+const ONE_AS_VALUE = new RegExp(
   [
     "\\b(?:add|adds|added|adding|subtract|subtracts|subtracted|subtracting|take away|takes away|taking away) one\\b",
     "\\b(?:divide|divides|divided|dividing|multiply|multiplies|multiplied|multiplying)\\b(?: [\\p{L}']+){0,6} by one\\b",
     "\\b(?:plus|minus|times|negative|squared|cubed|equals|equal to) one\\b",
-    "\\bone (?:plus|minus|times|squared|cubed)\\b",
+    "\\bone (?:plus|minus|times|squared|cubed|over)\\b",
+    "\\bone (?:more|less|fewer) than\\b",
+    "\\b(?:is|are|be|been|being|was|were|equal|by|than|to|from|over|take|takes|make|makes|give|gives|get|gets) one(?=\\s*(?:$|[.,;:!?)\"'—–-]|(?:and|or|but|then|so|again|instead|exactly|more|less|fewer)\\b))",
   ].join("|"),
   "iu",
 );
 
-/** Lowercase letters and digits only, accents removed: "Nörthwind-Algebra, Path" -> "northwindalgebrapath". */
+/** Does the text state a number in words? (see CARDINAL_STEMS) */
+export function hasNumberWord(text: string): boolean {
+  const words = text.match(/\p{L}+/gu) ?? [];
+  for (const word of words) {
+    const lower = word.toLowerCase();
+    if (NUMBER_WORDS.has(lower) || isGluedNumber(lower)) return true;
+    if (word.length >= 2 && /^[MDCLXVI]+$/.test(word) && ROMAN.test(word)) return true;
+  }
+  return ONE_AS_VALUE.test(text.replace(/\bone by one\b/giu, "in turn"));
+}
+
+/**
+ * Latin letters that NFD does not split into a base letter and a mark, folded to what they look like, so a name
+ * written with them still matches ("Northwınd" with a dotless i).
+ */
+const LETTER_FOLD: Readonly<Record<string, string>> = { ı: "i", ø: "o", ł: "l", đ: "d", ð: "d", æ: "ae", œ: "oe", ß: "ss", þ: "th", ŋ: "n", ħ: "h", ŧ: "t", ſ: "s", ƒ: "f" };
+
+/** Lowercase letters and digits only, accents removed and look-alike letters folded: "Nørthwınd-Algebra, Path" -> "northwindalgebrapath". */
 export function nameSkeleton(s: string): string {
-  return s.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}+/gu, "")
+    .replace(/[ıøłđðæœßþŋħŧſƒ]/gu, (ch) => LETTER_FOLD[ch] ?? ch)
+    .replace(/[^\p{L}\p{N}]+/gu, "");
 }
 /** Names shorter than this (as skeletons) are skipped: they would match inside ordinary words. */
 const MIN_SKELETON = 4;
@@ -85,7 +159,7 @@ export function curriculumSkeletons(context: CurriculumContext): string[] {
  * plain punctuation), plus rules for typed input only (generated text is not affected):
  *  - not empty, length, and no word longer than MAX_WORD_LENGTH;
  *  - `url_like`: a scheme glued to what follows;
- *  - `number_word`: NUMBER_WORD_LIST, and "one" as an operand;
+ *  - `number_word`: hasNumberWord (generated number words, glued compounds, roman numerals, "one" as a value);
  *  - `PROSE_NAMES_CURRICULUM` also when the skeleton of the text contains a curriculum skeleton (spacing, punctuation,
  *    case and accent variants of a name or code);
  *  - `compatibility_characters`: the text changes under NFKC (full-width letters, ligatures such as Ĳ, superscripts);
@@ -101,7 +175,7 @@ export function correctionTextProblems(raw: string, kind: "title" | "text", name
   codes.push(...checkText(text, [...names]));
   if (URL_LIKE.test(text)) codes.push("url_like");
   if (text.split(/[\s\-–—]+/u).some((word) => [...word].length > MAX_WORD_LENGTH)) codes.push("word_too_long");
-  if (NUMBER_WORD.test(text) || ONE_AS_OPERAND.test(text)) codes.push("number_word");
+  if (hasNumberWord(text)) codes.push("number_word");
   const skeleton = nameSkeleton(text);
   if (skeletons.some((s) => skeleton.includes(s))) codes.push("PROSE_NAMES_CURRICULUM");
   if (text.normalize("NFKC") !== text) codes.push("compatibility_characters");
