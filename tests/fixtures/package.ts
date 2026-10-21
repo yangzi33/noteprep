@@ -1,4 +1,6 @@
+import path from "node:path";
 import { CAPABILITIES } from "@/lib/curriculum/capabilities";
+import { readDatasetDir } from "@/lib/curriculum/files";
 import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { withContextHash, type CurriculumContext, type UnhashedContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -49,4 +51,21 @@ export function testPackage(overrides: Partial<LessonRequestV2> = {}, seed = "se
 /** The topic title a package's documents use as their running header. */
 export function topicTitleOf(pkg: { context: unknown }): string {
   return (pkg.context as { topic: { title: string } }).topic.title;
+}
+
+/** A context shaped like the one the DAL resolves for the suggested fixture's supported topic (no objectives, no codes). */
+export function suggestedTestContext(): CurriculumContext {
+  const dataset = readDatasetDir(path.join(__dirname, "curricula/suggested-fixture/v1"));
+  const topic = dataset.structure.topics[0]!;
+  return testContext("suggested", {
+    curriculum: {
+      id: dataset.meta.curriculum.id,
+      name: dataset.meta.curriculum.name,
+      educationSystem: { id: dataset.meta.educationSystem.id, name: dataset.meta.educationSystem.name, regionCode: dataset.meta.educationSystem.regionCode },
+      version: { id: dataset.meta.version.id, label: dataset.meta.version.label, kind: "suggested", source: { title: dataset.meta.version.source.title, url: null, publisher: null, retrievedAt: null } },
+    },
+    topic: { id: topic.id, title: topic.title },
+    objectives: [],
+    prerequisites: [],
+  });
 }

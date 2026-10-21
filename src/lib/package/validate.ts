@@ -1,5 +1,5 @@
 import { canonicalJson } from "@/lib/domain/hash";
-import { verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
+import { alignmentClaimsAllowedFor, learningObjectiveItems, verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import { validateLessonMath, VALIDATOR_VERSION, type LessonMathReport } from "@/lib/math/validate";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { ALIGNMENT_TITLE, EDGES, sectionId } from "./build";
@@ -46,6 +46,9 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
   const issues: Issue[] = [];
   const names = curriculumNames(context);
 
+  // Defence in depth: only a real dataset may allow alignment claims, whatever the stored flag says.
+  if (context.alignmentClaimsAllowed && !alignmentClaimsAllowedFor(context.curriculum.version.kind)) issues.push({ code: "ALIGNMENT_CLAIM_NOT_ALLOWED", where: "context" });
+
   for (const section of pkg.sections) {
     if (section.kind === "alignment") {
       if (section.title !== ALIGNMENT_TITLE) issues.push({ code: "ALIGNMENT_NOT_IN_DATASET", where: section.id, detail: "alignment title must be the fixed title" });
@@ -71,7 +74,7 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
     for (const code of checkText(section.title, names)) issues.push({ code, where: section.id });
     if (section.kind === "objectives" || section.kind === "prerequisites") {
       // dataset text, repeated verbatim; the framing paragraph is still prose-checked below
-      const expected = section.kind === "objectives" ? context.objectives.map((o) => o.label) : context.prerequisites.map((p) => p.title);
+      const expected = section.kind === "objectives" ? learningObjectiveItems(context) : context.prerequisites.map((p) => p.title);
       const lists = section.blocks.flatMap((b) => (b.type === "list" ? [b.items] : []));
       const actual = lists.flat();
       if (JSON.stringify(actual) !== JSON.stringify(expected)) issues.push({ code: "DATASET_TEXT_ALTERED", where: section.id });

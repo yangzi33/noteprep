@@ -43,6 +43,15 @@ export function alignmentClaimsAllowedFor(kind: DatasetKind): boolean {
   return kind === "real";
 }
 
+/**
+ * The learning-objective lines a lesson lists. Normally the dataset's own objective labels. A suggested dataset has none
+ * (it carries no official objectives), so the one line comes from NotePrep's own topic title: no code, no claim.
+ */
+export function learningObjectiveItems(context: Pick<UnhashedContext, "objectives" | "topic" | "curriculum">): string[] {
+  if (context.objectives.length === 0 && context.curriculum.version.kind === "suggested") return [`Practise: ${context.topic.title}`];
+  return context.objectives.map((o) => o.label);
+}
+
 export type UnhashedContext = Omit<CurriculumContext, "contextHash">;
 
 export function contextHashOf(context: UnhashedContext): string {
