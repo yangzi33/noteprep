@@ -1,3 +1,5 @@
+import path from "node:path";
+import { readDatasetDir } from "@/lib/curriculum/files";
 import { describe, expect, it } from "vitest";
 import { learningObjectiveItems } from "@/lib/curriculum/context";
 import { escapeText } from "@/lib/latex/escape";
@@ -8,6 +10,19 @@ import { checkProse, validatePackage } from "@/lib/package/validate";
 import { suggestedTestContext, testContext, testRequest } from "../fixtures/package";
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
+describe("the in-memory suggested test context", () => {
+  it("matches the fixture dataset", () => {
+    const d = readDatasetDir(path.join(__dirname, "../fixtures/curricula/suggested-fixture/v1"));
+    const c = suggestedTestContext();
+    expect(c.curriculum.id).toBe(d.meta.curriculum.id);
+    expect(c.curriculum.name).toBe(d.meta.curriculum.name);
+    expect(c.curriculum.educationSystem).toEqual(d.meta.educationSystem);
+    expect(c.curriculum.version).toMatchObject({ id: d.meta.version.id, label: d.meta.version.label, kind: d.meta.version.kind });
+    expect(c.curriculum.version.source.title).toBe(d.meta.version.source.title);
+    expect(c.topic).toEqual({ id: d.structure.topics[0]!.id, title: d.structure.topics[0]!.title });
+  });
+});
+
 describe("a lesson built from a suggested topic", () => {
   const context = suggestedTestContext();
   const pkg = buildPackage({ request: testRequest(), context, seed: "s" });

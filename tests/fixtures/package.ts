@@ -1,6 +1,4 @@
-import path from "node:path";
 import { CAPABILITIES } from "@/lib/curriculum/capabilities";
-import { readDatasetDir } from "@/lib/curriculum/files";
 import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { withContextHash, type CurriculumContext, type UnhashedContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -53,18 +51,25 @@ export function topicTitleOf(pkg: { context: unknown }): string {
   return (pkg.context as { topic: { title: string } }).topic.title;
 }
 
-/** A context shaped like the one the DAL resolves for the suggested fixture's supported topic (no objectives, no codes). */
+/**
+ * A context shaped like the one the DAL resolves for the suggested fixture's supported topic (no objectives, no codes).
+ * Built in memory on purpose: the host test image copies only this file, not tests/fixtures/curricula/. A unit test
+ * (tests/unit/package-suggested.test.ts) checks these values against the fixture dataset so they cannot drift.
+ */
 export function suggestedTestContext(): CurriculumContext {
-  const dataset = readDatasetDir(path.join(__dirname, "curricula/suggested-fixture/v1"));
-  const topic = dataset.structure.topics[0]!;
   return testContext("suggested", {
     curriculum: {
-      id: dataset.meta.curriculum.id,
-      name: dataset.meta.curriculum.name,
-      educationSystem: { id: dataset.meta.educationSystem.id, name: dataset.meta.educationSystem.name, regionCode: dataset.meta.educationSystem.regionCode },
-      version: { id: dataset.meta.version.id, label: dataset.meta.version.label, kind: "suggested", source: { title: dataset.meta.version.source.title, url: null, publisher: null, retrievedAt: null } },
+      id: "suggested-fixture",
+      name: "Suggested topics for Test Course (unofficial)",
+      educationSystem: { id: "suggested-system", name: "Suggested Test System", regionCode: "ZZ" },
+      version: {
+        id: "suggested-fixture@v1",
+        label: "Suggested v1 (unofficial)",
+        kind: "suggested",
+        source: { title: "Written by NotePrep for tests: an unofficial mapping, not an official source", url: null, publisher: null, retrievedAt: null },
+      },
     },
-    topic: { id: topic.id, title: topic.title },
+    topic: { id: "suggested-fixture@v1/course/u1/t1", title: "Solving linear equations" },
     objectives: [],
     prerequisites: [],
   });
