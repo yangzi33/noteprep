@@ -116,6 +116,13 @@ pnpm supabase:stop
 - **Storage RLS 的边界**:策略只检查"路径首段等于自己的 `auth.uid()`"和 `.pdf` 扩展名;它**不知道**课包是否已删除或修订是否已发布。这些由应用的 Route Handler 强制(账号为 active、课包未删除、修订已完成且清单列出该文件);已记录为课包删除功能上线时要补上的已知限制(D-48)。私有 PDF 现在以 `Cache-Control: max-age=0`(每次重新验证)上传;此改动之前上传的文件仍是 `max-age=3600`;托管环境里签名路由实际返回的响应头尚未观察过(本地签名路由不带该头,已观察到的是对象自身的头)。
 - **未验证/已知限制**:预览用浏览器自带 PDF 查看器——移动端兼容性没有在真机上测过(因此有降级链接);下载的"请求频率限制"尚未接入(CLAUDE.md 要求,P3);服务端不在每次发放前重新校验文件哈希(worker 写入时已校验);无版面视觉回归;调整与更正是 M6。
 
+## 界面(Figma UI 落地,U1–U4;在栈式分支上,**其 E2E 与集成测试从未运行过**)
+
+- **`/prepare` 的下拉级联需要 JavaScript**:课程体系/级别/课程/单元/主题的联动由客户端 `router.push` 驱动(URL 仍是状态,刷新/后退保留选择);关闭 JS 时联动不工作,没有 noscript 回退。**生成的 POST 本身不依赖 JS**(服务端动作)。这取代了上文 M2 描述的"链接式向导"。
+- **HTML 草稿预览**(D-60):`/lessons/[id]?view=draft` 由**同一 revisionId 的结构化内容**在服务端渲染,带"Draft preview. The exported PDF is the final version."标注;默认视图仍是**真正编译出的 PDF**,PDF 才是权威的导出物,草稿不替代真实编译。草稿里的数学只来自已验证的有理数内容,经 KaTeX(`trust:false`、`strict:error`)渲染,无法表达时退化为纯文本。Worksheet 的草稿不含答案。
+- **新依赖 `katex`**:`package.json` 里**固定为 `0.19.0`**(精确版本,无范围符)。它的 CSS 与字体由构建**打包到本地**(`src/app/lessons/[id]/page.tsx` 导入 `katex/dist/katex.min.css`),不从外部 CDN 加载。
+- **验证清单**:这些页面改动在没有 Docker 的环境里写成,E2E/集成测试待在有 Docker 的机器上运行,命令顺序、未运行测试清单与 1440px/390px 的手动检查见 [docs/ui-verification-checklist.md](docs/ui-verification-checklist.md)。仪表盘(U5)与落地页(U7)在其他分支上进行中,尚未合并。
+
 ## Worker 打包与 staging 主机(设计与文件已完成;**未在任何真实主机上运行过**)
 
 - **脚本**:`pnpm worker:build`(esbuild 打包到 `dist/worker/`)、`pnpm worker:start`(运行打包产物)、`pnpm worker:image`(构建 worker 镜像 `noteprep-worker:dev`,linux/amd64)、`pnpm worker:hosttest-image`(构建在主机上跑沙箱测试的 `noteprep-hosttest:dev`)、`pnpm smoke:staging`(对 staging 的冒烟,见下)。构建镜像需要 Docker。**本机(开发机)上做过**:`pnpm worker:image`、`test:image`(6–8 个测试通过)和 hosttest 容器(41 个测试通过)。**没有发生过**:`images.yml` 在 GitHub Actions 上的任何运行、任何真实主机、任何向 GHCR 的推送(`ci.yml` 的 `worker-image` 作业与 hosttest 步骤已在 PR #10 的 CI 里通过)。
