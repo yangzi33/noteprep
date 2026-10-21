@@ -4,7 +4,7 @@ import { AdjustmentNotApplicable } from "@/lib/domain/errors";
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { DRAW_EXHAUSTED, GENERATOR_VERSION, generateExerciseSet, questionFingerprint, type Difficulty, type GeneratedQuestion } from "@/lib/math/generator";
-import { LINEAR_CONCEPT_ID, planOutline } from "./build";
+import { degenerateExample, exampleLevel, LINEAR_CONCEPT_ID, planOutline, sectionMinutes, timingBlock, workedExampleBlock } from "./build";
 import { effectiveSettings } from "./effective";
 import { rehashPackage } from "./inputs";
 import type { ExercisesSection, LessonPackage, Section, SectionKind, SolutionsSection } from "./schema";
@@ -105,13 +105,6 @@ function checkEditTarget(pkg: LessonPackage, edit: TextEdit): void {
   if (target.itemIndex >= items.length) notApplicable("target_not_found");
 }
 
-const NEW_MINUTES_KEYS: Partial<Record<SectionKind, "explanation" | "examples" | "review" | "exercises">> = {
-  explanation: "explanation",
-  worked_examples: "examples",
-  teaching_sequence: "review",
-  exercises: "exercises",
-};
-
 interface Draft {
   changed: string[];
   changedMethod: "deterministic" | "llm" | "tutor_edit";
@@ -181,10 +174,7 @@ function draftFor(pkg: LessonPackage, change: AdjustmentChange): Draft {
       // A section that is not rebuilt but whose minutes moved has a different inputsHash (minutes are hashed in).
       const regenerated = new Set<string>(changed.map((k) => idOf(pkg, k)));
       const rehash = pkg.outline.sections
-        .filter((o) => {
-          const key = NEW_MINUTES_KEYS[o.kind];
-          return !regenerated.has(o.id) && o.minutes !== (key ? next[key] : 0);
-        })
+        .filter((o) => !regenerated.has(o.id) && o.minutes !== sectionMinutes(o.kind, next))
         .map((o) => o.id);
       return { changed: changed.map((k) => idOf(pkg, k)), changedMethod: "deterministic", rehash, outlineChanged: true };
     }
@@ -216,7 +206,7 @@ export function adjustmentSeed(pkg: LessonPackage, sourceContentHash: string, ch
   return `${pkg.seed}:adj:${sha256Hex(canonicalJson({ source: sourceContentHash, change })).slice(0, 16)}`;
 }
 
-/** Seeds tried (`<seed>:exercises:<attempt>`) before giving up on drawing questions that are all new. */
+/** Seeds tried (`<seed>:exercises:<attempt>`, `<seed>:examples:<attempt>`) before giving up on drawing questions that are all new. */
 const DRAW_ATTEMPTS = 20;
 /** The writing space under each exercise, as the builder lays it out. */
 const WRITING_SPACE_LINES = 4;
@@ -236,11 +226,20 @@ function takenFingerprints(pkg: LessonPackage): Set<string> {
   return out;
 }
 
-/** Questions that repeat nothing in `exclude`, trying `<seed>:exercises:0..19`; otherwise not applicable. */
-function drawNewQuestions(seed: string, args: { count: number; difficulty: Difficulty; startIndex?: number; ramp?: boolean }, exclude: ReadonlySet<string>): GeneratedQuestion[] {
+/**
+ * Questions that repeat nothing in `exclude`, trying `<seed>:<kind>:0..19`; otherwise not applicable. Exercises get
+ * ids `ex-N`, worked examples `we-N`, as the builder numbers them.
+ */
+function drawNewQuestions(
+  seed: string,
+  args: { count: number; difficulty: Difficulty; startIndex?: number; ramp?: boolean },
+  exclude: ReadonlySet<string>,
+  kind: "exercises" | "examples" = "exercises",
+): GeneratedQuestion[] {
+  const idPrefix = kind === "exercises" ? "ex" : "we";
   for (let attempt = 0; attempt < DRAW_ATTEMPTS; attempt++) {
     try {
-      const set = generateExerciseSet({ jobSeed: `${seed}:exercises:${attempt}`, idPrefix: "ex", exclude, ...args });
+      const set = generateExerciseSet({ jobSeed: `${seed}:${kind}:${attempt}`, idPrefix, exclude, ...args });
       if (set.length === args.count && set.every((q) => !exclude.has(questionFingerprint(q)))) return set;
     } catch (e) {
       if (!(e instanceof Error && e.message === DRAW_EXHAUSTED)) throw e;
@@ -272,10 +271,161 @@ const exerciseBlocksOf = (qs: readonly GeneratedQuestion[]): ExerciseBlock[] =>
   ]);
 const solutionBlocksOf = (qs: readonly GeneratedQuestion[]): SolutionBlock[] => qs.map((q) => ({ type: "solution" as const, questionId: q.id, solution: q.solution, steps: q.steps }));
 
+type WorkedExamplesSection = Extract<Section, { kind: "worked_examples" }>;
+type WorkedExamplesBlock = WorkedExamplesSection["blocks"][number];
+type ExampleBlock = Extract<WorkedExamplesBlock, { type: "worked_example" }>;
+type TeachingSequenceSection = Extract<Section, { kind: "teaching_sequence" }>;
+
+const isExample = (b: WorkedExamplesBlock): b is ExampleBlock => b.type === "worked_example";
+const isUniqueExample = (b: WorkedExamplesBlock): boolean => isExample(b) && b.solution.kind === "unique";
+
+function sectionOfKind<K extends SectionKind>(pkg: LessonPackage, kind: K): Extract<Section, { kind: K }> {
+  const found = pkg.sections.find((s) => s.kind === kind);
+  if (!found) throw new Error(`applyAdjustment: the package has no ${kind} section`);
+  return found as Extract<Section, { kind: K }>;
+}
+
+/** The difficulty the worked examples were drawn for: their own provenance, else the request (as the builder records it). */
+const examplesDifficulty = (pkg: LessonPackage, section: WorkedExamplesSection): Difficulty =>
+  section.provenance.difficulty ?? (pkg.request as { difficulty: Difficulty }).difficulty;
+
+/** The provenance a section regenerated by `seed` records; method and model notes of its kept wording stay. */
+const regeneratedProvenance = (section: Section, seed: string, difficulty: Difficulty): Section["provenance"] => ({
+  ...section.provenance,
+  seed,
+  difficulty,
+  generatorVersion: GENERATOR_VERSION,
+});
+
+/** The whole exercise set and its answer key drawn again: `count` questions at `difficulty` (mixed: the thirds ramp). */
+function redrawExercises(source: LessonPackage, seed: string, count: number, difficulty: Difficulty, exclude: ReadonlySet<string>) {
+  const exercises = sectionOfKind(source, "exercises");
+  const solutions = sectionOfKind(source, "solutions");
+  const fresh = drawNewQuestions(seed, { count, difficulty }, exclude);
+  // Solutions derive from the exercises, so both record the same seed and difficulty.
+  const provenance = { method: "deterministic" as const, seed, difficulty, generatorVersion: GENERATOR_VERSION };
+  return {
+    drawn: fresh,
+    sections: [
+      { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, false, exerciseBlocksOf(fresh)), provenance } as Section,
+      { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, false, solutionBlocksOf(fresh)), provenance } as Section,
+    ],
+  };
+}
+
+/**
+ * The no-solution example under a new id, drawn again through the builder's own code path. Its equation depends only
+ * on the package seed, so the result is the same example renumbered; anything else means the block is not the
+ * builder's and is refused rather than rewritten.
+ */
+function renumberedDegenerate(pkg: LessonPackage, block: ExampleBlock, id: string): ExampleBlock {
+  if (canonicalJson(workedExampleBlock(degenerateExample(pkg.seed, block.questionId))) !== canonicalJson(block)) {
+    throw new Error("applyAdjustment: the no-solution example is not the one the builder made");
+  }
+  return workedExampleBlock(degenerateExample(pkg.seed, id));
+}
+
+/** add_worked_example: one new unique-solution example after the last one, before the no-solution example and note. */
+function addWorkedExample(source: LessonPackage, seed: string, taken: ReadonlySet<string>): Section[] {
+  const section = sectionOfKind(source, "worked_examples");
+  const blocks = section.blocks;
+  const last = blocks.findLastIndex(isUniqueExample);
+  if (last < 0) throw new Error("applyAdjustment: the worked examples section has no unique-solution example");
+  // The largest we-N plus one, so the id stays unique however many examples were added (or renumbered) before.
+  const numbers = blocks.filter(isExample).map((b) => /^we-(\d+)$/.exec(b.questionId)).map((m) => (m ? Number(m[1]) : 0));
+  const startIndex = Math.max(0, ...numbers) + 1;
+  const difficulty = examplesDifficulty(source, section);
+  // One example at the level the builder draws examples at for this difficulty (no ramp for a single new example).
+  const [added] = drawNewQuestions(seed, { count: 1, difficulty: exampleLevel(difficulty), startIndex, ramp: false }, taken, "examples");
+  const ids = new Set(source.sections.flatMap((s) => (s.blocks as Block[]).flatMap((b) => ("questionId" in b ? [b.questionId] : []))));
+  if (!added || ids.has(added.id)) throw new Error("applyAdjustment: the new example id is already taken");
+  const next = [...blocks.slice(0, last + 1), workedExampleBlock(added), ...blocks.slice(last + 1)];
+  return [{ ...section, blocks: next, provenance: regeneratedProvenance(section, seed, difficulty) } as Section];
+}
+
+/**
+ * change_duration. The outline is the builder's for the new duration; the plan says which sections are rebuilt:
+ *  - teaching_sequence: only its timing block is replaced (the builder's, for the new outline);
+ *  - worked_examples, when the number of unique-solution examples differs from the new outline's: the unique examples
+ *    are drawn again (we-1..we-k, the builder's draw at the section's difficulty); the intro paragraph, the
+ *    no-solution example (renumbered we-(k+1), as the builder numbers it) and its note keep their places;
+ *  - exercises + solutions, when the number of exercises differs: the whole set is drawn again at the current
+ *    effective difficulty.
+ * Owner-visible: the comparison uses the package's actual counts, so examples or exercises added earlier by
+ * add_worked_example / add_exercises are discarded and redrawn whenever the new duration's count differs (they are
+ * kept only when it matches).
+ */
+function changeDuration(source: LessonPackage, durationMinutes: number, plan: AdjustmentPlan, seed: string, taken: Set<string>) {
+  const next = planOutline(durationMinutes);
+  const outline: LessonPackage["outline"] = {
+    totalMinutes: durationMinutes,
+    sections: source.outline.sections.map((o) => ({ ...o, minutes: sectionMinutes(o.kind, next) })),
+  };
+  const regenerate = new Set(plan.changed);
+  const teaching = sectionOfKind(source, "teaching_sequence");
+  const examples = sectionOfKind(source, "worked_examples");
+  const exercises = sectionOfKind(source, "exercises");
+  const known = new Set([teaching.id, examples.id, exercises.id]);
+  if (!regenerate.has(teaching.id) || plan.changed.some((id) => !known.has(id))) throw new Error("applyAdjustment: unexpected plan for change_duration");
+
+  const replaced: Section[] = [];
+  if (!teaching.blocks.some((b) => b.type === "timing")) throw new Error("applyAdjustment: the teaching sequence has no timing block");
+  const teachingBlocks = teaching.blocks.map((b): TeachingSequenceSection["blocks"][number] => (b.type === "timing" ? timingBlock(next) : b));
+  replaced.push({ ...teaching, blocks: teachingBlocks } as Section);
+
+  if (regenerate.has(examples.id)) {
+    const difficulty = examplesDifficulty(source, examples);
+    const fresh = drawNewQuestions(seed, { count: next.exampleCount, difficulty: exampleLevel(difficulty) }, taken, "examples");
+    for (const q of fresh) taken.add(questionFingerprint(q));
+    const degenerate = examples.blocks.filter((b): b is ExampleBlock => isExample(b) && !isUniqueExample(b));
+    if (degenerate.length > 1) throw new Error("applyAdjustment: more than one example without a unique solution");
+    const kept = degenerate.map((b) => renumberedDegenerate(source, b, `we-${fresh.length + 1}`));
+    const first = examples.blocks.findIndex(isUniqueExample);
+    if (first < 0) throw new Error("applyAdjustment: the worked examples section has no unique-solution example");
+    const rest = examples.blocks.filter((b) => !isUniqueExample(b)).map((b) => (b === degenerate[0] ? kept[0]! : b));
+    // Nothing before the first unique example is an example, so `first` is also its position in `rest`.
+    const blocks = [...rest.slice(0, first), ...fresh.map(workedExampleBlock), ...rest.slice(first)];
+    replaced.push({ ...examples, blocks, provenance: regeneratedProvenance(examples, seed, difficulty) } as Section);
+  }
+
+  if (regenerate.has(exercises.id)) {
+    replaced.push(...redrawExercises(source, seed, next.exerciseCount, effectiveSettings(source).difficulty, taken).sections);
+  }
+  return { replaced, outline };
+}
+
+/** The exercise-only adjustments: make_easier, make_harder, add_exercises. */
+function exerciseChange(source: LessonPackage, change: Extract<ApplicableChange, { action: "make_easier" | "make_harder" | "add_exercises" }>, seed: string, taken: ReadonlySet<string>): Section[] {
+  const current = effectiveSettings(source).difficulty;
+  if (change.action !== "add_exercises") {
+    const difficulty = LADDER[LADDER.indexOf(current) + (change.action === "make_harder" ? 1 : -1)]!;
+    const count = sectionOfKind(source, "exercises").blocks.filter((b) => b.type === "question").length;
+    return redrawExercises(source, seed, count, difficulty, taken).sections;
+  }
+  const exercises = sectionOfKind(source, "exercises");
+  const solutions = sectionOfKind(source, "solutions");
+  const count = exercises.blocks.filter((b) => b.type === "question").length;
+  const added = drawNewQuestions(seed, { count: change.count, difficulty: current, startIndex: count + 1, ramp: false }, taken);
+  const ids = new Set(exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : [])));
+  if (added.some((q) => ids.has(q.id))) throw new Error("applyAdjustment: a new question id is already taken");
+  // After add_exercises the section mixes questions drawn from earlier seeds with new ones and `seed` is only the
+  // latest: the recomputed inputsHash is then a self-consistency tag for the stored package, not proof that these
+  // inputs alone reproduce the section.
+  const provenance = { method: "deterministic" as const, seed, difficulty: current, generatorVersion: GENERATOR_VERSION };
+  return [
+    { ...exercises, blocks: placeMath(exercises.blocks, isExerciseMath, true, exerciseBlocksOf(added)), provenance } as Section,
+    { ...solutions, blocks: placeMath(solutions.blocks, isSolutionMath, true, solutionBlocksOf(added)), provenance } as Section,
+  ];
+}
+
+const withoutInputsHash = (s: Section | undefined) => (s ? Object.fromEntries(Object.entries(s).filter(([key]) => key !== "inputsHash")) : undefined);
+
 /**
  * Executes a deterministic adjustment and returns the new package, already rehashed and with one more `adjustments`
  * record. Pure: no clock, no randomness beyond `seed`, no I/O, and `pkg` is never modified. Throws
- * `AdjustmentNotApplicable` when the planner refuses the change or no new distinct questions can be drawn.
+ * `AdjustmentNotApplicable` when the planner refuses the change or no new distinct questions can be drawn. The
+ * planner's classification is the contract: what it rebuilds is rebuilt here, and every section it keeps or only
+ * rehashes is checked to come back unchanged.
  *
  * make_easier / make_harder: every exercise is drawn again, same count, one step down or up basic < mixed < challenge,
  * exactly as the generator lays out a set at that difficulty. Moving to mixed (basic -> harder, challenge -> easier)
@@ -286,67 +436,57 @@ const solutionBlocksOf = (qs: readonly GeneratedQuestion[]): SolutionBlock[] => 
  * add_exercises: the existing exercise and solution blocks stay byte-identical; the new questions continue the ids
  * (ex-(n+1), ...), are drawn at the current effective difficulty, and repeat no question already in the package.
  *
+ * add_worked_example: one new unique-solution example (id: the largest we-N plus one) right after the last
+ * unique-solution example, so the no-solution example and its note stay last. It is drawn at the level the builder
+ * uses for the worked examples' difficulty (basic -> basic, otherwise mixed), repeats no question of the package, and
+ * every other block stays byte-identical. The outline does not change.
+ *
+ * change_duration: see `changeDuration`. New questions repeat no question of the source, nor each other.
+ *
  * Product-visible behaviours (owner decisions recorded here; do not change without one):
  *  - add_exercises on a MIXED set appends every new question at the mixed level; the existing easy-to-hard ramp is
  *    not redone, so the set no longer ends on its hardest questions.
- *  - A regenerated exercises / solutions section keeps its title, its intro paragraphs and its `edited` flag: a tutor's
- *    correction to that wording survives make_easier, make_harder and add_exercises. Only the questions, writing spaces
+ *  - A regenerated exercises / solutions / worked examples section keeps its title, its intro paragraphs and its
+ *    `edited` flag: a tutor's correction to that wording survives the adjustment. Only the questions, writing spaces
  *    and solutions are replaced or appended.
+ *  - change_duration discards examples / exercises added earlier when the new duration's count differs.
  */
 export function applyAdjustment(pkg: LessonPackage, change: ApplicableChange, opts: { seed: string; context: CurriculumContext }): LessonPackage {
-  if (change.action === "add_worked_example" || change.action === "change_duration") {
-    throw new Error(`applyAdjustment: ${change.action} is not implemented yet`);
-  }
   const plan = planAdjustment(pkg, change); // throws AdjustmentNotApplicable
   if ((pkg.context as { contextHash?: unknown }).contextHash !== opts.context.contextHash) {
     throw new Error("applyAdjustment: the context is not the package's curriculum snapshot");
   }
   const source = structuredClone(pkg);
   const { seed } = opts;
-  const current = effectiveSettings(source).difficulty;
-  const exercises = source.sections.find((s): s is ExercisesSection => s.kind === "exercises")!;
-  const solutions = source.sections.find((s): s is SolutionsSection => s.kind === "solutions");
-  if (!solutions) throw new Error("applyAdjustment: the package has no solutions section");
-  const count = exercises.blocks.filter((b) => b.type === "question").length;
   const taken = takenFingerprints(source);
 
-  let difficulty: Difficulty;
-  let exerciseBlocks: ExerciseBlock[];
-  let solutionBlocks: SolutionBlock[];
-  if (change.action === "add_exercises") {
-    difficulty = current;
-    const added = drawNewQuestions(seed, { count: change.count, difficulty, startIndex: count + 1, ramp: false }, taken);
-    const ids = new Set(exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : [])));
-    if (added.some((q) => ids.has(q.id))) throw new Error("applyAdjustment: a new question id is already taken");
-    exerciseBlocks = placeMath(exercises.blocks, isExerciseMath, true, exerciseBlocksOf(added));
-    solutionBlocks = placeMath(solutions.blocks, isSolutionMath, true, solutionBlocksOf(added));
-  } else {
-    difficulty = LADDER[LADDER.indexOf(current) + (change.action === "make_harder" ? 1 : -1)]!;
-    const fresh = drawNewQuestions(seed, { count, difficulty }, taken);
-    exerciseBlocks = placeMath(exercises.blocks, isExerciseMath, false, exerciseBlocksOf(fresh));
-    solutionBlocks = placeMath(solutions.blocks, isSolutionMath, false, solutionBlocksOf(fresh));
-  }
+  let replaced: Section[];
+  let outline = source.outline;
+  if (change.action === "add_worked_example") replaced = addWorkedExample(source, seed, taken);
+  else if (change.action === "change_duration") ({ replaced, outline } = changeDuration(source, change.durationMinutes, plan, seed, taken));
+  else replaced = exerciseChange(source, change, seed, taken);
 
-  // Solutions derive from the exercises, so both record the same seed and difficulty. After add_exercises the section
-  // mixes questions drawn from earlier seeds with new ones and `seed` is only the latest: the recomputed inputsHash is
-  // then a self-consistency tag for the stored package, not proof that these inputs alone reproduce the section.
-  const provenance = { method: "deterministic" as const, seed, difficulty, generatorVersion: GENERATOR_VERSION };
+  const byId = new Map(replaced.map((s) => [s.id, s]));
+  const regenerated = new Set(plan.sections.filter((s) => s.disposition === "regenerate").map((s) => s.id));
+  for (const id of byId.keys()) if (!regenerated.has(id)) throw new Error(`applyAdjustment: section ${id} rebuilt but the plan does not regenerate it`);
   const next: LessonPackage = {
     ...source,
-    sections: source.sections.map((s) => {
-      if (s.id === exercises.id) return { ...s, blocks: exerciseBlocks, provenance } as Section;
-      if (s.id === solutions.id) return { ...s, blocks: solutionBlocks, provenance } as Section;
-      return s;
-    }),
+    outline,
+    sections: source.sections.map((s) => byId.get(s.id) ?? s),
     adjustments: [...(source.adjustments ?? []), { action: change.action, method: "deterministic", seed, sourceContentHash: packageContentHash(pkg) }],
   };
   const result = rehashPackage(next, source.request as Pick<LessonRequestV2, "difficulty">, opts.context);
 
-  // The plan is the contract: a section it keeps must come back byte for byte.
+  // The plan is the contract: a section it keeps must come back byte for byte, a rehashed one with only a new inputsHash.
+  const find = (p: LessonPackage, id: string) => p.sections.find((s) => s.id === id);
   for (const id of plan.unchanged) {
-    const before = pkg.sections.find((s) => s.id === id);
-    const after = result.sections.find((s) => s.id === id);
-    if (canonicalJson(before) !== canonicalJson(after)) throw new Error(`applyAdjustment: section ${id} changed but the plan keeps it`);
+    if (canonicalJson(find(pkg, id)) !== canonicalJson(find(result, id))) throw new Error(`applyAdjustment: section ${id} changed but the plan keeps it`);
   }
+  for (const id of plan.rehashed) {
+    if (canonicalJson(withoutInputsHash(find(pkg, id))) !== canonicalJson(withoutInputsHash(find(result, id)))) {
+      throw new Error(`applyAdjustment: section ${id} changed but the plan only rehashes it`);
+    }
+  }
+  if (!plan.outlineChanged && canonicalJson(result.outline) !== canonicalJson(pkg.outline)) throw new Error("applyAdjustment: the outline changed but the plan keeps it");
   return result;
 }
