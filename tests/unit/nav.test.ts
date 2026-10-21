@@ -25,6 +25,6 @@ describe("activeNavHref", () => {
 
 describe("NAV_ITEMS", () => {
   it("lists the workspace destinations in order", () => {
-    expect(NAV_ITEMS.map((i) => i.href)).toEqual(["/dashboard", "/prepare", "/lessons", "/lessons/new"]);
+    expect(NAV_ITEMS.map((i) => i.href)).toEqual(["/dashboard", "/prepare", "/lessons"]);
   });
 });
