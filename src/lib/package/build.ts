@@ -47,15 +47,56 @@ export function planOutline(totalMinutes: number) {
   return { explanation, examples, review, exercises, exerciseCount, exampleCount };
 }
 
+export type OutlinePlan = ReturnType<typeof planOutline>;
+
+/** The minutes the outline gives a section of this kind (the four timed sections; every other kind gets 0). */
+export function sectionMinutes(kind: SectionKind, plan: OutlinePlan): number {
+  switch (kind) {
+    case "explanation":
+      return plan.explanation;
+    case "worked_examples":
+      return plan.examples;
+    case "teaching_sequence":
+      return plan.review;
+    case "exercises":
+      return plan.exercises;
+    default:
+      return 0;
+  }
+}
+
+/** The teaching sequence's timing block for an outline plan. */
+export function timingBlock(plan: OutlinePlan): Extract<Section["blocks"][number], { type: "timing" }> {
+  return {
+    type: "timing",
+    items: [
+      { label: "Key ideas", minutes: Math.max(1, plan.explanation) },
+      { label: "Worked examples", minutes: Math.max(1, plan.examples) },
+      { label: "Exercises", minutes: Math.max(1, plan.exercises) },
+      { label: "Review", minutes: Math.max(1, plan.review) },
+    ],
+  };
+}
+
+/** The level worked examples are drawn at for a lesson difficulty: basic stays basic, anything else is the mixed set. */
+export const exampleLevel = (difficulty: "basic" | "mixed" | "challenge"): "basic" | "mixed" => (difficulty === "basic" ? "basic" : "mixed");
+
+/** The no-solution worked example a non-basic lesson ends its examples with; the equation depends on the seed only. */
+export const degenerateExample = (seed: string, id: string): GeneratedQuestion =>
+  generateLinearQuestion({ id, difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: `${seed}:we-degenerate` });
+
+/** A worked example block for a generated question. */
+export const workedExampleBlock = (q: GeneratedQuestion) => ({ type: "worked_example" as const, questionId: q.id, problem: q.problem, solution: q.solution, steps: q.steps });
+
+/** The note that follows the no-solution example (it must stay the last example). */
+export const NO_SOLUTION_NOTE = "The last example has no solution. Discuss why the unknown disappears and what that tells us.";
+
 const fingerprint = (q: GeneratedQuestion) => JSON.stringify(q.problem.equation);
 
 /** Examples and exercises never repeat an equation; the draw is deterministic and bounded. */
 function drawQuestions(seed: string, difficulty: "basic" | "mixed" | "challenge", exampleCount: number, exerciseCount: number, withDegenerateExample: boolean) {
-  const exampleLevel = difficulty === "basic" ? "basic" : "mixed";
-  const examples = generateExerciseSet({ jobSeed: `${seed}:examples`, count: exampleCount, difficulty: exampleLevel, idPrefix: "we" });
-  if (withDegenerateExample) {
-    examples.push(generateLinearQuestion({ id: `we-${examples.length + 1}`, difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: `${seed}:we-degenerate` }));
-  }
+  const examples = generateExerciseSet({ jobSeed: `${seed}:examples`, count: exampleCount, difficulty: exampleLevel(difficulty), idPrefix: "we" });
+  if (withDegenerateExample) examples.push(degenerateExample(seed, `we-${examples.length + 1}`));
   const taken = new Set(examples.map(fingerprint));
   for (let attempt = 0; attempt < 20; attempt++) {
     const exercises = generateExerciseSet({ jobSeed: `${seed}:exercises:${attempt}`, count: exerciseCount, difficulty, idPrefix: "ex" });
@@ -106,6 +147,9 @@ export function sectionInputsParams(kind: SectionKind, a: InputsParamsArgs): Rec
       return {};
   }
 }
+
+/** The one title an alignment section may carry (the validator requires it verbatim). */
+export const ALIGNMENT_TITLE = "Curriculum information";
 
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
@@ -160,7 +204,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
             { type: "list", items: ["Undo addition and subtraction first, using the opposite operation on both sides.", "Then undo multiplication or division, again on both sides.", "When the unknown appears on both sides, collect the unknown terms on one side first.", "Always check the answer by substituting it back into the original equation."] },
           ],
       ...llmMeta,
-      minutes: plan.explanation,
+      minutes: sectionMinutes("explanation", plan),
       params: paramsOf("explanation"),
     },
     {
@@ -188,11 +232,11 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       title: "Worked examples",
       blocks: [
         { type: "paragraph", text: prose ? prose.draft.exampleIntro : "Work through each example with the learner, asking them to name the next step before it is shown." },
-        ...examples.map((q) => ({ type: "worked_example" as const, questionId: q.id, problem: q.problem, solution: q.solution, steps: q.steps })),
-        ...(wantDegenerate ? [{ type: "note" as const, text: "The last example has no solution. Discuss why the unknown disappears and what that tells us." }] : []),
+        ...examples.map(workedExampleBlock),
+        ...(wantDegenerate ? [{ type: "note" as const, text: NO_SOLUTION_NOTE }] : []),
       ],
       ...llmMeta,
-      minutes: plan.examples,
+      minutes: sectionMinutes("worked_examples", plan),
       params: paramsOf("worked_examples"),
     },
     {
@@ -200,18 +244,10 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       title: "Teaching sequence",
       blocks: [
         { type: "list", items: prose ? prose.draft.teachingSequence : ["Recall earlier work and state the goal of the lesson.", "Introduce the key ideas and the method.", "Work through the examples together.", "Let the learner attempt the exercises, giving help only when asked.", "Review mistakes and summarize."] },
-        {
-          type: "timing",
-          items: [
-            { label: "Key ideas", minutes: Math.max(1, plan.explanation) },
-            { label: "Worked examples", minutes: Math.max(1, plan.examples) },
-            { label: "Exercises", minutes: Math.max(1, plan.exercises) },
-            { label: "Review", minutes: Math.max(1, plan.review) },
-          ],
-        },
+        timingBlock(plan),
       ],
       ...llmMeta,
-      minutes: plan.review,
+      minutes: sectionMinutes("teaching_sequence", plan),
       params: paramsOf("teaching_sequence"),
     },
     {
@@ -246,7 +282,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
         ]),
       ],
       method: "deterministic",
-      minutes: plan.exercises,
+      minutes: sectionMinutes("exercises", plan),
       params: paramsOf("exercises"),
     },
     {
@@ -262,7 +298,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
     },
     {
       kind: "alignment",
-      title: "Curriculum information",
+      title: ALIGNMENT_TITLE,
       blocks: [
         {
           type: "alignment",

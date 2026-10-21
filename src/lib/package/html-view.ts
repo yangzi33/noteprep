@@ -1,6 +1,7 @@
 import { equationTex, operationText, solutionText } from "@/lib/latex/math";
 import { DOCUMENT_TITLES } from "@/lib/latex/templates";
 import { splitInlineMath, type InlineMathPart } from "@/lib/ui/math-html";
+import { effectiveSettings } from "./effective";
 import { documentView } from "./views";
 import type { DocumentKind, LessonPackage, Section } from "./schema";
 
@@ -119,12 +120,12 @@ export function htmlDocument(pkg: LessonPackage, id: DocumentKind): HtmlDocument
   });
 
   const context = pkg.context as { topic: { title: string } };
-  const request = pkg.request as { difficulty: keyof typeof DIFFICULTY_LABEL; durationMinutes: number };
+  const effective = effectiveSettings(pkg);
   return {
     document: id,
     title: DOCUMENT_TITLES[id],
     subtitle: context.topic.title,
-    meta: id === "worksheet" ? null : `${Math.trunc(request.durationMinutes)} minutes · ${DIFFICULTY_LABEL[request.difficulty]}`,
+    meta: id === "worksheet" ? null : `${Math.trunc(effective.durationMinutes)} minutes · ${DIFFICULTY_LABEL[effective.difficulty]}`,
     sections,
   };
 }

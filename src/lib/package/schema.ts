@@ -61,7 +61,9 @@ export const AlignmentBlock = z.strictObject({
 
 const provenance = z.strictObject({
   method: z.enum(["deterministic", "llm", "tutor_edit"]),
-  seed: z.string().optional(),
+  seed: z.string().max(200).optional(),
+  /** Set when a quick adjustment gave this section a difficulty other than the request's. */
+  difficulty: z.enum(["basic", "mixed", "challenge"]).optional(),
   generatorVersion: z.string().optional(),
   promptVersion: z.string().optional(),
   model: z.string().max(100).optional(),
@@ -136,6 +138,18 @@ export const PackageSchema = z.strictObject({
   documents: z.array(z.strictObject({ id: z.enum(DOCUMENT_KINDS), sectionIds: z.array(Id).min(1), templateId: z.literal("classic") })).min(1).max(3),
   /** `from` is upstream: if it changes, `to` must be regenerated. */
   deps: z.array(z.strictObject({ from: Id, to: Id, kind: z.enum(["derives", "references"]) })),
+  /** Quick adjustments applied since the package was first built (absent on a package that was never adjusted). */
+  adjustments: z
+    .array(
+      z.strictObject({
+        action: z.string().regex(/^[a-z][a-z_]{0,39}$/),
+        method: z.enum(["deterministic", "llm", "tutor_edit"]),
+        seed: z.string().max(200).optional(),
+        sourceContentHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+      }),
+    )
+    .max(200)
+    .optional(),
 });
 export type LessonPackage = z.infer<typeof PackageSchema>;
 

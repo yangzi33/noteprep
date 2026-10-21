@@ -1,5 +1,6 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import type { LessonPackage, Section } from "@/lib/package/schema";
+import { effectiveSettings } from "@/lib/package/effective";
 import { documentView, type DocumentView } from "@/lib/package/views";
 import type { DocumentKind } from "@/lib/package/schema";
 import { equationTex, operationText, solutionText } from "./math";
@@ -90,10 +91,10 @@ function blockTex(block: Block, ctx: { question: number; compact: boolean; probl
 
 function headerTex(view: DocumentView, pkg: LessonPackage): string {
   const context = pkg.context as CurriculumContext;
-  const request = pkg.request as { difficulty: keyof typeof DIFFICULTY_LABEL; durationMinutes: number };
+  const effective = effectiveSettings(pkg);
   const lines = [`\\begin{center}`, `{\\Large \\textbf{${t(DOCUMENT_TITLES[view.document])}}}\\par\\medskip`, `{\\large ${t(context.topic.title)}}\\par`];
   if (view.document === "worksheet") lines.push("\\medskip", "Name: \\rule{6cm}{0.2pt}\\qquad Date: \\rule{3cm}{0.2pt}");
-  else lines.push("\\smallskip", `${Math.trunc(request.durationMinutes)} minutes \\quad ${t(DIFFICULTY_LABEL[request.difficulty])}`);
+  else lines.push("\\smallskip", `${Math.trunc(effective.durationMinutes)} minutes \\quad ${t(DIFFICULTY_LABEL[effective.difficulty])}`);
   lines.push("\\end{center}", "");
   if (view.document !== "worksheet") lines.push("\\textit{AI-assisted material. Review it before teaching.}", "");
   return lines.join("\n");

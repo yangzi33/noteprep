@@ -98,6 +98,49 @@ export class InvalidSelection extends DomainError {
   }
 }
 
+/** The requested adjustment cannot change this lesson (for example it is already at the easiest level). */
+export class AdjustmentNotApplicable extends DomainError {
+  constructor(
+    /** A machine-readable reason code (never user text). */
+    readonly reason: string,
+  ) {
+    super("ADJUSTMENT_NOT_APPLICABLE", "This adjustment does not apply to the lesson");
+  }
+}
+
+/** The lesson's head revision is no longer the revision the adjustment was requested against. */
+export class SourceSuperseded extends DomainError {
+  constructor() {
+    super("SOURCE_SUPERSEDED", "The lesson has changed since this adjustment was requested");
+  }
+}
+
+export class AdjustmentInProgress extends DomainError {
+  constructor() {
+    super("ADJUSTMENT_IN_PROGRESS", "An adjustment is already in progress for this lesson");
+  }
+}
+
+export class AdjustmentBudgetExhausted extends DomainError {
+  constructor() {
+    super("ADJUSTMENT_BUDGET_EXHAUSTED", "No adjustment budget remaining for this lesson");
+  }
+}
+
+/** The adjustment kind is switched off or its backend is unavailable in this environment. */
+export class AdjustmentUnavailable extends DomainError {
+  constructor() {
+    super("ADJUSTMENT_UNAVAILABLE", "This adjustment is not available");
+  }
+}
+
+/** A text correction failed validation. `codes` are machine-readable issue codes, never the text itself. */
+export class CorrectionRejected extends DomainError {
+  constructor(readonly codes: string[]) {
+    super("CORRECTION_REJECTED", "The correction was rejected");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

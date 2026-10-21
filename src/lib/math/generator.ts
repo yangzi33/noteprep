@@ -1,3 +1,4 @@
+import { canonicalJson } from "@/lib/domain/hash";
 import { Rng } from "./rng";
 import { Rational } from "./rational";
 import type { Equation, Problem, Question, Step } from "./schema";
@@ -214,30 +215,57 @@ export function difficultyRamp(count: number, difficulty: Difficulty): Difficult
   return Array.from({ length: count }, (_, i) => (i < third ? "basic" : i < 2 * third ? "mixed" : "challenge"));
 }
 
-function fingerprint(q: GeneratedQuestion): string {
-  return JSON.stringify(q.problem.equation);
+/**
+ * What makes two questions the same for de-duplication: the equation as written. Canonical JSON (sorted keys), so a
+ * stored block read back with another key order has the same fingerprint as the freshly generated question. Inside
+ * one set every equation has the generator's own key order, so de-duplication there is exactly as before.
+ */
+export function questionFingerprint(q: { problem: { equation: unknown } }): string {
+  return canonicalJson(q.problem.equation);
 }
+
+/** Thrown by `generateExerciseSet` when no distinct question can be drawn for a position. */
+export const DRAW_EXHAUSTED = "could not draw a distinct question";
 
 /**
  * A set of exercises with no repeated equation. Asking for "mixed" gives an easy-to-hard ramp. Each
  * question has its own seed derived from the job, and a repeat is re-drawn with a bumped sub-seed.
+ *
+ * The optional arguments exist for quick adjustments and change nothing when omitted:
+ *  startIndex  number of the first question (default 1), so appended questions continue the ids
+ *              (`ex-<startIndex>`, ...) and their per-question seeds
+ *  exclude     fingerprints (see `questionFingerprint`) that count as already taken, so a new question never
+ *              repeats one that is already in the package
+ *  ramp        false keeps every question at `difficulty`, also for "mixed" (default true: the ramp above)
  */
-export function generateExerciseSet(args: { jobSeed: string; count: number; difficulty: Difficulty; idPrefix?: string }): GeneratedQuestion[] {
+export function generateExerciseSet(args: {
+  jobSeed: string;
+  count: number;
+  difficulty: Difficulty;
+  idPrefix?: string;
+  startIndex?: number;
+  exclude?: ReadonlySet<string>;
+  ramp?: boolean;
+}): GeneratedQuestion[] {
   const prefix = args.idPrefix ?? "ex";
-  const levels = difficultyRamp(args.count, args.difficulty);
+  const start = args.startIndex ?? 1;
+  if (!Number.isInteger(start) || start < 1) throw new RangeError("startIndex must be a positive integer");
+  const exclude = args.exclude ?? new Set<string>();
+  const levels = args.ramp === false ? Array.from({ length: args.count }, () => args.difficulty) : difficultyRamp(args.count, args.difficulty);
   const seen = new Set<string>();
   const out: GeneratedQuestion[] = [];
   levels.forEach((level, i) => {
-    const id = `${prefix}-${i + 1}`;
+    const id = `${prefix}-${start + i}`;
     for (let retry = 0; retry < 50; retry++) {
       const q = generateLinearQuestion({ id, difficulty: level, seed: `${args.jobSeed}:${id}:${retry}` });
-      if (!seen.has(fingerprint(q))) {
-        seen.add(fingerprint(q));
+      const fp = questionFingerprint(q);
+      if (!seen.has(fp) && !exclude.has(fp)) {
+        seen.add(fp);
         out.push(q);
         return;
       }
     }
-    throw new Error("could not draw a distinct question"); // practically unreachable: thousands of variants exist per level
+    throw new Error(DRAW_EXHAUSTED); // practically unreachable without `exclude`: thousands of variants exist per level
   });
   return out;
 }
