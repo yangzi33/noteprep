@@ -1,11 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LandingPage } from "@/components/marketing/landing-page";
+import { LandingFooter, LandingPage } from "@/components/marketing/landing-page";
 import { PublicHeader } from "@/components/app/public-header";
 import { landingContent } from "@/lib/marketing/content";
 
-const html = renderToStaticMarkup(createElement(LandingPage));
+const html = renderToStaticMarkup(createElement(LandingPage)) + renderToStaticMarkup(createElement(LandingFooter));
 
 describe("landing page markup", () => {
   it("has exactly one h1 and no main element of its own", () => {

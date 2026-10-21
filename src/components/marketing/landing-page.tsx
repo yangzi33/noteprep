@@ -4,12 +4,11 @@ import {
   FinalCtaSection,
   HeroSection,
   HowItWorksSection,
-  LandingFooter,
   PricingSection,
   ShowcaseSection,
 } from "./sections";
 
-/** Landing content without the page landmark; the route wraps it in the single <main>. */
+/** Landing content without the page landmarks; the route wraps it in the single <main> and renders LandingFooter after it. */
 export function LandingPage() {
   return (
     <>
@@ -20,7 +19,8 @@ export function LandingPage() {
       <PricingSection />
       <FaqSection />
       <FinalCtaSection />
-      <LandingFooter />
     </>
   );
 }
+
+export { LandingFooter } from "./sections";
