@@ -190,7 +190,7 @@ describe("curriculum statements in the documents", () => {
     const p = testPackage({}, "s", "suggested", testContext("suggested", { objectives: [] }));
     const notes = renderDocument(p, "notes").tex;
     expect(notes).toContain("No curriculum alignment is claimed for this material.");
-    expect(notes).toContain("unofficial NotePrep suggestion for Fictional Mathematics Programme (Fiction Edition 7)");
+    expect(notes).toContain("unofficial NotePrep suggestion (``Fictional Mathematics Programme (Fiction Edition 7)'')");
     expect(notes).toContain("not endorsed by any curriculum authority");
     expect(notes).not.toMatch(/This lesson addresses objectives|test data|sample data/);
     expect(renderDocument(p, "worksheet").tex).toContain("No curriculum alignment is claimed.");

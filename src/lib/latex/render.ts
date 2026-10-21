@@ -35,7 +35,7 @@ function alignmentTex(block: Extract<Block, { type: "alignment" }>, compact: boo
     return [`This lesson addresses objectives from ${name}:`, "\\begin{itemize}", ...items, "\\end{itemize}"].join("\n");
   }
   // No claim is made for sample or test data, and the document says so in plain words.
-  const origin = noClaimOrigin(block.datasetKind, name);
+  const origin = noClaimOrigin(block.datasetKind, name, ["``", "''"]);
   return compact ? "No curriculum alignment is claimed." : `No curriculum alignment is claimed for this material.${origin}`;
 }
 

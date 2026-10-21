@@ -24,7 +24,7 @@ export function alignmentNotice(alignment: Pick<AlignmentView, "claim" | "curric
       : `Built from ${alignment.curriculumName} (${alignment.versionLabel}). This lesson makes no claim of alignment.`;
   }
   if (alignment.datasetKind === "suggested") {
-    return `Topic list: an unofficial NotePrep suggestion for ${alignment.curriculumName} (${alignment.versionLabel}). It is not an official curriculum and is not endorsed by any curriculum authority. This lesson makes no claim of alignment.`;
+    return `The topic list is an unofficial NotePrep suggestion (“${alignment.curriculumName} (${alignment.versionLabel})”). It is not an official curriculum and is not endorsed by any curriculum authority. This lesson makes no claim of alignment.`;
   }
   return `Based on the ${alignment.datasetKind === "synthetic" ? "test" : "sample"} dataset “${alignment.curriculumName}” (${alignment.versionLabel}). This is not a real curriculum and makes no claim of alignment.`;
 }

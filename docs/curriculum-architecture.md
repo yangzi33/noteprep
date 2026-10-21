@@ -218,8 +218,17 @@ A fourth dataset kind, `suggested` (D-74, D-75): an UNOFFICIAL mapping, written 
 
 - It never produces an alignment claim: `alignmentClaimsAllowed` is true only for `real` (`alignmentClaimsAllowedFor`).
 - It needs no official source URL, retrieval date or review record (the `real`-provenance CHECK only constrains `real`).
-- It carries no official codes: the validator rejects any objective or topic-objective link (`SUGGESTED_NO_OBJECTIVES`) and does not require a topic to have an objective. Course codes are NotePrep identifiers here.
+- It carries no official codes: the validator rejects any objective or topic-objective link (`SUGGESTED_NO_OBJECTIVES`) and does not require a topic to have an objective. Course codes and unit codes (if present) are NotePrep identifiers and must start with `NP-` (`SUGGESTED_CODE_PREFIX`), so they can never pass for official codes (D-75).
 - It must say so: the version label and the curriculum name must contain the word "suggested" (`KIND_LABEL`, as for sample and synthetic).
 - It is loadable and visible in every environment with no flag (unlike sample and synthetic). The Prepare page shows "Suggested topics, unofficial"; the PDF, the draft view and the lesson page say the topic list is an unofficial NotePrep suggestion, not an official curriculum, not endorsed by any curriculum authority.
+- Lessons: with no objectives, the "Learning objectives" section has exactly one line derived from NotePrep's own topic title (`Practise: <topic title>`, `learningObjectiveItems`). The validator treats it as dataset text (`DATASET_TEXT_ALTERED` still applies); the alignment block stays `none`, `alignmentClaimsAllowed` stays false, and the package validator also fails any package whose context allows alignment while the dataset kind is not `real`.
 - Stored lesson packages: the kind enums were widened, not changed, so old packages parse unchanged. `PACKAGE_SCHEMA_VERSION` is not bumped and no existing hash changes (old packages never contain the new value).
 - Migration `20261021120000_dataset_kind_suggested` is a single `ALTER TYPE dataset_kind ADD VALUE IF NOT EXISTS 'suggested'`.
+
+Rollback and known limitations of the `suggested` kind:
+
+- The migration is forward-only. Postgres cannot drop an enum value, so `dataset_kind` keeps `suggested` even if the code is reverted.
+- Rolling the application code back to a version without `suggested` makes its zod enums reject any stored lesson package or context that contains it (such lessons would show as unreadable until the code is rolled forward again). Old packages are unaffected.
+- A published suggested version is immutable like every other kind; a correction is a new version.
+- Known limitation: the curriculum name is not frozen in the database for a kind, so a later version of the same curriculum id could carry a different kind. Not addressed in this slice.
+- Known limitation: fixture and sample datasets are not blocked from being loaded by file path; the loader's environment options are the only guard for sample and synthetic data, and `suggested` fixtures can be loaded anywhere. Not addressed in this slice.
