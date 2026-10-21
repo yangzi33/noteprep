@@ -4,9 +4,11 @@ import type { HtmlBlock, HtmlDocument } from "@/lib/package/html-view";
 type Alignment = Extract<HtmlBlock, { type: "alignment" }>;
 
 // Wording mirrors alignmentTex in src/lib/latex/render.ts so the draft says what the PDF says.
-function AlignmentText({ block }: { block: Alignment }) {
+// Compact (worksheet and solutions) is the one-line form; notes keep the full form.
+function AlignmentText({ block, compact }: { block: Alignment; compact: boolean }) {
   const name = `${block.curriculumName} (${block.versionLabel})`;
   if (block.claim === "aligned") {
+    if (compact) return <p>{`Curriculum: ${name}.`}</p>;
     return (
       <>
         <p>This lesson addresses objectives from {name}:</p>
@@ -22,6 +24,7 @@ function AlignmentText({ block }: { block: Alignment }) {
       </>
     );
   }
+  if (compact) return <p>No curriculum alignment is claimed.</p>;
   const origin = block.datasetKind === "real" ? "" : ` It was prepared from ${block.datasetKind === "sample" ? "sample" : "test"} data (${name}) that is not a real curriculum.`;
   return <p>{`No curriculum alignment is claimed for this material.${origin}`}</p>;
 }
@@ -41,7 +44,7 @@ function Steps({ steps }: { steps: Extract<HtmlBlock, { type: "worked" }>["steps
   );
 }
 
-function Block({ block }: { block: HtmlBlock }) {
+function Block({ block, compact }: { block: HtmlBlock; compact: boolean }) {
   switch (block.type) {
     case "paragraph":
       return <p>{block.text}</p>;
@@ -102,12 +105,13 @@ function Block({ block }: { block: HtmlBlock }) {
           </div>
           <Steps steps={block.steps} />
           <p className="font-medium">
+            <strong>Answer:</strong>{" "}
             <Inlines parts={block.answer} />
           </p>
         </div>
       );
     case "alignment":
-      return <AlignmentText block={block} />;
+      return <AlignmentText block={block} compact={compact} />;
   }
 }
 
@@ -130,7 +134,7 @@ export function LessonDraft({ doc }: { doc: HtmlDocument }) {
         <section key={section.id} className="space-y-3">
           {section.kind === "alignment" ? null : <h2 className="font-heading text-lg font-semibold">{section.title}</h2>}
           {section.blocks.map((block, i) => (
-            <Block key={i} block={block} />
+            <Block key={i} block={block} compact={doc.document !== "notes"} />
           ))}
         </section>
       ))}
