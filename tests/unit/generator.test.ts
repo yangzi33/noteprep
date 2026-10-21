@@ -10,6 +10,7 @@ import {
   type GeneratedQuestion,
   type Outcome,
 } from "@/lib/math/generator";
+import { isChallengeLevel } from "@/lib/package/adjust";
 import { Rational, withinLimits } from "@/lib/math/rational";
 import { Rng } from "@/lib/math/rng";
 import { validateLinearQuestion, validateLessonMath } from "@/lib/math/validate";
@@ -292,5 +293,29 @@ describe("exercise sets for quick adjustments (optional startIndex, exclude, ram
     expect(questionFingerprint({ problem: { equation: reordered } })).toBe(questionFingerprint(q));
     const other = generateLinearQuestion({ id: "q", difficulty: "mixed", seed: "fp-2" });
     expect(questionFingerprint(other)).not.toBe(questionFingerprint(q));
+  });
+});
+
+describe("challenge classification used by add_exercises on a mixed set (D-72)", () => {
+  const classify = (q: GeneratedQuestion) => isChallengeLevel(q.problem, q.solution);
+
+  for (const level of ["basic", "mixed", "challenge"] as const) {
+    it(`classes every ${level} question as ${level === "challenge" ? "" : "not "}challenge-level`, () => {
+      for (let i = 0; i < 300; i++) {
+        const q = generateLinearQuestion({ id: "ex-1", difficulty: level, seed: `class-${level}-${i}` });
+        expect(classify(q), `${level} ${i}`).toBe(level === "challenge");
+      }
+    });
+  }
+
+  it("classes no_solution and identity questions as not challenge-level", () => {
+    for (const difficulty of ["mixed", "challenge"] as const) {
+      for (const outcome of ["no_solution", "identity"] as const) {
+        for (let i = 0; i < 100; i++) {
+          const q = generateLinearQuestion({ id: "ex-1", difficulty, seed: `class-${difficulty}-${outcome}-${i}`, form: "ax+b=cx+d", outcome });
+          expect(classify(q), `${difficulty} ${outcome} ${i}`).toBe(false);
+        }
+      }
+    }
   });
 });

@@ -411,10 +411,24 @@ function checkFresh(label: string, source: LessonPackage, change: AdjustmentChan
       const tail = questions(result).slice(n).length === change.count && added.every((b, i) => questions(result)[n + i] === b);
       if (level !== "mixed") expect(tail, `${label} appended at the end`).toBe(true);
       else {
-        // the new questions are contiguous, and everything behind them (the challenge group) is the source's tail
-        const first = questions(result).findIndex((b) => b.questionId === newIds[0]);
-        expect(questions(result).slice(first, first + change.count).map((b) => b.questionId), label).toEqual(newIds);
-        expect(canonicalJson(questions(result).slice(first + change.count)), label).toBe(canonicalJson(questions(source).slice(first)));
+        // Independent of adjust.ts: the source's challenge-level group is its trailing run of questions with a fractional
+        // answer or coefficient (rationals print as "p/q"). The new questions sit right before that run, and the set
+        // still ends on it, unchanged.
+        const fractional = (b: QuestionBlock) => {
+          const answer = solutions(source).find((x) => x.questionId === b.questionId)!.solution.value;
+          return [answer ?? "", ...Object.values(b.problem.params)].some((t) => t.includes("/"));
+        };
+        let run = 0;
+        for (const b of [...questions(source)].reverse()) {
+          if (!fractional(b)) break;
+          run++;
+        }
+        const at = n - run;
+        expect(questions(result).slice(at, at + change.count).map((b) => b.questionId), label).toEqual(newIds);
+        expect(canonicalJson(questions(result).slice(at + change.count)), label).toBe(canonicalJson(questions(source).slice(at)));
+        expect(canonicalJson(questions(result).slice(0, at)), label).toBe(canonicalJson(questions(source).slice(0, at)));
+        expect(canonicalJson(solutions(result).slice(at + change.count)), label).toBe(canonicalJson(solutions(source).slice(at)));
+        for (const b of questions(result).slice(at + change.count)) expect(fractional(b), label).toBe(true);
       }
       fresh(added);
       break;

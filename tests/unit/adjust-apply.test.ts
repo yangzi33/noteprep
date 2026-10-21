@@ -303,6 +303,27 @@ describe("add_exercises", () => {
     expect(validatePackage(pkg).overall).toBe("verified");
   });
 
+  it("appends at the end of a legacy mixed set whose added questions already follow the challenge group (old D-69 shape)", () => {
+    const added = apply(testPackage({ difficulty: "mixed", durationMinutes: 60 }, "mixed-legacy"), { action: "add_exercises", count: 2 });
+    // move ex-7 and ex-8 (inserted before the challenge group) behind it, as the old behaviour left them
+    const legacy = structuredClone(added);
+    const move = <B extends { type: string; questionId?: string }>(section: { blocks: B[] }, from: string, len: number) => {
+      const i = section.blocks.findIndex((b) => b.questionId === from);
+      const moved = section.blocks.splice(i, len);
+      let last = -1;
+      section.blocks.forEach((b, k) => {
+        if (b.type === "question" || b.type === "writing_space" || b.type === "solution") last = k;
+      });
+      section.blocks.splice(last + 1, 0, ...moved);
+    };
+    move(sectionOf(legacy, "exercises") as unknown as { blocks: { type: string; questionId?: string }[] }, "ex-7", 4);
+    move(sectionOf(legacy, "solutions") as unknown as { blocks: { type: string; questionId?: string }[] }, "ex-7", 2);
+    expect(questions(legacy).map((q) => q.questionId)).toEqual(["ex-1", "ex-2", "ex-3", "ex-4", "ex-5", "ex-6", "ex-7", "ex-8"]);
+    const result = apply(legacy, { action: "add_exercises", count: 1 });
+    expect(questions(result).map((q) => q.questionId)).toEqual(["ex-1", "ex-2", "ex-3", "ex-4", "ex-5", "ex-6", "ex-7", "ex-8", "ex-9"]);
+    expect(solutions(result).map((s) => s.questionId)).toEqual(questions(result).map((q) => q.questionId));
+  });
+
   it("appends at the end of a mixed set that has no challenge-level group", () => {
     const source = testPackage({ difficulty: "mixed", durationMinutes: 45 }, "mixed-short"); // 4 exercises: basic, basic, mixed, mixed
     const n = questions(source).length;
@@ -526,6 +547,7 @@ describe("add_worked_example", () => {
       if (!exampleFitsLevel(added, "basic")) basicOnly++;
       // the section now records the difficulty it was drawn for: the package's current one
       expect(sectionOf(result, "worked_examples").provenance.difficulty).toBe("mixed");
+      expectPlanHolds(harder, { action: "add_worked_example" }, result);
     }
     expect(basicOnly).toBeGreaterThan(0); // a basic-level draw would never leave the basic rules
   });

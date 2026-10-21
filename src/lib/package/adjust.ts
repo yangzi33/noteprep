@@ -259,14 +259,18 @@ function placeMath<B extends { type: string }>(blocks: readonly B[], isMath: (b:
  * challenge ones do not). Read from the stored content, so it still holds after earlier additions moved the ramp's
  * thirds; only the trailing run counts, so a set of any other shape just gets the new questions at its end.
  */
+export function isChallengeLevel(problem: { params: Record<string, string> }, solution: { kind: string; value?: string }): boolean {
+  const isInteger = (text: string) => Rational.tryParse(text)?.den === 1n;
+  if (solution.kind !== "unique" || solution.value === undefined) return false;
+  return !isInteger(solution.value) || !Object.values(problem.params).every(isInteger);
+}
+
 function challengeGroupStart(questions: readonly ExerciseBlock[], solutions: readonly SolutionBlock[]): number {
   const qs = questions.filter((b): b is Extract<ExerciseBlock, { type: "question" }> => b.type === "question");
   const answers = new Map(solutions.flatMap((b) => (b.type === "solution" ? [[b.questionId, b.solution] as const] : [])));
-  const isInteger = (text: string) => Rational.tryParse(text)?.den === 1n;
   const isChallenge = (q: (typeof qs)[number]) => {
     const solution = answers.get(q.questionId);
-    if (!solution || solution.kind !== "unique" || solution.value === undefined) return false;
-    return !isInteger(solution.value) || !Object.values(q.problem.params).every(isInteger);
+    return solution !== undefined && isChallengeLevel(q.problem, solution);
   };
   let start = qs.length;
   while (start > 0 && isChallenge(qs[start - 1]!)) start--;
@@ -366,7 +370,7 @@ function addWorkedExample(source: LessonPackage, seed: string, taken: ReadonlySe
  * change_duration. The outline is the builder's for the new duration; the plan says which sections are rebuilt:
  *  - teaching_sequence: only its timing block is replaced (the builder's, for the new outline);
  *  - worked_examples, when the number of unique-solution examples differs from the new outline's: the unique examples
- *    are drawn again (we-1..we-k, the builder's draw at the section's difficulty); the intro paragraph, the
+ *    are drawn again (we-1..we-k, the builder's draw at the package's current effective difficulty, D-72); the intro paragraph, the
  *    no-solution example (copied as stored, renumbered we-(k+1) as the builder numbers it) and its note keep their
  *    places;
  *  - exercises + solutions, when the number of exercises differs: the whole set is drawn again at the current
