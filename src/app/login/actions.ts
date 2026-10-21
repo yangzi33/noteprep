@@ -21,7 +21,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   // One message for every failure (wrong password, unknown or unconfirmed address).
   if (error) redirect("/login?error=invalid");
-  redirect("/account");
+  redirect("/dashboard");
 }
 
 export async function signUp(formData: FormData) {

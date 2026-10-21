@@ -16,10 +16,10 @@ describe("safeNextPath (open redirect defence)", () => {
     "/ok\nSet-Cookie: x=1",
     `/${"a".repeat(300)}`,
   ])("falls back for %j", (bad) => {
-    expect(safeNextPath(bad)).toBe("/account");
+    expect(safeNextPath(bad)).toBe("/dashboard");
   });
   it("falls back for missing values and honours a custom fallback", () => {
-    expect(safeNextPath(null)).toBe("/account");
+    expect(safeNextPath(null)).toBe("/dashboard");
     expect(safeNextPath(undefined, "/home")).toBe("/home");
   });
 });
