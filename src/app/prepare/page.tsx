@@ -111,7 +111,8 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   }
 
   const fields = buildSelectFields({ curricula, params, steps, stepOptions });
-  const sample = path !== null && path.curriculum.kind !== "real";
+  const sample = path !== null && (path.curriculum.kind === "sample" || path.curriculum.kind === "synthetic");
+  const suggested = path !== null && path.curriculum.kind === "suggested";
   const topic = path?.topic ?? null;
   const topicSupported = topic !== null && topic.supported;
   const topicOptions = stepOptions.topic ?? [];
@@ -130,6 +131,11 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         {sample && (
           <Notice intent="info" data-testid="sample-banner">
             Sample data, not a real curriculum. No curriculum alignment is claimed for lessons made from it.
+          </Notice>
+        )}
+        {suggested && (
+          <Notice intent="info" data-testid="suggested-banner">
+            Suggested topics, unofficial. NotePrep wrote this list; it is not an official curriculum, and no curriculum alignment is claimed for lessons made from it.
           </Notice>
         )}
         <SelectionFields fields={fields} params={params} />
