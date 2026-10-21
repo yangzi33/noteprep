@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { LoginForm } from "@/components/app/login-form";
-import { SignedInHome } from "@/components/app/signed-in-home";
 import { SignedOutHome } from "@/components/marketing/signed-out-home";
+import { homeTarget } from "@/lib/ui/home-target";
 import { loginMessage } from "@/lib/ui/login-messages";
 
 const noop = async () => {};
@@ -63,11 +63,9 @@ describe("home page branches", () => {
     expect(html.indexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
     expect(html).toMatch(/href="\/login"[^>]*>Get started/);
   });
-  it("signed-in home keeps Prepare a lesson and no marketing", () => {
-    const html = renderToStaticMarkup(createElement(SignedInHome));
-    expect(html.match(/<h1[ >]/g)).toHaveLength(1);
-    expect(html.match(/<main[ >]/g)).toHaveLength(1);
-    expect(html).toMatch(/href="\/prepare"[^>]*>Prepare a lesson/);
-    expect(html).not.toMatch(/Get started/);
+  it("sends signed-in visitors to the dashboard and everyone else to the landing page", () => {
+    expect(homeTarget({ id: "u1" })).toBe("/dashboard");
+    expect(homeTarget(null)).toBe("landing");
+    expect(homeTarget(undefined)).toBe("landing");
   });
 });

@@ -1,6 +1,9 @@
 # dependencies
 /node_modules
 
+# agent worktrees
+/.claude/worktrees/
+
 # next.js
 /.next/
 /out/

@@ -13,7 +13,7 @@
 | U3 作业页 | `feat/ui-jobs` | `/jobs/[id]` 生成进度卡片与步骤列表(失败/取消不显示步骤列表)、仅供读屏的 live 行、`prefers-reduced-motion` | [ui-jobs](superpowers/plans/2026-10-20-ui-jobs.md) |
 | U4 课包页 | `feat/ui-lesson` | `/lessons/[id]` 的编译 PDF 视图 + HTML 草稿预览(`?view=draft`,D-60)、KaTeX 0.19.0(本地打包 CSS/字体)、只读 DAL 方法 `getLessonPackage` | [ui-lesson](superpowers/plans/2026-10-20-ui-lesson.md) |
 
-进行中(**不在上述分支上,本清单不涉及其验证**):U5(仪表盘与 My materials,`feat/ui-dashboard`)、U7(落地页,`feat/ui-landing`)。U6(预设调整与文字更正)阻塞于 M6 后端,尚未开始。
+已合并进 `feat/ui-integration`(**尚未合并进 main**):U5(仪表盘与 My materials,`feat/ui-dashboard`)、U7(落地页/公共页头/登录与账户/not-found,`feat/ui-landing`)。登录后访问 `/` 现在重定向到 `/dashboard`(纯函数 `homeTarget`,`SignedInHome` 组件已删除)。U6(预设调整与文字更正)阻塞于 M6 后端,尚未开始。
 
 ## 2. 命令顺序(运行所有尚未运行的测试)
 
@@ -170,11 +170,18 @@ pnpm db:down
 - `pnpm lint` 会扫描 `.claude/worktrees/**`;worktree 清理后需要加 eslint ignore 与 `.gitignore` 条目。
 - **未决风险**:KaTeX CSS/字体打包与路由使用已在构建中看到产出(一个 CSS chunk、20 个 woff2),但从未在浏览器里确认;`ownership.test.ts` 与 `lesson-request-v2.test.ts` 未运行;新的草稿 E2E 未运行。
 
-### U5 仪表盘(进行中的分支 `feat/ui-dashboard`,审阅发现,均为"修复中,见 feat/ui-dashboard")
-- 各卡片的仪表盘链接名称相同(修复中,见 feat/ui-dashboard)。
-- "Recent documents" 措辞,正改名为 "Recent activity"(修复中,见 feat/ui-dashboard)。
-- 缺少 failed/canceled 且带 revisionId 的卡片测试用例(修复中,见 feat/ui-dashboard)。
-- 缺少已有数据的仪表盘 E2E(修复中,见 feat/ui-dashboard)。
+### U5 仪表盘(已合并进 `feat/ui-integration`,未进 main)
+- 新增/改动但**尚未执行**的测试:`tests/e2e/dashboard.spec.ts` 的两个测试(新账户仪表盘;有数据的仪表盘)。
+- 已知遗留的小问题(延后):标题为空时卡片链接会得到 "Open: " 标签;过长标题的显示未处理;E2E 只检查 aria-label 的模式,未检查具体文案。
+
+### U7 落地页与公共页面(已合并进 `feat/ui-integration`,未进 main)
+- 新增/改动但**尚未执行**的测试:`tests/e2e/landing.spec.ts`(签出访客的落地页入口链接;登录后 `/` 重定向到 `/dashboard`)。
+- 已知遗留的小问题(延后):
+  - 禁用措辞列表仍不完整,例如 "free of mistakes"、"zero mistakes"、"without errors"、"always right"、"verified"、"curriculum aligned"、"instantly"、"any topic"、"in seconds"。
+  - "Exercises at different difficulty levels" 与 Basic 难度的说法未核实。
+  - `SignedOutHeader` 调用了两次 `getRequestUser`(layout 与 header 各一次)。
+  - 没有 E2E 覆盖:已登录时 `/login` 只显示一个页头;not-found 页。
+  - **落地页与 Figma 的保真度未比对**(代理拿到的 Figma 截图不可读),需要人工在 1440 与 390 宽度下做一次视觉检查。
 
 ## 6. 合并顺序
 
@@ -184,6 +191,6 @@ pnpm db:down
 2. `feat/ui-prepare`(U2)
 3. `feat/ui-jobs`(U3)
 4. `feat/ui-lesson`(U4)
-5. 然后是并行分支(各自基于哪个分支以其计划为准,**合并前需重新核对冲突**):`feat/ui-dashboard`(U5,进行中)、`feat/ui-landing`(U7,进行中)。U5 若新增 DAL 只读方法,还需要 `pnpm test:integration`。
+5. 然后是并行分支(各自基于哪个分支以其计划为准,**合并前需重新核对冲突**):`feat/ui-dashboard`(U5)、`feat/ui-landing`(U7);二者已合并进 `feat/ui-integration`。U5 若新增 DAL 只读方法,还需要 `pnpm test:integration`。
 
 CLAUDE.md §7 的一句修订(预览双轨,D-60)在提交 `5090dca` 中,该提交属于 `docs/figma-ui-plan`,经 `feat/ui-foundation` 的祖先链进入;合并时请确认它随栈一起进入 main。

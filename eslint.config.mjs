@@ -48,7 +48,7 @@ const eslintConfig = defineConfig([
     files: ENV_FILES,
     rules: { "no-restricted-properties": "off" },
   },
-  globalIgnores(["src/generated/**", ".next/**", "out/**", "build/**", "coverage/**", "dist/**", "next-env.d.ts"]),
+  globalIgnores(["src/generated/**", ".next/**", "out/**", "build/**", "coverage/**", "dist/**", ".claude/worktrees/**", "next-env.d.ts"]),
 ]);
 
 export default eslintConfig;

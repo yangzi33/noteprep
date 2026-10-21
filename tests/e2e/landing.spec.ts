@@ -1,4 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { createUser, deleteCreatedUsers, signIn } from "./support/helpers";
+
+test.afterAll(deleteCreatedUsers);
+
+test("a signed-in visitor on / is redirected to the dashboard", async ({ page }) => {
+  await signIn(page, await createUser());
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/dashboard$/);
+});
 
 test("signed-out visitors see the landing page with working entry links", async ({ page }) => {
   await page.goto("/");
