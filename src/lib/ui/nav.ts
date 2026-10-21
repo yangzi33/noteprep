@@ -1,6 +1,7 @@
-export type NavIcon = "create" | "materials" | "legacy";
+export type NavIcon = "dashboard" | "create" | "materials" | "legacy";
 
 export const NAV_ITEMS: readonly { href: string; label: string; icon: NavIcon }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/prepare", label: "Create material", icon: "create" },
   { href: "/lessons", label: "My materials", icon: "materials" },
   { href: "/lessons/new", label: "Quick form", icon: "legacy" },

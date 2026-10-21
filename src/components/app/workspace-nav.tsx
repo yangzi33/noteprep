@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Files, FileText, SquarePen } from "lucide-react";
+import { Files, FileText, LayoutDashboard, SquarePen } from "lucide-react";
 import { cn } from "cn";
 import { activeNavHref, NAV_ITEMS, type NavIcon } from "@/lib/ui/nav";
 
 const ICONS: Record<NavIcon, typeof SquarePen> = {
+  dashboard: LayoutDashboard,
   create: SquarePen,
   materials: Files,
   legacy: FileText,
