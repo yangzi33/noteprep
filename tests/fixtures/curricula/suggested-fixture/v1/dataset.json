@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "suggested-system",
+    "name": "Suggested Test System",
+    "regionCode": "ZZ"
+  },
+  "curriculum": {
+    "id": "suggested-fixture",
+    "name": "Suggested topics for Test Course (unofficial)",
+    "subject": "math"
+  },
+  "version": {
+    "id": "suggested-fixture@v1",
+    "label": "Suggested v1 (unofficial)",
+    "kind": "suggested",
+    "source": {
+      "title": "Written by NotePrep for tests: an unofficial mapping, not an official source"
+    },
+    "licenseNote": "Written by NotePrep; names the course only to describe it; no official text, codes or logos."
+  }
+}

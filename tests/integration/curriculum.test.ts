@@ -22,6 +22,7 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 const SAMPLE = read("data/curricula/sample-math/sample-1");
 const WITH_LEVELS = read("tests/fixtures/curricula/synthetic-levels/v1");
 const NO_LEVELS = read("tests/fixtures/curricula/synthetic-nolevels/v1");
+const SUGGESTED = read("tests/fixtures/curricula/suggested-fixture/v1");
 
 // Visibility variants of the same database.
 const everything = createCurriculumDal(appDb, { allowSample: true, allowSynthetic: true });
@@ -33,6 +34,7 @@ beforeAll(async () => {
   await loadDataset(ownerDb, SAMPLE, { allowSample: true });
   await loadDataset(ownerDb, WITH_LEVELS, { allowSynthetic: true });
   await loadDataset(ownerDb, NO_LEVELS, { allowSynthetic: true });
+  await loadDataset(ownerDb, SUGGESTED); // no option: suggested topics are loadable anywhere
 });
 afterAll(async () => {
   await Promise.all([admin.end(), app.end(), worker.end(), ownerDb.$disconnect(), appDb.$disconnect()]);
@@ -51,7 +53,7 @@ function renamed(dataset: Dataset, versionId: string, tweak: (d: Dataset) => voi
 
 describe("loading datasets", () => {
   it("loads the shipped and fixture datasets completely and publishes them", async () => {
-    for (const d of [SAMPLE, WITH_LEVELS, NO_LEVELS]) {
+    for (const d of [SAMPLE, WITH_LEVELS, NO_LEVELS, SUGGESTED]) {
       const v = await admin.query(`SELECT status, dataset_kind, dataset_hash FROM curriculum_version WHERE id = $1`, [d.meta.version.id]);
       expect(v.rows[0]).toMatchObject({ status: "published", dataset_kind: d.meta.version.kind });
       expect(await count("curriculum_topic", "version_id = $1", [d.meta.version.id])).toBe(d.structure.topics.length);
@@ -149,6 +151,32 @@ describe("who can touch curriculum data", () => {
       }
       expect(await pgErrorCode(() => app.query(`INSERT INTO ${table} SELECT * FROM ${table} LIMIT 0`)), table).toBe(CODES.forbidden);
     }
+  });
+});
+
+describe("a published suggested version is immutable like the others", () => {
+  const versionId = SUGGESTED.meta.version.id;
+  it("freezes its rows and its version row", async () => {
+    const topic = SUGGESTED.structure.topics[0]!;
+    expect(await pgErrorCode(() => admin.query(`UPDATE curriculum_topic SET title = 'changed' WHERE id = $1`, [topic.id]))).toBe(CODES.state);
+    expect(await pgErrorCode(() => admin.query(`DELETE FROM topic_concept WHERE version_id = $1`, [versionId]))).toBe(CODES.state);
+    expect(await pgErrorCode(() => admin.query(`UPDATE curriculum_version SET label = 'new label' WHERE id = $1`, [versionId]))).toBe(CODES.state);
+    expect(await pgErrorCode(() => admin.query(`UPDATE curriculum_version SET dataset_kind = 'real' WHERE id = $1`, [versionId]))).toBe(CODES.state);
+    expect(await pgErrorCode(() => admin.query(`DELETE FROM curriculum_version WHERE id = $1`, [versionId]))).toBe(CODES.state);
+  });
+  it("different content under the same version id is refused; the same content is a no-op", async () => {
+    expect(await loadDataset(ownerDb, SUGGESTED)).toEqual({ versionId, outcome: "unchanged" });
+    const changed = clone(SUGGESTED);
+    changed.structure.topics[0]!.title += " (edited)";
+    expect(await loadDataset(ownerDb, changed).catch((e) => e)).toMatchObject({ code: "VERSION_CHANGED" });
+  });
+  it("the loader rejects a suggested dataset without the word suggested or with official objectives", async () => {
+    const unlabeled = renamed(SUGGESTED, "suggested-fixture@nolabel", (d) => void (d.meta.version.label = "Version 1"));
+    expect(await loadDataset(ownerDb, unlabeled).catch((e) => e)).toMatchObject({ code: "DATASET_INVALID" });
+    const withObjective = renamed(SUGGESTED, "suggested-fixture@obj", (d) =>
+      d.objectives.objectives.push({ id: "suggested-fixture@obj/o1", unitId: d.structure.units[0]!.id, officialCode: "A1", label: "x", sourceRef: "s" }),
+    );
+    expect(await loadDataset(ownerDb, withObjective).catch((e) => e)).toMatchObject({ code: "DATASET_INVALID" });
   });
 });
 
@@ -274,6 +302,7 @@ describe("database constraints on curriculum rows", () => {
     expect(await insert("synthetic-constraints@real-bad", "real")).toBe(CODES.check);
     expect(await insert("synthetic-constraints@real-ok", "real", "with-provenance")).toBeNull();
     expect(await insert("synthetic-constraints@sample-ok", "sample")).toBeNull();
+    expect(await insert("synthetic-constraints@suggested-ok", "suggested")).toBeNull(); // no source URL or review needed
   });
   it("the version needs a license note and a well-formed hash", async () => {
     expect(await q(`INSERT INTO curriculum_version (id, curriculum_id, label, dataset_kind, source_title, license_note, dataset_hash) VALUES ('synthetic-constraints@nolicense', 'synthetic-constraints', 'x', 'sample', 's', ' ', $1)`, [`sha256:${"e".repeat(64)}`])).toBe(CODES.check);
@@ -292,9 +321,9 @@ describe("engine concepts", () => {
 });
 
 describe("what the application can see (DAL)", () => {
-  it("shows nothing in a production-like environment, even though sample and synthetic rows exist in the database", async () => {
-    expect(await count("curriculum_version", "dataset_kind <> 'real'")).toBeGreaterThan(0);
-    expect(await productionLike.listCurricula()).toEqual([]);
+  it("shows only suggested topics in a production-like environment, even though sample and synthetic rows exist in the database", async () => {
+    expect(await count("curriculum_version", "dataset_kind NOT IN ('real', 'suggested')")).toBeGreaterThan(0);
+    expect((await productionLike.listCurricula()).map((c) => c.id)).toEqual(["suggested-fixture"]);
     for (const id of [SAMPLE.meta.version.id, WITH_LEVELS.meta.version.id]) {
       await expect(productionLike.getSelectionSteps(id)).rejects.toBeInstanceOf(CurriculumNotFound);
       await expect(productionLike.getSelectionOptions({ versionId: id })).rejects.toBeInstanceOf(CurriculumNotFound);
@@ -307,6 +336,13 @@ describe("what the application can see (DAL)", () => {
     expect(ids).toContain("sample-math");
     expect(ids).not.toContain("synthetic-levels");
     expect((await everything.listCurricula()).map((c) => c.id)).toEqual(expect.arrayContaining(["sample-math", "synthetic-levels", "synthetic-nolevels"]));
+  });
+  it("a suggested dataset is visible in every environment, with its kind", async () => {
+    for (const dal of [productionLike, createCurriculumDal(appDb, { allowSample: true }), everything]) {
+      const found = (await dal.listCurricula()).find((c) => c.id === "suggested-fixture")!;
+      expect(found.versions).toEqual([{ id: SUGGESTED.meta.version.id, label: "Suggested v1 (unofficial)", kind: "suggested" }]);
+      expect(await dal.getSelectionSteps(SUGGESTED.meta.version.id)).toEqual(["course", "unit", "topic"]);
+    }
   });
   it("lists curricula with their education system and version kind", async () => {
     const sample = (await everything.listCurricula()).find((c) => c.id === "sample-math")!;
@@ -439,6 +475,16 @@ describe("resolving the curriculum context", () => {
     expect((await everything.resolveCurriculumContext({ versionId, topicId: topicBoth })).alignmentClaimsAllowed).toBe(false);
     const synthetic = await everything.resolveCurriculumContext({ versionId: WITH_LEVELS.meta.version.id, topicId: WITH_LEVELS.structure.topics[0]!.id });
     expect(synthetic.alignmentClaimsAllowed).toBe(false);
+  });
+
+  it("suggested data resolves a context with alignment disabled, no objectives and no official codes", async () => {
+    const t1 = SUGGESTED.structure.topics[0]!.id;
+    const ctx = await productionLike.resolveCurriculumContext({ versionId: SUGGESTED.meta.version.id, topicId: t1 });
+    expect(ctx.curriculum.version).toMatchObject({ kind: "suggested", source: { url: null, retrievedAt: null } });
+    expect(ctx.alignmentClaimsAllowed).toBe(false);
+    expect(ctx.objectives).toEqual([]);
+    expect(verifyContextHash(ctx)).toBe(true);
+    await expect(productionLike.resolveCurriculumContext({ versionId: SUGGESTED.meta.version.id, topicId: SUGGESTED.structure.topics[1]!.id })).rejects.toBeInstanceOf(TopicUnsupported); // not verified yet
   });
 
   it("carries a partial-coverage note through so the document can be honest about it", async () => {

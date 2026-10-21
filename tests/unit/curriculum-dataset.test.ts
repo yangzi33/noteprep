@@ -16,9 +16,10 @@ const codes = (d: Dataset) => validateDataset(d).map((i) => i.code);
 const SAMPLE = "data/curricula/sample-math/sample-1";
 const WITH_LEVELS = "tests/fixtures/curricula/synthetic-levels/v1";
 const NO_LEVELS = "tests/fixtures/curricula/synthetic-nolevels/v1";
+const SUGGESTED = "tests/fixtures/curricula/suggested-fixture/v1";
 
 describe("shipped and fixture datasets are valid", () => {
-  it.each([SAMPLE, WITH_LEVELS, NO_LEVELS])("%s", (dir) => {
+  it.each([SAMPLE, WITH_LEVELS, NO_LEVELS, SUGGESTED])("%s", (dir) => {
     expect(validateDataset(load(dir))).toEqual([]);
   });
   it("the sample dataset announces itself as invented, everywhere it names itself", () => {
@@ -143,6 +144,45 @@ describe("each dataset rule is enforced", () => {
       d.meta.version.effectiveFrom = "2021-09-01";
       d.meta.version.source.retrievedAt = "2026-01-01T12:30:00.123+05:30";
       expect(codes(d)).toEqual([]);
+    });
+  });
+
+  describe("suggested datasets (unofficial NotePrep mappings)", () => {
+    it("are accepted with their label, with no source URL, no review record and no official codes", () => {
+      const d = load(SUGGESTED);
+      expect(d.meta.version.kind).toBe("suggested");
+      expect(d.meta.version.source.url).toBeUndefined();
+      expect(d.meta.version.review).toBeUndefined();
+      expect(codes(d)).toEqual([]);
+    });
+    it.each([
+      ["a version label without the word suggested", (d: Dataset) => void (d.meta.version.label = "Version 1 (unofficial)")],
+      ["a curriculum name without the word suggested", (d: Dataset) => void (d.meta.curriculum.name = "Test Course")],
+    ])("rejects %s", (_n, mutate) => {
+      const d = clone(load(SUGGESTED));
+      mutate(d);
+      expect(codes(d)).toContain("KIND_LABEL");
+    });
+    it("rejects objectives and topic-objective links: a suggestion carries no official codes", () => {
+      const d = clone(load(SUGGESTED));
+      d.objectives.objectives.push({ id: `${d.meta.version.id}/obj/o1`, unitId: d.structure.units[0]!.id, officialCode: "A1.1", label: "x", sourceRef: "s" });
+      expect(codes(d)).toContain("SUGGESTED_NO_OBJECTIVES");
+      const e = clone(load(SUGGESTED));
+      e.mappings.topicObjectives.push({ topicId: e.structure.topics[0]!.id, objectiveId: `${e.meta.version.id}/obj/o1`, coverage: "full" });
+      expect(codes(e)).toContain("SUGGESTED_NO_OBJECTIVES");
+    });
+    it("does not need a topic to have an objective", () => {
+      expect(codes(load(SUGGESTED))).not.toContain("TOPIC_WITHOUT_OBJECTIVE");
+    });
+    it("leaves the other kinds' rules unchanged", () => {
+      const sample = clone(load(SAMPLE));
+      sample.mappings.topicObjectives = [];
+      expect(codes(sample)).toContain("TOPIC_WITHOUT_OBJECTIVE");
+      const noLabel = clone(load(SUGGESTED));
+      noLabel.meta.version.kind = "sample";
+      expect(codes(noLabel)).toContain("KIND_LABEL"); // "suggested" does not satisfy the sample label rule
+      noLabel.meta.version.kind = "real";
+      expect(codes(noLabel)).toEqual(expect.arrayContaining(["REAL_NEEDS_SOURCE", "REAL_NEEDS_REVIEW"]));
     });
   });
 

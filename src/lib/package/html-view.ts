@@ -1,3 +1,4 @@
+import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { equationTex, operationText, solutionText } from "@/lib/latex/math";
 import { DOCUMENT_TITLES } from "@/lib/latex/templates";
 import { splitInlineMath, type InlineMathPart } from "@/lib/ui/math-html";
@@ -27,7 +28,7 @@ export type HtmlBlock =
       claim: "aligned" | "none";
       curriculumName: string;
       versionLabel: string;
-      datasetKind: "real" | "sample" | "synthetic";
+      datasetKind: DatasetKind;
       objectives: { officialCode: string | null; label: string; partial: boolean; note: string | null }[];
     };
 

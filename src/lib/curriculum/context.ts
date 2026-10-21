@@ -33,9 +33,14 @@ export interface CurriculumContext {
   }[];
   prerequisites: { topicId: string; title: string }[];
   concepts: { id: string; name: string; coverage: Coverage; note: string | null; capability: Pick<Capability, "generatorVersion" | "validatorVersion" | "forms" | "difficulties" | "outcomes"> }[];
-  /** False for sample and synthetic data: such lessons must not render any curriculum alignment claim. */
+  /** False for sample, synthetic and suggested data: such lessons must not render any curriculum alignment claim. */
   alignmentClaimsAllowed: boolean;
   contextHash: string;
+}
+
+/** Only a real, reviewed dataset may ever allow a curriculum alignment claim; sample, synthetic and suggested data never do. */
+export function alignmentClaimsAllowedFor(kind: DatasetKind): boolean {
+  return kind === "real";
 }
 
 export type UnhashedContext = Omit<CurriculumContext, "contextHash">;

@@ -30,7 +30,8 @@ export interface DatasetIssue {
     | "ORDINAL_RANGE"
     | "DATE_INVALID"
     | "REAL_SOURCE_URL"
-    | "REAL_REVIEW_BLANK";
+    | "REAL_REVIEW_BLANK"
+    | "SUGGESTED_NO_OBJECTIVES";
   where: string;
   detail?: string;
 }
@@ -212,7 +213,8 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     }
   });
   structure.topics.forEach((t, i) => {
-    if (!objectiveTopics.has(t.id)) add("TOPIC_WITHOUT_OBJECTIVE", `topics[${i}]`, t.id); // no objective, nothing to trace alignment to
+    // a suggested mapping has no objectives to trace (it carries no official codes), so it is exempt
+    if (meta.version.kind !== "suggested" && !objectiveTopics.has(t.id)) add("TOPIC_WITHOUT_OBJECTIVE", `topics[${i}]`, t.id); // no objective, nothing to trace alignment to
   });
 
   const topicConceptKeys = new Set<string>();
@@ -272,9 +274,14 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     }
     if (v.review && (v.review.by.trim() === "" || v.review.scope.trim() === "")) add("REAL_REVIEW_BLANK", "version.review", "reviewer and scope must not be blank");
   } else {
-    // sample and synthetic data must announce themselves so they cannot pass for a real curriculum
-    const word = v.kind === "sample" ? /sample/i : /synthetic/i;
+    // sample, synthetic and suggested data must announce themselves so they cannot pass for a real curriculum
+    const word = v.kind === "sample" ? /sample/i : v.kind === "synthetic" ? /synthetic/i : /suggested/i;
     if (!word.test(v.label) || !word.test(meta.curriculum.name)) add("KIND_LABEL", "version.label", `${v.kind} datasets must say so in the version label and curriculum name`);
+  }
+  if (v.kind === "suggested") {
+    // An unofficial suggestion never carries official objectives or codes, so it can never be traced to (or mistaken for) an alignment claim.
+    if (objectives.objectives.length > 0) add("SUGGESTED_NO_OBJECTIVES", "objectives", "a suggested dataset must not define objectives or official codes");
+    if (mappings.topicObjectives.length > 0) add("SUGGESTED_NO_OBJECTIVES", "topicObjectives", "a suggested dataset must not link topics to objectives");
   }
   return issues;
 }

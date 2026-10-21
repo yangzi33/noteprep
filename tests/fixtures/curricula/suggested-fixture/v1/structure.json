@@ -1,0 +1,35 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "suggested-fixture@v1/course",
+      "code": "SUGG-1",
+      "title": "Test Course (suggested topics)",
+      "ordinal": 1
+    }
+  ],
+  "units": [
+    {
+      "id": "suggested-fixture@v1/course/u1",
+      "courseId": "suggested-fixture@v1/course",
+      "title": "Equations",
+      "ordinal": 1
+    }
+  ],
+  "topics": [
+    {
+      "id": "suggested-fixture@v1/course/u1/t1",
+      "unitId": "suggested-fixture@v1/course/u1",
+      "title": "Solving linear equations",
+      "summary": "A NotePrep topic that has verified practice.",
+      "ordinal": 1
+    },
+    {
+      "id": "suggested-fixture@v1/course/u1/t2",
+      "unitId": "suggested-fixture@v1/course/u1",
+      "title": "Quadratic equations",
+      "summary": "A suggested topic NotePrep cannot verify yet.",
+      "ordinal": 2
+    }
+  ]
+}
