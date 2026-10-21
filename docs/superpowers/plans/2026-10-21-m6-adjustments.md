@@ -330,6 +330,22 @@ export function effectiveSettings(pkg: LessonPackage): { difficulty: "basic" | "
 - **结果**:被编辑节 `provenance.method='tutor_edit'`、`edited:true`,保留 seed/generatorVersion/difficulty;`inputsHash` 按非 LLM 参数重算。产生新草稿(origin `correct`),重新渲染与编译;不是生成,共享调整限额。
 - 校验器新增:对所有非 alignment 节的标题运行 `checkText`。alignment 的固定标题 "Curriculum information" 会命中 `CLAIM_WORDS`(`prose-rules.ts:35`),它不可编辑,所以排除。
 - **可用性代价**:导师不能输入任何数字,包括 "step two" 这类数量短语(`prose-rules.ts:8,20-29`)。
+- **S1 已实现的更正文字规则**(`src/lib/package/correct.ts` 的 `correctionTextProblems`,2026-10-21;问题只返回代码,从不返回文字):
+  - **规范化**:NFC;弯引号 ‘ ’ “ ” 转成直引号 `'` 与 `"`;所有空白(制表、换行、NBSP 等)折叠成一个空格并去掉首尾。零宽与双向控制字符不算空白,保留下来由字符检查拒绝。
+  - **字符**:沿用 `checkText`:禁止任何数字与数学/标记字符(`= $ \ < > { } ^ _ ~ |`),只允许字母、组合标记、空格与 `. , ; : ' " ( ) ! ? - – —`;所以 `&`、`/`、`%` 一律被拒绝(`PROSE_UNUSUAL_CHARACTERS`)。
+  - **数字词(`number_word`)**,集合由代码生成而非手写:
+    - 词干 `zero`、`two`..`nineteen`、`twenty`..`ninety`、`hundred`、`thousand`、`million`、`billion`、`trillion`、`dozen`、`myriad`、`googol`,各自本身以及加后缀 `s`/`es`/`th`/`ths`/`fold`/`folds`/`some`/`ish`;以 y 结尾的词干再加 `ieth`/`ieths`/`ies`(`twentieth`、`nineties`)。
+    - 不规则词:`fifth(s)`、`eighth(s)`、`ninth(s)`、`twelfth(s)`、`third(s)`、`half`/`halves`/`halve`/`halved`/`halving`、`quarter(s)`/`quartered`、`twice`、`thrice`、`double`..`decuple`(及 `-s`、`-d`)、`doubling`、`tripling`、`single`、`couple(s)`、`pair(s)`、`duo`、`trio`、`quartet`、`quintet`、`sextet`、`octet`(及复数)、`twain`、`decade(s)`、`century`/`centuries`、`nought(s)`、`naught`、`nil`。
+    - 由两个及以上数字词(含 `one`)**整词拼接**而成的词(`twentyone`、`sevenhundred`);按整词切分判断,不按子串,所以 `often`、`stone`、`money`、`none` 不受影响。连字符或空格分开的(`twenty-one`)按单词逐个命中。
+    - 全大写、至少 2 个字母且是合法罗马数字的词(`II`、`XIX`、`MMXXVI`;也会命中 `MIX`)。`I`、`DIM`、`CIVIC` 不是罗马数字,放行。
+    - `one` 只允许出现在白名单里:紧跟在 `no`/`each`/`this`/`that`/`which`/`any`/`every` 之后;紧接在 `of`/`way`/`another`/`side`/`at a time` 之前;以及 `one by one`。其余的 `one` 一律拒绝;另有一层"作为运算数或值"的正则作为第二道网。
+    - 明确放行:`first`、`second`、`next`、`last`、`once`、`score`、`gross`、`brace`,以及只是包含数字词的词(`someone`、`thirdly`、`halfway`、`doubly`)。
+  - **仅对导师输入的三条规则**(生成文字不受影响):`url_like`(字母后紧跟冒号再接字母或 `/`,如 `javascript:alert`、`mailto:x`);`word_too_long`(按空白与各种横线切分后任一词超过 40 个字符);`unprintable_characters`(LaTeX 渲染器会打印成 "?" 的字母或标记:其他文字系统、残留的组合标记)。
+  - **`compatibility_characters`**:文字经 NFKC 后会变化即拒绝(全角字母、`Ĳ` 这类合字、上标)。
+  - **课程名骨架规则**(`PROSE_NAMES_CURRICULUM`):把文字与课程名、版本标签、代码以及对齐节标题都化成"骨架"——小写、去重音(NFD 去组合标记)、按折叠表把 `ı ø ł đ ð æ œ ß þ ŋ ħ ŧ ſ ƒ` 换成相近的拉丁字母、只保留字母与数字;文字骨架包含任一长度 ≥ 4 的名称骨架即拒绝。短于 4 的名称骨架被跳过(否则会命中普通词)。
+  - **请求级规则**:同一目标出现两次为 `duplicate_target`;全部编辑都是无操作则为 `nothing_changed`。
+  - **导师因此失去的说法(已接受的代价,见 D-69 第 3 项)**:`work in pairs`、`a single step`、`double check`、`half`、`decade`、`trio`、`the right one`、`pick one example`、`more than one method`,以及恰好构成罗马数字的大写词 `MIX`、`XL`、`CD`、`MD`、`DC`、`CM`、`MM`。
+  - **建议(数据集校验器,尚未实现)**:当课程名、版本标签或代码化成骨架后少于 6 个字母/数字,或本身是常见英文单词时给出警告;这类名称会让骨架规则误伤普通文字,或因短于 4 被跳过而失去保护。
 
 ### 2.7 Web 接口(U6 需要的后端)
 
