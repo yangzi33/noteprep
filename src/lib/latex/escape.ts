@@ -44,6 +44,14 @@ const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "
 const MAX_TEXT = 5000;
 
 /**
+ * True when `escapeText` renders this single character as itself or as a fixed escape sequence, false when it would
+ * print "?" (the same tables `escapeText` uses, so callers that refuse unprintable input cannot drift from it).
+ */
+export function printsLiterally(ch: string): boolean {
+  return SPECIAL[ch] !== undefined || PLAIN.test(ch) || (LATIN_LETTER.test(ch) && !UNPRINTABLE_LETTERS.has(ch));
+}
+
+/**
  * Turns arbitrary text into text that LaTeX prints literally. Every character is either passed through from a short
  * safe list, replaced by a fixed escape sequence, or replaced by "?" when the pinned fonts cannot print it (emoji, other
  * scripts, control characters). Nothing in the input can start a command: a backslash, brace, dollar, percent, caret

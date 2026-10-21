@@ -4,7 +4,7 @@ import type { TextEdit } from "@/lib/domain/adjustment";
 import { AdjustmentNotApplicable, CorrectionRejected } from "@/lib/domain/errors";
 import { canonicalJson } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
-import { escapeText } from "@/lib/latex/escape";
+import { escapeText, printsLiterally } from "@/lib/latex/escape";
 import { assertTexIsSafe, renderPackage } from "@/lib/latex/render";
 import { Rng } from "@/lib/math/rng";
 import { packageContentHash, planAdjustment } from "@/lib/package/adjust";
@@ -13,7 +13,8 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { rehashPackage } from "@/lib/package/inputs";
 import { PackageSchema, type LessonPackage, type Section, type SectionKind } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
-import { testPackage } from "../fixtures/package";
+import { testContext, testPackage } from "../fixtures/package";
+import { checkText, curriculumNames } from "@/lib/package/prose-rules";
 
 type Block = Section["blocks"][number];
 type Target = TextEdit["target"];
@@ -291,7 +292,7 @@ describe("checkCorrections: hostile text", () => {
   });
 
   it("accepts plain prose, including the punctuation the prose rules allow and accented Latin letters", () => {
-    for (const text of ["Don't rush: check the \"sign\" (carefully) — then move on!", "A naïve guess is fine; refine it.", "Add two examples if needed.", "No one is perfect, each one learns."]) {
+    for (const text of ["Don't rush: check the \"sign\" (carefully) — then move on!", "A naïve guess is fine; refine it.", "Add more examples if needed.", "No one is perfect, each one learns."]) {
       expect(codesOf(pkg, para(text)), text).toEqual([]);
     }
   });
@@ -514,4 +515,131 @@ describe("applyCorrections: seeded sweep", () => {
     }
     expect(totalEdits).toBeGreaterThanOrEqual(N);
   }, 60_000);
+});
+
+describe("fix round 1: curriculum name variants", () => {
+  const northwind = testContext("sample", {
+    curriculum: {
+      id: "northwind",
+      name: "Northwind Algebra Path",
+      educationSystem: { id: "nw", name: "Invented system", regionCode: "XX" },
+      version: { id: "northwind@r", label: "Northwind Revised", kind: "sample", source: { title: "Invented", url: null, publisher: null, retrievedAt: null } },
+    },
+    objectives: [{ id: "o1", officialCode: "NW-ALG-A", label: "Solve equations with one unknown", coverage: "full", note: null, source: { ref: "invented", page: null } }],
+  });
+  const pkg = testPackage({}, "seed-nw", "sample", northwind);
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+  const title = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "title" }, text }];
+
+  it("the package for the invented curriculum is verified", () => {
+    expect(validatePackage(pkg).overall).toBe("verified");
+  });
+
+  it.each([
+    "Northwind-Algebra-Path",
+    "Northwind, Algebra Path",
+    "North wind Algebra Path",
+    "Nörthwind Algebra Path",
+    "Northwind-Revised",
+    "We follow NW ALG A here",
+    "NW–ALG–A",
+    "NWALGA",
+    "ŃW-ALG-A",
+    "Curriculum-Information",
+  ])("refuses %j in body text and titles", (text) => {
+    expect(codesOf(pkg, para(text))).toContain("PROSE_NAMES_CURRICULUM");
+    expect(codesOf(pkg, title(text))).toContain("PROSE_NAMES_CURRICULUM");
+  });
+
+  it("accepts prose that only shares short words with the names", () => {
+    for (const text of ["Walk the path north with the algebra.", "The wind blew; we revised the algebra together.", "A new walk along a different path.", "Algebra is a path to clear thinking."]) {
+      expect(codesOf(pkg, para(text)), text).toEqual([]);
+    }
+  });
+
+  it("the sample dataset's names are refused in their variants too", () => {
+    const sample = testContext("sample", {
+      curriculum: {
+        id: "sample-math",
+        name: "Sample Mathematics (not a real curriculum)",
+        educationSystem: { id: "sample-system", name: "Sample system", regionCode: "XX" },
+        version: { id: "sample-math@sample-1", label: "Sample 1 (not a real curriculum)", kind: "sample", source: { title: "Invented", url: null, publisher: null, retrievedAt: null } },
+      },
+    });
+    const p = testPackage({}, "seed-s", "sample", sample);
+    const edit = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+    expect(codesOf(p, edit("Sample-Mathematics: not a real Curriculum"))).toContain("PROSE_NAMES_CURRICULUM");
+    expect(codesOf(p, edit("SAMPLE MATHEMATICS NOT A REAL CURRICULUM"))).toContain("PROSE_NAMES_CURRICULUM");
+    expect(codesOf(p, edit("Sample a few mathematics problems first."))).toEqual([]);
+  });
+
+  it("generated-text checking is unchanged: checkText still matches names by plain substring only", () => {
+    expect(checkText("Northwind-Algebra-Path", curriculumNames(northwind))).toEqual([]);
+  });
+});
+
+describe("fix round 1: number words", () => {
+  const pkg = testPackage();
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+
+  it.each([
+    "Look at step two",
+    "The answer is seven",
+    "x equals seven",
+    "Divide both sides of the equation by seven",
+    "Add one to both sides",
+    "Multiply both sides by half",
+    "Double both sides",
+    "Add a dozen to each side",
+    "x is three squared",
+    "Twenty-one learners",
+    "Take one-half of it",
+    "It is negative one",
+    "Then one plus the unknown",
+    "Divide everything on the left side by one",
+    "Do it twice",
+    "A third of the class",
+    "Halve each side",
+    "Work in pairs",
+    "Use a single step",
+    "Move on to the fifth example",
+    "ZERO is special",
+  ])("refuses %j", (text) => {
+    expect(codesOf(pkg, para(text))).toContain("number_word");
+  });
+
+  it.each([
+    "Explain why the balance method works.",
+    "Check your answer by substitution.",
+    "Read the first example slowly, then the second.",
+    "Someone on the phone was alone, and often thirdly halfway.",
+    "No one should rush; each one checks once at the end.",
+    "Take the next step and the last step carefully.",
+    "One way is to undo the operations.",
+  ])("accepts %j", (text) => {
+    expect(codesOf(pkg, para(text))).toEqual([]);
+  });
+});
+
+describe("fix round 1: characters", () => {
+  const pkg = testPackage();
+  const para = (text: string): TextEdit[] => [{ sectionId: ID.explanation, target: { field: "block_text", blockIndex: 0 }, text }];
+
+  it("typographic quotes become plain quotes before checking and storing; & / % stay refused", () => {
+    const out = applyCorrections(pkg, para("Don’t say ‘easy’ or “simple”."), ctxOf(pkg));
+    expect((blocksOf(out, ID.explanation)[0] as { text: string }).text).toBe("Don't say 'easy' or \"simple\".");
+    for (const text of ["Salt & pepper", "either/or", "fully %"]) expect(codesOf(pkg, para(text)), text).toContain("PROSE_UNUSUAL_CHARACTERS");
+  });
+
+  it("the NFKC clause alone refuses the Ĳ ligature (a printable Latin Extended-A letter)", () => {
+    expect(printsLiterally("Ĳ")).toBe(true);
+    expect(checkText("Ĳssel lake", [])).toEqual([]);
+    expect(codesOf(pkg, para("Ĳssel lake"))).toEqual(["compatibility_characters"]);
+    expect(codesOf(pkg, para("ĳs"))).toEqual(["compatibility_characters"]);
+  });
+
+  it("letters are checked with the renderer's own table", () => {
+    for (const ch of ["Ħ", "ŉ", "ſ", "Ω", "ж", "q\u0301"]) expect(codesOf(pkg, para(`Word ${ch} here`)), ch).toContain("unprintable_characters");
+    for (const ch of ["é", "Ž", "ő", "ç"]) expect(codesOf(pkg, para(`Word ${ch} here`)), ch).toEqual([]);
+  });
 });

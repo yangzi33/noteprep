@@ -9,7 +9,8 @@ export type EditableBlockType = "paragraph" | "note" | "list" | "step_list";
  * item at a time (`block_item`). Every other block (questions, worked examples, solutions, writing space, timing,
  * alignment) is math or dataset content and never editable; neither are the dataset lists of objectives and
  * prerequisites, the derivation's paragraphs, notes and lists, or anything in the alignment section. A kind that
- * cannot hold a block type does not list it (teaching_sequence has no notes in the schema).
+ * cannot hold a block type does not list it: section 2.6 names notes for teaching_sequence, exercises and solutions,
+ * but the schema allows no note block in any of those three kinds.
  */
 export const EDITABLE_BLOCKS: Readonly<Record<SectionKind, readonly EditableBlockType[]>> = Object.freeze({
   objectives: Object.freeze(["paragraph"] as const),

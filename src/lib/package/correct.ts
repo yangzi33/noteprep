@@ -4,7 +4,9 @@ import { TextEditTarget, type TextEdit } from "@/lib/domain/adjustment";
 import { CorrectionRejected } from "@/lib/domain/errors";
 import { canonicalJson } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
+import { printsLiterally } from "@/lib/latex/escape";
 import { packageContentHash, planAdjustment } from "./adjust";
+import { ALIGNMENT_TITLE } from "./build";
 import { resolveEditTarget } from "./editable";
 import { rehashPackage } from "./inputs";
 import { checkText, curriculumNames } from "./prose-rules";
@@ -22,33 +24,75 @@ export const MAX_TEXT_LENGTH = 600;
 export const MAX_WORD_LENGTH = 40;
 
 /**
- * The wording as it is checked and stored: NFC, every whitespace run (tabs, newlines, NBSP, other Unicode spaces)
- * collapsed to one space, trimmed. Invisible format characters (zero-width, bidi controls) are not whitespace and stay,
- * so the character check rejects them.
+ * The wording as it is checked and stored: NFC; typographic single and double quotes (‘ ’ “ ”, which phone keyboards
+ * insert) replaced by the plain ' and "; every whitespace run (tabs, newlines, NBSP, other Unicode spaces) collapsed
+ * to one space; trimmed. Invisible format characters (zero-width, bidi controls) are not whitespace and stay, so the
+ * character check rejects them.
  */
 export function normalizeEditText(raw: string): string {
-  return raw.normalize("NFC").replace(/\s+/gu, " ").trim();
+  return raw.normalize("NFC").replace(/[‘’]/gu, "'").replace(/[“”]/gu, '"').replace(/\s+/gu, " ").trim();
 }
 
 /** A scheme glued to what follows ("javascript:alert", "mailto:x", "ftp://"): a link even without "http" or a domain. */
 const URL_LIKE = /\p{L}:(?=[\p{L}/])/u;
+
 /**
- * Letters the LaTeX renderer prints (escapeText: ASCII letters, Latin-1 and Latin Extended-A, minus the ones the pinned
- * fonts lack). Anything else would print as "?", and a letter from another script can look like a Latin one and slip a
- * banned word ("curriculum" with a Cyrillic "u") past the word rules.
+ * Words that state a quantity (plan 2.6: a tutor cannot type any number, "step two" included; D-65). Banned as whole
+ * words, case-insensitively; a hyphen is a word boundary, so "twenty-one" and "one-half" are caught.
+ *  - cardinals: zero, two..twenty, thirty, forty, fifty, sixty, seventy, eighty, ninety, hundred(s), thousand(s),
+ *    million(s), billion(s), dozen(s);
+ *  - fractions and ordinals from third on: half, halves, halve(d), quarter(s), third(s), fourth(s) .. tenth(s);
+ *  - multiplicative and counting words: twice, thrice, double(s/d), triple(s/d), single, couple(s), pair(s).
+ * Deliberately allowed: "one" (also a pronoun: "no one", "each one", "one way"; it is refused only as an operand, see
+ * ONE_AS_OPERAND), "first" and "second" (ordinary sequencing; "second" is also a unit), "next", "last", "once", and
+ * words that merely contain a number word ("someone", "often", "thirdly", "halfway", "doubly").
  */
-const PRINTABLE_LETTER = /^[A-Za-zÀ-ſ]$/u;
-const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
+const NUMBER_WORD_LIST = [
+  "zero", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+  "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+  "hundreds?", "thousands?", "millions?", "billions?", "dozens?",
+  "half", "halves", "halved?", "quarters?", "thirds?", "fourths?", "fifths?", "sixths?", "sevenths?", "eighths?", "ninths?", "tenths?",
+  "twice", "thrice", "doubles?", "doubled", "triples?", "tripled", "single", "couples?", "pairs?",
+];
+const NUMBER_WORD = new RegExp(`(?<![\\p{L}\\p{N}])(?:${NUMBER_WORD_LIST.join("|")})(?![\\p{L}\\p{N}])`, "iu");
+/** "one" used as a number: an operand of an operation ("add one to", "divide both sides by one", "minus one", "one plus x"). */
+const ONE_AS_OPERAND = new RegExp(
+  [
+    "\\b(?:add|adds|added|adding|subtract|subtracts|subtracted|subtracting|take away|takes away|taking away) one\\b",
+    "\\b(?:divide|divides|divided|dividing|multiply|multiplies|multiplied|multiplying)\\b(?: [\\p{L}']+){0,6} by one\\b",
+    "\\b(?:plus|minus|times|negative|squared|cubed|equals|equal to) one\\b",
+    "\\bone (?:plus|minus|times|squared|cubed)\\b",
+  ].join("|"),
+  "iu",
+);
+
+/** Lowercase letters and digits only, accents removed: "Nörthwind-Algebra, Path" -> "northwindalgebrapath". */
+export function nameSkeleton(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+}
+/** Names shorter than this (as skeletons) are skipped: they would match inside ordinary words. */
+const MIN_SKELETON = 4;
+
+/** The skeletons a correction may not contain: the validator's curriculum names (name, version label, codes) and the alignment title. */
+export function curriculumSkeletons(context: CurriculumContext): string[] {
+  return [...new Set([...curriculumNames(context), ALIGNMENT_TITLE].map(nameSkeleton).filter((s) => s.length >= MIN_SKELETON))];
+}
 
 /**
  * Every rule a corrected text breaks, as stable codes (never the text). The same prose rules the validator applies to
  * generated wording (checkText: digits and math or markup characters, URLs and domains, number words used as operands,
  * curriculum claims and grade levels, meta text, curriculum names and codes, characters outside letters, spaces and
- * plain punctuation), plus rules for typed input: not empty, length, word length, URL-like schemes, and letters the
- * renderer can print (compatibility forms such as full-width letters or ligatures, other scripts and leftover combining
- * marks are refused).
+ * plain punctuation), plus rules for typed input only (generated text is not affected):
+ *  - not empty, length, and no word longer than MAX_WORD_LENGTH;
+ *  - `url_like`: a scheme glued to what follows;
+ *  - `number_word`: NUMBER_WORD_LIST, and "one" as an operand;
+ *  - `PROSE_NAMES_CURRICULUM` also when the skeleton of the text contains a curriculum skeleton (spacing, punctuation,
+ *    case and accent variants of a name or code);
+ *  - `compatibility_characters`: the text changes under NFKC (full-width letters, ligatures such as Ĳ, superscripts);
+ *  - `unprintable_characters`: a letter or mark the LaTeX renderer would print as "?" (other scripts, which can also
+ *    look like Latin letters and slip a banned word past the word rules, and leftover combining marks).
  */
-export function correctionTextProblems(raw: string, kind: "title" | "text", names: readonly string[]): string[] {
+export function correctionTextProblems(raw: string, kind: "title" | "text", names: readonly string[], skeletons: readonly string[] = []): string[] {
   if (raw.length > MAX_TEXT_LENGTH) return ["text_too_long"];
   const text = normalizeEditText(raw);
   if (text.length === 0) return ["text_empty"];
@@ -57,8 +101,11 @@ export function correctionTextProblems(raw: string, kind: "title" | "text", name
   codes.push(...checkText(text, [...names]));
   if (URL_LIKE.test(text)) codes.push("url_like");
   if (text.split(/[\s\-–—]+/u).some((word) => [...word].length > MAX_WORD_LENGTH)) codes.push("word_too_long");
-  const printable = text.normalize("NFKC") === text && [...text].every((ch) => !/[\p{L}\p{M}]/u.test(ch) || (PRINTABLE_LETTER.test(ch) && !UNPRINTABLE_LETTERS.has(ch)));
-  if (!printable) codes.push("unprintable_characters");
+  if (NUMBER_WORD.test(text) || ONE_AS_OPERAND.test(text)) codes.push("number_word");
+  const skeleton = nameSkeleton(text);
+  if (skeletons.some((s) => skeleton.includes(s))) codes.push("PROSE_NAMES_CURRICULUM");
+  if (text.normalize("NFKC") !== text) codes.push("compatibility_characters");
+  if (![...text].every((ch) => !/[\p{L}\p{M}]/u.test(ch) || printsLiterally(ch))) codes.push("unprintable_characters");
   return [...new Set(codes)];
 }
 
@@ -80,6 +127,7 @@ function check(pkg: LessonPackage, edits: readonly TextEdit[], context: Curricul
   if (!Array.isArray(edits)) return { issues: [{ code: "invalid_edit" }], effective };
   if (edits.length > MAX_EDITS) return { issues: [{ code: "too_many_edits" }], effective };
   const names = curriculumNames(context);
+  const skeletons = curriculumSkeletons(context);
   const seen = new Set<string>();
   edits.forEach((raw: unknown, i) => {
     const where = `edit:${i}`;
@@ -99,7 +147,7 @@ function check(pkg: LessonPackage, edits: readonly TextEdit[], context: Curricul
     seen.add(key);
     const text = edit.text.length > MAX_TEXT_LENGTH ? edit.text : normalizeEditText(edit.text);
     if (text === resolved.current) return; // a no-op: allowed, ignored
-    for (const code of correctionTextProblems(edit.text, edit.target.field === "title" ? "title" : "text", names)) issues.push({ code, where });
+    for (const code of correctionTextProblems(edit.text, edit.target.field === "title" ? "title" : "text", names, skeletons)) issues.push({ code, where });
     effective.push({ ...edit, text });
   });
   if (issues.length === 0 && effective.length === 0) issues.push({ code: "nothing_changed" });
