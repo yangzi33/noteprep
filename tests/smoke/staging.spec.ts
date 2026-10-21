@@ -18,7 +18,7 @@ test("staging: sign in, generate, preview, and every PDF downloads", async ({ pa
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/account$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await page.goto("/lessons");
   const allowance = ((await page.getByTestId("allowance").textContent()) ?? "").trim();
   expect(Number(/^(\d+) of \d+ generations left/.exec(allowance)?.[1] ?? 0), "no free generations left: use a new throwaway staging user").toBeGreaterThan(0);

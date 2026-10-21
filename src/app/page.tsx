@@ -1,27 +1,10 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { SignedOutHome } from "@/components/marketing/signed-out-home";
 import { getRequestUser } from "@/lib/server/auth/require-user";
+import { homeTarget } from "@/lib/ui/home-target";
 
 export default async function HomePage() {
-  const user = await getRequestUser();
-  return (
-    <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">noteprep</h1>
-      <p className="mt-2">Lesson preparation for independent math tutors.</p>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Phase 1 skeleton: the generation pipeline runs end to end, but the lessons are placeholders, not real handouts.
-      </p>
-      <div className="mt-6">
-        {user ? (
-          <Button asChild>
-            <Link href="/prepare">Prepare a lesson</Link>
-          </Button>
-        ) : (
-          <Button asChild>
-            <Link href="/login">Sign in</Link>
-          </Button>
-        )}
-      </div>
-    </main>
-  );
+  const target = homeTarget(await getRequestUser());
+  if (target !== "landing") redirect(target);
+  return <SignedOutHome />;
 }

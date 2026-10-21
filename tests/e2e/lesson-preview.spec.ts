@@ -128,3 +128,34 @@ test("a pack of fewer documents shows only those tabs, and a document that was n
     await worker.stop();
   }
 });
+
+test("the draft preview shows the same revision as an HTML view, without a PDF frame, and answers only in the solutions", async ({ page }) => {
+  const user = await createUser();
+  const worker = await startStorageWorker();
+  try {
+    const { lessonId, revisionId } = await generate(page, user);
+    await page.getByTestId("view-tabs").getByRole("link", { name: "Draft preview" }).click();
+    await expect(page).toHaveURL(/view=draft/);
+
+    await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. The exported PDF is the final version.");
+    const draft = page.getByTestId("lesson-draft");
+    await expect(draft).toBeVisible();
+    await expect(draft).toHaveAttribute("data-document", "notes");
+    await expect(page.getByTestId("pdf-frame")).toHaveCount(0);
+    // the download still names this revision's own file
+    await expect(page.getByTestId("download-pdf")).toHaveAttribute("href", `/lessons/${lessonId}/documents/notes?rev=${revisionId}&download=1`);
+    for (const doc of ["notes", "worksheet", "solutions"] as const) {
+      await expect(page.locator(`[data-testid="document-tabs"] a[href="/lessons/${lessonId}?rev=${revisionId}&doc=${doc}&view=draft"]`)).toHaveCount(1);
+    }
+
+    await page.getByTestId("document-tabs").getByRole("link", { name: "Student Practice Worksheet" }).click();
+    await expect(draft).toHaveAttribute("data-document", "worksheet");
+    await expect(draft).not.toContainText("Answer:");
+
+    await page.getByTestId("document-tabs").getByRole("link", { name: "Solutions / Answer Key" }).click();
+    await expect(draft).toHaveAttribute("data-document", "solutions");
+    await expect(draft).toContainText("Answer:");
+  } finally {
+    await worker.stop();
+  }
+});

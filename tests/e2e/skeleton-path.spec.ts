@@ -105,7 +105,7 @@ test("after three complete generations the fourth is refused, in the page and on
 
     // The disabled button is only a convenience: submitting anyway is refused by the server.
     await page.evaluate(() => (document.querySelector("main form") as HTMLFormElement).requestSubmit());
-    await expect(page.locator("p[role=alert]")).toContainText("no generations left"); // not Next's route announcer
+    await expect(page.locator("main [role=alert]")).toContainText("no generations left"); // not Next's route announcer
     await page.goto("/lessons");
     await expect(historyItems(page)).toHaveCount(3);
   } finally {

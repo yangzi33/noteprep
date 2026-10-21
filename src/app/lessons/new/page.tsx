@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/notice";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { generationErrorMessage } from "@/lib/ui/messages";
@@ -26,15 +27,15 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
       </p>
 
       {error && (
-        <p role="alert" className="mt-4 rounded border border-destructive p-3 text-sm">
+        <Notice intent="error" className="mt-4">
           {generationErrorMessage(error)}
-        </p>
+        </Notice>
       )}
       {exhausted && (
-        <p role="status" className="mt-4 rounded border p-3 text-sm">
+        <Notice intent="info" role="status" className="mt-4">
           You have used all of your free generations. Subscriptions are not available yet (they arrive in a later phase).
           You can still view your history.
-        </p>
+        </Notice>
       )}
 
       <form action={createLesson} className="mt-6 flex flex-col gap-4">

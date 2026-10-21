@@ -3,7 +3,7 @@ import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
 import { NotFound } from "@/lib/domain/errors";
 import { parseManifestV2 } from "@/lib/domain/manifest";
-import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, PackageSchema, type DocumentKind } from "@/lib/package/schema";
+import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
 
 export interface AlignmentView {
   claim: "aligned" | "none";
@@ -89,6 +89,18 @@ export function createLessonsDal(db: Db) {
         }),
         alignment: alignmentOf(revision.schemaVersion, revision.content),
       };
+    },
+
+    /**
+     * The validated package of a finalized revision, for the draft preview. Only ids and the parsed package: no manifest,
+     * storage paths, hashes or validation reports. A legacy placeholder or damaged content has nothing to preview.
+     */
+    async getLessonPackage(ctx: AuthedCtx, lessonId: string, revisionId?: string): Promise<{ lessonId: string; revisionId: string; package: LessonPackage }> {
+      const { lesson, revision } = await findRevision(ctx, lessonId, revisionId);
+      if (revision.schemaVersion !== PACKAGE_REVISION_SCHEMA_VERSION) throw new NotFound();
+      const parsed = PackageSchema.safeParse(revision.content);
+      if (!parsed.success) throw new NotFound();
+      return { lessonId: lesson.id, revisionId: revision.id, package: parsed.data };
     },
 
     /** The one PDF of a revision a caller may fetch. Only PDFs: the sources are never offered (decision D-31). */

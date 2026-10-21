@@ -3,31 +3,48 @@ import { allowanceText, createUser, deleteCreatedUsers, signIn, startWorker } fr
 
 test.afterAll(deleteCreatedUsers);
 
-const options = (page: import("@playwright/test").Page) => page.getByTestId("options").locator("li");
+const SAMPLE = "sample-math@sample-1";
+const LEVEL = `${SAMPLE}/level-a`;
+const COURSE = `${LEVEL}/course-1`;
+// Real choices only: the "" placeholder option is excluded.
+const choices = (page: import("@playwright/test").Page, testId: string) => page.getByTestId(testId).locator('option:not([value=""])');
 
-test("choose a curriculum topic step by step, generate, and see the lesson finish", async ({ page }) => {
+test("choose a curriculum topic with the dropdowns, generate, and see the lesson finish", async ({ page }) => {
   const user = await createUser();
   const worker = await startWorker();
   try {
     await signIn(page, user);
     await page.goto("/prepare");
+    await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
     await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
 
-    await page.getByRole("link", { name: "Sample Mathematics (not a real curriculum)" }).click();
+    await expect(page.getByTestId("select-v")).toHaveValue(""); // nothing is chosen yet
+    await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
     await expect(page.getByTestId("sample-banner")).toBeVisible(); // sample data is always labelled
-    await expect(page.getByTestId("options")).toHaveAttribute("data-step", "level");
-    await page.getByRole("link", { name: "Sample Level A" }).click();
-    await expect(page.getByTestId("options")).toHaveAttribute("data-step", "course");
-    await page.getByRole("link", { name: /Sample Course 1/ }).click();
-    await expect(page.getByTestId("options")).toHaveAttribute("data-step", "unit");
-    await page.getByRole("link", { name: "Sample unit: Equations" }).click();
+    await expect(page.getByTestId("select-level")).toBeEnabled();
+    await expect(page.getByTestId("select-course")).toBeDisabled();
+
+    await page.getByTestId("select-level").selectOption({ label: "Sample Level A" });
+    await expect(page).toHaveURL(/level=/);
+    await expect(page.getByTestId("select-course")).toBeEnabled();
+    await expect(page.getByTestId("select-unit")).toBeDisabled();
+
+    await page.getByTestId("select-course").selectOption(COURSE); // label is "Sample Course 1 (SAMPLE-1)"
+    await expect(page.getByTestId("select-course").locator("option:checked")).toHaveText(/Sample Course 1/);
+    await expect(page).toHaveURL(/course=/);
+    await expect(page.getByTestId("select-unit")).toBeEnabled();
+    await expect(page.getByTestId("select-topic")).toBeDisabled();
+
+    await page.getByTestId("select-unit").selectOption({ label: "Sample unit: Equations" });
+    await expect(page).toHaveURL(/unit=/);
 
     // topics: two supported ones, one partly covered
-    await expect(page.getByTestId("options")).toHaveAttribute("data-step", "topic");
-    await expect(options(page)).toHaveCount(3);
-    await expect(options(page).nth(2)).toContainText("(partly covered)");
+    await expect(page.getByTestId("select-topic")).toBeEnabled();
+    await expect(choices(page, "select-topic")).toHaveCount(3);
+    await expect(choices(page, "select-topic").nth(2)).toContainText("(partly covered)");
 
-    await page.getByRole("link", { name: "Sample topic: Unknown on both sides" }).click();
+    await page.getByTestId("select-topic").selectOption({ label: "Sample topic: Unknown on both sides" });
+    await expect(page).toHaveURL(/topic=/);
     await expect(page.getByTestId("topic-summary")).toContainText("Sample objective: solve one-unknown equations");
     await expect(page.getByTestId("topic-summary")).toContainText("Solving equations with one unknown"); // prerequisite
 
@@ -45,11 +62,18 @@ test("choose a curriculum topic step by step, generate, and see the lesson finis
 test("topics we cannot verify are shown as unavailable and cannot be chosen, even by editing the URL", async ({ page }) => {
   const user = await createUser();
   await signIn(page, user);
-  const base = "sample-math@sample-1/level-a/course-1";
-  await page.goto(`/prepare?v=sample-math@sample-1&level=sample-math@sample-1/level-a&course=${base}&unit=${base}/shapes`);
-  await expect(options(page)).toHaveCount(1);
-  await expect(options(page).first()).toHaveAttribute("data-unsupported", "true");
-  await expect(options(page).first().getByRole("link")).toHaveCount(0);
+  const base = COURSE;
+  // the unit with nothing verifiable is listed but cannot be chosen
+  await page.goto(`/prepare?v=${SAMPLE}&level=${LEVEL}&course=${base}`);
+  const shapes = page.getByTestId("select-unit").locator(`option[value="${base}/shapes"]`);
+  await expect(shapes).toBeDisabled();
+  await expect(shapes).toContainText("nothing here is available yet");
+  // and so is its only topic
+  await page.goto(`/prepare?v=${SAMPLE}&level=${LEVEL}&course=${base}&unit=${base}/shapes`);
+  await expect(choices(page, "select-topic")).toHaveCount(1);
+  await expect(choices(page, "select-topic").first()).toBeDisabled();
+  await expect(choices(page, "select-topic").first()).toContainText("not available yet");
+  await expect(page.getByTestId("topic-hint")).toBeVisible();
 
   await page.goto(`/prepare?v=sample-math@sample-1&level=sample-math@sample-1/level-a&course=${base}&unit=${base}/shapes&topic=${base}/shapes/areas`);
   await expect(page.getByTestId("unsupported-topic")).toBeVisible();
@@ -65,17 +89,21 @@ test("a selection that does not fit together is refused politely, not with an er
   await expect(page.getByTestId("bad-selection")).toBeVisible();
 });
 
-test("refreshing and going back keep the wizard where it was, because the URL is the state", async ({ page }) => {
+test("refreshing and going back keep the selection where it was, because the URL is the state", async ({ page }) => {
   const user = await createUser();
   await signIn(page, user);
   await page.goto("/prepare");
-  await page.getByRole("link", { name: "Sample Mathematics (not a real curriculum)" }).click();
-  await page.getByRole("link", { name: "Sample Level A" }).click();
+  await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
+  await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
+  await expect(page.getByTestId("select-level")).toBeEnabled();
+  await page.getByTestId("select-level").selectOption({ label: "Sample Level A" });
   await expect(page).toHaveURL(/level=/); // let the navigation finish before reloading
   await page.reload();
-  await expect(page.getByTestId("options")).toHaveAttribute("data-step", "course");
+  await expect(page.getByTestId("select-level")).toHaveValue(LEVEL);
+  await expect(page.getByTestId("select-course")).toBeEnabled();
   await page.goBack();
-  await expect(page.getByTestId("options")).toHaveAttribute("data-step", "level");
+  await expect(page.getByTestId("select-level")).toHaveValue("");
+  await expect(page.getByTestId("select-course")).toBeDisabled();
 });
 
 test("a signed-out visitor is sent to sign in", async ({ page }) => {

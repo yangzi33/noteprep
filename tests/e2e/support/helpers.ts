@@ -40,7 +40,7 @@ export async function signIn(page: Page, user: TestUser) {
   await page.getByLabel("Email").fill(user.email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/account$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
 }
 
 export async function signedInPage(browser: Browser, user: TestUser) {

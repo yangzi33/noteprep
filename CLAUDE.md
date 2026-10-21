@@ -90,7 +90,7 @@
 - Unsupported or failed AI output must not be billed as a complete success. A draft may be saved with its reasons for inspection. Limit automatic repair attempts; if the result remains invalid, fail the job and release its reservation.
 - Changes to a question, parameters, or solution immediately invalidate affected validation and derived files; recheck the new revision. Known mathematical errors block final export. Math content (questions, answers, steps) is never hand-edited: it changes only through deterministic regeneration, which keeps answers consistent with questions. Adjustments regenerate only the affected sections and their dependents; unrelated sections must remain byte-identical.
 - Provide preview and predefined quick adjustments instead of a content editor; allow minimal manual corrections to text fields only. The initial release must not accept arbitrary user .tex files, must not expose .tex to users, and must not expose an online endpoint for executing arbitrary TeX programs. Generated prose must contain no curriculum names, codes, or alignment claims; those come only from the dataset.
-- Previews are the genuinely compiled PDFs; KaTeX/MathJax cannot replace real PDF compilation. Restrict macros, HTML, URLs, and trust options. Remind tutors to review AI materials before teaching; never claim zero errors.
+- The compiled PDF is the authoritative export and stays previewable; an in-app HTML draft preview rendered from the same structured revision (decision D-60) is also allowed, but KaTeX/MathJax never replace real PDF compilation. Restrict macros, HTML, URLs, and trust options. Remind tutors to review AI materials before teaching; never claim zero errors.
 
 ## 8. LaTeX Security and Output Quality
 
