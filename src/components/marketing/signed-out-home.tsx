@@ -4,7 +4,7 @@ import { LandingFooter, LandingPage } from "./landing-page";
 export function SignedOutHome() {
   return (
     <>
-      <PublicHeader />
+      <PublicHeader variant="landing" />
       <main>
         <LandingPage />
       </main>

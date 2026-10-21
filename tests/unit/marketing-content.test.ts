@@ -51,6 +51,11 @@ describe("landing content", () => {
     expect(visibleText(html).join(" ")).not.toMatch(/\d\s*[£€$]|[£€$]\s*\d|\d+\s*(usd|gbp|cad|eur)/i);
   });
 
+  it("does not carry over placeholder or unsupported design copy", () => {
+    const text = renderToStaticMarkup(createElement(LandingPage)) + renderToStaticMarkup(createElement(LandingFooter));
+    expect([...all, ...visibleText(text)].join("\n")).not.toMatch(/quiz|graph|Jane Doe|Grade 12|Ontario|Derivative|worksheets, |save hours|share my|edit the wording|Refine/i);
+  });
+
   it("does not promise student accounts, live teaching or team features", () => {
     const out = /student account|live teaching|team plan|studio|testimonial/i;
     for (const s of all) expect(s, s).not.toMatch(out);
@@ -67,8 +72,10 @@ describe("landing content", () => {
   });
 
   it("has three benefits, four steps and the three documents", () => {
-    expect(landingContent.benefits).toHaveLength(3);
+    expect(landingContent.benefits.items).toHaveLength(3);
     expect(landingContent.steps).toHaveLength(4);
+    expect(landingContent.documents.map((d) => d.pdf)).toEqual(["/samples/notes.pdf", "/samples/worksheet.pdf", "/samples/solutions.pdf"]);
+    expect(landingContent.nav.map((n) => n.href)).toEqual(["#features", "#how-it-works", "#pricing"]);
     expect(landingContent.documents.map((d) => d.name)).toEqual([
       "Tutor Lesson Notes",
       "Student Practice Worksheet",
