@@ -171,6 +171,18 @@ describe("each dataset rule is enforced", () => {
       e.mappings.topicObjectives.push({ topicId: e.structure.topics[0]!.id, objectiveId: `${e.meta.version.id}/obj/o1`, coverage: "full" });
       expect(codes(e)).toContain("SUGGESTED_NO_OBJECTIVES");
     });
+    it("course and unit codes must be NotePrep identifiers (NP- prefix), never official codes", () => {
+      const course = clone(load(SUGGESTED));
+      course.structure.courses[0]!.code = "MTH1W";
+      expect(codes(course)).toContain("SUGGESTED_CODE_PREFIX");
+      const unit = clone(load(SUGGESTED));
+      unit.structure.units[0]!.code = "B";
+      expect(codes(unit)).toContain("SUGGESTED_CODE_PREFIX");
+      unit.structure.units[0]!.code = "NP-B";
+      expect(codes(unit)).toEqual([]);
+      const sample = clone(load(SAMPLE)); // other kinds keep their official-style codes
+      expect(codes(sample)).not.toContain("SUGGESTED_CODE_PREFIX");
+    });
     it("does not need a topic to have an objective", () => {
       expect(codes(load(SUGGESTED))).not.toContain("TOPIC_WITHOUT_OBJECTIVE");
     });

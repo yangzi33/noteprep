@@ -3,7 +3,7 @@
   "courses": [
     {
       "id": "suggested-fixture@v1/course",
-      "code": "SUGG-1",
+      "code": "NP-SUGG-1",
       "title": "Test Course (suggested topics)",
       "ordinal": 1
     }

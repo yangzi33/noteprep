@@ -31,7 +31,8 @@ export interface DatasetIssue {
     | "DATE_INVALID"
     | "REAL_SOURCE_URL"
     | "REAL_REVIEW_BLANK"
-    | "SUGGESTED_NO_OBJECTIVES";
+    | "SUGGESTED_NO_OBJECTIVES"
+    | "SUGGESTED_CODE_PREFIX";
   where: string;
   detail?: string;
 }
@@ -281,6 +282,13 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   if (v.kind === "suggested") {
     // An unofficial suggestion never carries official objectives or codes, so it can never be traced to (or mistaken for) an alignment claim.
     if (objectives.objectives.length > 0) add("SUGGESTED_NO_OBJECTIVES", "objectives", "a suggested dataset must not define objectives or official codes");
+    // Course and unit codes are NotePrep identifiers here, marked by a prefix so they can never pass for official codes (D-75).
+    structure.courses.forEach((c, i) => {
+      if (!c.code.startsWith("NP-")) add("SUGGESTED_CODE_PREFIX", `courses[${i}].code`, "a suggested dataset's codes must start with NP-");
+    });
+    structure.units.forEach((u, i) => {
+      if (u.code !== undefined && !u.code.startsWith("NP-")) add("SUGGESTED_CODE_PREFIX", `units[${i}].code`, "a suggested dataset's codes must start with NP-");
+    });
     if (mappings.topicObjectives.length > 0) add("SUGGESTED_NO_OBJECTIVES", "topicObjectives", "a suggested dataset must not link topics to objectives");
   }
   return issues;
