@@ -7,8 +7,8 @@ import { PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/pack
 import { testPackage } from "../fixtures/package";
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
-/** classic/2 only changed the left header field; the goldens below were taken with classic/1's fixed "NotePrep" there. */
-const asClassic1 = (tex: string) => tex.replace(/^\\fancyhead\[L\]\{.*\}$/m, "\\fancyhead[L]{NotePrep}");
+/** classic/2 changed only the left header field and headheight (14pt -> 28pt); the goldens below were taken with classic/1. */
+const asClassic1 = (tex: string) => tex.replace(/^\\fancyhead\[L\]\{.*\}$/m, "\\fancyhead[L]{NotePrep}").replace("headheight=28pt", "headheight=14pt");
 
 /** sha256 of renderDocument().tex and of JSON(htmlDocument()), computed on the code BEFORE effectiveSettings existed. */
 const GOLDEN: Record<string, { tex: string; html: string }> = {

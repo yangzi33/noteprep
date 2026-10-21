@@ -35,14 +35,14 @@ export const DEFAULT_RUNNING_TITLE = "NotePrep";
 
 /**
  * The left header field as safe LaTeX. Dataset text: normalized, cut to MAX_RUNNING_TITLE characters (57 + "...", counted in
- * code points) BEFORE escaping, then passed through escapeText like every other text. Spaces become ordinary spaces so the
- * parbox in the header can wrap; no other character of the escaped text is changed.
+ * code points) BEFORE escaping, then passed through escapeText like every other text. escapeText keeps ordinary spaces
+ * (it maps only U+00A0 to "~", and whitespace collapsing removes that first), so the parbox in the header can wrap.
  */
 export function runningTitleTex(topicTitle: string): string {
   const chars = Array.from(topicTitle.normalize("NFC").replace(/\s+/g, " ").trim());
   if (chars.length === 0) return escapeText(DEFAULT_RUNNING_TITLE);
   const cut = chars.length > MAX_RUNNING_TITLE ? `${chars.slice(0, MAX_RUNNING_TITLE - 3).join("").trimEnd()}...` : chars.join("");
-  return escapeText(cut).replaceAll("~", " ");
+  return escapeText(cut);
 }
 
 export function preamble(document: DocumentKind, runningTitle: string): string {
@@ -55,13 +55,14 @@ export function preamble(document: DocumentKind, runningTitle: string): string {
     "\\usepackage[utf8]{inputenc}",
     "\\usepackage{lmodern}",
     "\\usepackage{amsmath}",
-    "\\usepackage[margin=2.2cm,headheight=14pt]{geometry}",
+    "\\usepackage[margin=2.2cm,headheight=28pt]{geometry}",
     "\\usepackage{fancyhdr}",
     "\\setlength{\\parindent}{0pt}",
     "\\setlength{\\parskip}{0.6em}",
     "\\pagestyle{fancy}",
     "\\fancyhf{}",
-    // escapeText turns a space into "~", and runningTitleTex turns it back; "~" is otherwise never emitted bare.
+    // The title is escaped text in a parbox: it wraps at its spaces instead of running into the right field. headheight
+    // leaves room for two lines; a single unbroken run of ~35+ wide capitals can still overflow sideways (cosmetic only).
     `\\fancyhead[L]{\\parbox[b]{0.6\\textwidth}{\\raggedright ${runningTitleTex(runningTitle)}}}`,
     `\\fancyhead[R]{${DOCUMENT_TITLES[document].replace("/", "\\textbar{}")}}`,
     "\\fancyfoot[C]{\\thepage}",

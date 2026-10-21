@@ -53,14 +53,15 @@ describe("compiling a real lesson package in the sandbox", () => {
     const withTitle = (title: string) => ({ ...base, context: { ...(base.context as object), topic: { id: "t1", title } } }) as typeof base;
     const titles = [
       "Solving linear equations with one unknown variable using inverse operations", // cut to 60
-      "WWWWWWW ".repeat(10), // wide capitals in words, cut to 60 and wrapped inside the box
+      "WWWWWWW ".repeat(5), // wide capitals in words (35 chars): wraps to 2 lines. 60 wide capitals can need 3 (cosmetic: fancyhdr warns, nothing breaks)
+      "Mixed Numbers, Ratios And Percentages Of Quantities In Real Life Problems", // capitalised, wraps to 2 lines
       "A&B 50% x_1 #2 $3 {a} ~ ^ \"q\" \\input{/etc/passwd} \\write18{id} Café",
       "",
     ];
     for (const title of titles) {
       const r = await compileRaw({ "notes.tex": renderDocument(withTitle(title), "notes").tex });
       const log = Buffer.from(r.byName.get("notes.log") ?? new Uint8Array()).toString("utf8");
-      expect(log.split("\n").filter((l) => /Missing character|Undefined control|Illegal character|Overfull \\hbox|Overfull \\vbox/.test(l)), title).toEqual([]);
+      expect(log.split("\n").filter((l) => /Missing character|Undefined control|Illegal character|Overfull \\hbox|Overfull \\vbox|headheight.{0,12}too small|too small/.test(l)), title).toEqual([]);
       const pdf = r.byName.get("notes.pdf")!;
       expect(Buffer.from(pdf.subarray(0, 5)).toString()).toBe("%PDF-");
       const text = await pdfText(pdf);
