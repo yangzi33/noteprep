@@ -2,7 +2,7 @@ import { canonicalJson } from "@/lib/domain/hash";
 import { verifyContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import { validateLessonMath, VALIDATOR_VERSION, type LessonMathReport } from "@/lib/math/validate";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
-import { EDGES, sectionId } from "./build";
+import { ALIGNMENT_TITLE, EDGES, sectionId } from "./build";
 import { sectionContentHash } from "./hash";
 import { expectedInputsHash } from "./inputs";
 import { checkText, curriculumNames } from "./prose-rules";
@@ -48,6 +48,7 @@ export function checkProse(pkg: LessonPackage, context: CurriculumContext): Pros
 
   for (const section of pkg.sections) {
     if (section.kind === "alignment") {
+      if (section.title !== ALIGNMENT_TITLE) issues.push({ code: "ALIGNMENT_NOT_IN_DATASET", where: section.id, detail: "alignment title must be the fixed title" });
       // Statements come from the dataset only: every objective must be one of the snapshot's, and the claim
       // is allowed only when the snapshot says so.
       for (const block of section.blocks) {

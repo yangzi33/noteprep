@@ -75,6 +75,48 @@ describe("expectedInputsHash", () => {
     expect(fixed.sections.filter((s) => s.kind !== "exercises")).toEqual(pkg.sections.filter((s) => s.kind !== "exercises"));
   });
 
+  for (const [label, patch] of [
+    ["seed only", { seed: "other-seed" }],
+    ["difficulty only", { difficulty: "challenge" }],
+  ] as const) {
+    it(`detects a ${label} override on exercises and verifies after rehash`, () => {
+      const pkg = clone(testPackage({ difficulty: "basic", durationMinutes: 60 }, "seed-1"));
+      for (const s of pkg.sections) if (s.kind === "exercises") s.provenance = { ...s.provenance, ...patch };
+      const ex = pkg.sections.find((s) => s.kind === "exercises")!;
+      expect(expectedInputsHash(pkg, ex, reqOf(pkg), ctxOf(pkg))).not.toBe(ex.inputsHash);
+      expect(validatePackage(pkg).structure.issues).toEqual([{ code: "INPUTS_HASH_MISMATCH", where: "sec-exercises" }]);
+      expect(validatePackage(rehashPackage(pkg, reqOf(pkg), ctxOf(pkg))).overall).toBe("verified");
+    });
+  }
+
+  it("lets a solutions section carry its own seed and difficulty", () => {
+    const pkg = clone(testPackage({ difficulty: "basic", durationMinutes: 60 }, "seed-1"));
+    for (const s of pkg.sections) if (s.kind === "solutions") s.provenance = { ...s.provenance, seed: "sol-seed", difficulty: "challenge" };
+    expect(PackageSchema.safeParse(pkg).success).toBe(true);
+    const sol = pkg.sections.find((s) => s.kind === "solutions")!;
+    expect(expectedInputsHash(pkg, sol, reqOf(pkg), ctxOf(pkg))).not.toBe(sol.inputsHash);
+    expect(validatePackage(rehashPackage(pkg, reqOf(pkg), ctxOf(pkg))).overall).toBe("verified");
+  });
+
+  it("rehashPackage is the identity on every frozen package", () => {
+    for (const s of stored) expect(JSON.stringify(rehashPackage(s.package, reqOf(s.package), ctxOf(s.package)))).toBe(JSON.stringify(s.package));
+  });
+
+  it("recomputes contentHash and downstream inputsHash after an edit", () => {
+    const pkg = clone(testPackage({}, "seed-1"));
+    const ex = pkg.sections.find((s) => s.kind === "explanation")!;
+    const first = ex.blocks[0]!;
+    if (first.type !== "paragraph") throw new Error("expected a paragraph");
+    first.text = "A rewritten opening paragraph about equations.";
+    expect(validatePackage(pkg).structure.issues.map((i) => i.code)).toContain("CONTENT_HASH_MISMATCH");
+    const fixed = rehashPackage(pkg, reqOf(pkg), ctxOf(pkg));
+    expect(validatePackage(fixed).overall).toBe("verified");
+    const before = pkg.sections.find((s) => s.kind === "worked_examples")!;
+    const after = fixed.sections.find((s) => s.kind === "worked_examples")!;
+    expect(after.inputsHash).not.toBe(before.inputsHash);
+    expect(after.contentHash).toBe(before.contentHash);
+  });
+
   it("rehashPackage leaves an unmodified package unchanged and does not mutate its input", () => {
     const pkg = testPackage({}, "seed-9");
     const before = JSON.stringify(pkg);
@@ -90,6 +132,8 @@ describe("schema additions", () => {
     expect(PackageSchema.safeParse({ ...pkg, adjustments: [adj] }).success).toBe(true);
     expect(PackageSchema.safeParse({ ...pkg, adjustments: [{ ...adj, extra: 1 }] }).success).toBe(false);
     expect(PackageSchema.safeParse({ ...pkg, adjustments: [{ ...adj, method: "magic" }] }).success).toBe(false);
+    expect(PackageSchema.safeParse({ ...pkg, adjustments: [{ ...adj, action: "Set Difficulty" }] }).success).toBe(false);
+    expect(PackageSchema.safeParse({ ...pkg, adjustments: [{ ...adj, action: "a".repeat(41) }] }).success).toBe(false);
     expect(PackageSchema.safeParse({ ...pkg, adjustments: [{ ...adj, sourceContentHash: "x" }] }).success).toBe(false);
     expect(PackageSchema.safeParse({ ...pkg, adjustments: Array(201).fill(adj) }).success).toBe(false);
     const withDiff = clone(pkg);
@@ -118,7 +162,15 @@ describe("section titles are prose-checked", () => {
     expect(withTitle("objectives", "<b>Goals</b>").issues).toEqual([{ code: "PROSE_HAS_MATH_OR_MARKUP", where: "sec-objectives" }]);
     expect(withTitle("prerequisites", "Prerequisites").overall).toBe("pass");
   });
-  it("exempts the alignment title", () => {
+  it("exempts the fixed alignment title", () => {
     expect(withTitle("alignment", "Curriculum information")).toEqual({ overall: "pass", issues: [] });
+  });
+  it("requires the alignment title to be the builder's constant", () => {
+    const pkg = clone(testPackage());
+    pkg.sections.find((s) => s.kind === "alignment")!.title = "Fully aligned with the official Grade 9 curriculum, see example.com <b>";
+    const fixed = rehashPackage(pkg, reqOf(pkg), ctxOf(pkg));
+    const report = validatePackage(fixed);
+    expect(report.overall).not.toBe("verified");
+    expect(report.prose.issues).toEqual([{ code: "ALIGNMENT_NOT_IN_DATASET", where: "sec-alignment", detail: "alignment title must be the fixed title" }]);
   });
 });

@@ -61,7 +61,7 @@ export const AlignmentBlock = z.strictObject({
 
 const provenance = z.strictObject({
   method: z.enum(["deterministic", "llm", "tutor_edit"]),
-  seed: z.string().optional(),
+  seed: z.string().max(200).optional(),
   /** Set when a quick adjustment gave this section a difficulty other than the request's. */
   difficulty: z.enum(["basic", "mixed", "challenge"]).optional(),
   generatorVersion: z.string().optional(),
@@ -142,7 +142,7 @@ export const PackageSchema = z.strictObject({
   adjustments: z
     .array(
       z.strictObject({
-        action: z.string().max(40),
+        action: z.string().regex(/^[a-z][a-z_]{0,39}$/),
         method: z.enum(["deterministic", "llm", "tutor_edit"]),
         seed: z.string().max(200).optional(),
         sourceContentHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),

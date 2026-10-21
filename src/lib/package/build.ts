@@ -107,6 +107,9 @@ export function sectionInputsParams(kind: SectionKind, a: InputsParamsArgs): Rec
   }
 }
 
+/** The one title an alignment section may carry (the validator requires it verbatim). */
+export const ALIGNMENT_TITLE = "Curriculum information";
+
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
 export function buildPackage({ request, context, seed, prose }: BuildInput): LessonPackage {
@@ -262,7 +265,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
     },
     {
       kind: "alignment",
-      title: "Curriculum information",
+      title: ALIGNMENT_TITLE,
       blocks: [
         {
           type: "alignment",

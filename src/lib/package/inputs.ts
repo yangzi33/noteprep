@@ -1,7 +1,7 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { EDGES, sectionInputsParams } from "./build";
-import { sectionInputsHash } from "./hash";
+import { sectionContentHash, sectionInputsHash } from "./hash";
 import { PROSE_PROMPT_VERSION } from "./prose";
 import type { LessonPackage, Section, SectionKind } from "./schema";
 
@@ -26,12 +26,18 @@ export function expectedInputsHash(pkg: LessonPackage, section: Section, request
   return sectionInputsHash({ kind: section.kind, params: { ...params, contextHash: context.contextHash, minutes }, upstreamContentHashes: upstream as string[] });
 }
 
-/** The package with every section's inputsHash recomputed from its provenance; content hashes are left as they are. */
+/**
+ * The package with every section's contentHash and inputsHash recomputed, so an adjuster can edit blocks or provenance
+ * and call this once. Content hashes use the builder's sectionContentHash and are all recomputed first; an inputs hash
+ * depends only on its own provenance and the (updated) content hashes of its upstream EDGES, so the result is the same
+ * as recomputing in dependency order. An unmodified package comes back unchanged.
+ */
 export function rehashPackage(pkg: LessonPackage, request: Pick<LessonRequestV2, "difficulty">, context: Pick<CurriculumContext, "contextHash">): LessonPackage {
+  const withContent: LessonPackage = { ...pkg, sections: pkg.sections.map((s) => ({ ...s, contentHash: sectionContentHash(s) }) as Section) };
   return {
-    ...pkg,
-    sections: pkg.sections.map((section) => {
-      const inputsHash = expectedInputsHash(pkg, section, request, context);
+    ...withContent,
+    sections: withContent.sections.map((section) => {
+      const inputsHash = expectedInputsHash(withContent, section, request, context);
       return inputsHash === null ? section : ({ ...section, inputsHash } as Section);
     }),
   };

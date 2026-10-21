@@ -8,6 +8,7 @@ import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
 import { AllowanceExhausted, CurriculumNotFound, IdempotencyConflict, InvalidSelection, NotFound, TopicUnsupported } from "@/lib/domain/errors";
 import { DEV_DEFAULT_LIMITS } from "@/lib/domain/generation";
+import { PACKAGE_VALIDATOR_VERSION } from "@/lib/package/validate";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
@@ -314,7 +315,7 @@ describe("running a curriculum lesson", () => {
     expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
     const rev = (await admin.query(`SELECT r.* FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
     expect(rev).toMatchObject({ schema_version: 2, validation_status: "verified", status: "finalized" });
-    expect(rev.validator_version).toMatch(/^package\/1\+/);
+    expect(rev.validator_version).toBe(PACKAGE_VALIDATOR_VERSION);
     const pkg = rev.content;
     expect(pkg.schemaVersion).toBe("lesson-package/1");
     expect(pkg.sections.map((s: { kind: string }) => s.kind)).toContain("solutions");
