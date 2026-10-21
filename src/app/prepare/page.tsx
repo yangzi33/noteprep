@@ -201,7 +201,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
               </>
             )}
             <p className="text-sm">
-              <span className="font-medium">Format</span> A4 · Print-ready PDF
+              <span className="font-medium">Format</span> Letter · Print-ready PDF
             </p>
           </Card>
           <p className="text-[13px] text-muted-foreground">Next, review the preview, then export your PDFs.</p>
