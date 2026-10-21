@@ -70,6 +70,7 @@
     "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts",
     "test:e2e": "playwright test",
     "smoke:staging": "playwright test --config playwright.smoke.config.ts",
+    "samples:build": "tsx --conditions=react-server scripts/build-marketing-samples.ts",
     "curriculum:validate": "tsx scripts/curriculum-validate.ts",
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
     "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",
