@@ -15,13 +15,16 @@ export const DOCUMENT_PURPOSE: Record<DocumentKind, string> = {
 
 /**
  * The sentence shown about curriculum alignment. It is built from the dataset's own fields only. A lesson from a sample
- * or synthetic dataset never gets an alignment claim, however the model worded anything else.
+ * synthetic or suggested dataset never gets an alignment claim, however the model worded anything else.
  */
 export function alignmentNotice(alignment: Pick<AlignmentView, "claim" | "curriculumName" | "versionLabel" | "datasetKind">): string {
   if (alignment.datasetKind === "real") {
     return alignment.claim === "aligned"
       ? `Built from ${alignment.curriculumName} (${alignment.versionLabel}).`
       : `Built from ${alignment.curriculumName} (${alignment.versionLabel}). This lesson makes no claim of alignment.`;
+  }
+  if (alignment.datasetKind === "suggested") {
+    return `Topic list: an unofficial NotePrep suggestion for ${alignment.curriculumName} (${alignment.versionLabel}). It is not an official curriculum and is not endorsed by any curriculum authority. This lesson makes no claim of alignment.`;
   }
   return `Based on the ${alignment.datasetKind === "synthetic" ? "test" : "sample"} dataset “${alignment.curriculumName}” (${alignment.versionLabel}). This is not a real curriculum and makes no claim of alignment.`;
 }
