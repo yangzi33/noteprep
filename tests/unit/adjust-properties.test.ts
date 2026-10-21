@@ -551,9 +551,10 @@ function step(label: string, source: LessonPackage, change: AdjustmentChange, pl
 }
 
 describe("adjustment sequences: properties on every step", () => {
-  // 200 sources (about 700 checked steps) keep this file near 10 s; ADJUST_PROP_N=2000 was run once locally (see the
-  // Task 8 report).
-  const N = Number(process.env.ADJUST_PROP_N ?? 200);
+  // 100 sources by default (about 350 checked steps): measured locally the sweep took 12.4 s at 200 sources and 6.6 s
+  // at 100, and 200 made the full suite flaky under load. ADJUST_PROP_N raises it for a one-off bigger sweep
+  // (ADJUST_PROP_N=2000 was run once locally, see the Task 8 report).
+  const N = Number(process.env.ADJUST_PROP_N ?? 100);
 
   it(`${N} random sources, chains of 1-6 applicable actions of every kind`, () => {
     const counts: Record<string, number> = {};
