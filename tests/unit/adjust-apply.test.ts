@@ -228,16 +228,40 @@ describe("add_exercises", () => {
         const n = questions(source).length;
         const exBlocks = blocksOf(source, "exercises");
         const solBlocks = blocksOf(source, "solutions");
-        // the intro and the first n question / writing_space pairs, and the first n solutions, are unchanged
-        expect(JSON.stringify(blocksOf(result, "exercises").slice(0, exBlocks.length))).toBe(JSON.stringify(exBlocks));
-        expect(JSON.stringify(blocksOf(result, "solutions").slice(0, solBlocks.length))).toBe(JSON.stringify(solBlocks));
-        expect(blocksOf(result, "exercises")).toHaveLength(exBlocks.length + 2 * count);
-        expect(blocksOf(result, "solutions")).toHaveLength(solBlocks.length + count);
+        // D-72: a mixed set takes the new questions just before its challenge-level group (where the generator's ramp
+        // puts it); basic and challenge sets, and a mixed set without a challenge group, append at the end.
+        const firstChallenge = difficultyRamp(n, "mixed").indexOf("challenge");
+        const at = difficulty === "mixed" && firstChallenge >= 0 ? firstChallenge : n;
+        const exAt = at === n ? exBlocks.length : exBlocks.findIndex((b) => b.type === "question" && b.questionId === `ex-${at + 1}`);
+        const solAt = at === n ? solBlocks.length : solBlocks.findIndex((b) => b.type === "solution" && b.questionId === `ex-${at + 1}`);
+        expect(exAt).toBeGreaterThan(0);
+        expect(solAt).toBeGreaterThan(0);
+        if (difficulty === "mixed") expect(at).toBeLessThan(n);
+        const outEx = blocksOf(result, "exercises");
+        const outSol = blocksOf(result, "solutions");
+        expect(outEx).toHaveLength(exBlocks.length + 2 * count);
+        expect(outSol).toHaveLength(solBlocks.length + count);
+        // every existing block is the source's, byte for byte and in order; only the new blocks sit between them
+        expect(JSON.stringify([...outEx.slice(0, exAt), ...outEx.slice(exAt + 2 * count)])).toBe(JSON.stringify(exBlocks));
+        expect(JSON.stringify([...outSol.slice(0, solAt), ...outSol.slice(solAt + count)])).toBe(JSON.stringify(solBlocks));
 
-        const added = questions(result).slice(n);
-        expect(added.map((q) => q.questionId)).toEqual(Array.from({ length: count }, (_, i) => `ex-${n + i + 1}`));
-        expect(blocksOf(result, "exercises").slice(exBlocks.length).map((b) => b.type)).toEqual(Array.from({ length: count }, () => ["question", "writing_space"]).flat());
+        const newIds = Array.from({ length: count }, (_, i) => `ex-${n + i + 1}`);
+        const added = questions(result).filter((q) => newIds.includes(q.questionId));
+        expect(added.map((q) => q.questionId)).toEqual(newIds);
+        expect(questions(result).map((q) => q.questionId)).toEqual(
+          difficulty === "mixed"
+            ? [...questions(source).slice(0, at).map((q) => q.questionId), ...newIds, ...questions(source).slice(at).map((q) => q.questionId)]
+            : [...questions(source).map((q) => q.questionId), ...newIds],
+        );
+        expect(outEx.slice(exAt, exAt + 2 * count).map((b) => b.type)).toEqual(Array.from({ length: count }, () => ["question", "writing_space"]).flat());
+        expect(outSol.slice(solAt, solAt + count).map((b) => (b.type === "solution" ? b.questionId : b.type))).toEqual(newIds);
         expect(solutions(result).map((s) => s.questionId)).toEqual(questions(result).map((q) => q.questionId));
+        if (difficulty === "mixed") {
+          // the challenge-level group is still last
+          const tail = questions(result).slice(-(n - at));
+          for (const q of tail) expect(fitsLevel(result, q, "challenge"), q.questionId).toBe(true);
+          for (const q of questions(result).slice(0, -(n - at))) expect(fitsLevel(result, q, "challenge"), q.questionId).toBe(false);
+        }
 
         // new questions: at the current level as a whole (mixed: the mixed level, no new ramp), and never a repeat
         for (const q of added) expect(fitsLevel(result, q, difficulty), q.questionId).toBe(true);
@@ -257,6 +281,37 @@ describe("add_exercises", () => {
       });
     }
   }
+
+  it("keeps the challenge-level group last over repeated additions to a mixed set (D-72)", () => {
+    let pkg = testPackage({ difficulty: "mixed", durationMinutes: 60 }, "mixed-repeat"); // 6 exercises: 2 basic, 2 mixed, 2 challenge
+    const challengeIds = questions(pkg).slice(-2).map((q) => q.questionId);
+    for (const count of [1, 2, 1]) {
+      const before = pkg;
+      pkg = apply(pkg, { action: "add_exercises", count });
+      const qs = questions(pkg);
+      expect(qs.slice(-2).map((q) => q.questionId)).toEqual(challengeIds);
+      for (const q of qs.slice(-2)) expect(fitsLevel(pkg, q, "challenge")).toBe(true);
+      for (const q of qs.slice(0, -2)) expect(fitsLevel(pkg, q, "challenge")).toBe(false);
+      expect(solutions(pkg).map((b) => b.questionId)).toEqual(qs.map((q) => q.questionId));
+      expect(new Set(qs.map((q) => q.questionId)).size).toBe(qs.length);
+      // every earlier question and answer is the same block as before, in the same relative order
+      const kept = new Set(questions(before).map((q) => q.questionId));
+      expect(JSON.stringify(qs.filter((q) => kept.has(q.questionId)))).toBe(JSON.stringify(questions(before)));
+      expect(JSON.stringify(solutions(pkg).filter((b) => kept.has(b.questionId)))).toBe(JSON.stringify(solutions(before)));
+    }
+    expect(questions(pkg)).toHaveLength(10);
+    expect(validatePackage(pkg).overall).toBe("verified");
+  });
+
+  it("appends at the end of a mixed set that has no challenge-level group", () => {
+    const source = testPackage({ difficulty: "mixed", durationMinutes: 45 }, "mixed-short"); // 4 exercises: basic, basic, mixed, mixed
+    const n = questions(source).length;
+    expect(difficultyRamp(n, "mixed")).not.toContain("challenge");
+    const result = apply(source, { action: "add_exercises", count: 2 });
+    expect(questions(result).slice(0, n).map((q) => q.questionId)).toEqual(questions(source).map((q) => q.questionId));
+    expect(questions(result).slice(n).map((q) => q.questionId)).toEqual([`ex-${n + 1}`, `ex-${n + 2}`]);
+    expect(JSON.stringify(blocksOf(result, "exercises").slice(0, blocksOf(source, "exercises").length))).toBe(JSON.stringify(blocksOf(source, "exercises")));
+  });
 
   it("uses the adjusted difficulty, not the request's, after make_harder", () => {
     const harder = apply(testPackage({ difficulty: "mixed" }, "chain"), { action: "make_harder" });
@@ -460,6 +515,21 @@ describe("add_worked_example", () => {
     });
   }
 
+  it("draws at the package's current difficulty: basic, make_harder, then add_worked_example gives a mixed-level example (D-72)", () => {
+    let basicOnly = 0;
+    for (let i = 0; i < 12; i++) {
+      const harder = apply(testPackage({ difficulty: "basic", durationMinutes: 60 }, `we-eff-${i}`), { action: "make_harder" });
+      expect(effectiveSettings(harder).difficulty).toBe("mixed");
+      const result = apply(harder, { action: "add_worked_example" });
+      const added = blocksOf(result, "worked_examples").filter((b): b is ExampleBlock => b.type === "worked_example").find((b) => !blocksOf(harder, "worked_examples").some((o) => canonicalJson(o) === canonicalJson(b)))!;
+      expect(exampleFitsLevel(added, "mixed"), `${i}`).toBe(true);
+      if (!exampleFitsLevel(added, "basic")) basicOnly++;
+      // the section now records the difficulty it was drawn for: the package's current one
+      expect(sectionOf(result, "worked_examples").provenance.difficulty).toBe("mixed");
+    }
+    expect(basicOnly).toBeGreaterThan(0); // a basic-level draw would never leave the basic rules
+  });
+
   it("on a basic package (no no-solution example) appends the example at the end", () => {
     const source = testPackage({ difficulty: "basic", durationMinutes: 60 }, "we-basic");
     const result = apply(source, { action: "add_worked_example" });
@@ -497,14 +567,6 @@ describe("add_worked_example", () => {
     expect(pkg.adjustments).toHaveLength(3);
     // the source of each step is a different revision, so each step drew with a different seed
     expect(new Set(pkg.adjustments!.map((a) => a.seed)).size).toBe(3);
-  });
-
-  it("draws at the worked-examples section's own difficulty, not the exercises' adjusted one", () => {
-    const harder = apply(testPackage({ difficulty: "basic" }, "we-after-harder"), { action: "make_harder" });
-    const result = apply(harder, { action: "add_worked_example" });
-    expect(sectionOf(result, "worked_examples").provenance.difficulty).toBe("basic");
-    expect(exampleFitsLevel(examples(result).at(-1)!, "basic")).toBe(true);
-    expectPlanHolds(harder, { action: "add_worked_example" }, result);
   });
 
   it("gives up with no_distinct_questions after 20 seeds", () => {
@@ -594,7 +656,7 @@ describe("change_duration", () => {
         expect(weResult.at(-1)).toEqual(weSource.at(-1));
       }
       expect(uniqueExamples(result).some((b) => old.has(questionFingerprint(b)))).toBe(false);
-      const sectionLevel = sectionOf(source, "worked_examples").provenance.difficulty ?? request.difficulty;
+      const sectionLevel = effectiveSettings(source).difficulty; // D-72: examples follow the package's current difficulty
       const levels = difficultyRamp(k, sectionLevel === "basic" ? "basic" : "mixed");
       uniqueExamples(result).forEach((b, i) => expect(exampleFitsLevel(b, levels[i]!), b.questionId).toBe(true));
       expect(sectionOf(result, "worked_examples").provenance).toEqual({ ...sectionOf(source, "worked_examples").provenance, seed, difficulty: sectionLevel, generatorVersion: GENERATOR_VERSION });

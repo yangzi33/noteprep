@@ -328,12 +328,14 @@ function checkPlan(label: string, source: LessonPackage, plan: AdjustmentPlan, r
   expect(canonicalJson(result.outline) !== canonicalJson(source.outline), `${label} outline`).toBe(plan.outlineChanged);
 }
 
-/** Properties 3 and 4: answer key matches the exercises, every question verified twice, no repeats, ids in order. */
+/** Properties 3 and 4: answer key matches the exercises, every question verified twice, no repeats, ids unique and contiguous. */
 function checkMath(label: string, pkg: LessonPackage) {
   const qs = questions(pkg);
   const sols = solutions(pkg);
   expect(sols.map((s) => s.questionId), label).toEqual(qs.map((q) => q.questionId));
-  expect(qs.map((q) => q.questionId), label).toEqual(qs.map((_, i) => `ex-${i + 1}`));
+  // Ids are the stable link to the answer key, not positions: a mixed add_exercises inserts new ids before the
+  // challenge-level group (D-72), so the ids are ex-1..ex-n exactly once each, in any order.
+  expect(qs.map((q) => q.questionId).sort((a, b) => Number(a.slice(3)) - Number(b.slice(3))), label).toEqual(qs.map((_, i) => `ex-${i + 1}`));
   const qIds = new Set(qs.map((q) => q.questionId));
   for (const s of sols) expect(qIds.has(s.questionId), label).toBe(true);
 
@@ -394,9 +396,27 @@ function checkFresh(label: string, source: LessonPackage, change: AdjustmentChan
     case "add_exercises": {
       const n = questions(source).length;
       expect(questions(result).length, label).toBe(n + change.count);
-      expect(canonicalJson(questions(result).slice(0, n)), label).toBe(canonicalJson(questions(source)));
-      expect(canonicalJson(solutions(result).slice(0, n)), label).toBe(canonicalJson(solutions(source)));
-      fresh(questions(result).slice(n));
+      // Content and pairing, not position: the existing questions and answers are the source's blocks, byte for byte and
+      // in the same relative order. Only on a mixed set (D-72) do the new ones sit before the challenge-level group
+      // instead of at the end, which moves the position of the questions behind them.
+      const newIds = Array.from({ length: change.count }, (_, i) => `ex-${n + i + 1}`);
+      const oldQuestions = questions(result).filter((b) => !newIds.includes(b.questionId));
+      const oldSolutions = solutions(result).filter((b) => !newIds.includes(b.questionId));
+      expect(canonicalJson(oldQuestions), label).toBe(canonicalJson(questions(source)));
+      expect(canonicalJson(oldSolutions), label).toBe(canonicalJson(solutions(source)));
+      expect(canonicalJson(solutions(result).map((b) => b.questionId)), label).toBe(canonicalJson(questions(result).map((b) => b.questionId)));
+      const added = questions(result).filter((b) => newIds.includes(b.questionId));
+      expect(added.map((b) => b.questionId), label).toEqual(newIds);
+      const level = effectiveSettings(source).difficulty;
+      const tail = questions(result).slice(n).length === change.count && added.every((b, i) => questions(result)[n + i] === b);
+      if (level !== "mixed") expect(tail, `${label} appended at the end`).toBe(true);
+      else {
+        // the new questions are contiguous, and everything behind them (the challenge group) is the source's tail
+        const first = questions(result).findIndex((b) => b.questionId === newIds[0]);
+        expect(questions(result).slice(first, first + change.count).map((b) => b.questionId), label).toEqual(newIds);
+        expect(canonicalJson(questions(result).slice(first + change.count)), label).toBe(canonicalJson(questions(source).slice(first)));
+      }
+      fresh(added);
       break;
     }
     case "add_worked_example": {
@@ -767,27 +787,32 @@ describe("mutation sentinels", () => {
     return examples(result).find((b) => !before.has(canonicalJson(b)))!;
   };
 
-  it("CURRENT behaviour: an added worked example is drawn at the section's own level (basic stays basic, otherwise mixed, no ramp)", () => {
-    // Pinned as implemented in Task 6 (examplesDifficulty + exampleLevel, ramp: false); the owner may change it. A
-    // single question drawn WITH the mixed ramp would be basic, and challenge would give fractional answers, so over
-    // these seeds the mixed rule always holds and the basic rule does not.
+  it("an added worked example is drawn at the package's CURRENT effective difficulty (D-72: basic stays basic, otherwise mixed, no ramp)", () => {
+    // examplesDifficulty = effectiveSettings(pkg).difficulty, then exampleLevel. A single question drawn WITH the mixed
+    // ramp would be basic, and challenge would give fractional answers, so over these seeds the mixed rule always holds
+    // for a non-basic package and the basic rule does not.
     for (const difficulty of DIFFICULTIES) {
-      const level = difficulty === "basic" ? "basic" : "mixed";
       let notBasic = 0;
+      let mixedPacks = 0;
       for (let i = 0; i < 24; i++) {
         let source = testPackage({ difficulty, durationMinutes: 60 }, `level-${difficulty}-${i}`);
-        // The exercises' adjusted difficulty does not move the examples' level.
+        // The exercises' adjusted difficulty moves the examples' level too.
         if (i % 2 === 1) source = run(source, { action: difficulty === "challenge" ? "make_easier" : "make_harder" });
+        const effective = effectiveSettings(source).difficulty;
+        const level = effective === "basic" ? "basic" : "mixed";
         const result = run(source, { action: "add_worked_example" });
         const added = addedExample(source, result);
         expect(added.solution.kind).toBe("unique");
         expect(fits(added, level), `${difficulty} ${i}`).toBe(true);
-        if (!fits(added, "basic")) notBasic++;
-        // The section records its own difficulty (the request's), not the level drawn at nor the exercises' one.
-        expect(sectionOf(result, "worked_examples").provenance.difficulty).toBe(difficulty);
+        if (level === "mixed") {
+          mixedPacks++;
+          if (!fits(added, "basic")) notBasic++;
+        }
+        // The section records the effective difficulty it was drawn for, not the request's.
+        expect(sectionOf(result, "worked_examples").provenance.difficulty).toBe(effective);
       }
-      if (level === "mixed") expect(notBasic, difficulty).toBeGreaterThan(0);
-      else expect(notBasic).toBe(0);
+      if (difficulty === "basic") expect(mixedPacks).toBeGreaterThan(0);
+      if (mixedPacks > 0) expect(notBasic).toBeGreaterThan(0);
     }
   });
 

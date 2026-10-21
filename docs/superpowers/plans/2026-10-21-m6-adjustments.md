@@ -514,6 +514,7 @@ export interface AdjustmentStateView {
 - [ ] **Step 2–4:** 确认失败 → 实现 → `pnpm test`。实现说明:
   - 难度阶梯 basic < mixed < challenge。
   - 追加题使用有效难度;有效难度为 mixed 时追加题直接用 mixed 级,不重排分段。
+  - **D-72 更新**:有效难度为 mixed 时,新题仍用 mixed 级,但插在末尾 challenge 级分组之前(答案块同位置插入,既有块内容逐字节不变、仅位置后移);非 mixed 仍追加在末尾。add_worked_example / change_duration 的例题难度改取包的当前有效难度(`effectiveSettings`),不再取例题节原来的 provenance。
   - 保留题的解答按 questionId 从源 solutions 复制,新题的解答取自生成器。
 - [ ] **Step 5: 提交** `git commit -m "package: deterministic difficulty and exercise-count adjustments"`。
 
