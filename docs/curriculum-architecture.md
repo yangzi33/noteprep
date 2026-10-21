@@ -209,3 +209,17 @@ M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到
 | 镜像 | 基础镜像摘要固定;TeX 包版本在 `packages.lock`(不含 `libc6`/`perl-base`,避免例行安全更新让 CI 无故变红);**生产镜像必须用摘要引用**(worker 配置强制) |
 | 尚未做 | gVisor/Firecracker 的评估与目标主机验证(D-03/D-20);孤儿对象清理(P3);把 `CompileError.detail` 写进作业记录;视觉回归(版面度量)——目前只验证页数与文字;真实课程数据下的字体/符号覆盖 |
 
+
+## 17. Dataset kind `suggested` (English note, added 2026-10-21)
+
+This section is written in English on purpose; the rest of the file stays in Chinese until someone translates it.
+
+A fourth dataset kind, `suggested` (D-74, D-75): an UNOFFICIAL mapping, written by NotePrep, of a named curriculum or course onto NotePrep's own topics.
+
+- It never produces an alignment claim: `alignmentClaimsAllowed` is true only for `real` (`alignmentClaimsAllowedFor`).
+- It needs no official source URL, retrieval date or review record (the `real`-provenance CHECK only constrains `real`).
+- It carries no official codes: the validator rejects any objective or topic-objective link (`SUGGESTED_NO_OBJECTIVES`) and does not require a topic to have an objective. Course codes are NotePrep identifiers here.
+- It must say so: the version label and the curriculum name must contain the word "suggested" (`KIND_LABEL`, as for sample and synthetic).
+- It is loadable and visible in every environment with no flag (unlike sample and synthetic). The Prepare page shows "Suggested topics, unofficial"; the PDF, the draft view and the lesson page say the topic list is an unofficial NotePrep suggestion, not an official curriculum, not endorsed by any curriculum authority.
+- Stored lesson packages: the kind enums were widened, not changed, so old packages parse unchanged. `PACKAGE_SCHEMA_VERSION` is not bumped and no existing hash changes (old packages never contain the new value).
+- Migration `20261021120000_dataset_kind_suggested` is a single `ALTER TYPE dataset_kind ADD VALUE IF NOT EXISTS 'suggested'`.
