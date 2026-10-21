@@ -201,7 +201,7 @@ export function methodOf(change: AdjustmentChange): AdjustmentMethod; // reduce_
 | make_easier / make_harder | 确定性 | exercises(同题数,难度降/升一级,新种子)+ solutions(derives) | — | 页眉难度经 `effectiveSettings` 改变 | 已是 basic / challenge,或能力表不支持 |
 | add_exercises(count 1–6) | 确定性 | exercises(既有题块逐字节保留,追加新题与书写空间)+ solutions(既有解答逐字节保留,追加) | — | 提纲不变(课时不变) | 题数超过 `MAX_EXERCISES=20`(块上限 60:`1+2n≤60`) |
 | add_worked_example | 确定性 | worked_examples(在最后一道唯一解例题之后插入) | — | 提纲不变 | 唯一解例题已达 `MAX_EXAMPLES=4` |
-| change_duration | 确定性 | teaching_sequence(只换 timing 块)、exercises+solutions(题数变化时整套重抽)、worked_examples(例题数变化时重抽题块,保留引言段落) | worked_examples(仅当未重抽时) | `outline` 按 `planOutline(新课时)` 重算 | 与当前课时相同 |
+| change_duration | 确定性 | teaching_sequence(只换 timing 块)、exercises+solutions(题数变化时整套重抽)、worked_examples(例题数变化时重抽题块,保留引言段落) | 提纲分钟数改变但未重生成的节:explanation 总是(分钟变化时)、worked_examples(未重抽时)、exercises(题数未变时);solutions 分钟恒为 0 且上游 contentHash 未变,保持 unchanged | `outline` 按 `planOutline(新课时)` 重算 | 与当前课时相同。题数/例题数是否变化 = 包内**实际**唯一解例题数/练习题数与 `planOutline(新课时)` 的比较;因此用 add_exercises/add_worked_example 追加过的内容会在题数不同的新课时下被丢弃并重抽(需产品负责人确认这是预期行为) |
 | correct_text | tutor_edit | 被编辑的节(method→`tutor_edit`,`edited:true`) | references 下游;derives 下游重新派生后与原内容比较(题目不变时解答逐字节相同) | — | 编辑目标不可编辑 |
 | reduce_theory(推迟,S6) | llm | explanation、derivation | worked_examples(ref) | — | LLM 动作未启用 |
 
@@ -468,7 +468,7 @@ export interface AdjustmentStateView {
   - make_harder 在 mixed 上 → changed=[exercises]、dependents=[solutions]、unchanged=其余 8 节。
   - make_easier 在 basic 上抛 `at_easiest`;make_harder 在 challenge 上抛 `at_hardest`。
   - add_worked_example 在 4 道唯一解例题时抛 `max_examples`。
-  - change_duration 为相同课时时抛 `same_duration`;60→90 时(题数 9→12,例题数 2→3)exercises、solutions、worked_examples、teaching_sequence 都是 regenerate,且 `outlineChanged=true`。
+  - change_duration 为相同课时时抛 `same_duration`;60→90 时(题数 6→8,例题数 2→3,取自 `planOutline`;**更正**:原文的 9→12 实为 90→120)exercises、solutions、worked_examples、teaching_sequence 都是 regenerate,sec-explanation 为 rehash(提纲分钟 9→14),且 `outlineChanged=true`。
   - correct_text 编辑 explanation 段落 → changed=[explanation]、rehashed=[worked_examples]。
   - correct_text 编辑 exercises 引导段落 → dependents=[solutions](重新派生,应用后再判定逐字节相同)。
   - 编辑目标为 question 块、objectives 的列表项、alignment、timing 时抛 `not_editable`。
