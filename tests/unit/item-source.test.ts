@@ -75,3 +75,37 @@ describe("deterministicLinearSource", () => {
     expect(questionFingerprint(b as { problem: { equation: unknown } })).not.toBe(taken);
   });
 });
+
+describe("admitItem: ids and levels (S1 review)", () => {
+  it("accepts only builder-style ids that match the role", async () => {
+    const raw = clone(await draw({ level: "basic" }));
+    for (const id of ["", "x", "ex-0", "ex-01", "ex-1234567", "ex-1;rm", `ex-${"9".repeat(300)}`, "we-3", "EX-1", " ex-1"]) {
+      expect(rejection(() => admitItem({ ...raw, id }, "basic")).reason).toMatch(/^(bad_id|malformed_item)$/);
+    }
+    expect(admitItem({ ...raw, id: "ex-999999" }, "basic").id).toBe("ex-999999");
+    const example = clone(await draw({ role: "example", level: "basic", index: 2 }));
+    expect(admitItem(example, "basic").id).toBe("we-2");
+    expect(rejection(() => admitItem({ ...example, id: "ex-2" }, "basic")).reason).toBe("bad_id");
+  });
+
+  it("requires the declared level to fit the question where that is checkable", async () => {
+    const levels = ["basic", "mixed", "challenge"] as const;
+    for (const drawn of levels) {
+      for (let index = 1; index <= 8; index++) {
+        const raw = await draw({ level: drawn, index, seed: `lv${index}` });
+        for (const declared of levels) {
+          const fits = drawn === declared || (drawn === "basic" && declared === "mixed");
+          if (fits) expect(admitItem(raw, declared).level).toBe(declared);
+          else if (drawn === "mixed" && declared === "basic") {
+            // a mixed question may by chance look like a basic one (one-sided, 2 <= a <= 9); otherwise it is refused
+            try {
+              admitItem(raw, declared);
+            } catch (error) {
+              expect((error as ItemRejected).reason).toBe("level_mismatch");
+            }
+          } else expect(rejection(() => admitItem(raw, declared)).reason).toBe("level_mismatch");
+        }
+      }
+    }
+  });
+});
