@@ -24,7 +24,7 @@ const refusingLegacyCompiler: Compiler = {
 async function main() {
   const config = workerEnv();
   const db = createDb(config.WORKER_DATABASE_URL);
-  const dal = createWorkerDal(db, { purgeGraceDays: config.limits.purgeGraceDays });
+  const dal = createWorkerDal(db, { purgeGraceDays: config.limits.purgeGraceDays, exportDeadlineGraceSeconds: config.limits.exportDeadlineGraceSeconds });
   const stop = new AbortController();
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.once(signal, () => {

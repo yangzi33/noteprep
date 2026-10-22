@@ -15,6 +15,9 @@ export interface AllowanceView {
 
 export interface HistoryItem {
   jobId: string;
+  /** "export": a job of the draft export flow; its `exportId` is the link target for a job that has not succeeded (/exports/{id}). */
+  kind: "generate" | "export";
+  exportId: string | null;
   lessonId: string;
   title: string;
   state: "queued" | "running" | "succeeded" | "failed" | "canceled";
@@ -50,13 +53,15 @@ export function createHistoryDal(db: Db, deps: HistoryDeps = {}) {
 
     async listJobs(ctx: AuthedCtx, limit = 50): Promise<HistoryItem[]> {
       const jobs = await db.generationJob.findMany({
-        where: { ownerId: ctx.userId, kind: "generate", lesson: { deletedAt: null } },
+        where: { ownerId: ctx.userId, kind: { in: ["generate", "export"] }, lesson: { deletedAt: null } },
         orderBy: { createdAt: "desc" },
         take: Math.min(Math.max(limit, 1), 200),
-        include: { lesson: { select: { title: true } } },
+        include: { lesson: { select: { title: true } }, exports: { select: { id: true }, take: 1 } },
       });
       return jobs.map((job) => ({
         jobId: job.id,
+        kind: job.kind === "export" ? "export" : "generate",
+        exportId: job.exports[0]?.id ?? null,
         lessonId: job.lessonId,
         title: job.lesson.title,
         state: job.state,

@@ -7,6 +7,8 @@ import { inTransaction, type Tx } from "./tx";
 
 export interface ClaimedJob {
   id: string;
+  /** What the job is: a legacy generation, or an export of a frozen snapshot (S4). */
+  kind: "generate" | "export";
   ownerId: string;
   lessonId: string;
   /** Present on every write this attempt makes; a newer claim invalidates it. */
@@ -30,6 +32,32 @@ export interface SweepReport {
   canceled: number;
   /** Buckets whose counters disagree with their reservation rows: an alert, never auto-repaired. */
   drift: string[];
+  /** Committed exports whose job or reservation disagree (export_state_drift): an alert, never auto-repaired. */
+  exportDrift: string[];
+  /** Rows whose recovery threw: counted and skipped so one poisoned row cannot stall the batch (it is retried next sweep; alert on > 0). */
+  sweepRowErrors: number;
+}
+
+/** What an export attempt needs, readable only by the attempt that currently owns the job. */
+export interface ExportInput {
+  exportId: string;
+  snapshotId: string;
+  ownerId: string;
+  lessonId: string;
+  exportKey: string;
+  /** The frozen spec ({v, documents, locale, pageFormat, templateVersion, renderVersion}) and the expected rendered-source hashes. */
+  spec: unknown;
+  texSha256: unknown;
+  /** The full LessonPackage as confirmed, and its content hash. */
+  content: unknown;
+  packageHash: string;
+  validatorVersion: string;
+  deadlineAt: Date;
+}
+
+export interface JobsOptions {
+  /** How long past deadline_at a RUNNING export job may stay before the sweeper fails it (the worker checks the deadline itself). */
+  exportDeadlineGraceSeconds?: number;
 }
 
 type Stage = "generating" | "validating" | "compiling" | "storing";
@@ -54,7 +82,8 @@ async function lockRunning(tx: Tx, jobId: string, token: bigint): Promise<Runnin
 }
 
 /** Worker-side job lifecycle: claim, lease, budget, retry, and the recovery sweeper. */
-export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF) {
+export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF, options: JobsOptions = {}) {
+  const graceSeconds = options.exportDeadlineGraceSeconds ?? 60;
   return {
     /**
      * Atomically claims one runnable job: the row lock is skipped (not waited on) when another worker
@@ -62,24 +91,27 @@ export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF) 
      */
     async claimNext(workerId: string, leaseMs: number): Promise<ClaimedJob | null> {
       const rows = await db.$queryRaw<
-        { id: string; owner_id: string; lesson_id: string; fencing_token: bigint; attempt: number; max_attempts: number; deadline_at: Date }[]
+        { id: string; kind: "generate" | "export"; owner_id: string; lesson_id: string; fencing_token: bigint; attempt: number; max_attempts: number; deadline_at: Date }[]
       >`
         UPDATE generation_job
-           SET state = 'running'::job_state, stage = 'generating'::job_stage, lease_owner = ${workerId},
+           SET state = 'running'::job_state,
+               stage = CASE WHEN kind = 'export'::job_kind THEN 'compiling'::job_stage ELSE 'generating'::job_stage END,
+               lease_owner = ${workerId},
                lease_expires_at = now() + (${leaseMs}::int * interval '1 millisecond'),
                fencing_token = fencing_token + 1, attempt = attempt + 1, started_at = COALESCE(started_at, now())
          WHERE id = (
            SELECT id FROM generation_job
-            WHERE state = 'queued'::job_state AND kind = 'generate'::job_kind
+            WHERE state = 'queued'::job_state AND kind IN ('generate'::job_kind, 'export'::job_kind)
               AND run_after <= now() AND cancel_requested_at IS NULL
               AND attempt < max_attempts AND deadline_at > now()
             ORDER BY run_after, created_at
             FOR UPDATE SKIP LOCKED LIMIT 1)
-     RETURNING id, owner_id, lesson_id, fencing_token, attempt, max_attempts, deadline_at`;
+     RETURNING id, kind::text AS kind, owner_id, lesson_id, fencing_token, attempt, max_attempts, deadline_at`;
       const row = rows[0];
       if (!row) return null;
       return {
         id: row.id,
+        kind: row.kind,
         ownerId: row.owner_id,
         lessonId: row.lesson_id,
         fencingToken: row.fencing_token,
@@ -109,6 +141,35 @@ export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF) 
          WHERE j.id = ${jobId}::uuid AND j.fencing_token = ${token} AND j.state = 'running'::job_state`;
       if (!rows[0]) throw new StaleOrCanceled();
       return rows[0].input_spec;
+    },
+
+    /** The export an attempt must produce: job (running, this token) joined to its export and immutable snapshot. */
+    async getExportInput(jobId: string, token: bigint): Promise<ExportInput> {
+      const rows = await db.$queryRaw<
+        { export_id: string; snapshot_id: string; owner_id: string; lesson_id: string; export_key: string; spec: unknown; tex_sha256: unknown; content: unknown; package_hash: string; validator_version: string; deadline_at: Date }[]
+      >`
+        SELECT e.id AS export_id, s.id AS snapshot_id, j.owner_id, j.lesson_id, e.export_key, s.spec, s.tex_sha256, s.content,
+               s.package_hash, s.validator_version, j.deadline_at
+          FROM generation_job j
+          JOIN export e ON e.job_id = j.id AND e.owner_id = j.owner_id
+          JOIN export_snapshot s ON s.id = e.snapshot_id AND s.owner_id = e.owner_id
+         WHERE j.id = ${jobId}::uuid AND j.fencing_token = ${token} AND j.state = 'running'::job_state
+           AND j.kind = 'export'::job_kind AND e.state = 'pending'`;
+      const row = rows[0];
+      if (!row) throw new StaleOrCanceled();
+      return {
+        exportId: row.export_id,
+        snapshotId: row.snapshot_id,
+        ownerId: row.owner_id,
+        lessonId: row.lesson_id,
+        exportKey: row.export_key,
+        spec: row.spec,
+        texSha256: row.tex_sha256,
+        content: row.content,
+        packageHash: row.package_hash,
+        validatorVersion: row.validator_version,
+        deadlineAt: row.deadline_at,
+      };
     },
 
     /**
@@ -155,50 +216,61 @@ export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF) 
      * workers: rows are taken with SKIP LOCKED, and every give-up path releases the reservation.
      */
     async sweep(limit = 50): Promise<SweepReport> {
-      const report: SweepReport = { requeued: 0, failed: 0, canceled: 0, drift: [] };
+      const report: SweepReport = { requeued: 0, failed: 0, canceled: 0, drift: [], exportDrift: [], sweepRowErrors: 0 };
       const ids = await db.$queryRaw<{ id: string }[]>`
         SELECT id FROM generation_job
          WHERE (state = 'running'::job_state AND lease_expires_at < now())
             OR (state = 'queued'::job_state AND (deadline_at <= now() OR attempt >= max_attempts OR cancel_requested_at IS NOT NULL))
+            OR (state = 'running'::job_state AND kind = 'export'::job_kind AND deadline_at + make_interval(secs => ${graceSeconds}::int) < now())
          ORDER BY created_at LIMIT ${limit}`;
       for (const { id } of ids) {
-        await inTransaction(db, async (tx) => {
-          const rows = await tx.$queryRaw<
-            { state: string; attempt: number; max_attempts: number; expired: boolean; past_deadline: boolean; canceled: boolean }[]
-          >`
-            SELECT state::text AS state, attempt, max_attempts,
-                   (state = 'running'::job_state AND lease_expires_at < now()) AS expired,
-                   (deadline_at <= now()) AS past_deadline,
-                   (cancel_requested_at IS NOT NULL) AS canceled
-              FROM generation_job WHERE id = ${id}::uuid FOR UPDATE SKIP LOCKED`;
-          const job = rows[0];
-          if (!job) return; // another sweeper has it
-          const stalled = job.state === "running" && job.expired;
-          const stuckQueued = job.state === "queued" && (job.past_deadline || job.attempt >= job.max_attempts || job.canceled);
-          if (!stalled && !stuckQueued) return; // recovered meanwhile (heartbeat or claim)
+        // One bad row must never stall the batch: its transaction rolls back (nothing of it is applied), it is counted, and the
+        // next row is recovered. The row stays eligible and is retried by the next sweep.
+        try {
+          const outcome = await inTransaction(db, async (tx): Promise<"requeued" | "failed" | "canceled" | null> => {
+            const rows = await tx.$queryRaw<
+              { state: string; attempt: number; max_attempts: number; expired: boolean; past_deadline: boolean; canceled: boolean; export_overdue: boolean }[]
+            >`
+              SELECT state::text AS state, attempt, max_attempts,
+                     (state = 'running'::job_state AND lease_expires_at < now()) AS expired,
+                     (deadline_at <= now()) AS past_deadline,
+                     (cancel_requested_at IS NOT NULL) AS canceled,
+                     (state = 'running'::job_state AND kind = 'export'::job_kind AND deadline_at + make_interval(secs => ${graceSeconds}::int) < now()) AS export_overdue
+                FROM generation_job WHERE id = ${id}::uuid FOR UPDATE SKIP LOCKED`;
+            const job = rows[0];
+            if (!job) return null; // another sweeper has it
+            const stalled = job.state === "running" && job.expired;
+            const stuckQueued = job.state === "queued" && (job.past_deadline || job.attempt >= job.max_attempts || job.canceled);
+            if (!stalled && !stuckQueued && !job.export_overdue) return null; // recovered meanwhile (heartbeat or claim) or finished
 
-          if (job.canceled) {
-            await finishLockedJob(tx, id, "canceled", "canceled");
-            report.canceled++;
-          } else if (job.past_deadline) {
-            await finishLockedJob(tx, id, "failed", "deadline_exceeded");
-            report.failed++;
-          } else if (job.attempt >= job.max_attempts) {
-            await finishLockedJob(tx, id, "failed", "max_attempts_exceeded");
-            report.failed++;
-          } else {
-            const delayMs = backoffDelayMs(job.attempt, backoff);
-            await tx.$executeRaw`
-              UPDATE generation_job
-                 SET state = 'queued'::job_state, stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
-                     run_after = now() + (${delayMs}::int * interval '1 millisecond')
-               WHERE id = ${id}::uuid`;
-            report.requeued++;
-          }
-        });
+            if (job.canceled) {
+              await finishLockedJob(tx, id, "canceled", "canceled");
+              return "canceled";
+            } else if (job.past_deadline) {
+              await finishLockedJob(tx, id, "failed", "deadline_exceeded");
+              return "failed";
+            } else if (job.attempt >= job.max_attempts) {
+              await finishLockedJob(tx, id, "failed", "max_attempts_exceeded");
+              return "failed";
+            } else {
+              const delayMs = backoffDelayMs(job.attempt, backoff);
+              await tx.$executeRaw`
+                UPDATE generation_job
+                   SET state = 'queued'::job_state, stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
+                       run_after = now() + (${delayMs}::int * interval '1 millisecond')
+                 WHERE id = ${id}::uuid`;
+              return "requeued";
+            }
+          });
+          if (outcome) report[outcome]++; // counted only once the transaction (and its deferred checks) committed
+        } catch {
+          report.sweepRowErrors++;
+        }
       }
       const drift = await db.$queryRaw<{ bucket_id: string }[]>`SELECT bucket_id FROM usage_bucket_drift`;
       report.drift = drift.map((d) => d.bucket_id);
+      const exportDrift = await db.$queryRaw<{ export_id: string }[]>`SELECT export_id FROM export_state_drift`;
+      report.exportDrift = exportDrift.map((d) => d.export_id);
       return report;
     },
   };
