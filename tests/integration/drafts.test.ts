@@ -68,6 +68,22 @@ const one = async (sql: string, params: unknown[] = []) => (await admin.query(sq
 const count = async (sql: string, params: unknown[] = []) => Number((await one(`SELECT count(*)::int AS n FROM ${sql}`, params)).n);
 const bucket = async (ownerId: string) => (await one(`SELECT used, reserved, limit_count FROM usage_bucket WHERE owner_id = $1`, [ownerId])) as { used: number; reserved: number; limit_count: number };
 const driftFor = async (ownerId: string) => (await admin.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = $1`, [ownerId])).rows;
+/** Time travel for tests only: the guard (rightly) forbids moving the expiry of an expired draft, so switch it off for one statement. */
+async function forceExpiry(draftId: string, sqlOffset: string) {
+  const client = await admin.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`ALTER TABLE draft DISABLE TRIGGER draft_guard`);
+    await client.query(`UPDATE draft SET expires_at = now() ${sqlOffset} WHERE id = $1`, [draftId]);
+    await client.query(`ALTER TABLE draft ENABLE TRIGGER draft_guard`);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 const expireAt = (draftId: string, sqlOffset: string) => admin.query(`UPDATE draft SET expires_at = now() ${sqlOffset} WHERE id = $1`, [draftId]);
 
 describe("R1: a draft is free", () => {
@@ -352,7 +368,7 @@ describe("expiry and purge", () => {
     await expect(web.drafts.getDraftView(ctx, justExpired.draft.draftId)).rejects.toBeInstanceOf(DraftExpired);
 
     // after the grace period the marked one goes too
-    await expireAt(justExpired.draft.draftId, "- interval '8 days'");
+    await forceExpiry(justExpired.draft.draftId, "- interval '8 days'");
     await purger.purgeExpired(1000);
     expect(await count(`draft WHERE id = $1`, [justExpired.draft.draftId])).toBe(0);
     expect(await count(`draft_version WHERE draft_id = $1`, [justExpired.draft.draftId])).toBe(0);
