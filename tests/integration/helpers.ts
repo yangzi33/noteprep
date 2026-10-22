@@ -193,3 +193,33 @@ export async function txErrorCode(db: Db, statements: Array<[string, unknown[]?]
     client.release();
   }
 }
+
+/**
+ * Settles every pending export in the database consistently (export failed, job failed, reservation released, counter returned).
+ * The database is shared by every test file, and several files park leftover queued jobs with a plain UPDATE; that is
+ * only legal for an export job when its export row and reservation settle in the same transaction.
+ */
+export async function settleAllPendingExports(db: Db) {
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`UPDATE export SET state = 'failed', failure_code = 'test_cleanup', settled_at = now() WHERE state = 'pending'`);
+    await client.query(
+      `WITH released AS (
+         UPDATE usage_reservation r SET state = 'released', settle_reason = 'test_cleanup', settled_at = now()
+           FROM export e WHERE e.job_id = r.job_id AND e.failure_code = 'test_cleanup' AND r.state = 'reserved'
+         RETURNING r.bucket_id)
+       UPDATE usage_bucket b SET reserved = b.reserved - x.n FROM (SELECT bucket_id, count(*)::int AS n FROM released GROUP BY bucket_id) x WHERE x.bucket_id = b.id`,
+    );
+    await client.query(
+      `UPDATE generation_job j SET state = 'failed', stage = NULL, error_code = 'test_cleanup', lease_owner = NULL, lease_expires_at = NULL, finished_at = now()
+         FROM export e WHERE e.job_id = j.id AND e.failure_code = 'test_cleanup' AND j.state IN ('queued', 'running')`,
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

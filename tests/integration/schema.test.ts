@@ -11,11 +11,14 @@ import {
   seedExportRows,
   seedRevision,
   seedTrialBucket,
+  settleAllPendingExports,
   txErrorCode,
 } from "./helpers";
 
 const { admin, app, worker } = pools();
 afterAll(async () => {
+  // The export fixtures below leave pending exports with queued jobs; other files park queued jobs with a plain UPDATE.
+  await settleAllPendingExports(admin);
   await Promise.all([admin.end(), app.end(), worker.end()]);
 });
 

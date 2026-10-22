@@ -439,11 +439,12 @@ describe("limits apply only to the create path; refusals roll back", () => {
   it("the global queued cap", async () => {
     const lim = await createHarness({ limits: { exportMaxQueuedGlobal: 1 } });
     try {
+      await lim.parkForeignJobs(); // queued legacy jobs of other files would already fill the cap
       const [c1, c2] = [await lim.account(), await lim.account()];
       const [a, b] = [await lim.newDraft(c1), await lim.newDraft(c2)];
-      await lim.confirm(c1, a); // one queued job now (assuming nothing else is queued globally)
+      await lim.confirm(c1, a); // exactly one queued job now
       const queued = await lim.count(`SELECT count(*) AS n FROM generation_job WHERE state = 'queued'`);
-      expect(queued).toBeGreaterThanOrEqual(1);
+      expect(queued).toBe(1);
       expect(await code(lim.confirm(c2, b))).toBe("QUEUE_BUSY");
       expect(await lim.bucket(c2.userId)).toMatchObject({ reserved: 0 });
     } finally {
