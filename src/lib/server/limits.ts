@@ -38,6 +38,10 @@ const SHAPE = {
   exportDeadlineMinutes: int("EXPORT_DEADLINE_MINUTES", 10, 1, 120),
   // Expiry and purge
   draftTtlDays: int("DRAFT_TTL_DAYS", 14, 1, 365),
+  // Hard cap on sliding expiry: expires_at never goes beyond created_at + this many days (placeholder)
+  draftMaxLifetimeDays: int("DRAFT_MAX_LIFETIME_DAYS", 60, 1, 730),
+  // How long a draft operation waits for a row lock before DRAFT_BUSY (SET LOCAL lock_timeout; placeholder)
+  draftLockTimeoutMs: int("DRAFT_LOCK_TIMEOUT_MS", 5_000, 50, 60_000),
   purgeGraceDays: int("DRAFT_PURGE_GRACE_DAYS", 7, 0, 365),
   purgeBatchSize: int("DRAFT_PURGE_BATCH_SIZE", 100, 1, 10_000),
   // Reserved for a future language-model item source (0 = no budget; nothing reads these yet)
@@ -48,6 +52,7 @@ const SHAPE = {
 
 const LimitsSchema = z
   .object(Object.fromEntries(Object.entries(SHAPE).map(([key, { schema }]) => [key, schema])) as { [K in keyof typeof SHAPE]: (typeof SHAPE)[K]["schema"] })
+  .refine((l) => l.draftMaxLifetimeDays >= l.draftTtlDays, { message: "DRAFT_MAX_LIFETIME_DAYS must not be below DRAFT_TTL_DAYS", path: ["draftMaxLifetimeDays"] })
   .refine((l) => l.minExercises <= l.maxExercises, { message: "MIN_EXERCISES must not exceed MAX_EXERCISES_PER_DRAFT", path: ["minExercises"] });
 
 export type Limits = z.infer<typeof LimitsSchema>;

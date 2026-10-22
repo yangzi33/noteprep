@@ -234,6 +234,13 @@ export class CandidateRateLimited extends DomainError {
   }
 }
 
+/** The draft row (or one of its versions) stayed locked by another request for longer than the lock timeout: safe to retry. */
+export class DraftBusy extends DomainError {
+  constructor() {
+    super("DRAFT_BUSY", "This draft is busy");
+  }
+}
+
 /** The draft already holds the maximum number of versions (nothing is evicted automatically). */
 export class VersionLimit extends DomainError {
   constructor(readonly max: number) {

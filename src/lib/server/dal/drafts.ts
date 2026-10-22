@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound, VersionLimit, VersionRateLimited } from "@/lib/domain/errors";
+import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftBusy, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound, VersionLimit, VersionRateLimited } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -36,7 +36,7 @@ import { DEFAULT_LIMITS, type Limits } from "../limits";
 import type { DraftCreated, DraftMutationResult, DraftSelection, DraftSummaryDto, DraftVersionResult, DraftVersionSummary, DraftViewDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
-import { inTransaction, isCheckViolation, type Tx } from "./tx";
+import { hasSqlState, inTransaction, isCheckViolation, type Tx } from "./tx";
 
 // Drafts are FREE: nothing in this module may touch the allowance, reservations or jobs. A test pins that by reading
 // this file's imports (tests/unit/drafts-isolation.test.ts); keep it that way.
@@ -147,12 +147,40 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     return { pkg, levels, report, content };
   }
 
-  /** Sliding expiry: every successful mutation pushes the expiry out to now + TTL (the draft guard allows it only for active, unexpired drafts). */
-  const slidingExpiry = (now: Date) => new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
+  /** The expiry of a new draft. Later mutations slide it with `slideExpiry` (database clock, capped). */
+  const initialExpiry = (now: Date) => new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
+
+  /**
+   * Sliding expiry as a SQL assignment, on the database clock (the same one the draft guard uses): now + TTL, never beyond
+   * created_at + the lifetime cap, and never shorter than it already is (a touch does not shorten a draft whose cap was lowered).
+   */
+  const slideExpiry = () =>
+    Prisma.sql`expires_at = GREATEST(expires_at, LEAST(now() + make_interval(days => ${limits.draftTtlDays}::int), created_at + make_interval(days => ${limits.draftMaxLifetimeDays}::int))), updated_at = now()`;
+
+  /**
+   * Every draft transaction: bounded lock waits (SET LOCAL lock_timeout -> DRAFT_BUSY, safe to retry) and, as a backstop, a
+   * draft-guard refusal about expiry (SQLSTATE 55000) is reported as DRAFT_EXPIRED. Deadlocks and serialization failures are
+   * retried by inTransaction.
+   *
+   * LOCK ORDER, the same for every write: profile (createDraft only) -> draft row -> counter rows (rate_limit_window; leaf
+   * locks, nothing else is waited on while holding one) -> version row(s). No path locks a version row before its draft row.
+   */
+  async function draftTx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    try {
+      return await inTransaction(db, async (tx) => {
+        await tx.$queryRaw`SELECT set_config('lock_timeout', ${`${limits.draftLockTimeoutMs}ms`}, true)`;
+        return fn(tx);
+      });
+    } catch (error) {
+      if (hasSqlState(error, "55P03")) throw new DraftBusy();
+      if (hasSqlState(error, "55000", "expired")) throw new DraftExpired();
+      throw error;
+    }
+  }
 
   /** The transaction of createDraft. Lock order is part of the safety contract: see the comments inside. */
   async function createDraftTx(ownerId: string, request: LessonRequestV2, key: string, hash: string, options: CreateDraftOptions): Promise<CreateDraftResult> {
-    return inTransaction(db, async (tx) => {
+    return draftTx(async (tx) => {
       const now = clock();
 
       // 0. Per-account serialization point (the same lock the generation flow takes). SAFETY CONTRACT: this lock comes
@@ -189,7 +217,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
       const { pkg, levels, report, content } = buildVerified(request, context, seed);
 
       // 5. Store: the draft (request and context once), version 1, then the active pointer.
-      const expiresAt = slidingExpiry(now);
+      const expiresAt = initialExpiry(now);
       const draft = await tx.draft.create({
         data: {
           ownerId,
@@ -250,22 +278,27 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     if (!uuid.safeParse(draftId).success || !uuid.safeParse(versionId).success) throw new NotFound();
     if (!Number.isInteger(expectedRev) || expectedRev < 1) throw new InvalidRequest("expectedRev must be a positive integer");
     const ownerId = ctx.userId;
-    return inTransaction(db, async (tx) => {
-      const rows = await tx.$queryRaw<
-        { id: string; rev: number; seed: string; content: unknown; content_hash: string; question_meta: unknown; next_question_seq: number; history: unknown; changes: unknown; pending_candidate: unknown; status: string; expires_at: Date; request: unknown; context: unknown }[]
-      >`SELECT v.id, v.rev, v.seed, v.content, v.content_hash, v.question_meta, v.next_question_seq, v.history, v.changes, v.pending_candidate,
-               d.status::text AS status, d.expires_at, d.request, d.context
-          FROM draft_version v JOIN draft d ON d.id = v.draft_id AND d.owner_id = v.owner_id
-         WHERE v.id = ${versionId}::uuid AND v.draft_id = ${draftId}::uuid AND v.owner_id = ${ownerId}::uuid
-         FOR UPDATE OF v`;
+    return draftTx(async (tx) => {
+      // 1. The draft row first (FOR NO KEY UPDATE: it excludes other writers of the draft but not the foreign-key share locks
+      // that createVersion/switchVersion need on rows they reference), then 2. the version row. Same order as the version operations.
+      const drafts = await tx.$queryRaw<{ request: unknown; context: unknown; live: boolean }[]>`
+        SELECT request, context, (status = 'active'::draft_status AND expires_at > now()) AS live
+          FROM draft WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid FOR NO KEY UPDATE`;
+      const locked = drafts[0];
+      if (!locked) throw new NotFound();
+      if (!locked.live) throw new DraftExpired();
+      const rows = await tx.$queryRaw<{ id: string; rev: number; seed: string; content: unknown; content_hash: string; question_meta: unknown; next_question_seq: number; history: unknown; changes: unknown; pending_candidate: unknown }[]>`
+        SELECT id, rev, seed, content, content_hash, question_meta, next_question_seq, history, changes, pending_candidate
+          FROM draft_version
+         WHERE id = ${versionId}::uuid AND draft_id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid
+         FOR UPDATE`;
       const row = rows[0];
       if (!row) throw new NotFound();
       const now = clock();
-      if (row.status !== "active" || row.expires_at.getTime() <= now.getTime()) throw new DraftExpired();
       if (row.rev !== expectedRev) throw new DraftConflict(row.rev);
 
       const version = { id: row.id, rev: row.rev, seed: row.seed, content: row.content, contentHash: row.content_hash, questionMeta: row.question_meta, nextQuestionSeq: row.next_question_seq, history: row.history, changes: row.changes, pendingCandidate: row.pending_candidate };
-      const draft = { request: row.request, context: row.context };
+      const draft = { request: locked.request, context: locked.context };
       const { state, candidate } = await op({ draft, version, state: stateOf(version, draft) }, tx);
 
       const content = split(state.pkg);
@@ -287,7 +320,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
       });
       if (updated.count !== 1) throw new DraftConflict(expectedRev + 1);
       // Sliding expiry: rev is NOT changed here (the pointer revision belongs to version operations); only expires_at and updated_at move.
-      await tx.draft.updateMany({ where: { id: draftId, ownerId }, data: { updatedAt: now, expiresAt: slidingExpiry(now) } });
+      await tx.$executeRaw`UPDATE draft SET ${slideExpiry()} WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid`;
       return { rev: expectedRev + 1, contentHash };
     });
   }
@@ -307,13 +340,13 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
    * Locks the draft row (owner filtered), refuses an expired draft and compares the pointer revision the caller saw.
    * Everything a version operation writes happens after this lock, in the same transaction.
    */
-  async function lockDraft(tx: Tx, ownerId: string, draftId: string, expectedDraftRev: number, now: Date): Promise<LockedDraft> {
-    const rows = await tx.$queryRaw<{ id: string; rev: number; version_count: number; active_version_id: string | null; status: string; expires_at: Date; request: unknown; context: unknown }[]>`
-      SELECT id, rev, version_count, active_version_id, status::text AS status, expires_at, request, context
+  async function lockDraft(tx: Tx, ownerId: string, draftId: string, expectedDraftRev: number): Promise<LockedDraft> {
+    const rows = await tx.$queryRaw<{ id: string; rev: number; version_count: number; active_version_id: string | null; live: boolean; request: unknown; context: unknown }[]>`
+      SELECT id, rev, version_count, active_version_id, (status = 'active'::draft_status AND expires_at > now()) AS live, request, context
         FROM draft WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid FOR UPDATE`;
     const row = rows[0];
     if (!row) throw new NotFound();
-    if (row.status !== "active" || row.expires_at.getTime() <= now.getTime()) throw new DraftExpired();
+    if (!row.live) throw new DraftExpired();
     if (row.rev !== expectedDraftRev) throw new DraftConflict(row.rev);
     return { id: row.id, rev: row.rev, versionCount: row.version_count, activeVersionId: row.active_version_id, request: row.request, context: row.context };
   }
@@ -324,9 +357,9 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
   }
 
   async function createVersionTx(ownerId: string, draftId: string, expectedDraftRev: number): Promise<DraftVersionResult> {
-    return inTransaction(db, async (tx) => {
+    return draftTx(async (tx) => {
       const now = clock();
-      const draft = await lockDraft(tx, ownerId, draftId, expectedDraftRev, now);
+      const draft = await lockDraft(tx, ownerId, draftId, expectedDraftRev);
       const existing = await tx.draftVersion.count({ where: { draftId, ownerId } });
       if (existing >= limits.maxVersionsPerDraft) throw new VersionLimit(limits.maxVersionsPerDraft);
       if ((await incrementRateLimit(tx, `ver:u:${ownerId}`)) > limits.versionCreatesPerUserPerHour) throw new VersionRateLimited();
@@ -350,13 +383,11 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
           updatedAt: now,
         },
       });
-      const expiresAt = slidingExpiry(now);
-      const moved = await tx.draft.updateMany({
-        where: { id: draftId, ownerId, rev: expectedDraftRev },
-        data: { versionCount: { increment: 1 }, activeVersionId: version.id, rev: { increment: 1 }, expiresAt, updatedAt: now },
-      });
-      if (moved.count !== 1) throw new DraftConflict(expectedDraftRev + 1);
-      return { draftRev: expectedDraftRev + 1, versionId: version.id, ordinal, expiresAt };
+      const moved = await tx.$queryRaw<{ expires_at: Date }[]>`
+        UPDATE draft SET version_count = version_count + 1, active_version_id = ${version.id}::uuid, rev = rev + 1, ${slideExpiry()}
+         WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid AND rev = ${expectedDraftRev} RETURNING expires_at`;
+      if (moved.length !== 1) throw new DraftConflict(expectedDraftRev + 1);
+      return { draftRev: expectedDraftRev + 1, versionId: version.id, ordinal, expiresAt: moved[0]!.expires_at };
     });
   }
 
@@ -469,18 +500,15 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     async switchVersion(ctx: AuthedCtx, draftId: string, versionId: string, expectedDraftRev: number): Promise<DraftVersionResult> {
       checkVersionArgs(draftId, expectedDraftRev, versionId);
       const ownerId = ctx.userId;
-      return inTransaction(db, async (tx) => {
-        const now = clock();
-        await lockDraft(tx, ownerId, draftId, expectedDraftRev, now);
+      return draftTx(async (tx) => {
+        await lockDraft(tx, ownerId, draftId, expectedDraftRev);
         const target = await tx.draftVersion.findFirst({ where: { id: versionId, draftId, ownerId }, select: { id: true, ordinal: true } });
         if (!target) throw new NotFound();
-        const expiresAt = slidingExpiry(now);
-        const moved = await tx.draft.updateMany({
-          where: { id: draftId, ownerId, rev: expectedDraftRev },
-          data: { activeVersionId: target.id, rev: { increment: 1 }, expiresAt, updatedAt: now },
-        });
-        if (moved.count !== 1) throw new DraftConflict(expectedDraftRev + 1);
-        return { draftRev: expectedDraftRev + 1, versionId: target.id, ordinal: target.ordinal, expiresAt };
+        const moved = await tx.$queryRaw<{ expires_at: Date }[]>`
+          UPDATE draft SET active_version_id = ${target.id}::uuid, rev = rev + 1, ${slideExpiry()}
+           WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid AND rev = ${expectedDraftRev} RETURNING expires_at`;
+        if (moved.length !== 1) throw new DraftConflict(expectedDraftRev + 1);
+        return { draftRev: expectedDraftRev + 1, versionId: target.id, ordinal: target.ordinal, expiresAt: moved[0]!.expires_at };
       });
     },
 
