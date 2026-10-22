@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
+import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound, VersionLimit, VersionRateLimited } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -15,6 +15,7 @@ import {
   BUILDER_MIN_EXERCISES,
   changeSummary,
   drawReplacement,
+  exerciseIds,
   questionSlots,
   removeQuestion as removeQuestionOp,
   undoLabel,
@@ -23,6 +24,7 @@ import {
   type HistoryEntry,
   type MetaMap,
   type OpsConfig,
+  type ChangeSummary,
   type PendingCandidate,
   type StoredChanges,
 } from "@/lib/package/draft-ops";
@@ -31,7 +33,7 @@ import { validatePackage } from "@/lib/package/validate";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
 import { DEFAULT_LIMITS, type Limits } from "../limits";
-import type { DraftCreated, DraftMutationResult, DraftSelection, DraftSummaryDto, DraftViewDto } from "./dto";
+import type { DraftCreated, DraftMutationResult, DraftSelection, DraftSummaryDto, DraftVersionResult, DraftVersionSummary, DraftViewDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
 import { inTransaction, isCheckViolation, type Tx } from "./tx";
@@ -115,6 +117,14 @@ function stateOf(row: { content: unknown; contentHash: string; questionMeta: unk
   return { pkg: parsed.data, meta: asMeta(row.questionMeta), nextSeq: row.nextQuestionSeq, history: (Array.isArray(row.history) ? row.history : []) as HistoryEntry[], changes: asChanges(row.changes) };
 }
 
+/** Summary of a version from its stored meta and changes (no package content needed: meta entries of removed questions are deleted). */
+function summaryOf(questionMeta: unknown, changes: unknown): ChangeSummary {
+  const replacedIds = Object.entries(asMeta(questionMeta))
+    .filter(([, m]) => m.origin === "replacement")
+    .map(([id]) => id);
+  return { replacedIds, removedIds: [...new Set(asChanges(changes).removedIds)], modifiedIds: [...replacedIds] };
+}
+
 const asCandidate = (value: unknown): PendingCandidate | null => (value && typeof value === "object" ? (value as PendingCandidate) : null);
 
 export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
@@ -125,6 +135,20 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
   async function bump(tx: Tx, key: string, max: number) {
     if ((await incrementRateLimit(tx, key)) > max) throw new DraftRateLimited();
   }
+
+  /** Builds and verifies one package from the stored request and context. Only a fully verified, in-limit package is returned. */
+  function buildVerified(request: LessonRequestV2, context: CurriculumContext, seed: string) {
+    const { pkg, levels } = buildPackageWithMeta({ request, context, seed });
+    const report = validatePackage(pkg);
+    if (report.overall !== "verified") throw new PackageBuildError("the drafted package did not validate as verified");
+    const content = split(pkg);
+    if (Buffer.byteLength(JSON.stringify(content), "utf8") > limits.maxDraftBytes) throw new PackageBuildError("the drafted package exceeds the size limit");
+    if (exerciseIds(pkg).length > limits.maxExercises) throw new PackageBuildError("the drafted package has more exercises than allowed");
+    return { pkg, levels, report, content };
+  }
+
+  /** Sliding expiry: every successful mutation pushes the expiry out to now + TTL (the draft guard allows it only for active, unexpired drafts). */
+  const slidingExpiry = (now: Date) => new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
 
   /** The transaction of createDraft. Lock order is part of the safety contract: see the comments inside. */
   async function createDraftTx(ownerId: string, request: LessonRequestV2, key: string, hash: string, options: CreateDraftOptions): Promise<CreateDraftResult> {
@@ -162,14 +186,10 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
 
       // 4. Build and verify. Only a fully verified package may be stored.
       const seed = newSeed();
-      const { pkg, levels } = buildPackageWithMeta({ request, context, seed });
-      const report = validatePackage(pkg);
-      if (report.overall !== "verified") throw new PackageBuildError("the drafted package did not validate as verified");
-      const content = split(pkg);
-      if (Buffer.byteLength(JSON.stringify(content), "utf8") > limits.maxDraftBytes) throw new PackageBuildError("the drafted package exceeds the size limit");
+      const { pkg, levels, report, content } = buildVerified(request, context, seed);
 
       // 5. Store: the draft (request and context once), version 1, then the active pointer.
-      const expiresAt = new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
+      const expiresAt = slidingExpiry(now);
       const draft = await tx.draft.create({
         data: {
           ownerId,
@@ -266,8 +286,77 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
         },
       });
       if (updated.count !== 1) throw new DraftConflict(expectedRev + 1);
-      await tx.draft.updateMany({ where: { id: draftId, ownerId }, data: { updatedAt: now } });
+      // Sliding expiry: rev is NOT changed here (the pointer revision belongs to version operations); only expires_at and updated_at move.
+      await tx.draft.updateMany({ where: { id: draftId, ownerId }, data: { updatedAt: now, expiresAt: slidingExpiry(now) } });
       return { rev: expectedRev + 1, contentHash };
+    });
+  }
+
+  // --- versions (S3) ---------------------------------------------------------------------------------
+
+  interface LockedDraft {
+    id: string;
+    rev: number;
+    versionCount: number;
+    activeVersionId: string | null;
+    request: unknown;
+    context: unknown;
+  }
+
+  /**
+   * Locks the draft row (owner filtered), refuses an expired draft and compares the pointer revision the caller saw.
+   * Everything a version operation writes happens after this lock, in the same transaction.
+   */
+  async function lockDraft(tx: Tx, ownerId: string, draftId: string, expectedDraftRev: number, now: Date): Promise<LockedDraft> {
+    const rows = await tx.$queryRaw<{ id: string; rev: number; version_count: number; active_version_id: string | null; status: string; expires_at: Date; request: unknown; context: unknown }[]>`
+      SELECT id, rev, version_count, active_version_id, status::text AS status, expires_at, request, context
+        FROM draft WHERE id = ${draftId}::uuid AND owner_id = ${ownerId}::uuid FOR UPDATE`;
+    const row = rows[0];
+    if (!row) throw new NotFound();
+    if (row.status !== "active" || row.expires_at.getTime() <= now.getTime()) throw new DraftExpired();
+    if (row.rev !== expectedDraftRev) throw new DraftConflict(row.rev);
+    return { id: row.id, rev: row.rev, versionCount: row.version_count, activeVersionId: row.active_version_id, request: row.request, context: row.context };
+  }
+
+  function checkVersionArgs(draftId: string, expectedDraftRev: number, versionId?: string) {
+    if (!uuid.safeParse(draftId).success || (versionId !== undefined && !uuid.safeParse(versionId).success)) throw new NotFound();
+    if (!Number.isInteger(expectedDraftRev) || expectedDraftRev < 1) throw new InvalidRequest("expectedDraftRev must be a positive integer");
+  }
+
+  async function createVersionTx(ownerId: string, draftId: string, expectedDraftRev: number): Promise<DraftVersionResult> {
+    return inTransaction(db, async (tx) => {
+      const now = clock();
+      const draft = await lockDraft(tx, ownerId, draftId, expectedDraftRev, now);
+      const existing = await tx.draftVersion.count({ where: { draftId, ownerId } });
+      if (existing >= limits.maxVersionsPerDraft) throw new VersionLimit(limits.maxVersionsPerDraft);
+      if ((await incrementRateLimit(tx, `ver:u:${ownerId}`)) > limits.versionCreatesPerUserPerHour) throw new VersionRateLimited();
+
+      // A new seed every time (never reused); the same request and context as the draft's other versions.
+      const seed = newSeed();
+      const { pkg, levels, report, content } = buildVerified(draft.request as LessonRequestV2, draft.context as CurriculumContext, seed);
+      const ordinal = draft.versionCount + 1; // version_count never decreases: a monotonic allocator
+      const version = await tx.draftVersion.create({
+        data: {
+          draftId,
+          ownerId,
+          ordinal,
+          seed,
+          content: content as unknown as Prisma.InputJsonValue,
+          contentHash: packageContentHash(pkg),
+          questionMeta: Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, origin: "initial" }])),
+          nextQuestionSeq: nextExerciseSeq(pkg),
+          validatorVersion: report.validatorVersion,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      const expiresAt = slidingExpiry(now);
+      const moved = await tx.draft.updateMany({
+        where: { id: draftId, ownerId, rev: expectedDraftRev },
+        data: { versionCount: { increment: 1 }, activeVersionId: version.id, rev: { increment: 1 }, expiresAt, updatedAt: now },
+      });
+      if (moved.count !== 1) throw new DraftConflict(expectedDraftRev + 1);
+      return { draftRev: expectedDraftRev + 1, versionId: version.id, ordinal, expiresAt };
     });
   }
 
@@ -287,6 +376,11 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     const pending = pendingOf(locked);
     if (!pending || pending.id !== candidateId) throw new CandidateStale();
     return pending;
+  }
+
+  async function listSummaries(draftId: string, ownerId: string, activeVersionId: string | null): Promise<DraftVersionSummary[]> {
+    const rows = await db.draftVersion.findMany({ where: { draftId, ownerId }, orderBy: { ordinal: "asc" }, select: { id: true, ordinal: true, createdAt: true, questionMeta: true, changes: true } });
+    return rows.map((r) => ({ versionId: r.id, ordinal: r.ordinal, createdAt: r.createdAt, changesSummary: summaryOf(r.questionMeta, r.changes), isActive: r.id === activeVersionId }));
   }
 
   return {
@@ -327,6 +421,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
 
       const state = stateOf(version, draft);
       const pkg = state.pkg;
+      const versions = await listSummaries(draft.id, ctx.userId, draft.activeVersionId);
       const context = draft.context as unknown as CurriculumContext;
       const request = draft.request as unknown as LessonRequestV2;
       return {
@@ -334,6 +429,10 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
         versionId: version.id,
         ordinal: version.ordinal,
         rev: version.rev,
+        draftRev: draft.rev,
+        activeVersionId: draft.activeVersionId ?? version.id,
+        versions,
+        versionLimit: limits.maxVersionsPerDraft,
         contentHash: version.contentHash,
         expiresAt: draft.expiresAt,
         documents: pkg.documents.map((d) => d.id),
@@ -350,6 +449,48 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
       };
     },
 
+    /**
+     * Creates another version of the draft from its stored request and a fresh seed, makes it the active one and keeps every
+     * earlier version untouched. `expectedDraftRev` is the draft revision the page showed (else DRAFT_CONFLICT). Refused with
+     * VERSION_LIMIT at the configured number of versions (nothing is evicted) and VERSION_RATE_LIMITED past the hourly cap.
+     */
+    async createVersion(ctx: AuthedCtx, draftId: string, expectedDraftRev: number): Promise<DraftVersionResult> {
+      checkVersionArgs(draftId, expectedDraftRev);
+      try {
+        return await createVersionTx(ctx.userId, draftId, expectedDraftRev);
+      } catch (error) {
+        if (isCheckViolation(error)) throw new PackageBuildError("the drafted package exceeds a storage limit");
+        throw error;
+      }
+    },
+
+    /** Points the draft at another of its own versions. Writes only the draft row (pointer, rev + 1, expiry); no version row is touched. */
+    async switchVersion(ctx: AuthedCtx, draftId: string, versionId: string, expectedDraftRev: number): Promise<DraftVersionResult> {
+      checkVersionArgs(draftId, expectedDraftRev, versionId);
+      const ownerId = ctx.userId;
+      return inTransaction(db, async (tx) => {
+        const now = clock();
+        await lockDraft(tx, ownerId, draftId, expectedDraftRev, now);
+        const target = await tx.draftVersion.findFirst({ where: { id: versionId, draftId, ownerId }, select: { id: true, ordinal: true } });
+        if (!target) throw new NotFound();
+        const expiresAt = slidingExpiry(now);
+        const moved = await tx.draft.updateMany({
+          where: { id: draftId, ownerId, rev: expectedDraftRev },
+          data: { activeVersionId: target.id, rev: { increment: 1 }, expiresAt, updatedAt: now },
+        });
+        if (moved.count !== 1) throw new DraftConflict(expectedDraftRev + 1);
+        return { draftRev: expectedDraftRev + 1, versionId: target.id, ordinal: target.ordinal, expiresAt };
+      });
+    },
+
+    /** Lightweight summaries of every version of the draft, in ordinal order. No content. */
+    async listVersions(ctx: AuthedCtx, draftId: string): Promise<DraftVersionSummary[]> {
+      if (!uuid.safeParse(draftId).success) throw new NotFound();
+      const draft = await db.draft.findFirst({ where: { id: draftId, ownerId: ctx.userId }, select: { activeVersionId: true, status: true, expiresAt: true } });
+      if (!draft) throw new NotFound();
+      if (draft.status === "expired" || draft.expiresAt.getTime() <= clock().getTime()) throw new DraftExpired();
+      return listSummaries(draftId, ctx.userId, draft.activeVersionId);
+    },
 
     /**
      * Asks for an alternative to one exercise (same level). The original stays in the draft until the candidate is accepted.

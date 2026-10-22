@@ -71,7 +71,15 @@ export interface DraftViewDto {
   draftId: string;
   versionId: string;
   ordinal: number;
+  /** Revision of the shown version (question operations name it). */
   rev: number;
+  /** Revision of the draft row (the active-version pointer); version operations name it. */
+  draftRev: number;
+  /** The version the draft currently points at (the one shown when the URL names none). */
+  activeVersionId: string;
+  /** Every version, lightweight, in ordinal order. */
+  versions: DraftVersionSummary[];
+  versionLimit: number;
   contentHash: string;
   expiresAt: Date;
   documents: DocumentKind[];
@@ -81,6 +89,23 @@ export interface DraftViewDto {
   package: LessonPackage;
   /** Question-level adjustment state (S2). Server-side only, like `package`. */
   adjust: DraftAdjustView;
+}
+
+/** One version without its content. */
+export interface DraftVersionSummary {
+  versionId: string;
+  ordinal: number;
+  createdAt: Date;
+  changesSummary: ChangeSummary;
+  isActive: boolean;
+}
+
+/** What createVersion and switchVersion return: the new draft revision and the version now active. */
+export interface DraftVersionResult {
+  draftRev: number;
+  versionId: string;
+  ordinal: number;
+  expiresAt: Date;
 }
 
 export interface DraftAdjustView {

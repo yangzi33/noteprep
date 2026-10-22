@@ -23,7 +23,8 @@ const SHAPE = {
   draftCreatesPerIpPerHour: int("DRAFT_CREATES_PER_IP_PER_HOUR", 60, 1, 100_000),
   draftCreatesGlobalPerHour: int("DRAFT_CREATES_GLOBAL_PER_HOUR", 5_000, 1, 10_000_000),
   maxActiveDraftsPerUser: int("MAX_ACTIVE_DRAFTS_PER_USER", 20, 1, 1_000),
-  // Adjustment (S2, S3): not enforced yet
+  // Versions and adjustment (S2, S3): versions per user per hour (key ver:u:), versions per draft, candidates (cand:u:, per slot), undo, exercise counts
+  versionCreatesPerUserPerHour: int("VERSION_CREATES_PER_USER_PER_HOUR", 60, 1, 10_000),
   maxVersionsPerDraft: int("MAX_VERSIONS_PER_DRAFT", 5, 1, 50),
   candidatesPerUserPerHour: int("CANDIDATES_PER_USER_PER_HOUR", 120, 1, 100_000),
   candidatesPerSlot: int("CANDIDATES_PER_SLOT", 5, 1, 100),

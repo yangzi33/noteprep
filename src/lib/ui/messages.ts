@@ -24,6 +24,8 @@ const GENERATION_ERRORS: Record<string, string> = {
   NOTHING_TO_UNDO: "There is nothing to undo.",
   CANDIDATE_LIMIT: "You have looked at several alternatives for this question. Pick one, or keep the original.",
   CANDIDATE_RATE_LIMITED: "You have asked for many alternative questions recently. Please try again later.",
+  VERSION_LIMIT: "This draft has reached its limit of versions. Switch to one you have, or start a new draft.",
+  VERSION_RATE_LIMITED: "You have created many versions recently. Please try again later.",
   ITEM_REJECTED: "We could not build a fully checked lesson from those choices. Please try again.",
   PACKAGE_BUILD_FAILED: "We could not build this lesson from the selected topic.",
 };
