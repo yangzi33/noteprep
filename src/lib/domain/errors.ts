@@ -141,6 +141,16 @@ export class CorrectionRejected extends DomainError {
   }
 }
 
+/** A drawn question did not pass the item gate (structured shape, exact re-solve, validator "verified"). */
+export class ItemRejected extends DomainError {
+  constructor(
+    /** A machine-readable reason (never question content). */
+    readonly reason: string,
+  ) {
+    super("ITEM_REJECTED", "A question did not pass verification");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);
