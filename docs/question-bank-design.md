@@ -23,6 +23,13 @@ The tier is derived on import, never trusted from the file: an item claiming `ve
 ## 3. MathText: the safety-critical part
 CLAUDE.md section 8 allows only supported math expressions and macros, so free-form LLM math cannot enter LaTeX as text. MathText is a small restricted markup (digits, variables, `+ - * / ^`, parentheses, `=`, `<`, `>`, fractions, roots, a fixed list of function names such as sin/cos/tan/log, pi, and plain words). It is **parsed to an AST** on import (reject anything unparseable) and rendered by our own renderers to LaTeX and to KaTeX HTML. Unknown symbols make the item invalid. This needs the owner to accept that some LLM-written items will be rejected until the grammar covers them; the grammar grows by deliberate change, not per item.
 
+**Decided (owner, 2026-10-22): MathText is a restricted LaTeX-style syntax inside ordinary JSON strings.** It is a strict subset of familiar LaTeX notation (for example `\frac{3}{4}`, `x^2`, `\sqrt{2}`, `\sin x`), chosen because LLMs write it fluently, unlike ASCII math (ambiguous: `1/2x`) or a math AST in JSON (verbose and error-prone). Properties:
+- The allowed commands, symbols and nesting are a fixed list; the import step parses every string to an AST and rejects anything else with a precise reason (for example an unknown command or unbalanced braces). Raw LaTeX never reaches the compiler; only our renderers emit LaTeX and KaTeX HTML from the AST.
+- Rejections can be fed back to the LLM offline for a retry, so batch authoring converges quickly.
+- The item container (fields, tags, level) is plain JSON and can be produced under an LLM JSON-schema constraint.
+- MathText guarantees safe, parseable notation only. Correctness is the validator's job (verified tier) or the human reviewer's (reviewed tier).
+- **First step before any parser:** write the grammar as a short spec (allowed commands, examples, forbidden constructs) plus about 20 sample items, and let the owner try them on their LLM to measure the first-pass acceptance rate. The grammar grows by deliberate change when a pattern is worth supporting.
+
 ## 4. Storage and loading
 Same pattern as curricula: files in the repo, validated by `pnpm bank:validate` in CI, loaded into a new table (`question_bank_item`) by a manual workflow with an immutable version per bank. A pack stores the exact item content it used (pack content remains the source of truth, hashes unchanged in spirit), so later bank edits never alter an existing lesson.
 
@@ -37,7 +44,8 @@ Same pattern as curricula: files in the repo, validated by `pnpm bank:validate` 
 2. **Section 7:** "known mathematical errors block final export" stays. The new text allows the `reviewed` status for items with a recorded human review and requires the label; it does not allow `draft` or unlabelled unverified math. "Math content is never hand-edited" stays true for tutors; the owner's reviewed files are the controlled path.
 
 ## 7. Build slices (after approval)
-1. MathText grammar, parser, renderers (LaTeX, HTML), tests incl. injection fuzzing. Independent security review.
+0. MathText grammar spec and about 20 sample items, tried by the owner on an LLM (acceptance rate) before any code.
+1. MathText parser and renderers (LaTeX, HTML), tests incl. injection fuzzing. Independent security review.
 2. Item schema, `bank:validate`, tier derivation, duplicate detection, CI.
 3. Table, migration, load workflow.
 4. Pack builder integration, validation status `reviewed`, labels in UI/PDF/lesson page, E2E.
@@ -78,3 +86,4 @@ A prompt is not limited to weaknesses. In the interpreter path (7b) the LLM turn
 6. Tags (section 2): approved in discussion on 2026-10-22; vocabulary per topic to be written with the first bank topics.
 7. Live top-up at press time (section 7c): open; decide after the offline bank exists.
 8. Separate AI draft box (section 7d): recorded as a later option; decide after the offline bank exists and the Beta shows demand.
+9. MathText as the only way math enters bank items, as a restricted LaTeX-style syntax (section 3): approved in discussion on 2026-10-22.
