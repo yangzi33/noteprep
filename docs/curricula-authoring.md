@@ -126,3 +126,13 @@ A published dataset version is immutable. The loader refuses different content u
 - Adding a new topic to the catalog changes nothing until a curriculum lists it; changing a topic's title or summary changes every curriculum that uses it, so bump each affected curriculum.
 
 Loading into a database is a separate, manual step (the "Load curriculum dataset" workflow). Suggested datasets need no allow flag.
+
+## 5. Loading the datasets into staging or production
+
+After the generated files are merged to `main`, run the **Load curriculum dataset** workflow (Actions tab, Run workflow on `main`):
+
+1. Choose the environment, dataset `all-suggested`, action `validate`. This validates every dataset and touches nothing.
+2. Run it again with action `load`. It loads every `data/curricula/*/suggested-*` directory in version order. Datasets that are already loaded are reported as unchanged, so rerunning is safe.
+3. Open `/prepare`: the Country dropdown appears once more than one country is loaded.
+
+The workflow needs the `staging` or `production` environment approval, like the database migrations. The database migrations must be applied first (the `suggested` dataset kind needs migration `20261021120000_dataset_kind_suggested`).

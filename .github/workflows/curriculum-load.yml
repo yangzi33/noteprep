@@ -15,9 +15,9 @@ on:
         options: [staging, production]
         required: true
       dataset:
-        description: Dataset directory (add real datasets here as they are reviewed and committed)
+        description: "Dataset directory, or all-suggested = every data/curricula/*/suggested-* directory in version order (safe to rerun: loaded datasets are reported unchanged)"
         type: choice
-        options: [data/curricula/sample-math/sample-1]
+        options: [data/curricula/sample-math/sample-1, all-suggested]
         required: true
       action:
         description: "validate = check the files only (touches nothing); load = write them to the database"
@@ -62,7 +62,13 @@ jobs:
       - name: Load the dataset
         if: inputs.action == 'load'
         run: |
-          if [ "$TARGET_ENV" = "staging" ]; then
+          if [ "$DATASET_DIR" = "all-suggested" ]; then
+            # Suggested datasets need no flag in any environment. Sorted so that a curriculum's older version loads first.
+            for dir in $(ls -d data/curricula/*/suggested-* | sort -V); do
+              echo "loading $dir"
+              pnpm curriculum:load "$dir"
+            done
+          elif [ "$TARGET_ENV" = "staging" ]; then
             pnpm curriculum:load "$DATASET_DIR" --allow-sample
           else
             pnpm curriculum:load "$DATASET_DIR"
