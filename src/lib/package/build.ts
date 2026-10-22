@@ -1,7 +1,9 @@
 import { learningObjectiveItems, type CurriculumContext } from "@/lib/curriculum/context";
-import { DomainError } from "@/lib/domain/errors";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
-import { GENERATOR_VERSION, generateExerciseSet, generateLinearQuestion, type GeneratedQuestion } from "@/lib/math/generator";
+import { LINEAR_GENERAL } from "@/lib/content/blueprints/linear-general";
+import { composeLesson, degenerateExample, exampleLevel } from "@/lib/content/compose";
+import { PackageBuildError } from "@/lib/content/errors";
+import { GENERATOR_VERSION, type GeneratedQuestion } from "@/lib/math/generator";
 import { sectionContentHash, sectionInputsHash } from "./hash";
 import { PROSE_PROMPT_VERSION, type ProseDraft } from "./prose";
 import {
@@ -16,11 +18,7 @@ import {
 /** The one concept the engine can generate for today (docs/curriculum-architecture.md section 3). */
 export const LINEAR_CONCEPT_ID = "linear-equations-one-variable";
 
-export class PackageBuildError extends DomainError {
-  constructor(message: string) {
-    super("PACKAGE_BUILD_FAILED", message);
-  }
-}
+export { PackageBuildError, degenerateExample, exampleLevel };
 
 export interface BuildInput {
   request: LessonRequestV2;
@@ -78,32 +76,11 @@ export function timingBlock(plan: OutlinePlan): Extract<Section["blocks"][number
   };
 }
 
-/** The level worked examples are drawn at for a lesson difficulty: basic stays basic, anything else is the mixed set. */
-export const exampleLevel = (difficulty: "basic" | "mixed" | "challenge"): "basic" | "mixed" => (difficulty === "basic" ? "basic" : "mixed");
-
-/** The no-solution worked example a non-basic lesson ends its examples with; the equation depends on the seed only. */
-export const degenerateExample = (seed: string, id: string): GeneratedQuestion =>
-  generateLinearQuestion({ id, difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: `${seed}:we-degenerate` });
-
 /** A worked example block for a generated question. */
 export const workedExampleBlock = (q: GeneratedQuestion) => ({ type: "worked_example" as const, questionId: q.id, problem: q.problem, solution: q.solution, steps: q.steps });
 
 /** The note that follows the no-solution example (it must stay the last example). */
 export const NO_SOLUTION_NOTE = "The last example has no solution. Discuss why the unknown disappears and what that tells us.";
-
-const fingerprint = (q: GeneratedQuestion) => JSON.stringify(q.problem.equation);
-
-/** Examples and exercises never repeat an equation; the draw is deterministic and bounded. */
-function drawQuestions(seed: string, difficulty: "basic" | "mixed" | "challenge", exampleCount: number, exerciseCount: number, withDegenerateExample: boolean) {
-  const examples = generateExerciseSet({ jobSeed: `${seed}:examples`, count: exampleCount, difficulty: exampleLevel(difficulty), idPrefix: "we" });
-  if (withDegenerateExample) examples.push(degenerateExample(seed, `we-${examples.length + 1}`));
-  const taken = new Set(examples.map(fingerprint));
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const exercises = generateExerciseSet({ jobSeed: `${seed}:exercises:${attempt}`, count: exerciseCount, difficulty, idPrefix: "ex" });
-    if (exercises.every((q) => !taken.has(fingerprint(q)))) return { examples, exercises };
-  }
-  throw new PackageBuildError("could not draw exercises that differ from the worked examples");
-}
 
 type Draft = { kind: SectionKind; title: string; blocks: Section["blocks"]; method: "deterministic" | "llm"; model?: string; minutes: number; params: Record<string, unknown> };
 
@@ -160,7 +137,8 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
 
   const plan = planOutline(request.durationMinutes);
   const wantDegenerate = request.difficulty !== "basic" && concept.capability.outcomes.includes("no_solution");
-  const { examples, exercises } = drawQuestions(seed, request.difficulty, plan.exampleCount, plan.exerciseCount, wantDegenerate);
+  const bp = structuredClone(LINEAR_GENERAL); // packages never share arrays with the blueprint
+  const { examples, exercises } = composeLesson(bp, request, seed, { exampleCount: plan.exampleCount, exerciseCount: plan.exerciseCount, noSolutionExample: wantDegenerate });
 
   // Sections whose words the model wrote say so; the rest of the package is identical with or without it.
   const llmMeta = prose ? ({ method: "llm", ...(prose.model ? { model: prose.model } : {}) } as const) : ({ method: "deterministic" } as const);
@@ -198,11 +176,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       title: "Key ideas",
       blocks: prose
         ? prose.draft.explanation.map((text) => ({ type: "paragraph" as const, text }))
-        : [
-            { type: "paragraph", text: "An equation says that two expressions have the same value. Solving it means finding the value of the unknown that makes the statement true." },
-            { type: "paragraph", text: "Whatever is done to one side of an equation must also be done to the other side, so that the two sides stay equal." },
-            { type: "list", items: ["Undo addition and subtraction first, using the opposite operation on both sides.", "Then undo multiplication or division, again on both sides.", "When the unknown appears on both sides, collect the unknown terms on one side first.", "Always check the answer by substituting it back into the original equation."] },
-          ],
+        : bp.prose.explanation,
       ...llmMeta,
       minutes: sectionMinutes("explanation", plan),
       params: paramsOf("explanation"),
@@ -215,12 +189,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
           type: "step_list",
           steps: prose
             ? prose.draft.derivation
-            : [
-                "Start from an equation that is true for some value of the unknown.",
-                "Applying the same operation to both sides keeps the two sides equal, so the new equation has the same solution.",
-                "Each operation is chosen to remove one term or factor next to the unknown.",
-                "Repeat until the unknown stands alone; the other side then shows its value.",
-              ],
+            : bp.prose.derivation,
         },
       ],
       ...llmMeta,
@@ -231,7 +200,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       kind: "worked_examples",
       title: "Worked examples",
       blocks: [
-        { type: "paragraph", text: prose ? prose.draft.exampleIntro : "Work through each example with the learner, asking them to name the next step before it is shown." },
+        { type: "paragraph", text: prose ? prose.draft.exampleIntro : bp.prose.exampleIntro },
         ...examples.map(workedExampleBlock),
         ...(wantDegenerate ? [{ type: "note" as const, text: NO_SOLUTION_NOTE }] : []),
       ],
@@ -243,7 +212,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       kind: "teaching_sequence",
       title: "Teaching sequence",
       blocks: [
-        { type: "list", items: prose ? prose.draft.teachingSequence : ["Recall earlier work and state the goal of the lesson.", "Introduce the key ideas and the method.", "Work through the examples together.", "Let the learner attempt the exercises, giving help only when asked.", "Review mistakes and summarize."] },
+        { type: "list", items: prose ? prose.draft.teachingSequence : bp.prose.teachingSequence },
         timingBlock(plan),
       ],
       ...llmMeta,
@@ -258,13 +227,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
           type: "list",
           items: prose
             ? prose.draft.commonMistakes
-            : [
-                "Changing only one side of the equation.",
-                "Forgetting that a negative sign belongs to the term that follows it.",
-                "Adding when the opposite operation is needed.",
-                "Dividing only part of one side by the coefficient.",
-                "Skipping the check by substitution.",
-              ],
+            : bp.prose.commonMistakes,
         },
       ],
       ...llmMeta,

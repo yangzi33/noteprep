@@ -1,0 +1,1356 @@
+{
+ "build/basic/15/m0-seed-0": {
+  "content": "sha256:05c195804e69fa620ad5324f8d3a6b7f70f375748784cdacd042b1234e8be0f6",
+  "inputs": "eb1d45c31c2340322ef94cda308687ab60a9a55d31ad71b333ab62f0ef9dda0f",
+  "tex": {
+   "notes": "e4623116a927245a96273e86c4677c7c2cc23a83bd82bece72bfe7d5956bf372",
+   "worksheet": "07f105846168d104d02e503cf9261fbd40a0688710f008cb0e75cff68134a08c",
+   "solutions": "3cf3a0adb139781d67aac48d67cab791ae4f6bf66aa237689b389fb35b19158f"
+  }
+ },
+ "build/basic/15/m0-seed-1": {
+  "content": "sha256:f5fccd18de7a40c2d3512a0372d0b6351fc1054a8d1323818f2302ea37a475c7",
+  "inputs": "a0ed57a56bae3ecc6a4045ed7394af6cbf1024f4cedc8b467bea27191ac1c16a",
+  "tex": {
+   "notes": "3af6e2ac4301c3648a7e6b2dc66ef672c3e9f3d809d01db293f5986deb686f04",
+   "worksheet": "1de00239fd00616a579592f3d777c122004f04a1021bd76d14a53e0b45149e09",
+   "solutions": "933c45b6eaa260ad3ed0b2bfd534189829e593dbfc6cdcd84d7bedd4e3eb1e99"
+  }
+ },
+ "build/basic/15/m0-seed-2": {
+  "content": "sha256:041caa179d9fa306a84371689e7c45a69ba45b2c32303181844b665f0b9086c0",
+  "inputs": "55a1c1a991463668e192d88f684e6fd623ef390e27c70160b4089496587093bc",
+  "tex": {
+   "notes": "35b42c8df1ac37b6e02be74638be64d1f8962040d74e0b6d3bdbed6a14e751a9",
+   "worksheet": "29227a72cac8d7e95583b3d88419f6666bd9007526ab63512c756a516bed41a2",
+   "solutions": "37d063977c26c7f085741f2ad764e14866a353ac029b485b6a3c8063b97afecb"
+  }
+ },
+ "build/basic/15/m0-seed-3": {
+  "content": "sha256:531a53612f0f40165f9f1917d8b2474a1a34bafb0eb2e691b86413eba9f7a9b4",
+  "inputs": "03ba1de02164971f46fba9a5aba105c7767627bbff2f29d7bb267fdc101f03d8",
+  "tex": {
+   "notes": "1e925e523207ed97bdc25c332371355226b437147c950125c3e887c8b015c515",
+   "worksheet": "a0be94b935854db270dae643b087ebc1aefa2443961d3d9695239b9d007d49f0",
+   "solutions": "f593eb6dfa07f9c20f9432815075e524729c83fee6557984628ce08c1c40bbfa"
+  }
+ },
+ "build/basic/15/m0-seed-4": {
+  "content": "sha256:e481305f060789f9678665d3ba4ed95137408bd88a00e7ba42c98a2e7462a805",
+  "inputs": "21add9b533384c1dbd07bcb3933eaff1e1b60d2249cf5acb36c32a105038e5b3",
+  "tex": {
+   "notes": "2864af2aa0c90c19b68397ae5e9329c875ce14ef043904ec114b029c3b87f894",
+   "worksheet": "f0eac04969cf74f98c3158ba408aa366edc3b64b248f9a2a2299040d8c3a21b7",
+   "solutions": "07ce9e40be0944ced67a73c8a1e01ac9384b16bf305ee09ce37a138c5483fb7e"
+  }
+ },
+ "build/basic/15/m0-seed-5": {
+  "content": "sha256:241c5eb8cb03a62a5d624b936527ec653abf4cf29af9eec297a021bf9b142174",
+  "inputs": "e2d1bc6042d0f8bbb710fdf4732778392ebeaedb5717c25f90a9cb18e44f3aba",
+  "tex": {
+   "notes": "f19a4aae753f1eb3e5a71007b6cff7fdcda9903f2ee7a693d8640c291777fdd9",
+   "worksheet": "9a31ebb33aee7ca39abb5e4307feedfcf20b0d3430064f1cff87959467fabaf2",
+   "solutions": "d4d86fd7a6d3f8ba82856102df48a36adb5b0457a17a280c224600cf7e20746e"
+  }
+ },
+ "build/basic/15/m0-seed-6": {
+  "content": "sha256:156f19a6cf24391c6f12ef6bd974072fb57c5c5a9e6adf2ee84b1ab852e39be7",
+  "inputs": "dd63d1103a99fd8845a60f43edd5cb6c261b051c4627ce89de6fcf05f8b28140",
+  "tex": {
+   "notes": "f44d1991b8b1d44d073b32ac642c5519a6bc63666c366e29f654b2076b1b9e77",
+   "worksheet": "7dbd94f5df4f45f4d1fb0b922881eb7d0aa61ff78569134c8f84742b1a55ca55",
+   "solutions": "581fa08a2f46d59299d8169f5a9e2f2be668522d2ebd080d4eb759df922daafb"
+  }
+ },
+ "build/basic/15/m0-seed-7": {
+  "content": "sha256:efc04da474290ba4fc503727105396a6351bc2785bbf83184db4119229297a7e",
+  "inputs": "e9b5b99926dc501a2498366ff7d106154331c9a86ba9025d7782b0a0e7fe9582",
+  "tex": {
+   "notes": "a471bbd5ec39805fe2893f24e375ab402de2df987fccdfcd91c400ea048f3f86",
+   "worksheet": "6a9acba06e64147710ae95d08ce2175b111e514ec8b1893a736c893e57a2fb00",
+   "solutions": "b69fcf823ea10bafd5daa0c81022a4d0b3327dbe13c3d085c7fba0b55519b95f"
+  }
+ },
+ "build/basic/45/m0-seed-0": {
+  "content": "sha256:1c123cdc9e7ae1fad0744d8157057074cce0d6ca563a559a1c15e7ef7c12af26",
+  "inputs": "e6ed35261eba6096729a248f5781deb683770402c3c25e1ca59357922c8645b8",
+  "tex": {
+   "notes": "15f29653a734a1d14f6127c6838770539726c846b05ab67edc5c4549a7b80aa7",
+   "worksheet": "261162c283b66af2dce5cdd90c1a4f8552b8c3e5e63e989a2af474f35a37c8c4",
+   "solutions": "78c7531a17cb0a3888d82c153fa186865cdcef46819b4463dca1d2a032a973a1"
+  }
+ },
+ "build/basic/45/m0-seed-1": {
+  "content": "sha256:3302af02c05ad9363811026f55d385803fa6a3bdc64032609c01eb8de865ab93",
+  "inputs": "476799b09b76ed8e22e9fde612ae05eca100add390c218e4b4805c55edb03021",
+  "tex": {
+   "notes": "947fde259654f6675e59b2fa83059ca3d80273427dbf72d4396056b3cd53f924",
+   "worksheet": "5d1fa591267613bc72a098a9764b78f2c8aa69859f7a0e8678f1ee45e59fa980",
+   "solutions": "107f38751155cffb310d2a987c92f618e2395c4770bccd5ca5621e174ed73380"
+  }
+ },
+ "build/basic/45/m0-seed-2": {
+  "content": "sha256:8af695dc6bebc78b148d01c72a48f5b1afa70ba30d8c940f194a6442fb52b5e0",
+  "inputs": "2866293bf12b1df4c8486eca6bf8766ce34dbd436f0b2ef4a144f382d4a21186",
+  "tex": {
+   "notes": "54740f575827880e2085e47e136149d3a002b5da34bdc0e7ad64612f75b761e8",
+   "worksheet": "23407698cb1fee295e6120240181e3f8169044a1d06151a1074fbda16589854f",
+   "solutions": "e903e2d40742424928a1c183310c351df5af0d6af09b485aede729d0e94408f3"
+  }
+ },
+ "build/basic/45/m0-seed-3": {
+  "content": "sha256:7469249b40bf4b8b7f01bc8ec552d3c6ff1236aea44b12c67638cf6c5f2143bf",
+  "inputs": "8cf0f0b7bf34691e70919cef3d64efe4078065f9b3dc9fd2453e42b5d53bbe23",
+  "tex": {
+   "notes": "fd88e22157836de1381ec08e1d4274ea93b0851eee19c2fcbee62d965e416c42",
+   "worksheet": "993d08c39a699a546dae15a05180af851e7560f50b66cddd0318f5a3c00b0005",
+   "solutions": "39d6a3ae356cd4b0daa0f7fd7afab002dcbb13949ac24ddb71816c6457f2ec14"
+  }
+ },
+ "build/basic/45/m0-seed-4": {
+  "content": "sha256:b59d9ec9c5fe8e2679a2faa79f35caf08f12d8be596ea0835c941a5fdfbd5a55",
+  "inputs": "c871074f412c2ea225a9ca0e7c959eff0e4ac4f8f8c72465acdf3178e626799e",
+  "tex": {
+   "notes": "0b5bda1fe0dabc3ed7816ca3ca40409cd240df661eaba9779f1bbe442adfdde5",
+   "worksheet": "38400b77b93ea29a21cd3c451fa967234bab8a06ea68e08cbee1767775d82699",
+   "solutions": "0f6c7470ca84b95dfa54277ace1dfbbe0d734e264b512396bdf4613ac0927fef"
+  }
+ },
+ "build/basic/45/m0-seed-5": {
+  "content": "sha256:151ab345e16a9ee3b37bc0afa2c7948f6103b7b0e7f95e9438010b566dec9a22",
+  "inputs": "473741578c88a556075dec1aebb757c90ef411e955e219dcdfaa13bde2c4f33a",
+  "tex": {
+   "notes": "e94788c08c88b4d50065d15dbf8619416a7bb6584a33c17159ea5f6a4a95758f",
+   "worksheet": "436a9f7ca7b62e265f32ae07903ce36b07e9857e437f7b53e4aba2e487526ae3",
+   "solutions": "283c391dc3477d8c17b7e7bc4d93b907dda701641ab2e4f51363f6e2bafe7583"
+  }
+ },
+ "build/basic/45/m0-seed-6": {
+  "content": "sha256:d53b65780ed693b453f48a48d4b315f46906665c8a2f62f89bced4d5ce15f548",
+  "inputs": "773575bc8c5ed281bcbf74f0c8ea76cfb161152ecb993396229a5fca973f7106",
+  "tex": {
+   "notes": "2e4540d0b13b28f1cfd5f43c3577c709b68d361bb9bf642db83ab4aab1950d2a",
+   "worksheet": "e37ff1f0ff69269930c6fe68529ad03c4ac9c91cd377748344dc65de9225f23d",
+   "solutions": "2876beb7466b379f85254f53e74941ced51866cb00f47f0440a6cb63710eff81"
+  }
+ },
+ "build/basic/45/m0-seed-7": {
+  "content": "sha256:4e3bcb4bfd529977d7dbf61c2d563f46587030730c48df3a63f1af319a26681c",
+  "inputs": "e480f41c563e2c357768219e8d9e3dedd2878db5f93a4a7520f2ad9a9243ec5a",
+  "tex": {
+   "notes": "fd245fbffcec90f52079eb91862584b71e830c4ecc7243b605953f07516c1f51",
+   "worksheet": "2b7b91ea6c58affe73901173fb172281923e89ee69f3fa8d98379af13974e9ca",
+   "solutions": "dd6a928c722a85cf0d69244e344192dcf0a290b10294ed3e023e622a18df5f7f"
+  }
+ },
+ "build/basic/60/m0-seed-0": {
+  "content": "sha256:f408b358bb9ee81c1549385b3cccb7c3e6e83b05eaaf1d3ebfb3bd70e24daf65",
+  "inputs": "9e3aea48946b03030964c51416c0ad113b2f9f05e65dedeb7759a513655407af",
+  "tex": {
+   "notes": "34a34e8fbf3d9aa80205a169e9fba14613d34eb69be6120a60f8bd301a395baf",
+   "worksheet": "7a116c3cf5b0b1b6c64908c8506961a49efc3847c433699c62ac41fbf701299d",
+   "solutions": "b4f91f1da76fa4f99068ad1cf6f11b22b501bf3a68ea9207b19e797c6e3dbb41"
+  }
+ },
+ "build/basic/60/m0-seed-1": {
+  "content": "sha256:40fc1162262a121a0f027a5274ba63e1042e18cd57b7734a555c07288ee2f0aa",
+  "inputs": "0f7f16bfc332a0f4dd95324f750042cf56eb1c808c7050fd8bd7c2cba15b8d3f",
+  "tex": {
+   "notes": "6a4a126f2618c02aca7217738aafe8545893a28f37fc0a6142e1b0889a097393",
+   "worksheet": "e1890b3d9608f28e5562b3bbe8a2a7aaad3397575a06c5128d62fa1175e51512",
+   "solutions": "bbec1cea7918716b2befaef5f7eeb15ad48a25d4383c9c62ff0d15ccc2e03e00"
+  }
+ },
+ "build/basic/60/m0-seed-2": {
+  "content": "sha256:9b1d9e02dcd8449251226d8650136d15e73b4377340b293051e988a96bfc7b26",
+  "inputs": "ac90d6a0bef105695b440956a1a13d34927e4fea0719489d1404e3771fb29b88",
+  "tex": {
+   "notes": "867e98f9add41acd2ca3c41443520d82e11177f856e51151d494105c7e138024",
+   "worksheet": "f67899e54e5b76633ac03be769dcbbea41bd5483defd38323c76c1d1a57f2d0f",
+   "solutions": "8d10d17a8f99e4b2df2a9a2352f6118119a2de38502d829f58469f8ea1aef453"
+  }
+ },
+ "build/basic/60/m0-seed-3": {
+  "content": "sha256:e3299a1b645f4d4571f75825ba3556ba6d6c2d657e76f6329d820e4f25da5e88",
+  "inputs": "b4d0afc0086a533bb62fda95be4063ecf74cb0a1ba0c2f1f46eba3d4855918c2",
+  "tex": {
+   "notes": "ebbc676790334c4edf53e4cc8149292df0eebc31f48f0308f0728b48b8e6228b",
+   "worksheet": "39336a9f7559f29f44c130e75f107cdab1d7782b44d47350b820cdd5579e2a9c",
+   "solutions": "2f348dc82679256ce1744ff70e44a9a8d1ddb37ee9da297fb027db8f10316037"
+  }
+ },
+ "build/basic/60/m0-seed-4": {
+  "content": "sha256:11cb4b9474ac23d7a9c01238c8da234ca0b6b3114980cdc916284a44e346d623",
+  "inputs": "8d91bd989e48745391c470410f0e36d6177b1743a6c9083d8af7c72b8c30aedb",
+  "tex": {
+   "notes": "c2f8f99e2359a4ce09494bee54abf0d7e3507b8d07d903ec31ea2548f0fa9b89",
+   "worksheet": "8f91f6dc9d559ca91d5a430e61471907d07c59ee9ebc17ab34ed2cc0c044829e",
+   "solutions": "dc037460b49f54b99e7bf68e3900b818fdb398c22c5b563ec25c758eebaf47b3"
+  }
+ },
+ "build/basic/60/m0-seed-5": {
+  "content": "sha256:fddd2419addf0e6205b4e3176435bed437791ec52088a925a3f579f18e12e967",
+  "inputs": "3a96e275b415acf27b4ff52b979350f6298be778aaf752e55a8033179e37c164",
+  "tex": {
+   "notes": "86749e43f999e772bcf92ed7777cd037f320c5140216cda5540ae6676fa94be7",
+   "worksheet": "58dafdf9eb3159b914429bb1f4e7e7edf6061f1a2a67a0b39f2a5fae6b83d95c",
+   "solutions": "7827e45daad6fb6ec6fc8b1d41a1aabf8349f1251fc7e279a9f3f147d68311ef"
+  }
+ },
+ "build/basic/60/m0-seed-6": {
+  "content": "sha256:c4ed026153c0a829350860ff8d1fa829a23ebaee2345bad1985a59bb81df6d6d",
+  "inputs": "77f2261a48b1fb45ffb6acddc33543d9627f6216f92892c92549b0e2bc9d4a49",
+  "tex": {
+   "notes": "f838108bbde41c38439d86ad8eff7fdcb3156a979a6471bb1bcc4f5fa3eef6b4",
+   "worksheet": "6e50f81c4c2d770fdada2a93c7974d6af066ce381f633d522e2256b373be42bf",
+   "solutions": "09229f073855669a56194f9af72a183932e7abadbb2f7a2db66b6800259e9ca3"
+  }
+ },
+ "build/basic/60/m0-seed-7": {
+  "content": "sha256:06a29e3d1ed8f2a0a3bbb34ea8bb8a0342f34bf11ee4ca38dac4eb9c5a5ff62e",
+  "inputs": "9c2798d23bd983850b046d67135f9dccbdf8629973a8b98f9324a9ae04a580df",
+  "tex": {
+   "notes": "24a2afff49cbb832fb26ed3e2cc47a78e662f4884fc88bb6a0ab96943d145c0d",
+   "worksheet": "f58ada79e9917ca5d33b22c14667884142047a5d4f32c160311a35ac16adfeac",
+   "solutions": "4d1be5fae819d713402cdd0f8f733c876d7e31188ad2b2a8295ec76e76ae8442"
+  }
+ },
+ "build/basic/120/m0-seed-0": {
+  "content": "sha256:342c2e8cdc9d092c38cf22fc23867de25ff4435712dc7653d1140a5ccc74f7e8",
+  "inputs": "220781576453298a20269a183d719b37cbf009033351e659b7f5692ebc6185ce",
+  "tex": {
+   "notes": "5d3dbea2f47ab23b3d4e5a2e1fe57fd9d0896e518d255197397ad946bbbfcb7c",
+   "worksheet": "5625170e01b854109246ac3a28180bf5aede80008421b68cee28a768ed94542a",
+   "solutions": "ae7b0f351cfef90afaf170dfb98a68fd87222da512f267972351ec1caed8e293"
+  }
+ },
+ "build/basic/120/m0-seed-1": {
+  "content": "sha256:b39bcb3d376d010b876d817c94d45c6687a99084f97ab853668948af63859191",
+  "inputs": "e9bd00546ce93c896fadba4afad1646a0cf79c8134e29e3d11a1c15cfabcd7ad",
+  "tex": {
+   "notes": "ce67bdf142bad672cd1d0ce65e6064e659c0daa9ff8b1ffe78144a8cda393453",
+   "worksheet": "d399710c9e000583106d52e842b986591c3bbc5e3980ff0fffa1db2815d48f1a",
+   "solutions": "9d6892c9bdc46f99c095d87226c282aeb805eb06054c3223dd76b898420950fc"
+  }
+ },
+ "build/basic/120/m0-seed-2": {
+  "content": "sha256:1df79d722a9edacb35f81019e6ea78371d0deb557478da131a51c04a59b50f84",
+  "inputs": "37328fcbb0782483f0ce31258e7a546fd4bc1659a7525ba9b95301d93ec52c57",
+  "tex": {
+   "notes": "8bb937461e18367d005078017fbb0e0e8934e6f7d9cac819de54e9196f10a7b7",
+   "worksheet": "bd896716c846d1945213ccbbc1d8fa6024c8827d19c1be085dfce17bc4119ae7",
+   "solutions": "ed49129dc4e69d5e911fca1a5c15fbbcac80d0d7cf4346845d59093cbef5293d"
+  }
+ },
+ "build/basic/120/m0-seed-3": {
+  "content": "sha256:8ecb440ebd6f646bf47cf29b52b9f7ff2db3010c82e990b9f66e6b5f16caa8c9",
+  "inputs": "d8de1652b9d0a641f4273294c79beed95896628b42c0a11893fc22d5875c9d15",
+  "tex": {
+   "notes": "9e950565db2b97cc638794ab241e25833952681d44c4ce3df11e7d7efbadfc98",
+   "worksheet": "2dfc7ddd4bfb2ae97fc462a066a76ad85d06019ae9e6abe2fb9230e8e39e1add",
+   "solutions": "7124677fca210aca02528dee526b1c66b4f0ef8833f1fd1ad8e5b250495c7ec4"
+  }
+ },
+ "build/basic/120/m0-seed-4": {
+  "content": "sha256:53ddbd7d59a7cfbb7ac5441d5fc570459ebb79841a959a49e155cc423127bae8",
+  "inputs": "b6ce437021d04846a4cdcb70a7d76d8331b84f148cfb687cae9ff5ddfd13434d",
+  "tex": {
+   "notes": "a424d2cafa17f81ff21ab4be04974601e47710b9bae2e01a4dc26edeb06fc21e",
+   "worksheet": "6744ba6e476e81f35d957cb96a6389fe97d9c91d345bbdf1c07a9e8148cc020f",
+   "solutions": "ac7ec00279bab48e8a5971793f729123bdf1da4f5c10dae1daadc34d0cbc5ac9"
+  }
+ },
+ "build/basic/120/m0-seed-5": {
+  "content": "sha256:9b2b62cfefe941ec9a1608f145aeb9ed8270cb91dc3913b8d8fdea56ffcb33c1",
+  "inputs": "68eb9581d018a05f767264fa548c41f17850975264de2cf04c99547824793e85",
+  "tex": {
+   "notes": "cefe8279d6eb1b6402e53bea2f0614299bd4a48cb92d2b70b0ad7409579999c4",
+   "worksheet": "5723f24d99b663914f7a7067c6163fea99047f2cbb9725329ccb8a71a5efe58a",
+   "solutions": "bb8a0d7b5a6afe1bf2e2b46304e32ca2a9e7e2d4cb64e00be68169b66a9e1d04"
+  }
+ },
+ "build/basic/120/m0-seed-6": {
+  "content": "sha256:c3b606ca1422cc508893c8d665316ddd5bdf5d0e82371c95c8b6a67ed35dedcb",
+  "inputs": "4c7607615c469d1fc1925ea1247f3e2f7227466938eb449cb03c41c77977f55c",
+  "tex": {
+   "notes": "6e27f542c6466c74e13662ec642121e1de0b2159e7afe10a432d25abd8b6cd7e",
+   "worksheet": "00e381835dd0b7872a2a4c634f11a0bf1ac3c8079d134e7cec0a39d886af5ad8",
+   "solutions": "ddda6fe189f8b3ad50047d73018d4de8b38d96783446c7427d522b76e5c17d42"
+  }
+ },
+ "build/basic/120/m0-seed-7": {
+  "content": "sha256:1d5b97527e94881499ad5d091d64911f7acb41a8722be091fc27229c8d0d2317",
+  "inputs": "537b340bb6aa6e2e8fdf833d1263d52348d399436fd57f66b62cd4df1076b376",
+  "tex": {
+   "notes": "a632137c50532656e34331e93a0170e03b873e950e761df7ab8871758a999e8a",
+   "worksheet": "0b01a7be0a3257213572964a13d4ab97640a6747b8e05cb8ffde31644c630777",
+   "solutions": "db12563b1aadbd2632cdf88c42fbdbc8f0eebe213fcdbea7c6808b7a4df9a3b2"
+  }
+ },
+ "build/mixed/15/m0-seed-0": {
+  "content": "sha256:546809a1b500ab9713590fe7a0e98adf1c2581c50fbaa289af5e04b01ed44a2f",
+  "inputs": "e2235d08fef1130eb600f45d7115c8eaaaacbd795fee22b70dd1f9ef9fca17d6",
+  "tex": {
+   "notes": "d547bc9920cb8ce458f8286023e0c1ea03e6c499fca1eaf703d50c2ff266dfdd",
+   "worksheet": "296dbe4125b66ef1f0bfe91de832e7de720be9f3f4b504d20ee2b8966cb20869",
+   "solutions": "53d95e4762c78e6a2399b2d0fa112fa0676eb4d4bdf4485e4747299017f29d5e"
+  }
+ },
+ "build/mixed/15/m0-seed-1": {
+  "content": "sha256:025a9f32e99c4089d347121d4e9e111b198746b8bf0ed9fd6921bcddc59e0b3e",
+  "inputs": "2bc06dafef9d1b451eb43b2c067b550702810cf59859defe83c13aa0bfae39f6",
+  "tex": {
+   "notes": "9eaa0a6bac2bdac6c11aeb9b92cbbf166db976513ab7b7fa6f24222b5d3c38b6",
+   "worksheet": "ccbb60f4e9e45728381aaba550eea0162e6151dad9ab22d4b31c3b2738cbf9c0",
+   "solutions": "68bd9b77eaffd40b263eeb1d20f85a6275c9fb926c7e560c1678c9ea533bca78"
+  }
+ },
+ "build/mixed/15/m0-seed-2": {
+  "content": "sha256:50f15ecdb0ea784a1a43e21b51035032b941f3ec44934080c4c37689f24ebb86",
+  "inputs": "4495d5406a5d98bb9e5e5cb37e31921695aa7f47af0b653315ecc744deb83370",
+  "tex": {
+   "notes": "3c2bfdbeadbeceff26178067cdd0b33aa8b240900c493373ba6c870e429af0f7",
+   "worksheet": "8d163c9005a7569ac54d3e8f1550fceb306be6ebcd10ee428dd7d8d4c82579ba",
+   "solutions": "71c6bd4036a0dea6824c9432da1d4e41ee24dae65f254722fbb3cd1a331feb6a"
+  }
+ },
+ "build/mixed/15/m0-seed-3": {
+  "content": "sha256:9e8a27545fcd8949f1844d10b80e289ca02b746291871e2ae1d40195e7790902",
+  "inputs": "8cd5adceae36972da3671249c8aa2019dba5a734e376ce104a91d09f7c0cebc4",
+  "tex": {
+   "notes": "1142f75975a08f6a514ab350ab98ee910c40434c4670427f49ccfbfb0c76a67b",
+   "worksheet": "9b82aaf8f08c98b590d6073b86c494247f76a658746cb028435a4c0c9f4c8b0d",
+   "solutions": "f0d7cf924e2f685edcf4f357d75407ff5e625be88cd709ef6d18ebdbbc5ad9d0"
+  }
+ },
+ "build/mixed/15/m0-seed-4": {
+  "content": "sha256:be098fb718f6d54585fe6e8c0e5ee2df988dcf44c214a4916da1522dfad023bf",
+  "inputs": "84891e7391661c7b40ea1cfa24599bb312a6e7782c1b0689ac0a55ad2de64b52",
+  "tex": {
+   "notes": "03d91db462040614e31261d10a1dd14cd0717839f5d39965145b34e04bb277b4",
+   "worksheet": "7962d78e0dc9921162b6921be54ee052a50e9c96128ad6fd523028a6c0357738",
+   "solutions": "f90b936a3be22f4096a6494509e1f9d4d7fee2b02d30882691e8cc58f948ed3f"
+  }
+ },
+ "build/mixed/15/m0-seed-5": {
+  "content": "sha256:bffdf925b62bfb278aecdacb102122c36e93982e09e4be65025269f4aa78cade",
+  "inputs": "abc7b1c81b483948b60fb5cf7ad6c20c772a21adfbb13c03eb39bc77a298a057",
+  "tex": {
+   "notes": "fa7c5228065debb39913836651f5561f67d59e50ab5f628874fde66701a693e6",
+   "worksheet": "a0da13bfc735c1c110377b32d12c6fa4b7b0985b68ad42933d2dce6c79db9aaa",
+   "solutions": "d40c7c3d00e94b78598567709146104eacfc4b592a153a5631ec790bb51f7edc"
+  }
+ },
+ "build/mixed/15/m0-seed-6": {
+  "content": "sha256:353d21978e71763fb3ed1b1d56b722265290e66a54b53ef91225d7cb51048dd0",
+  "inputs": "0964912aa9a0fc5d3c5b9f25a65b85a360c612c4b44289309be9470609b7c302",
+  "tex": {
+   "notes": "4430da6182a9a7c994782ceda46ceb831882adba590cd4d988c17a2594956b22",
+   "worksheet": "57d8eb67e69aec116838c7cca0ce3f1e1a3e67f0125af99ff3bfb5a5b0d4acc5",
+   "solutions": "c06f49c16ce587a57db7a897a7c1c72515d7f2fec3311b8f8b84ccb0ef1398d8"
+  }
+ },
+ "build/mixed/15/m0-seed-7": {
+  "content": "sha256:31f42b0441ffa13daec4ffd23311b60df1358661839062f7fa33a94c94b888fb",
+  "inputs": "2451991c27b85f7011dc625dca8cc67639b79551e78b3fb5a289003f5f926cbc",
+  "tex": {
+   "notes": "ea86293ade0d972eb2ef9e0dbdeacde0d3f563fea35a729e5a52816f5a1885c0",
+   "worksheet": "0cac2e8cf10befecbc73c5f37bf8ce493b1ed4fe574ab4b5675b744d0d13d0ee",
+   "solutions": "553c92d683b0628efea32272a7b17fa186346798a78efe4fb7a8723ee726899a"
+  }
+ },
+ "build/mixed/45/m0-seed-0": {
+  "content": "sha256:aca21fcbed2d4847927f0129e72459da482fbb017297220f8eb27bd426334ec8",
+  "inputs": "af095640ef67b77b39cccafa9c6c2d48473459ed1855480f48e1951547e51d78",
+  "tex": {
+   "notes": "115a28a6cc1ab6255b3dd1c74143f208d640f67a4e3ec51f43065e2d607dc4ce",
+   "worksheet": "da05cf6f241c64e422ef8071e390600c09544482a0daa0c00a8051531919d14c",
+   "solutions": "cabcd8b8da0b2810be63f10da483752e42572a50a3abef154ddf00533906ec9a"
+  }
+ },
+ "build/mixed/45/m0-seed-1": {
+  "content": "sha256:9dfff81b67e627df3545615d29a6eba205142e92b1084d3746bd8be59a069fff",
+  "inputs": "bdf43df9b95c836fd787700a85cb62a661427167fcba79b28fe75036201382aa",
+  "tex": {
+   "notes": "8d3bd32993233fdd79db27461f59f6f50362a2722c3a4ef8a5c2e98e08679429",
+   "worksheet": "a45a6e6c657b12285988d7cb6ea9e50927eac837d49cce078b0e89d65609beb2",
+   "solutions": "2e25e91950a2f2551b00eed182e5b0fdce70a31515dd88317f8751b974d78b5d"
+  }
+ },
+ "build/mixed/45/m0-seed-2": {
+  "content": "sha256:91acd4aabf19b9b10949408a5f1190dd3e235c61d94e3a3702eea4004e6f26cb",
+  "inputs": "a2c53dfdbb14a92986d338ea728db0abdddc44d7b8eb1e84c5d0e301e814974f",
+  "tex": {
+   "notes": "97c2b34358ffb1378f6cb3213a073846c6e14ee9d86fec6ff02099689d0dac82",
+   "worksheet": "42feb531f8c87a1b41a218a512faa881674820a233178f7d068ff98c9d8957bf",
+   "solutions": "f6fd08567e33bedbc28eb7d872fd8514f3656d1ab4b3d70514035f7e20517876"
+  }
+ },
+ "build/mixed/45/m0-seed-3": {
+  "content": "sha256:957127b8e6911b00a1dfe8caf058b673b16b3106ada93c0f97fd069a59885ed1",
+  "inputs": "2cf20ad2b650503b246210ed32cf6e3ed01035334f591970cc1cdfed4606c303",
+  "tex": {
+   "notes": "4c821c7b8ea93149ab5c139e0f2a1e761c404e0d16ab175f728cbaa9ffd4e386",
+   "worksheet": "1d965e565091afe1885e09888ea7294b6559cd7ca64ef9af84395cd3b33d6166",
+   "solutions": "87d5677a0fce8fd6cc58326872dcde91d9f73138aca38606fbe6b5347fbaa27d"
+  }
+ },
+ "build/mixed/45/m0-seed-4": {
+  "content": "sha256:acc72fa3af9e4056be30109820d6f45e4606a0bf07d0e1a0adf768f58fc91a61",
+  "inputs": "ba0ba40f9d9276df7b90caf54167f6cb6e4654da4d52f795df84fef3613b46e5",
+  "tex": {
+   "notes": "a0af1e6d0b31e32134f66d9b6b37d426fa89fb2d700486372f0c5cb2d330d0b3",
+   "worksheet": "2fac8c9271022365f94b4149f8a9ba0f0f2e04883558089674dddfba86c08bef",
+   "solutions": "89994e664fb32c2f11bb6e88e1fca1204c66a777d9d5f40d0eebea803d617c24"
+  }
+ },
+ "build/mixed/45/m0-seed-5": {
+  "content": "sha256:f96ee5cde8aab3a305b364e57021bf30d4f9e4794bf5a54158851c13f29d3ea1",
+  "inputs": "c6c4d8fb3fa9e318442fb1d3629e5e7c3768a15d59e15388e467b32be728ed1a",
+  "tex": {
+   "notes": "fdeff606a8f674e65b96db6be2459a6b6a207864ffb1c821ed291e2f53fe2b6d",
+   "worksheet": "c0ff6f8069ef92f844f03a67cda2a7af83de58d80e35d5bced224baf8148d3e8",
+   "solutions": "754a53b1696dbcb5b599b337589ada07797c9f4edad63cd48e85b77ff18b70af"
+  }
+ },
+ "build/mixed/45/m0-seed-6": {
+  "content": "sha256:efbc212131a02f814058d8e8daa54cadf61023d15f492c6a526a31dec5f98257",
+  "inputs": "e56bc967e79061df36a63b46152214606ce33c444f97b29046ccd1d13e1e669e",
+  "tex": {
+   "notes": "875302366e92fa65f04194cfab2eab751aa0260867821d2c6abb90fee8d314ee",
+   "worksheet": "0eebddbd12159687aad96c220c4b8fc190d61891ec3ac16312551a5d583d7460",
+   "solutions": "bd63054e0f1f2214b11de935dcd9716041c5bc66ff97c71c27e62dffbdd692bd"
+  }
+ },
+ "build/mixed/45/m0-seed-7": {
+  "content": "sha256:3cf5cdc8c5f7e5b895afd54eeb040ae131ceed6390b06916e52587e484594ef4",
+  "inputs": "510d86e7fdd8279fe38f42460fc7eedd50c47f4f3126fa349b680f9e141ced37",
+  "tex": {
+   "notes": "05c162962fcea73ff9c1397d7ec7955a47329ddb3fba8f78d049135eb603902c",
+   "worksheet": "4b686e23e39b990656f3c53770e2c44e8bdb8816707dbfdb8d142a800764fde2",
+   "solutions": "876ea74a465ae04a495f3bd1291b945dc0cfd20cdac34fa9a67de22935edba0f"
+  }
+ },
+ "build/mixed/60/m0-seed-0": {
+  "content": "sha256:7ca075f895d8dad7fb07c69273257e7ca21a6cec7181130c6787b4c7e446136f",
+  "inputs": "ccb1050450629fd86973be91ebe627a7207ef2548fc8d42b4e34d9c3d5356c9e",
+  "tex": {
+   "notes": "04134094df0a6399bfccf6d68279ae42711a58fead4b64422c41f15c47799e65",
+   "worksheet": "77068bd5b76c9830c9bc7ae64101d4e2b7e4b08b5d2b75f585026f11a811bca9",
+   "solutions": "dd0ed90c89d4ffa1391b567b37d33094941fdf8ef21f7b094df2624d09ebd5ef"
+  }
+ },
+ "build/mixed/60/m0-seed-1": {
+  "content": "sha256:acb567e72e1ed93bd209f76d8d92f0d94c658c9302c0fa7a9e0f2090fe8ff8fb",
+  "inputs": "3c328c6c40caf5a8025efccae28c394b461533ee67268bf5c0fd026d9c7da7d3",
+  "tex": {
+   "notes": "fe1d5b112db983a2d9a646c2890e79ef9f8d1bb46c986591c48cb6d688021c85",
+   "worksheet": "ed8097cd0955283df6e0ce5883996099fba7982313352f8f55ffe510be1ee1b8",
+   "solutions": "467ab39514ee9a8a70fd337ee24dd6b30e5d8625021bd6027374ade967cfc5e3"
+  }
+ },
+ "build/mixed/60/m0-seed-2": {
+  "content": "sha256:30484b2cd0afa708ff0b363b227f56bf3ccdc7a929fc103c5dee8f52928b805d",
+  "inputs": "cadc9a44ef4ce31ba295261a1e0645b4f33be46c3243e424674e7c6e6d3847ea",
+  "tex": {
+   "notes": "227c42e32f0ba6744bca9608a898e55c1660268379d433ce163f09809901e98a",
+   "worksheet": "ec3b9dc66f18968cb1b184b4485d4ad07094cf44af8ff4d0c2878b8fc4de49d5",
+   "solutions": "906bcb036af8e5015b6d0916a2dfb2399f95767fd7baaa0da9a1eebf73abd92a"
+  }
+ },
+ "build/mixed/60/m0-seed-3": {
+  "content": "sha256:2e2920a6dca3b5d893d94b280358f211cd66952e0a9b57b06d1f460fa1dddf51",
+  "inputs": "7290f57eea520e6b6cecc7d32856d05b0a6d090464ad22b972a2f106449db37a",
+  "tex": {
+   "notes": "d39b613c5feaf62ce4a4e54a721146fcb5bd65c76ea0db82d94764cb640f3b0d",
+   "worksheet": "f64b7d72b586ceef42f7c0688641a58308bb77ddd613107e7a98eedd51702768",
+   "solutions": "afef5a119d47d7978e700b1c41d635a858e8f0ab5531046601a76049df380b99"
+  }
+ },
+ "build/mixed/60/m0-seed-4": {
+  "content": "sha256:b62773f11a6ad9edfb0396f1328e0699da1db3e8e740a90054821e531ad29a6b",
+  "inputs": "aa550e7e97bc9418d19f2183cb4b6eb9296dfeb78d9db105d3083386c77c876e",
+  "tex": {
+   "notes": "f157f097588b451b241edbf8c9121e0663d789590ee53f6539fbd2a97a2f1690",
+   "worksheet": "fe995434ed76f01f9caafe354c183b7aec0e762d03fb91b87982a2ce26849159",
+   "solutions": "c2c47332d9b4752b9756143df4e670d775acb0f1c2a2ca6d6c43178b5f288a08"
+  }
+ },
+ "build/mixed/60/m0-seed-5": {
+  "content": "sha256:6c59f79ec19d1361d067e2a7b17ff04946398b4c5ec589c9f0ced5c6f4c90619",
+  "inputs": "106512553a3d26383211f43a050896c86e88ee887ce8e2cff232ad2230592576",
+  "tex": {
+   "notes": "4fe3cda0a35b36c6fbbbfcb0d9d43730dfbd26fa23046aca907f03d720fd7c08",
+   "worksheet": "25103671cc7fa120c4a03a17c56a8a6924f50316be82044f8e53ea6c93ad5997",
+   "solutions": "a010621727b20ec42b4b6462a8817395e7afc01af665d606e3a4ce560259f12a"
+  }
+ },
+ "build/mixed/60/m0-seed-6": {
+  "content": "sha256:416fffbda81a89617230725b8a929bb5ca1443296f227e59f101b0c089f49bef",
+  "inputs": "b38324b23ffe5d1009b0916830486370f940168c8b0adb05bbdd6add6620a174",
+  "tex": {
+   "notes": "afd41990b777f8d5d21db19f68380f6314158cfcd0985c47d8dcf821ea43ee01",
+   "worksheet": "4222aaf7d21ef64d511682ed76c84e47521729594b09a1910faf53d36f58bc8c",
+   "solutions": "821ddbef5363e50d6988c076c16031f8af05b0e0f12702b75a39ae5cb47ffcab"
+  }
+ },
+ "build/mixed/60/m0-seed-7": {
+  "content": "sha256:ca437f4c660cd7f673be4af4de5a9312b93331d8c3097e985365a50164f87d6c",
+  "inputs": "4c2520912ab9a185b1bc658c84c69db6217596db5a6a00bcda6aae4ff92a383d",
+  "tex": {
+   "notes": "f90ff6fc41445911df3aa6d2a794b0e39b7ed570718d4b42c91222bb1e59ef5a",
+   "worksheet": "831b3a056d9a9dfecf262d3bb2fb06ef9f315c949a0c188f4432371d0c6f3f6d",
+   "solutions": "34f6a54045f01adda2ee33425c27ea07af58862facf6e3c65d0ee7787186237e"
+  }
+ },
+ "build/mixed/120/m0-seed-0": {
+  "content": "sha256:c0041b709638196498583faf90bcb508cc3c2c76fd17d4c132da4b388ae032e7",
+  "inputs": "d45a9c3599019940d93e11c333a9f4c55eb2acd4b3cb0f53f72c965375cb7970",
+  "tex": {
+   "notes": "be1861af69b5af963c78bdae702e78880cb7164c30d251c359306f7fcf424823",
+   "worksheet": "98f65842d6fd859b17d7c6b8e475521106adf744a22e561cc7f5e29758963150",
+   "solutions": "a870c3bfd1897a8ead411daceadf622bd460c55abcce8da3a129d2c51e531a2e"
+  }
+ },
+ "build/mixed/120/m0-seed-1": {
+  "content": "sha256:fb9d358a2d98faa255ddb263548090242b51637f9ffa11ee1ad2d91d915ce23d",
+  "inputs": "2be1fa78866e4756a08dd68edfbac8700ce4f5f7b7867bc6718bedd5e21d12b2",
+  "tex": {
+   "notes": "e821ee375a47ec90cc207d045709f1f65ce393c59436c01ff8752296d3e0baee",
+   "worksheet": "a8dca84cf67a602bea50facc7ae719702948e21fbef1da7520cfe0e47155839a",
+   "solutions": "185f7d4f05c54d2c8ff7a8978d48ba599847b932839cc99db5b751d1bba02ead"
+  }
+ },
+ "build/mixed/120/m0-seed-2": {
+  "content": "sha256:70bd696dfa3caece43737d318b27bcfebe5aac0348b60323b9cd4e18072dcfbb",
+  "inputs": "3507e4d15c79ead8ac72d95a89053b25c193355141ea7af033d2c336edd8b730",
+  "tex": {
+   "notes": "674706371f9f9d29666d38779116f9e28a3833091ee79f2ff517ac1643270765",
+   "worksheet": "6af4adbc69917cd833549055da2569cc1c3ac0667b9ff5f0fff5dc9c948e2ad0",
+   "solutions": "48be0ab618e586550b0c698d8441c1495e5378a67c56b1d4adaf8e44ddffd514"
+  }
+ },
+ "build/mixed/120/m0-seed-3": {
+  "content": "sha256:8f4a097aee434d5276afd77198b19ee7c37631ff214f07a39cb0030caaa51a8a",
+  "inputs": "cf8639a208c0abdc15209d31e0a65d4f348936b8eab720ae7165e16b55e77f4c",
+  "tex": {
+   "notes": "22b56b4d536442c544c9f4c4b17f75f76dbe42f22b9ab683963e72d27234e658",
+   "worksheet": "304a9f097ade1aff1d4794418d541738b7f1cd3f43a7f4e36866e4c6c38f62d7",
+   "solutions": "a0d9a5d72e1d5fdcc64a39fba5f011de009683fce70b104f3d3239e6790c4af2"
+  }
+ },
+ "build/mixed/120/m0-seed-4": {
+  "content": "sha256:faec7a72ddb996987214d2f02fedc5723f16b0292d57bbebcb8468489c85e84b",
+  "inputs": "8d53f95cb951ce85ace4cfbe53c96329a7da7447852db718939ae32a31dca7ec",
+  "tex": {
+   "notes": "6f26b81ae6a19bdcda7959a4b4088467f7c5b20112307dd751873b3bbed922ed",
+   "worksheet": "3b5ff7a680a14baddadc796d22a018db92e77e511e090b400e36fdbcb0f30545",
+   "solutions": "31383b2efe77907f6a3e12e419d718d187689c6205a2e9675ebaefddfda5d225"
+  }
+ },
+ "build/mixed/120/m0-seed-5": {
+  "content": "sha256:3a9568630c6aa9b99b45053dbab3c389cbfdbf82797e76fef7e8541708a679d8",
+  "inputs": "b31b061af6fde60e899d01083729ce40094ccc9ea333bb847a41079005bc078e",
+  "tex": {
+   "notes": "d37c746d918f19d8e1f62f3e5072875d89f7cdb555447af41a48c15dbbbb105f",
+   "worksheet": "26a03b31d768900efa9f5a36aaf6e2a1d91fcb2dff373cee213bac0e3a832d89",
+   "solutions": "5901ef09a66928a28c2e632adb90355b0e665f840d387dbcf0060c428e6ff1cc"
+  }
+ },
+ "build/mixed/120/m0-seed-6": {
+  "content": "sha256:190a140355315942cd0ac5fd334cc597d1ef84c5a04eccea8dd95e6df6668eb6",
+  "inputs": "0504ed7077e9da9784b843b3e0d0d6a195a6f9bcbbb63c4ea73ec57c6bb874fe",
+  "tex": {
+   "notes": "5e22828cf17745cbe338f2d6a67c12e5fc46ba3767a6a106689aa34825bd9bfe",
+   "worksheet": "fe0ff77bdd1c955dcc8d26b817635743a728bf241217036a56b7ec47e5516258",
+   "solutions": "ff62773659369f410ee0eb48d79f77934392ef2a350b14d8955a04adbd6eb214"
+  }
+ },
+ "build/mixed/120/m0-seed-7": {
+  "content": "sha256:789cf2de2c75d343cbe74cf4e91ebe4419376cfca765353a441478178e79bd83",
+  "inputs": "d47f09379cf02595f22426f72698730dd167fef0eb45f401994f6e92c47a170c",
+  "tex": {
+   "notes": "97bb94ac9a132f79307ac35e0d86044bf94832800fb8319a0dba59392893bb7c",
+   "worksheet": "118076991615045295f11e23bfcd45cca810d5c9bade4aa04aa5ad711622a30b",
+   "solutions": "de0d4a2abfae64ff98e2b7a9b91b5865df55329157c5774e2ea360e6dd870d30"
+  }
+ },
+ "build/challenge/15/m0-seed-0": {
+  "content": "sha256:d67aa84e93deda8f9edb6c8027982d6c7f813b595833991950e030a18cd1d37d",
+  "inputs": "843ed14458f494caec201b23eec49857771bb85180fadeb41f521bcffeec8535",
+  "tex": {
+   "notes": "87ff01bf4ac8b745fe6e93416fac0306d18646b01bc1fafc8c120872be333899",
+   "worksheet": "2fe1f0de3b5362b524a26f72d64c1e415d44d7ed001a5880248f1acb5007dab8",
+   "solutions": "5eedf2135083cb8348e404edb34b630862c3dfdad8fe97a7f5fe059d0c6cc179"
+  }
+ },
+ "build/challenge/15/m0-seed-1": {
+  "content": "sha256:1e6ae4d4f0567707864cec2b3b2d00f37e0ddc4711f86c3335eb7ec257d4c80c",
+  "inputs": "da4d6bbcbf942b13b4077830b2d595c831315077b80f0eef4e3f6eed076595ac",
+  "tex": {
+   "notes": "86589643ad216972f40807eb60d403bc3f99f44a951fde2a0c59d2d82e75abcf",
+   "worksheet": "97bd061945ec1d1ac0477529487914da94854febcc11eb5fa95328822b4328d1",
+   "solutions": "0f8c16100b15c39930d1f6920e904f57a1d3a43ea931e1335b0ab2a238602439"
+  }
+ },
+ "build/challenge/15/m0-seed-2": {
+  "content": "sha256:619491a42575f460a5d86bcb341c184be828f7da07c92c32fd7330a4a4852504",
+  "inputs": "864f88311f30265c44c21d9b8e12cd68001c3ee2b1a715d177e03d4b880b667b",
+  "tex": {
+   "notes": "5cfe978b66a17bfb569319727407d8e86ff5bde1957419b8d47aa19ebe26d58d",
+   "worksheet": "da96eadccc7a896ae9b3526f427b1696d3916e9b878aebab93223984aaddfaca",
+   "solutions": "2a28f1a2955c1d9fc8d0cc33e25493664898307d26f7660f121d2a402f7ccf49"
+  }
+ },
+ "build/challenge/15/m0-seed-3": {
+  "content": "sha256:0ed8e0b03a2fab8b8945a6dd42e55dd97458130a8acd4785c694bc75d14c33d7",
+  "inputs": "3ff4e7f443b2d4fe5c78525629e48a5a1a590367854b6582c6e0e4341ce78048",
+  "tex": {
+   "notes": "cb2383d391815fa126d403b556d8b9b5c1aadc037f2744bf8128b4c525a14435",
+   "worksheet": "45027b783fcca9a7ca74ed273cff2b72b9d065756b031db628c2fb9d0e1c72f8",
+   "solutions": "2ed91d6ba6f728658fcade00a535b54e6ec172965ad7d214f7bbb5a6e66db738"
+  }
+ },
+ "build/challenge/15/m0-seed-4": {
+  "content": "sha256:c322ff9d44b8123249debe58245b3b44d4c5902b2d0251ecbfe811b49df413f4",
+  "inputs": "6a4b608a1238a2f629a6d6f9654af46641aec63a42d3d4abce76392d29311553",
+  "tex": {
+   "notes": "3817999d1a2694e4433b961defb7c79e04d0b5c74dd225b78e5b73a15b4970fd",
+   "worksheet": "a01a3c82e1ca091d66004521b588f3446a19915b2010b1993d4f46dae82af65a",
+   "solutions": "dbfa122764c8ffd0c285864ec712e31868aded1fedab7890da7457bd1f2c963d"
+  }
+ },
+ "build/challenge/15/m0-seed-5": {
+  "content": "sha256:e150f4abf4acc2b1812e5472f9a7ebe478b782b5621a8f1ae6939bccc8855135",
+  "inputs": "b37ce96e94537fe128b749b73de85c34518e88259a819c0a69e8d929063c70a1",
+  "tex": {
+   "notes": "ab7b91eeaa01e7e636c1498fa51e556ce2421d005c2c4da306255948421206c5",
+   "worksheet": "f6c0d721782cf505da7cfdce102fb665ce6ae419956743af1f3ae58f3fb86aa0",
+   "solutions": "10c259e06e0ccdd3d98bd79b0e07623aac7aed5871367c668879e8e1027b54d9"
+  }
+ },
+ "build/challenge/15/m0-seed-6": {
+  "content": "sha256:6ed45b57333cad6cc514d54402424403ce6fbd8906619bd3548c3a3f40bce51f",
+  "inputs": "3e56461feb8f3c2f571f6622a23e6ffe489f20fbab89bbebfdebd7617acb7983",
+  "tex": {
+   "notes": "ade409f8b95f5a75d898a1c2ce2c72253501b00f774ae632bab009017edc9f0d",
+   "worksheet": "91ce664a0be8de09e734705903b70b9dd148675ecbb8ccf2f17a6692bc57f6be",
+   "solutions": "32a793ec14d465627942752d3f15f66d1e504a495358956722eb179e83c00514"
+  }
+ },
+ "build/challenge/15/m0-seed-7": {
+  "content": "sha256:c89f0c59771a8c1425ee57b7acbf260e0ac73a142ace5d9ff23817a142eaf854",
+  "inputs": "0941a26f359b4f714f4f44fe032d4e3edfdfd37c5094790cb8d9913aa94e2443",
+  "tex": {
+   "notes": "56a6bb3438209f430b6207db5305a3e1a98417f13f70adcd5a4d4442c545899a",
+   "worksheet": "1ae736633f16a4b9dafbcf708a660758a743a49d42ed238c1697de14aa6661ac",
+   "solutions": "44f24baa62b86ea7de84a42d7607de1dc576d570c5034654cf61116fd151cbba"
+  }
+ },
+ "build/challenge/45/m0-seed-0": {
+  "content": "sha256:beaa55f80a28551a0b424bf771bd2d5de373371d9ec8210e396d4c8853bc1bfe",
+  "inputs": "1b369482678ca6f6bfefb8da2ab2ecf2e3b26c7f8f5c023e20b9e59154a661fc",
+  "tex": {
+   "notes": "76a65ace35ddee2a5f3a3d8cac77b96e36e817f6f6fcb75b5fbbf46d22ccc242",
+   "worksheet": "7c5626cc66c7e36da2da61e6e6afbd9e8b534407a6ef63dc006d5029683f2e5f",
+   "solutions": "2f528fb8caf3ead2ea5b7812180da76452499c29aacedce6e3494c7d530a44c1"
+  }
+ },
+ "build/challenge/45/m0-seed-1": {
+  "content": "sha256:ad5cfed7a02879ac6d880cc2aa617e329ac232254e89e93ad666c94a4968444c",
+  "inputs": "00bd99860f0db96e78ce413300e2955628e48d11f137a819a3ea72f062cd951f",
+  "tex": {
+   "notes": "83ad083a7e911aeefc76e87ec011c07e0f5e1dca302dd4a5bd401af1f6a0118c",
+   "worksheet": "c85a6b9bd0587e165e34e699b503cd084883947dd1f6e8263d10f13fc37501df",
+   "solutions": "413f792eb94052b94d85ea8679d86240b94aac68d1739e7040c76568968099e1"
+  }
+ },
+ "build/challenge/45/m0-seed-2": {
+  "content": "sha256:d3619c266b0b523de96de5905c5733a1d56bcf85ffa450c17bb634530ea5010e",
+  "inputs": "c9bbfed1ab3550fec229ebca03084b7ec31c1b89d4bd09e3b56465e40069b8ef",
+  "tex": {
+   "notes": "be8e696dbb3a85d9051cf7763b10883e522262f4ffc7433913f35ba718051e93",
+   "worksheet": "596d70c09b52b04d47fa2dd9377b1cba56f09b94526481ae27953be05fea3617",
+   "solutions": "05fdba6a3dc88114051f978937291bf65119a9c56c1e32bf51661dfce1f21636"
+  }
+ },
+ "build/challenge/45/m0-seed-3": {
+  "content": "sha256:fc3b77a613aa53bee4746dee728e75cf02593d4c075f3c0f8259e641d7ea17e4",
+  "inputs": "8674bb731756ca4fbbe90c2fe810a5dda3adde3333e4da6f14e9fb4a855ead3d",
+  "tex": {
+   "notes": "dbfd09433b796b3cbe26d4a01e645314f949964fa2c7a929516c602d170c32d0",
+   "worksheet": "cbbab285e922ad004d284586d1df6492f3812506a290fa5d843500fc0c60e9f2",
+   "solutions": "e3088aa80d2e15823f7a8e6a9091caeea4b1659cd2e874603462d637da513cee"
+  }
+ },
+ "build/challenge/45/m0-seed-4": {
+  "content": "sha256:d8c798a4a01029025cb4db1ed7f9cb25727af1f1f663b2ebc9eb115e8d278deb",
+  "inputs": "b7859026000bdc04efcc01bde90002382ea57edab7303b2ceaea2c46a7a5e51b",
+  "tex": {
+   "notes": "d593859433cb2be9cc22e11c8e0736f437d7ddff19b6ac6055541a49614cb36b",
+   "worksheet": "9c6fda051e768be23568eeeda12a96a73d7126ccf216b378dd765016bffa4278",
+   "solutions": "f98dcaffef3314327089a1139006d77653784f0c527be0897c0a9b85a522978a"
+  }
+ },
+ "build/challenge/45/m0-seed-5": {
+  "content": "sha256:7b6ef705a15135471654240a27ff87c1b84ff53503aac6d44dbc782758d6480c",
+  "inputs": "0d61c3bf056d840357e94fd1726c8e7af1985ff7bea128cd70f537dcceceea79",
+  "tex": {
+   "notes": "e03c2a8409b67819273d4dc1cb935bacef7b11b6d481f71891ed92c05e1670f6",
+   "worksheet": "fbefce9f7db2e72e242714045f891e65570c5cc0521dfa7fafec8803e0782c3f",
+   "solutions": "0f8d0eaad0091fdc82298af1d233f12325a7cd4b4d8ccefd81c86157d265b218"
+  }
+ },
+ "build/challenge/45/m0-seed-6": {
+  "content": "sha256:9562bad7205918b6742a0c60b8fbdd63e7469ce84dc0a0f0dd1e3f1062ebe064",
+  "inputs": "21563539acfacf751a4aa22080e83034541fda817aef656045504f8b1e4d3d57",
+  "tex": {
+   "notes": "6b2c5fad9d210131a38f36b9b41b66a95843ad1a524b8ec34d607790871a6634",
+   "worksheet": "293888358efbaee50ac1b82c5fbe90db8da54a76bdb987f582cca8db7be93cfa",
+   "solutions": "19a6bc7a77667bde176ca0a386ef3c8b357464156156d3dfcb42e6d2254f5ddb"
+  }
+ },
+ "build/challenge/45/m0-seed-7": {
+  "content": "sha256:d8e8117d36774d4775a3e2d78f950653566f66fa1bd483741afcde9f3404de36",
+  "inputs": "b65c4b965efbb0a00a30eee776313bd2706ffa1f31f59a9f5c61037c39ecdf2e",
+  "tex": {
+   "notes": "95de99c8b9db0cf433054ea651fca65821c31e66cbe8579a793928bdb7c4c9f2",
+   "worksheet": "1f523fc842a37dc1f34f162031ecfcc18af1b251ee29e069f5e0ead45e8d7058",
+   "solutions": "a683f0262c2c15ac09bfdadaf64dcc5945b621ca895c52c15190f8050b6d6d2a"
+  }
+ },
+ "build/challenge/60/m0-seed-0": {
+  "content": "sha256:12ceb6179d5ebc328d1dfcf0e56688fbd1c20fb5341498cd6f32c38a372ff8db",
+  "inputs": "f29bef2dcefe0f95e3b580d74d10cf676beac2ab2821f90c54a4d48d51e6aff8",
+  "tex": {
+   "notes": "0150b5c06ec90b9f936fd053939105d3c4a4bdfcea65bfa9869757ae88659c67",
+   "worksheet": "d5b357fa7f9829a834a987ffbddb33c2e3e2e2abd991a3e35c779939f64b4b56",
+   "solutions": "b3b5a766e57cc80085d82e69ee8c26d176bc178fd4ec1287f5c6a984bd608311"
+  }
+ },
+ "build/challenge/60/m0-seed-1": {
+  "content": "sha256:f8bf1d9a3601791193913d062a24f457b2b237f58fa15a5c0ae45171be0df53e",
+  "inputs": "2a7f709211624f4d3b1d22abd0bd00def94702e9292fb83235ee665d7615d2b3",
+  "tex": {
+   "notes": "c7913d62811cc8c9ac6290b875abb8cf64326ffaae81f30a267d37e9302cd700",
+   "worksheet": "8ba839119b664155a69495e8c92e28003c6aa796c197e4b3f8a06589f669c7f9",
+   "solutions": "9cf240a87ff1d34bec19f828cc9bab38f6f902fa4f0fdcef91ee7a616d1e7d80"
+  }
+ },
+ "build/challenge/60/m0-seed-2": {
+  "content": "sha256:239dfda600692e658beb2cbf4cf606626e4f927dba7e040f10d7580547234b05",
+  "inputs": "f77727806993dca44dcf414792fa1fc8ffafcf73d141f45e405bb1e9a93109cf",
+  "tex": {
+   "notes": "30757aca03fde4f4c82d12c1b13be686c73127383e1cc584abd568ce361f6a36",
+   "worksheet": "47575e3b3588a048324754f5275155270dd75923741f8810d2892cea089a08ee",
+   "solutions": "d7f8b753a3ca5ec9ad6f2af40e36fe1eafa8775e9458f340d947d97ac2d613d9"
+  }
+ },
+ "build/challenge/60/m0-seed-3": {
+  "content": "sha256:e6f7b213bed99546e36f05313e99c68e97d8553ef5111074e3ef2704a2a56f2a",
+  "inputs": "c2d5701bce8d24317cf65518e224b4e50327bd01d812a0fe925e8a200865039b",
+  "tex": {
+   "notes": "4afeb3e11ceecc8d4b3a756eb7b4582f21d11662b79c94b6f8e6a16e135f230c",
+   "worksheet": "0299515ac2f31ff6e6a0d316c8d71af3a65f291ad3fe04197cc939e05303be91",
+   "solutions": "4ccc70f917169ec60f0d5a5b40f1c8e9e8ab9b186b79c871346f0d0e760ac4f8"
+  }
+ },
+ "build/challenge/60/m0-seed-4": {
+  "content": "sha256:07fad914204f900fb390211428f141fd598a4949dc14d79f95cfb30b2f05fac3",
+  "inputs": "eee82f917cbdde6a7e5067b9bfedcdaef1f4a4d5ce8130fa3593612b314f1abf",
+  "tex": {
+   "notes": "b18a1a6e25d2bb11d2304c0ad7df8b30baa27dc4873537cea95b6cbf3e225f77",
+   "worksheet": "74606b64a923a4e9f6e37cdf3a4c6eb61413ce93a2bc9c2db0d6d73eb214e1a7",
+   "solutions": "ce2273c98aa778fa32882baad6cd7e9a59cf1a22f93ff0a78f3cd890cda2312e"
+  }
+ },
+ "build/challenge/60/m0-seed-5": {
+  "content": "sha256:f74ac29b1a978040ddab32e6bb9cbd33f4a109adcafc79fccdfda070f7d8caad",
+  "inputs": "ae46ce6f86e61ec4caab9553a5408596fc0eae0be2531aa2a4810c5361c5ffe2",
+  "tex": {
+   "notes": "a4576bb3d811a19562843d833aadfd1ac62262d2fe74ad11eb2d4956b74786ff",
+   "worksheet": "9ebbe38b8fee8750fe25885beb261d9afd0ca5d6185da20802982831f977e3e1",
+   "solutions": "03769dab4dc14d597d3e53576828bc20711e520a33857dc02a0f7d640fe88ce2"
+  }
+ },
+ "build/challenge/60/m0-seed-6": {
+  "content": "sha256:208fa531792924884bdbc2ae4150650297a58a48a099460ce8559232c7c852ba",
+  "inputs": "d3a0dc6366fed839e382966442ed5dfe0e8643790143d1dacb1c2e52e051ba16",
+  "tex": {
+   "notes": "0d3a956af85436050b025aab424d9a029939cc8265c21aefd2194ef00bfbe2fa",
+   "worksheet": "7bd71370b21567f65ab0e32451830454ec92ac048d360f2aece5e9ded3e44ae3",
+   "solutions": "c0baadfc9ce46702e9e598b6403b19383fbf996a3d44f22ff446cbab60e93509"
+  }
+ },
+ "build/challenge/60/m0-seed-7": {
+  "content": "sha256:bc2fcf717db7e9660562ff4ffc32c47ef2e1329ca5f5d328175d580069a9936f",
+  "inputs": "9d9a76bd56b324b22232c16780e62c019b14f17740f1cce256ede9789767b334",
+  "tex": {
+   "notes": "9226c07a1646b244748ecb16671e80d3a0dc479f9a908ba5703dd6d8fb1d0006",
+   "worksheet": "71ff4ba69d72b8f4caabd318f0140d04dfc7c6f478b29e9110f2c65293c70d76",
+   "solutions": "e1bb172af5ba7ae3e254536c0d4e536060815ad58754bec61607f26a0f67ee05"
+  }
+ },
+ "build/challenge/120/m0-seed-0": {
+  "content": "sha256:c110c73f3c14b892570e45dce8b799e06b73ff33f00a9c12ed73fd36670980a2",
+  "inputs": "cdb0f66c57ef965eda8723c7c0421e9b8e6f5fdbdb17ba04b980e2c371007cff",
+  "tex": {
+   "notes": "4145c7837d54cffcc6cf38cbb7445b1dc1a41dd1fbee299c31ac179fafc0023e",
+   "worksheet": "7173af31bcdb701facb3a97cc776e9100c22a0252f3478b6a6c12669784972ea",
+   "solutions": "a86f3adea7697091b6f814b1e91ec3ba3fdbdee00f34d19a95aed4d225157724"
+  }
+ },
+ "build/challenge/120/m0-seed-1": {
+  "content": "sha256:2286c0778470b650e2bbb969983cdc268ce9981890cc16ec93cd4ac91a502009",
+  "inputs": "8162738a1932bc0580fba625a4d78598c3b3c8a8757b0e00495338839cc77331",
+  "tex": {
+   "notes": "c18358c0b36e0d4fbadc924cc3d64b6cb3f20b83180275fea8f5141d49bb91cb",
+   "worksheet": "407d06fd1565fe172328620917aa972f88d36eb4fa406fee8c1fb8c4ca0c0a19",
+   "solutions": "15392a22cecb0dcf1c7aeeb755b3c03a0b1a65037b00252967dd7cb07ec0fa55"
+  }
+ },
+ "build/challenge/120/m0-seed-2": {
+  "content": "sha256:63bf0785fc12cd199f19cb9371c0a5bda3ba62f543ce3e7c3cca1dc6900dea87",
+  "inputs": "ec24c86553f576d2c0053cb507f62bf76b556dd9de3d4d48847dfd4e00df3fd9",
+  "tex": {
+   "notes": "d9d5e94df89c49ca3dc0c392c81b4caf8124413f46a5cb588bcd1a1944ee2056",
+   "worksheet": "4a50d4999a9fdfe99b848b4de69c5971de64e19d3b5171737f671992cd90c61c",
+   "solutions": "e1d3a9bc281473f0c89b1d3347e53e76ba756a9a4aedc7f018f2f9d947ba14a4"
+  }
+ },
+ "build/challenge/120/m0-seed-3": {
+  "content": "sha256:86c1ac7768b5323b0b73fe9e18072f71d6b776d67781cba6f73617bdddbeac1e",
+  "inputs": "e03253524bbe261df40f6bca838b3df345b51a1e5b5384f2bbe0e7870c4203a1",
+  "tex": {
+   "notes": "a25920360e368d149f305cd475792831557b4ee6369645d53be4469e179d05ee",
+   "worksheet": "1c42ac70356f508ea23bfbe02b38008e9a241e17ba9c9ff6a3578bbffa3d13a3",
+   "solutions": "e40a95f71b6b6c22903e9571eee9c272fc0ba6a4884ac4fdf9999056f55672cd"
+  }
+ },
+ "build/challenge/120/m0-seed-4": {
+  "content": "sha256:eb3bff4fdd408184c76d808b4ca700c4b703f2c4a631dd5f7a60b053a496f0eb",
+  "inputs": "fbc9b963ba57643ff8f74694b3f44fa6ca4af03d5fecda4b8d41f136853b25ad",
+  "tex": {
+   "notes": "9fa992d7928e02528c6c00a4c3919e03ef0b1c053c3d7f37a1bedc534885a7aa",
+   "worksheet": "98e0adf568d8ed7b5c95f98b466e8dbe820d13a51d72dd19258146854ae9a678",
+   "solutions": "b652e32ee7ef378069f23a48d265b49fa70e3743bd2407f9829d77e7502e0417"
+  }
+ },
+ "build/challenge/120/m0-seed-5": {
+  "content": "sha256:078c5503e22e70e629ddc1887ab3fe83d09fb9b5cd50a1a5d35501ca6d4af56c",
+  "inputs": "49d1a41164e9560efa697c879c750b034434daf29c1e48b771f2db0894ad1944",
+  "tex": {
+   "notes": "13d1d0029a057d5e3a7773b548a2f91e05c60817b2be9e439c3c50851114ec01",
+   "worksheet": "244d45852d56bf509bbc2c5e42b776e1649bc3452016ca01864f27cf3e3220ca",
+   "solutions": "540c180037c1b56849aed9198ce6d6f2869be0fcab9c37477f34e42ae0afc953"
+  }
+ },
+ "build/challenge/120/m0-seed-6": {
+  "content": "sha256:5c05f333a06360ce84365eb2f62eae920d1706768c182a282efaf5dc545f3e78",
+  "inputs": "b71e2ff55cf2dc4e284db90253d0e1800f66b62237787456b57785d9d3b48f56",
+  "tex": {
+   "notes": "708907792ed1567a13a021c40990f8ea69b78e18359c12eacf848ca1cb1771d7",
+   "worksheet": "3e91d15511e72e61900028d61477a8a8ef548a11e36e73f79c0a916f22336f73",
+   "solutions": "68b021bc0cff543cb0671a81f04197461a0c7a3b867f7164c0405afeee733907"
+  }
+ },
+ "build/challenge/120/m0-seed-7": {
+  "content": "sha256:7e391b55c1fc52a1362dd11d572e5b4bd665d0827f112fa519a797991bf89959",
+  "inputs": "413d3ba7e4cad804ea920665df074ae7ccffd36188276dd4bf401abdf98e8788",
+  "tex": {
+   "notes": "e2f1f7a214e5f250c23889cec66e531bf124b2ec22b1e562191ba45af5248a26",
+   "worksheet": "d92ada8cf18850f3422761709c4cecbca9060d1499a0c61431771e4dea5a3ae1",
+   "solutions": "53f3bac9b92583073c021e692cd93ac40bbc821c06a92133bffa0d841e596c51"
+  }
+ },
+ "llm/basic/45/m0-seed-0": {
+  "content": "sha256:accf481254ed9600121f5137a2cfed67a837742745038397426f2532a1b37744",
+  "inputs": "d597eaf410b559a9a78df1183130eacd035518f6da161f05a7e0ecb3222992ec",
+  "tex": {
+   "notes": "04022963d4f60a25e01d63c87419a3d2927a245326db7996e406210ffc34bcb4",
+   "worksheet": "261162c283b66af2dce5cdd90c1a4f8552b8c3e5e63e989a2af474f35a37c8c4",
+   "solutions": "78c7531a17cb0a3888d82c153fa186865cdcef46819b4463dca1d2a032a973a1"
+  }
+ },
+ "llm/basic/120/m0-seed-0": {
+  "content": "sha256:ab5b7801c610ae9073c1ac40b84c8431a52780f30543d5287175dc875c59441c",
+  "inputs": "dea4127ccfe6821709d2e229d63a57c24b4e3142d1ad3ac8e92d1c68845b1fac",
+  "tex": {
+   "notes": "9bed1ab92f40ed6f8879c77f3b12eeb480e941c611e76d424187b6ab239387fe",
+   "worksheet": "5625170e01b854109246ac3a28180bf5aede80008421b68cee28a768ed94542a",
+   "solutions": "ae7b0f351cfef90afaf170dfb98a68fd87222da512f267972351ec1caed8e293"
+  }
+ },
+ "llm/mixed/45/m0-seed-0": {
+  "content": "sha256:a4dc2ad7f3ab845ef681d081d4fd70d7946ecf51c33842de8bb4e80ff4a12ab7",
+  "inputs": "1efa222431dc60f4d2d4c19d73df8411ac285d618baade2f208de339dddc660b",
+  "tex": {
+   "notes": "9c498ca3e6a9d93c38d5152f7a4bbcb87452a7385d20bd8d334bdd9700a06dea",
+   "worksheet": "da05cf6f241c64e422ef8071e390600c09544482a0daa0c00a8051531919d14c",
+   "solutions": "cabcd8b8da0b2810be63f10da483752e42572a50a3abef154ddf00533906ec9a"
+  }
+ },
+ "llm/mixed/120/m0-seed-0": {
+  "content": "sha256:741f18911774fbdef881ed0b302ee695cbc4e8f2b57c47ac60bd9154187ce74b",
+  "inputs": "d9a985716d629899a20b485dd6739e7e833d61871cffe4c22e81ed8340c24dda",
+  "tex": {
+   "notes": "dbcc5cb03501acec3633939efdc0c0f6eb5da8990fe6202ce1f9f5b62d22cd75",
+   "worksheet": "98f65842d6fd859b17d7c6b8e475521106adf744a22e561cc7f5e29758963150",
+   "solutions": "a870c3bfd1897a8ead411daceadf622bd460c55abcce8da3a129d2c51e531a2e"
+  }
+ },
+ "llm/challenge/45/m0-seed-0": {
+  "content": "sha256:cb4c5423ba35a9b4bf7653fce540e6ddeda49448217f6a074c3c2fe88705e0e2",
+  "inputs": "9e1a2cb1e248b91afe91e491b75cea1d2e20eed1ae083919204f22e57662e676",
+  "tex": {
+   "notes": "ddbf9959efbb91de7682ba09bedb16c2eb7c9fc0e4bb5f6ae1fc49c3edbc3ed6",
+   "worksheet": "7c5626cc66c7e36da2da61e6e6afbd9e8b534407a6ef63dc006d5029683f2e5f",
+   "solutions": "2f528fb8caf3ead2ea5b7812180da76452499c29aacedce6e3494c7d530a44c1"
+  }
+ },
+ "llm/challenge/120/m0-seed-0": {
+  "content": "sha256:22df9b859b7ff6f48c6f9dcb573a510bb715a09ab9112e4475d30d73049d775a",
+  "inputs": "71b585cdcce19af3ce5bb5ab5c3e1b2f3990e44f107f3e6e019a1a80cb6f74a0",
+  "tex": {
+   "notes": "4febd2918a55e0915410effc3f259d523cb60e72354b0eeb6b1e039da14ff2ae",
+   "worksheet": "7173af31bcdb701facb3a97cc776e9100c22a0252f3478b6a6c12669784972ea",
+   "solutions": "a86f3adea7697091b6f814b1e91ec3ba3fdbdee00f34d19a95aed4d225157724"
+  }
+ },
+ "retry/basic/15/m0-retry-905": {
+  "content": "sha256:a62267bb9530e098550df35ad8db0969b746930413ed189ab5f0aa10fe1eabb7",
+  "inputs": "bba8a79942dcb04004582dea51062405f02059f4ccee7bd42aa4010ddb7fffcc",
+  "tex": {
+   "notes": "d1dffc3ebefca1bd8ea4cc3a6202aa740aee446e0d88fb4576465148004ccff1",
+   "worksheet": "2721ff6edbebb8c8b4bd313b6c1f2ec08f0b1b9736f20347e2fbc61d62a6cbc9",
+   "solutions": "f1c39035384167cdf34ff69e130d407bf4ae6f41e4678755b224b15db381b687"
+  }
+ },
+ "retry/basic/60/m0-retry-657": {
+  "content": "sha256:6df406931e26bd2ab7b07d42eccdd723664b22ae8e17d0e63182dda4c1df1f19",
+  "inputs": "81c4c232da0b917ff3505e04b05cab4365fae870ddbd6e0543b4060ab2b39cd8",
+  "tex": {
+   "notes": "8c8fc057205f343bd5b70a80bfa2895095dabeb5e8c9e2006aea8c966b203581",
+   "worksheet": "8e1e8ad38aaf60c6c8445e0c8ef49087e77ebbe71a7bf7933f2fc1513e7c606d",
+   "solutions": "25d0cf99a15c49d26d1bf8eb83866dcc9aa92760b32c874010fb0dce28a6e088"
+  }
+ },
+ "retry/mixed/45/m0-retry-1283": {
+  "content": "sha256:47fa41f3d5712e912412227cc8702ccaa86e44a952984ab72723e7148bbc93d1",
+  "inputs": "053e63c08900ae2b880dd1082d1c689832fc30d8fb58d0d6178f5d925306e47a",
+  "tex": {
+   "notes": "318de0a5348f844ce71adc3a6f11fd45364dc5319aadb2e87d74520839900acc",
+   "worksheet": "70b623dbd1837b813c427f0d45d895c7b8fa94953f0a13ab7d156ba3f15a9d98",
+   "solutions": "71bbf78e1c154d51a0f39369133c5803e192d77e8a201f435fb643cab9b702f4"
+  }
+ },
+ "retry/challenge/120/m0-retry-2296": {
+  "content": "sha256:bf3680a84320da787f1d7640442313b98aa4e44e2080148c7d01d24dc643be96",
+  "inputs": "7fc83024a018ca003b001a325215bf2018fba37b5ccad8215c8b801c0db34d87",
+  "tex": {
+   "notes": "af924271e4a8b6c0dfb1b18bf0ae8b9e73ce74b6405733531361a16a8eeb097e",
+   "worksheet": "382bc816ba183ab9f7d66acbfd1264be1b8fbdca8e0e4cd0467fe572de0ca196",
+   "solutions": "b0b6801a28d7e2cb1e8b50fc349d5ba3db23ae273a9a5da1af4c2ecd8666b669"
+  }
+ },
+ "adjust/make_easier/basic/45/m0-seed-0": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/make_harder/basic/45/m0-seed-0": {
+  "content": "sha256:0d9333fca1dc08f3429e1061292f9541b0b71345acfb3a472a3f26d2e2a62616",
+  "inputs": "fbf59724e2bb3e75dc7786b36874c7ff9751c59e59f9ab129485151b4a1a309e",
+  "tex": {
+   "notes": "27fda0a4c2a144a2583a801f0fdaf1181e149e6f6692a95a84c22607cf68663b",
+   "worksheet": "108eb170fc91e950e47dac3a535c7fdd141e1381d6731a7430c47dd52e9467f0",
+   "solutions": "8f2552046d1da9646e524ff1e2ab86ee4c831863597539bb324f2f0e3b7dc74d"
+  }
+ },
+ "adjust/add_exercises/basic/45/m0-seed-0": {
+  "content": "sha256:7bbf233cdc05c985dfea50d2e013616b550c010031f7bd02c48497ec4aca286a",
+  "inputs": "91daa41728fdc59443d206208659bce247c72a9ac566457d5eb0adaf635c6f37",
+  "tex": {
+   "notes": "15f29653a734a1d14f6127c6838770539726c846b05ab67edc5c4549a7b80aa7",
+   "worksheet": "eaa8691a55ae7bdbc7349e84a1da9b750d26e2ae4d810e57cba3d0a9b09e043f",
+   "solutions": "2fc5e72812f39b4db2938b11f0902b9868310338ac5a455a5da01b04dbe333da"
+  }
+ },
+ "adjust/add_worked_example/basic/45/m0-seed-0": {
+  "content": "sha256:a4ffe04528679c1f72754ca996795313085cdd49bce0d820f64b793f034a9a47",
+  "inputs": "8e64c38eb3a8ade5d720c38f524feac195c485b1eb30ea95d0e0ad4abd17a9ae",
+  "tex": {
+   "notes": "d19f66ab8494cf6e94d03f2440d519da5a9754e32092d07d325e960652cf3412",
+   "worksheet": "261162c283b66af2dce5cdd90c1a4f8552b8c3e5e63e989a2af474f35a37c8c4",
+   "solutions": "78c7531a17cb0a3888d82c153fa186865cdcef46819b4463dca1d2a032a973a1"
+  }
+ },
+ "adjust/make_easier/basic/45/m0-seed-1": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/make_harder/basic/45/m0-seed-1": {
+  "content": "sha256:985c3f0168cdf3c3b45aa6a675713d84fc2b005f1f7e51328228aa7d41cd8a57",
+  "inputs": "ebfb2e981fb2727bdc1816836801342a9d107124e9135526cf927fdca5cd6bf6",
+  "tex": {
+   "notes": "ddc6b97fc63c0ecf161b44b8139aeb8806570acdec39d4a63e73117bcad46c90",
+   "worksheet": "b059bc97aa751504289fc6712b9636562a26c4097ead8ba716c824963e6a3c35",
+   "solutions": "ce772cc98204015f96a641cf17079d656e7563ab2c5a3889f522d77dfd339148"
+  }
+ },
+ "adjust/add_exercises/basic/45/m0-seed-1": {
+  "content": "sha256:33dcaf3453c9d4e7dc1851f529ed0fc86a830792d2285a7d760fe632e2fd4cfd",
+  "inputs": "fb9a6278d7181f92eb5afbe25f80163948cbdfe2841e66ce715a765246947b18",
+  "tex": {
+   "notes": "947fde259654f6675e59b2fa83059ca3d80273427dbf72d4396056b3cd53f924",
+   "worksheet": "10ee96ff8d7daa98d14a99984b04996f5990ab0b6013e004ba78cdee57fb4f1e",
+   "solutions": "a866069c04c77d8bf34ac5c645b0bd0974ec97953fafc0907a23891d1a21d811"
+  }
+ },
+ "adjust/add_worked_example/basic/45/m0-seed-1": {
+  "content": "sha256:2ee1c306a2bac1fbb2320eff79c79672f10d2447211ed6c3deda78c5d01e2d77",
+  "inputs": "b75809a2aeafe8789e9a09539b8d200315b83e845d1a3d7607efd468b7290d62",
+  "tex": {
+   "notes": "73739d1f9f304b22d57cdf9ab1f5059aee26027d017a9892f95d482be2dde331",
+   "worksheet": "5d1fa591267613bc72a098a9764b78f2c8aa69859f7a0e8678f1ee45e59fa980",
+   "solutions": "107f38751155cffb310d2a987c92f618e2395c4770bccd5ca5621e174ed73380"
+  }
+ },
+ "adjust/make_easier/basic/120/m0-seed-0": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/make_harder/basic/120/m0-seed-0": {
+  "content": "sha256:d9be1342fe198f81331e9393c4f11cbc5a86ed74069297be956f95c73cbe3758",
+  "inputs": "4383d171bc627618fdc07c8caf03b159abdbcb50f1adf9d0253d8b5aac23bcf1",
+  "tex": {
+   "notes": "26e2ab219f5c8c4c9156d4c48d2188d109155afe502fe4b7a1401966d6326119",
+   "worksheet": "e2a85d3b48abdd2e673db1677896d3d7ae0218b7434652eba847daf081f60553",
+   "solutions": "a98a747116993021ce7c7280a997d8b5518e71d92cd5a34b90ee5f2c7155feda"
+  }
+ },
+ "adjust/add_exercises/basic/120/m0-seed-0": {
+  "content": "sha256:72a13d4f5eabde1d42ab11369ef5a0450d5627e372ece28707406d662b1be4de",
+  "inputs": "3f173ddc821574526a11c5265395b9ab94b8ef8c91a460b982eaa2b4eaec21e1",
+  "tex": {
+   "notes": "5d3dbea2f47ab23b3d4e5a2e1fe57fd9d0896e518d255197397ad946bbbfcb7c",
+   "worksheet": "f95813d5ef747f6148c7a0bb851c9670846319087e393db70a90c4c52e46d5e4",
+   "solutions": "7f0f9ae138991ff6b6ad18a45cd0eba043885c87dc69834df9b577c81af140c2"
+  }
+ },
+ "adjust/add_worked_example/basic/120/m0-seed-0": {
+  "content": "sha256:2510cf13448746c4d98222f95644cbe088f992ccb9727cf38ef0dc152929c603",
+  "inputs": "64cf0bf1c97077b49114022ccd692e38b1a6d97da1c6fab2e2c16f77d3c7c77b",
+  "tex": {
+   "notes": "aeb69a20acae5a0eb51112375bf08b5a46c775115e3ba41b8180b336dab56ab0",
+   "worksheet": "5625170e01b854109246ac3a28180bf5aede80008421b68cee28a768ed94542a",
+   "solutions": "ae7b0f351cfef90afaf170dfb98a68fd87222da512f267972351ec1caed8e293"
+  }
+ },
+ "adjust/make_easier/basic/120/m0-seed-1": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/make_harder/basic/120/m0-seed-1": {
+  "content": "sha256:31523746984282fbe3b04079d562591ea92cf448e80c4a5db2ae6ab3389b9545",
+  "inputs": "03c2c3237b8956d9d2449d82a73700d03150c38b38548f00696a10745e46649f",
+  "tex": {
+   "notes": "f6d9488af9d7c0473a90a6aa54a5ec697994b43cd39ef3df8b0c14b81463ed0e",
+   "worksheet": "6345ca76c43b78b1cf3d9c45e4c900515db7b9ab43c988d49b4e0ffb1fb92868",
+   "solutions": "d2a58ae96684b1499a8b38c8a498e2ba0d2016edc149d1aa066107bd6722dd90"
+  }
+ },
+ "adjust/add_exercises/basic/120/m0-seed-1": {
+  "content": "sha256:0db3e6dd787732de689cc6467ade63e52c5a56d0b93e922137b1adb2b50300be",
+  "inputs": "fc4da63b6361e53f3a0de5d1d640cbc9de6038b7a0869ce96cede587bc757ffa",
+  "tex": {
+   "notes": "ce67bdf142bad672cd1d0ce65e6064e659c0daa9ff8b1ffe78144a8cda393453",
+   "worksheet": "25f75a10689de553b56389e1928c200c235ccafb510b3729893efbfee8ea1e89",
+   "solutions": "2e99896768e9b3d313f2ff41d5ce595645c38b6a9d1f204639036adde57bbe52"
+  }
+ },
+ "adjust/add_worked_example/basic/120/m0-seed-1": {
+  "content": "sha256:162a92e3552fe704ad6ae3d34763c5f5a5a5bb3ed2f47e2b950d37dbaf8e366d",
+  "inputs": "7f77ae85ac274b2f6176c8e1d21bcbf6ad5cf695d4c4e2125db76dfc337f365a",
+  "tex": {
+   "notes": "0b663fb34c463e394c71fa14b6825e1c9f8eef21e132973f1591df0eb8cc83d2",
+   "worksheet": "d399710c9e000583106d52e842b986591c3bbc5e3980ff0fffa1db2815d48f1a",
+   "solutions": "9d6892c9bdc46f99c095d87226c282aeb805eb06054c3223dd76b898420950fc"
+  }
+ },
+ "adjust/make_easier/mixed/45/m0-seed-0": {
+  "content": "sha256:40d4226f229325f2025a90d55756c23fea05740d56c6e3df6af037fec1702f8b",
+  "inputs": "b50109f95b19ddea66f3337ce93f3ff75e8113f903c65b2ef3d4b650d451ee0f",
+  "tex": {
+   "notes": "db01ddd660c2d48eafcc4732aa7e208c82eb8172111615c025ec6779a475e167",
+   "worksheet": "820f20a1fd83e209afb68e1523dad16aed46fb14ece7dc9d7e1a81ecc800dbaf",
+   "solutions": "0c0150f3fcb7d59415123fd64c1410420c0073d3ee8e0ad2e64cc45181057f88"
+  }
+ },
+ "adjust/make_harder/mixed/45/m0-seed-0": {
+  "content": "sha256:e3c5719e2646b7964162f22a86481972b99b3bae16df4e70ab720fc1b6913028",
+  "inputs": "1d3c7667fb76748774dc5a66a08ba6a38fd4833098c8276856174d22d1bbafec",
+  "tex": {
+   "notes": "76a65ace35ddee2a5f3a3d8cac77b96e36e817f6f6fcb75b5fbbf46d22ccc242",
+   "worksheet": "c6770bd2996f261c6029ab0bc74eea7ba849cfa8c1563667e26e3b8d6f1d72ae",
+   "solutions": "c4308d73764591b4b2519f9ac55a1670e936fba1fc78be8acf70fa5a88ab953d"
+  }
+ },
+ "adjust/add_exercises/mixed/45/m0-seed-0": {
+  "content": "sha256:46467f17d9b2027ea07f8df2797a435759bd7d05b0eb1fbe9fced79bdc23cea3",
+  "inputs": "18ca6811ded3b7d6c2f525d0fd882ad461ee35bd60e2449e4d568afdaad0fe59",
+  "tex": {
+   "notes": "115a28a6cc1ab6255b3dd1c74143f208d640f67a4e3ec51f43065e2d607dc4ce",
+   "worksheet": "8c1387fff695b3da754ea80c301e649f8259ad557c2189c8c09bb0af30d47a5c",
+   "solutions": "e78be30eee53e71122fe08535cfc4902c34e21306ec670f624674994e01bc43f"
+  }
+ },
+ "adjust/add_worked_example/mixed/45/m0-seed-0": {
+  "content": "sha256:230e51518c6c5fb54b53a7fbf7fca0b82fb20b3a7d0bd5dc1d2fc8e02beeb40b",
+  "inputs": "2e75f4ad681519eeaff864115011cab6e2e308b20d4a470f604f5aaf031eae3b",
+  "tex": {
+   "notes": "e0a99e3cc2ea1ea1cbb676feaf986d30e35bdb38abada34d1240377831964abd",
+   "worksheet": "da05cf6f241c64e422ef8071e390600c09544482a0daa0c00a8051531919d14c",
+   "solutions": "cabcd8b8da0b2810be63f10da483752e42572a50a3abef154ddf00533906ec9a"
+  }
+ },
+ "adjust/make_easier/mixed/45/m0-seed-1": {
+  "content": "sha256:3d030b6fe328830df4c409be40ea636277dc2bcd17471547ccb715225fe5168b",
+  "inputs": "079688ded3f1afe8c2a5247b932ee77011eb9126145333c825a9c27349b06ee5",
+  "tex": {
+   "notes": "984a9aacf465b98700444ac6119333bc24ef306ca8f99c60182345cf331ce70c",
+   "worksheet": "c23e962b8f2a992b882f40dad849c5a7592c3695834e3cf702a83da8d434e913",
+   "solutions": "d0ac8d81daa77d498bc9f6e24deeb3eeab85cb866945cea4aa5974cc338ea39f"
+  }
+ },
+ "adjust/make_harder/mixed/45/m0-seed-1": {
+  "content": "sha256:df9a983b3ffaead70faafd06d7fc4be01d0a45eaccfba81ddd5293f8322af091",
+  "inputs": "b2e4debbc3c18fa03be423a3445a7fd1445db94493e406ab9a828e14ac732144",
+  "tex": {
+   "notes": "83ad083a7e911aeefc76e87ec011c07e0f5e1dca302dd4a5bd401af1f6a0118c",
+   "worksheet": "826eb92a4ee85f4309ba14a59d5df0ae0c4313a3930a856e9d55cc2ee3780462",
+   "solutions": "d15a857e4a9e62672c22072d01ed462552df3c97a9bd0a8b8b7c6676f7a4cf8a"
+  }
+ },
+ "adjust/add_exercises/mixed/45/m0-seed-1": {
+  "content": "sha256:79f008ca934e058c63c353a5a783099f3e2741a0d373ce131eb871caf71cfee3",
+  "inputs": "9ee113804bbff4c01585ee33506b8d6d387a57b164eb0c4e0e2b51023243f13e",
+  "tex": {
+   "notes": "8d3bd32993233fdd79db27461f59f6f50362a2722c3a4ef8a5c2e98e08679429",
+   "worksheet": "f7cbbda331c0364a56cf234dc176d5cbc26041c512a548bad078cbf27c614d46",
+   "solutions": "81b121570eae8edae023f4af26d3652f4bc1c11021e1797182d3f5b566a68e0b"
+  }
+ },
+ "adjust/add_worked_example/mixed/45/m0-seed-1": {
+  "content": "sha256:ae9cabd616540ac8a188815c1b77789e386d8c219d975356a3b552b5dd620aa9",
+  "inputs": "5ead977a5ba3f39cd63ad92d10a712f5192a61a949cf5ef476b17d5dca34ac01",
+  "tex": {
+   "notes": "79d751f2feed12c4d0d58efdd8ceeba47aa42b5567a6957e7fa5fff6a4a2b79c",
+   "worksheet": "a45a6e6c657b12285988d7cb6ea9e50927eac837d49cce078b0e89d65609beb2",
+   "solutions": "2e25e91950a2f2551b00eed182e5b0fdce70a31515dd88317f8751b974d78b5d"
+  }
+ },
+ "adjust/make_easier/mixed/120/m0-seed-0": {
+  "content": "sha256:3180ce0148777a7ada2a14d78bd881058733eaca7d48b6533cbb89ddeaa5e319",
+  "inputs": "71155348034ef18b8dd0991f43e3ccfab97ee82df54a2dc8dd6d24a72618f404",
+  "tex": {
+   "notes": "5b0023d6e7365e934f1e610c2e2bd32dba867ed4c1c0e3500c6ee8128dae4405",
+   "worksheet": "dca8e1609643e639755a653a332d8521c7ac882a5068c0c4a847d46b2f8ea12b",
+   "solutions": "a47a66f0d81c06dc74c5b060b76d1f20089d77347fa8bb549f33ab29badbdce7"
+  }
+ },
+ "adjust/make_harder/mixed/120/m0-seed-0": {
+  "content": "sha256:e5cd9a22e8ac23584b94edafdfbd32e9447e4c602d073db861788a0e5d4a867d",
+  "inputs": "8574fe065e16aaccafad57aa9debdc5768962db6852488acfe149953d45eeed6",
+  "tex": {
+   "notes": "4145c7837d54cffcc6cf38cbb7445b1dc1a41dd1fbee299c31ac179fafc0023e",
+   "worksheet": "a05072ab67a6d87245463a04b13a3ea901d878388ed197d889de8d3b7d01e4f0",
+   "solutions": "f8dc1ff62988ac4b3a79ae9b80fb1eb9543e97fd8816b9c74a55f3a1e5a8f2df"
+  }
+ },
+ "adjust/add_exercises/mixed/120/m0-seed-0": {
+  "content": "sha256:8cb6c736ff82ca9d0c41b6aa1bfaebf87966d8db3987fefd5bd8f46542eba282",
+  "inputs": "408ed1c9d4a2c76bc7700708ced940cefacd2ffddb1860b080ffd1d74b2a79e8",
+  "tex": {
+   "notes": "be1861af69b5af963c78bdae702e78880cb7164c30d251c359306f7fcf424823",
+   "worksheet": "003b19035fba2842a259dde961470be9f684c31062140380730404f6370b4680",
+   "solutions": "7e48cf56af26d082b89038a0451d6dfbeefafc728d3159cf4fe691be8ad14096"
+  }
+ },
+ "adjust/add_worked_example/mixed/120/m0-seed-0": {
+  "content": "sha256:61fe15ab69253a0fa1e123adf4f6edb9837e47756ae7572d918d5c9e182bcaae",
+  "inputs": "814d5c453d9bd257cf25c79b550d9f9347a7d5bdcae145946c6f487fcf80cc93",
+  "tex": {
+   "notes": "9c6b37c42de896d4385bea0fe46d0acc56408a6f54818df27877b396a42e5317",
+   "worksheet": "98f65842d6fd859b17d7c6b8e475521106adf744a22e561cc7f5e29758963150",
+   "solutions": "a870c3bfd1897a8ead411daceadf622bd460c55abcce8da3a129d2c51e531a2e"
+  }
+ },
+ "adjust/make_easier/mixed/120/m0-seed-1": {
+  "content": "sha256:b0ebeff974b8058f2cd7fda9b46f2c40374a760bb07926838b9febaad7d4974c",
+  "inputs": "57cd7847ee709cef67504053f8e28c1220838cd1269812abbfef414b8b347a1f",
+  "tex": {
+   "notes": "17b5d42a649d38db2a61ee39001d7ad58b8715d49d85be8ca456f93dcfe9c044",
+   "worksheet": "a7eedd5e275af11750a775d06ce98f8c6c01122bab0602fc2d17e27daf43cefe",
+   "solutions": "20f1419253f9e6f86d01286503f9f9887b842b7b3958c6b037c505279369d536"
+  }
+ },
+ "adjust/make_harder/mixed/120/m0-seed-1": {
+  "content": "sha256:4e6e280b8ea4eb8f13f251379694e9de01fe20730b39fc03fbd278edb9d00889",
+  "inputs": "ec6aca664b6cf00864d40c0ec817cbd72480055da7c62c18286b1afaf6d5287f",
+  "tex": {
+   "notes": "c18358c0b36e0d4fbadc924cc3d64b6cb3f20b83180275fea8f5141d49bb91cb",
+   "worksheet": "1e9396f48e3ef31599f0dfcf4b0729c019e342f8db12c51bb40f04404484c432",
+   "solutions": "2cfc48c633761eed3def0abe7eef9a2440477b52654b2602c9963314fbeddd95"
+  }
+ },
+ "adjust/add_exercises/mixed/120/m0-seed-1": {
+  "content": "sha256:e982771798c5487d0a9c30ead7dc73330396dc3755c1d7f5b35e3610536349a2",
+  "inputs": "3db88f423fee1e6feb9b26ea85f28e5ea7f36712f410ba5d384af783834d457e",
+  "tex": {
+   "notes": "e821ee375a47ec90cc207d045709f1f65ce393c59436c01ff8752296d3e0baee",
+   "worksheet": "5e3b3d364d3247a09ad4bd7911110980fbfa480f0eea2636f0757e16109f9e61",
+   "solutions": "773ff6e6744c6213196bb86ef343eedd424a9d59364277b6997a71dfdc6fc20d"
+  }
+ },
+ "adjust/add_worked_example/mixed/120/m0-seed-1": {
+  "content": "sha256:f0d83ca35e157c45ceb6c7c79c646f4093ea86dbda4bfb0aca56c400171ac9ed",
+  "inputs": "77374fb5bd2d27d869a353b0565b59e15469130f99cc5c950c684ed3907dc221",
+  "tex": {
+   "notes": "39802e3d187d7f8aff370bbe6734834c837e060c0abd28a3732fa66e971883b7",
+   "worksheet": "a8dca84cf67a602bea50facc7ae719702948e21fbef1da7520cfe0e47155839a",
+   "solutions": "185f7d4f05c54d2c8ff7a8978d48ba599847b932839cc99db5b751d1bba02ead"
+  }
+ },
+ "adjust/make_easier/challenge/45/m0-seed-0": {
+  "content": "sha256:c8b04a91e63f240f445e69f86773abba7d1361eba92a7ad5a4f7c22e7d39266b",
+  "inputs": "3c6ccc5f4add89fec8654f6778f84a949894b9e3663e79d57aa064da839c14fc",
+  "tex": {
+   "notes": "115a28a6cc1ab6255b3dd1c74143f208d640f67a4e3ec51f43065e2d607dc4ce",
+   "worksheet": "9a919f65ffcd0a4b399c6c4424673ad7168e73cab1354ab8d79e126b46329d72",
+   "solutions": "2b8dc6aa4df4a94fe337fb3bd3699b67f43175ca0a0149d115d322a6788db591"
+  }
+ },
+ "adjust/make_harder/challenge/45/m0-seed-0": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/add_exercises/challenge/45/m0-seed-0": {
+  "content": "sha256:25a21a801e5ae5f75879e00cdb8fbf2a0d43b5657117fdf030b6ddd4460e4e2f",
+  "inputs": "626b81470d62341592eb1abf6a6c011264564c50a9da8d0407bddb3c49789c5e",
+  "tex": {
+   "notes": "76a65ace35ddee2a5f3a3d8cac77b96e36e817f6f6fcb75b5fbbf46d22ccc242",
+   "worksheet": "7792a4c2039b679843d8c45d2ec99107dacd79073bc4d14aeb4a9db57d575a16",
+   "solutions": "8d6df4aaa854a6140d720fb18fb465f8799af29a6669d118b6d733a8fe29fae2"
+  }
+ },
+ "adjust/add_worked_example/challenge/45/m0-seed-0": {
+  "content": "sha256:29895187e5954da5fdbc2b836d1746a6c30d2b42a355fa5efadc6696770e2496",
+  "inputs": "234ef6464e6a570f50fde7afc48da3b06a439d72809d1dff3d46ae7a48a2e9e0",
+  "tex": {
+   "notes": "1f1be6eab2da18eae758e45f3b6b0cbe5b26d16629f435988d6488c6a0f4bdd2",
+   "worksheet": "7c5626cc66c7e36da2da61e6e6afbd9e8b534407a6ef63dc006d5029683f2e5f",
+   "solutions": "2f528fb8caf3ead2ea5b7812180da76452499c29aacedce6e3494c7d530a44c1"
+  }
+ },
+ "adjust/make_easier/challenge/45/m0-seed-1": {
+  "content": "sha256:cefd918ed296e715238281c99acb784ef8be02ef263d1bdb9f0a7893cd9f679f",
+  "inputs": "4cf8e4b325ecad995449df5242f7a41921863660000661c846327df7d3289409",
+  "tex": {
+   "notes": "8d3bd32993233fdd79db27461f59f6f50362a2722c3a4ef8a5c2e98e08679429",
+   "worksheet": "744bc8fdd408a7ce66e84d2e44d9c9766a39d20e3428865db244e2e1eb3cb052",
+   "solutions": "ebd7b18de1f251f40c5d93220e6ab3a4f122ac2f8df6214b64b7b7f647ade5ee"
+  }
+ },
+ "adjust/make_harder/challenge/45/m0-seed-1": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/add_exercises/challenge/45/m0-seed-1": {
+  "content": "sha256:a3ea8a3f304e07261d0ca44f10cc3eaae55105fe9a2ef4f081086c724f8a3d36",
+  "inputs": "7566847b6329809dd256a87a9a34884a0a70669bf61ce6e9f75da92e79ed52a3",
+  "tex": {
+   "notes": "83ad083a7e911aeefc76e87ec011c07e0f5e1dca302dd4a5bd401af1f6a0118c",
+   "worksheet": "57277e8246b8c57058a90d24768748502e4c92a5b2108d7cf208504e02fa140c",
+   "solutions": "0357423231e05eb66f514162034cfdadd95fcb4ce288ddfbdd4ddb4d6df750c0"
+  }
+ },
+ "adjust/add_worked_example/challenge/45/m0-seed-1": {
+  "content": "sha256:77b1ed1bbf82502a6d6045582ba9f7dc629106c9a2f8cc20bbf94578950110f7",
+  "inputs": "6baf6a7965b6d369e5df529947d9a77b9af7781dbdd6df01f159a9c6e796fd80",
+  "tex": {
+   "notes": "9cd4188e67ee321cd8de5bc9bc98d806cc9595b0b0fac2cf9f80596f75b7367a",
+   "worksheet": "c85a6b9bd0587e165e34e699b503cd084883947dd1f6e8263d10f13fc37501df",
+   "solutions": "413f792eb94052b94d85ea8679d86240b94aac68d1739e7040c76568968099e1"
+  }
+ },
+ "adjust/make_easier/challenge/120/m0-seed-0": {
+  "content": "sha256:303f3db83647022ef1dcd5f117d6ed5e5061e3901a80a4c0ba21d7f285902135",
+  "inputs": "2b94072f6afdb65f465ad59869435f21067324efafb7a3aa60d152bad47585c3",
+  "tex": {
+   "notes": "be1861af69b5af963c78bdae702e78880cb7164c30d251c359306f7fcf424823",
+   "worksheet": "1ea5e1fd4995ef967f28e77ba8194b4b0599865bd0e644dd9cadc99b4d5e5804",
+   "solutions": "a92ee186ae427bc6fd73d2578574843c7df8e42dcfdb3b665c5c0526d9a9ea4c"
+  }
+ },
+ "adjust/make_harder/challenge/120/m0-seed-0": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/add_exercises/challenge/120/m0-seed-0": {
+  "content": "sha256:eefcc0681acc66a7a8fc363872badd330fc9fa416993b1981ec9a2c319f086c1",
+  "inputs": "b7d5a58005583515ca03ae7db1bec5ed9dd44b6c20dbe464ef6a800cd56d0d3a",
+  "tex": {
+   "notes": "4145c7837d54cffcc6cf38cbb7445b1dc1a41dd1fbee299c31ac179fafc0023e",
+   "worksheet": "b3144e2504204a93758ccec68f537e40649069522aa6bbe8e5d075b7a9634780",
+   "solutions": "bb86313228cbd3372651b7a6f67abc833ba76ceb721a6725225be896c8cadf98"
+  }
+ },
+ "adjust/add_worked_example/challenge/120/m0-seed-0": {
+  "content": "sha256:064d964e7a087aef87758ab6364993d7bbe9bfb90faa7e5f600c692612482936",
+  "inputs": "6a0e26b5ffb9a6b44a8888797c6c7f516c045d668905e7fb8532097857c02497",
+  "tex": {
+   "notes": "47eb4cac926fcfb9fb16e5a737148f15b854ce6acd125dc1b15ad467708ed01f",
+   "worksheet": "7173af31bcdb701facb3a97cc776e9100c22a0252f3478b6a6c12669784972ea",
+   "solutions": "a86f3adea7697091b6f814b1e91ec3ba3fdbdee00f34d19a95aed4d225157724"
+  }
+ },
+ "adjust/make_easier/challenge/120/m0-seed-1": {
+  "content": "sha256:ea192fb4d2a04790b00c720624fed70586ced26e6f4412eac454088585af6ff7",
+  "inputs": "e8bb614f4a14fb6bb7e15abe05840333ce3f8b37e6cdc84c1c2d99ee7ab335e2",
+  "tex": {
+   "notes": "e821ee375a47ec90cc207d045709f1f65ce393c59436c01ff8752296d3e0baee",
+   "worksheet": "c6d42437a96960b610cd1a70d5d8d1c95794bd1dcb19dc0825f72d62ac3b7c13",
+   "solutions": "99667d3d81cd1aea7607c7cc1e2700f3c3a76e39b0ea910d88bbfb548d6b480b"
+  }
+ },
+ "adjust/make_harder/challenge/120/m0-seed-1": {
+  "content": "not-applicable",
+  "inputs": "",
+  "tex": {}
+ },
+ "adjust/add_exercises/challenge/120/m0-seed-1": {
+  "content": "sha256:e74c2501193693c9121c39dce3a84e62e5c7f4717cafe82f7d9eafea11d08c26",
+  "inputs": "a3e3c633e8e235b92715815fdfb51d44671dbc430a1ef5e732cea5f2d026885a",
+  "tex": {
+   "notes": "c18358c0b36e0d4fbadc924cc3d64b6cb3f20b83180275fea8f5141d49bb91cb",
+   "worksheet": "5ba25a51b67a6224f6f0a8486cc2f993fb60fa3f9520a5507276dca835bc771f",
+   "solutions": "66f3842ded691581df97e58e45a5b9127963ddf0614b13f2f356ec5798a88eb8"
+  }
+ },
+ "adjust/add_worked_example/challenge/120/m0-seed-1": {
+  "content": "sha256:132a0c57fd28bb3fe13a808a16446699f5c2fec980eb0aee7f5d6da9d9c1933a",
+  "inputs": "bbfc434497ad600f2f8ffb199ff3d477c10150a6b30dd4e1320c77c3bdd9f242",
+  "tex": {
+   "notes": "f7c25ce45a4246ecce1fa718d26d8216373883fedf15912708a981b1558fc016",
+   "worksheet": "407d06fd1565fe172328620917aa972f88d36eb4fa406fee8c1fb8c4ca0c0a19",
+   "solutions": "15392a22cecb0dcf1c7aeeb755b3c03a0b1a65037b00252967dd7cb07ec0fa55"
+  }
+ }
+}

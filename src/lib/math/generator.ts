@@ -92,20 +92,20 @@ function solveTwoSided(id: string, a: Rational, bb: Rational, c: Rational, d: Ra
 
 // --- parameter choice -----------------------------------------------------------------------------------
 
-interface Chosen {
+export interface Chosen {
   form: Form;
   style: string;
   params: Record<string, Rational>;
 }
 
-function chooseBasic(rng: Rng): Chosen {
+export function chooseBasic(rng: Rng): Chosen {
   const a = rng.int(2, 9);
   const x0 = rng.intExcluding(-10, 10, [0]);
   const b = rng.intExcluding(-12, 12, [0]);
   return { form: "ax+b=c", style: "integer", params: { a: R(a), b: R(b), c: R(a * x0 + b) } };
 }
 
-function chooseMixed(rng: Rng, form: Form): Chosen {
+export function chooseMixed(rng: Rng, form: Form): Chosen {
   if (form === "ax+b=c") {
     const a = rng.intExcluding(-9, 9, [0, 1, -1]);
     const x0 = rng.intExcluding(-12, 12, [0]);
@@ -119,7 +119,7 @@ function chooseMixed(rng: Rng, form: Form): Chosen {
   return { form, style: "integer", params: { a: R(a), b: R(b), c: R(c), d: R((a - c) * x0 + b) } };
 }
 
-function chooseChallenge(rng: Rng, form: Form): Chosen {
+export function chooseChallenge(rng: Rng, form: Form): Chosen {
   if (form === "ax+b=c" && rng.chance(1, 2)) {
     // unit-fraction coefficient with an integer answer: (1/q)x + b = c, x a multiple of q
     const q = rng.int(2, 5);
@@ -146,7 +146,7 @@ function chooseChallenge(rng: Rng, form: Form): Chosen {
   throw new Error("could not choose challenge parameters"); // unreachable in practice: acceptance is about 70%
 }
 
-function chooseDegenerate(rng: Rng, outcome: Exclude<Outcome, "unique">): Chosen {
+export function chooseDegenerate(rng: Rng, outcome: Exclude<Outcome, "unique">): Chosen {
   const a = rng.intExcluding(-9, 9, [0]);
   const b = rng.intExcluding(-12, 12, [0]);
   const d = outcome === "identity" ? b : b + rng.intExcluding(-9, 9, [0]);
