@@ -35,7 +35,8 @@ describe("add_exercises after a removal", () => {
     const next = applyAdjustment(removed, change, { seed: adjustmentSeed(removed, packageContentHash(removed), change), context: removed.context as CurriculumContext });
     const after = ids(next);
     expect(new Set(after).size).toBe(after.length);
-    expect(after.slice(-2).sort()).toEqual([`ex-${before.length + 1}`, `ex-${before.length + 2}`]);
+    const added = after.filter((id) => !ids(removed).includes(id)).sort();
+    expect(added).toEqual([`ex-${before.length + 1}`, `ex-${before.length + 2}`]);
     expect(validatePackage(next).overall).toBe("verified");
   });
 });
