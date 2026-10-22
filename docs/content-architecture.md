@@ -1,5 +1,7 @@
 # Content architecture: from verified math to useful teaching material (approved design, no code yet)
 
+> **Legacy (2026-10-22):** superseded as the active direction by [generation-flow](generation-flow.md) (D-94 to D-101). The code from M0 stays in the repo, decoupled; this document is kept as an archive.
+
 Status: design approved by the owner on 2026-10-22; decisions D-85 to D-93 in [decisions.md](decisions.md). **No implementation has started.** Each milestone below needs its own explicit go. Labels: **[F]** verified repo fact (read from `origin/main`), **[I]** inference to confirm at the start of the milestone, **[R]** recommendation (now approved where listed in section G), **[A]** assumption to validate with tutors. Related: [question-bank-design](question-bank-design.md) (deferred, see section E), [beta-roadmap](beta-roadmap.md), [curriculum-architecture](curriculum-architecture.md).
 
 ## Context
