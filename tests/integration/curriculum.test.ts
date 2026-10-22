@@ -1,3 +1,4 @@
+import { countryOptions, curriculaForCountry, resolveCountry } from "@/lib/ui/prepare-view";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { CAPABILITIES } from "@/lib/curriculum/capabilities";
@@ -348,6 +349,20 @@ describe("what the application can see (DAL)", () => {
     const sample = (await everything.listCurricula()).find((c) => c.id === "sample-math")!;
     expect(sample).toMatchObject({ name: "Sample Mathematics (not a real curriculum)", educationSystem: { regionCode: "XX" } });
     expect(sample.versions).toEqual([{ id: SAMPLE.meta.version.id, label: "Sample 1 (not a real curriculum)", kind: "sample" }]);
+  });
+
+  it("groups the listed curricula into countries by region code (several systems of one region are one country)", async () => {
+    const all = await everything.listCurricula();
+    const options = countryOptions(all);
+    expect(options.map((o) => o.value)).toEqual(expect.arrayContaining(["XX", "ZZ"]));
+    expect(options.filter((o) => o.value === "ZZ")).toHaveLength(1);
+    const zz = curriculaForCountry(all, "zz").map((c) => c.id);
+    expect(zz).toEqual(expect.arrayContaining(["synthetic-levels", "synthetic-nolevels", "suggested-fixture"]));
+    expect(zz).not.toContain("sample-math");
+    // a production-like environment sees one curriculum, hence one country: no step is shown
+    expect(resolveCountry({ curricula: await productionLike.listCurricula(), params: {} })).toEqual({ ok: true, country: "ZZ", showStep: false });
+    // a country filter never widens visibility: a hidden curriculum's country is unknown there
+    expect(resolveCountry({ curricula: await productionLike.listCurricula(), params: { country: "XX" } })).toEqual({ ok: false });
   });
 
   it("the level step exists only for curricula that have levels (AP/IB-like data has none)", async () => {

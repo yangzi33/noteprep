@@ -110,3 +110,28 @@ test("a signed-out visitor is sent to sign in", async ({ page }) => {
   await page.goto("/prepare");
   await expect(page).toHaveURL(/\/login/);
 });
+
+// Today's data has one country: the Country step is not shown, the URL does not carry it, and the flow is unchanged.
+test("with a single country there is no Country step, and a country in the URL is only a filter", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  await page.goto("/prepare");
+  await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.getByTestId("select-country")).toHaveCount(0);
+  await expect(page.getByText("Country", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("select-v")).toBeEnabled();
+  await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
+  await expect(page).toHaveURL(/\/prepare\?v=/);
+  expect(page.url()).not.toContain("country=");
+
+  // the region of the only country is accepted (a shared link) and the step stays hidden
+  await page.goto(`/prepare?country=XX&v=${SAMPLE}`);
+  await expect(page.getByTestId("select-country")).toHaveCount(0);
+  await expect(page.getByTestId("select-level")).toBeEnabled();
+
+  // a country that does not exist is a polite notice, not an error page
+  await page.goto(`/prepare?country=FR&v=${SAMPLE}`);
+  await expect(page.getByTestId("bad-selection")).toBeVisible();
+  await page.getByRole("link", { name: "Start again" }).click();
+  await expect(page.getByTestId("select-v")).toBeVisible();
+});

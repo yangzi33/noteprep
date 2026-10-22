@@ -1,5 +1,7 @@
 /** The wizard's whole state lives in the URL, so refresh, back and shared links all just work. */
 export interface PrepareParams {
+  /** Optional UI filter (region code); never decides what is generated or who may see what. */
+  country?: string;
   v?: string;
   level?: string;
   course?: string;
@@ -7,7 +9,7 @@ export interface PrepareParams {
   topic?: string;
 }
 
-export const PREPARE_STEPS = ["v", "level", "course", "unit", "topic"] as const;
+export const PREPARE_STEPS = ["country", "v", "level", "course", "unit", "topic"] as const;
 export type PrepareStep = (typeof PREPARE_STEPS)[number];
 
 export function prepareHref(params: PrepareParams & { error?: string } = {}): string {
@@ -33,5 +35,5 @@ export function upTo(params: PrepareParams, step: PrepareStep): PrepareParams {
 /** Only the known selection params, as plain strings (anything else in the URL is ignored). */
 export function readPrepareParams(raw: Record<string, string | string[] | undefined>): PrepareParams & { error?: string } {
   const one = (v: string | string[] | undefined) => (typeof v === "string" && v.length > 0 && v.length <= 200 ? v : undefined);
-  return { v: one(raw.v), level: one(raw.level), course: one(raw.course), unit: one(raw.unit), topic: one(raw.topic), error: one(raw.error) };
+  return { country: one(raw.country), v: one(raw.v), level: one(raw.level), course: one(raw.course), unit: one(raw.unit), topic: one(raw.topic), error: one(raw.error) };
 }
