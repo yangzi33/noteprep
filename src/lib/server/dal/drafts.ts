@@ -109,7 +109,7 @@ function asChanges(value: unknown): StoredChanges {
 }
 
 /** The state of a version row (with its draft's request and context) for the pure operations; the stored hash must match. */
-function stateOf(row: { content: unknown; contentHash: string; questionMeta: unknown; nextQuestionSeq: number; history: unknown; changes: unknown }, draft: { request: unknown; context: unknown }): DraftState {
+export function stateOf(row: { content: unknown; contentHash: string; questionMeta: unknown; nextQuestionSeq: number; history: unknown; changes: unknown }, draft: { request: unknown; context: unknown }): DraftState {
   const full = { ...(row.content as object), request: draft.request, context: draft.context };
   if (packageContentHash(full as LessonPackage) !== row.contentHash) throw new InvariantViolation("stored draft content does not match its hash");
   const parsed = PackageSchema.safeParse(full);
@@ -118,7 +118,7 @@ function stateOf(row: { content: unknown; contentHash: string; questionMeta: unk
 }
 
 /** Summary of a version from its stored meta and changes (no package content needed: meta entries of removed questions are deleted). */
-function summaryOf(questionMeta: unknown, changes: unknown): ChangeSummary {
+export function summaryOf(questionMeta: unknown, changes: unknown): ChangeSummary {
   const replacedIds = Object.entries(asMeta(questionMeta))
     .filter(([, m]) => m.origin === "replacement")
     .map(([id]) => id);
