@@ -56,7 +56,9 @@ export interface HistoryEntry {
   };
   beforeHash: string;
   afterHash: string;
-  /** What undo will say it undoes, e.g. "Replaced question 3". */
+  /** The question the operation concerned: the new id for a replace, the removed id for a remove. */
+  questionId: string;
+  /** Wording at the time of the operation. Never shown: the label is derived when read (`undoLabel`), so it cannot go stale. */
   summary: string;
 }
 
@@ -205,7 +207,7 @@ function finish(base: LessonPackage, exercises: ExercisesSection, solutions: Sol
   return next;
 }
 
-function entry(op: HistoryEntry["op"], at: Date, state: DraftState, afterHash: string, summary: string): HistoryEntry {
+function entry(op: HistoryEntry["op"], at: Date, state: DraftState, afterHash: string, questionId: string, summary: string): HistoryEntry {
   const exercises = exercisesOf(state.pkg);
   const solutions = solutionsOf(state.pkg);
   if (!exercises || !solutions) throw new InvariantViolation("the package has no exercises or solutions section");
@@ -221,6 +223,7 @@ function entry(op: HistoryEntry["op"], at: Date, state: DraftState, afterHash: s
     },
     beforeHash: packageContentHash(state.pkg),
     afterHash,
+    questionId,
     summary,
   };
 }
@@ -254,7 +257,7 @@ export function acceptReplacement(state: DraftState, candidate: PendingCandidate
   meta[item.id] = { level: slot.level, origin: "replacement", slot: old.slot ?? slot.questionId };
   const after: DraftState = { pkg: next, meta, nextSeq: state.nextSeq + 1, history: state.history, changes: state.changes };
   after.changes = changeSummary(after);
-  after.history = boundHistory([...state.history, entry("replace", now, state, packageContentHash(next), `Replaced question ${slot.position}`)], cfg);
+  after.history = boundHistory([...state.history, entry("replace", now, state, packageContentHash(next), item.id, `Replaced question ${slot.position}`)], cfg);
   return after;
 }
 
@@ -280,12 +283,20 @@ export function removeQuestion(state: DraftState, questionId: string, cfg: OpsCo
   const stored: StoredChanges = { ...state.changes, removedIds: [...state.changes.removedIds, old.slot ?? questionId] };
   const after: DraftState = { pkg: next, meta, nextSeq: state.nextSeq, history: state.history, changes: stored };
   after.changes = changeSummary(after);
-  after.history = boundHistory([...state.history, entry("remove", now, state, packageContentHash(next), `Removed question ${slot.position}`)], cfg);
+  after.history = boundHistory([...state.history, entry("remove", now, state, packageContentHash(next), questionId, `Removed question ${slot.position}`)], cfg);
   return after;
 }
 
 /** What undo would revert, for the button label; null when the history is empty. */
-export const undoLabel = (state: Pick<DraftState, "history">): string | null => state.history.at(-1)?.summary ?? null;
+export function undoLabel(state: Pick<DraftState, "history" | "pkg">): string | null {
+  const last = state.history.at(-1);
+  if (!last) return null;
+  if (!last.questionId) return last.summary; // an entry written before the id was recorded
+  const before = last.before.exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : []));
+  const position = last.op === "replace" ? exerciseIds(state.pkg).indexOf(last.questionId) : before.indexOf(last.questionId);
+  const where = position >= 0 ? ` question ${position + 1}` : " a question";
+  return `${last.op === "replace" ? "Replaced" : "Removed"}${where}`;
+}
 
 /**
  * Undoes the most recent question-level change: restores the exercises and solutions sections, the question metadata and the

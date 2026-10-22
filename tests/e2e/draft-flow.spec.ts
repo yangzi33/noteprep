@@ -131,8 +131,9 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   const count = await controls.count();
   expect(count).toBeGreaterThanOrEqual(4);
   const indicator = page.getByTestId("changes-indicator");
-  await expect(indicator).toHaveText("No questions changed yet");
+  await expect(indicator).toHaveText("No changes yet");
   await expect(page.getByTestId("undo-btn")).toBeDisabled();
+  await expect(page.getByTestId("undo-reason")).toHaveText("Nothing to undo yet");
   // always-visible real buttons with a 44px target and a name that says which question
   const replace3 = page.getByRole("button", { name: "Replace question 3" });
   await expect(replace3).toBeVisible();
@@ -151,7 +152,7 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   for (const eq of original) expect(withCandidate).toContain(eq);
   const first = (await panel.getByTestId("candidate-equation").locator("annotation").textContent())!;
   expect(original).not.toContain(first);
-  await expect(indicator).toHaveText("No questions changed yet");
+  await expect(indicator).toHaveText("No changes yet");
 
   // the candidate survives a refresh; Try another gives a different one
   await page.reload();
@@ -173,7 +174,7 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   const chosen = (await page.getByTestId("candidate-equation").locator("annotation").textContent())!;
   await page.getByTestId("accept-candidate").click();
   await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
-  await expect(indicator).toHaveText("1 question replaced · 0 removed");
+  await expect(indicator).toHaveText("1 question replaced");
   await expect(page.getByTestId("replaced-badge")).toHaveCount(1);
   const accepted = await equations(page);
   expect(accepted).toHaveLength(count);
@@ -205,9 +206,9 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   // undo the removal, then the replacement: back to the generated draft
   await page.getByTestId("undo-btn").click();
   await expect(controls).toHaveCount(count);
-  await expect(indicator).toHaveText("1 question replaced · 0 removed");
+  await expect(indicator).toHaveText("1 question replaced");
   await page.getByTestId("undo-btn").click();
-  await expect(indicator).toHaveText("No questions changed yet");
+  await expect(indicator).toHaveText("No changes yet");
   await expect(page.getByTestId("undo-btn")).toBeDisabled();
   expect(await equations(page)).toEqual(original);
 
@@ -228,12 +229,13 @@ test("a second tab with an older page gets a conflict notice and can reload", as
   await expect(second.getByTestId("question-controls").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Remove question 1" }).click(); // the first tab moves the draft on
-  await expect(page.getByTestId("changes-indicator")).toHaveText("0 questions replaced · 1 removed");
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question removed");
 
   await second.getByRole("button", { name: "Remove question 2" }).click(); // the second tab still holds the old revision
   const conflict = second.getByTestId("draft-conflict");
   await expect(conflict).toContainText("This draft changed in another tab or window. Reload to see the latest.");
+  await expect(second).toHaveURL(/doc=worksheet.*error=DRAFT_CONFLICT.*#question-2$/); // doc, error and the place survive the error redirect
   await conflict.getByTestId("draft-reload").click();
   await expect(second.getByTestId("draft-conflict")).toHaveCount(0);
-  await expect(second.getByTestId("changes-indicator")).toHaveText("0 questions replaced · 1 removed");
+  await expect(second.getByTestId("changes-indicator")).toHaveText("1 question removed");
 });

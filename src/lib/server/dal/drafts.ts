@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
+import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -228,7 +228,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
    */
   async function mutate(ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, op: (locked: Locked, tx: Tx) => Promise<Outcome>): Promise<DraftMutationResult> {
     if (!uuid.safeParse(draftId).success || !uuid.safeParse(versionId).success) throw new NotFound();
-    if (!Number.isInteger(expectedRev) || expectedRev < 1) throw new DraftConflict(0);
+    if (!Number.isInteger(expectedRev) || expectedRev < 1) throw new InvalidRequest("expectedRev must be a positive integer");
     const ownerId = ctx.userId;
     return inTransaction(db, async (tx) => {
       const rows = await tx.$queryRaw<

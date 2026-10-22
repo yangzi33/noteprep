@@ -172,6 +172,13 @@ export class ItemRejected extends DomainError {
   }
 }
 
+/** An operation was called with arguments that cannot be valid (for example a revision that is not a positive integer). */
+export class InvalidRequest extends DomainError {
+  constructor(detail = "Invalid request") {
+    super("INVALID_REQUEST", detail);
+  }
+}
+
 /** The version changed since the page was rendered (another tab or window): the caller names the current revision. */
 export class DraftConflict extends DomainError {
   constructor(readonly currentRev: number) {

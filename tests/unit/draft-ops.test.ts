@@ -433,3 +433,24 @@ describe("accept re-checks the stored candidate against the slot, not against it
     rejectedAs(() => acceptReplacement(s, forged(s, basicSlot, challenge, "basic"), CFG, NOW), "ITEM_REJECTED");
   });
 });
+
+describe("undo label is derived when read", () => {
+  it("follows the current position of the replaced question and ignores any stored wording", async () => {
+    const s0 = makeState("mixed", 120);
+    const { state: replaced } = await replace(s0, exerciseIds(s0.pkg)[2]!);
+    expect(undoLabel(replaced)).toBe("Replaced question 3");
+    // an earlier question disappears without a history entry of its own: the label tracks the new position
+    const shifted = removeQuestion(replaced, exerciseIds(replaced.pkg)[0]!, CFG, NOW);
+    const onlyReplace = { ...shifted, history: shifted.history.slice(0, 1) };
+    expect(onlyReplace.history[0]!.summary).toBe("Replaced question 3"); // the stored wording is stale
+    expect(undoLabel(onlyReplace)).toBe("Replaced question 2");
+  });
+
+  it("says where a removed question will come back, from the before-image", () => {
+    const s0 = makeState("mixed", 120);
+    const removed = removeQuestion(s0, exerciseIds(s0.pkg)[3]!, CFG, NOW);
+    expect(undoLabel(removed)).toBe("Removed question 4");
+    expect(undoLabel({ ...removed, history: [] })).toBeNull();
+    expect(undoLabel({ pkg: removed.pkg, history: [{ ...removed.history[0]!, questionId: "" }] })).toBe("Removed question 4"); // older entry: stored wording
+  });
+});

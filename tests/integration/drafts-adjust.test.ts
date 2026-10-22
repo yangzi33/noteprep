@@ -299,6 +299,18 @@ describe("concurrency control", () => {
     expect(await row(d.versionId)).toEqual(before);
   });
 
+  it("an expectedRev that is not a positive integer is an invalid request, not a conflict", async () => {
+    const ctx = await account();
+    const d = await newDraft(ctx);
+    const v0 = await view(ctx, d);
+    const before = await row(d.versionId);
+    for (const bad of [0, -1, 1.5, Number.NaN]) {
+      expect(await code(web.drafts.undo(ctx, d.draftId, d.versionId, bad))).toBe("INVALID_REQUEST");
+      expect(await code(web.drafts.removeQuestion(ctx, d.draftId, d.versionId, bad, exerciseIds(v0.package)[0]!))).toBe("INVALID_REQUEST");
+    }
+    expect(await row(d.versionId)).toEqual(before);
+  });
+
   it("an expired draft refuses every operation and stays frozen", async () => {
     const ctx = await account();
     const d = await newDraft(ctx);

@@ -25,12 +25,22 @@ const field = (formData: FormData, name: string) => {
   return typeof v === "string" && v !== "" ? v : undefined;
 };
 
-const draftHref = (draftId: string, doc: string | undefined, error?: string) => {
+/** Where the page returns to after the full-page redirect: the acted question, or the changes indicator (for undo). */
+const fragmentOf = (formData: FormData) => {
+  const at = field(formData, "at");
+  if (at === "changes") return "#changes-indicator";
+  return at && /^[1-9]\d?$/.test(at) ? `#question-${at}` : "";
+};
+
+const draftHref = (draftId: string, doc: string | undefined, error?: string, fragment = "") => {
   const q = new URLSearchParams();
   if (doc) q.set("doc", doc);
   if (error) q.set("error", error);
+  // A redirect to the page's own URL plus a fragment would be a hash-only navigation, which the router does not refetch.
+  // A changing token makes it a real navigation, so the page is rendered again with the new state.
+  if (fragment) q.set("n", Date.now().toString(36));
   const s = q.toString();
-  return `/drafts/${draftId}${s ? `?${s}` : ""}`;
+  return `/drafts/${draftId}${s ? `?${s}` : ""}${fragment}`;
 };
 
 type Dal = ReturnType<typeof webDal>["drafts"];
@@ -44,14 +54,14 @@ async function run(formData: FormData, extra: (formData: FormData) => z.ZodType 
   const { draftId, doc } = base.data;
   const schema = extra(formData);
   const x = schema ? schema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string"))) : null;
-  if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND"));
-  let target = draftHref(draftId, doc);
+  if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND", fragmentOf(formData)));
+  let target = draftHref(draftId, doc, undefined, fragmentOf(formData));
   try {
     await op(webDal().drafts, ctx, base.data, (x?.data ?? {}) as Record<string, string>);
   } catch (error) {
     const code = domainErrorCode(error);
     if (!code) throw error;
-    target = draftHref(draftId, doc, code);
+    target = draftHref(draftId, doc, code, fragmentOf(formData));
   }
   redirect(target); // outside the try: redirect() works by throwing
 }

@@ -4,6 +4,7 @@ import { MathView } from "@/components/app/math";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { equationTex } from "@/lib/latex/math";
+import { changesText } from "@/lib/ui/draft-changes";
 import type { DocumentKind } from "@/lib/package/schema";
 import type { DraftViewDto } from "@/lib/server/dal/dto";
 
@@ -49,7 +50,7 @@ export function ReplacedBadge({ ctx, questionId }: { ctx: AdjustContext; questio
 
 function CandidatePanel({ ctx, number }: { ctx: AdjustContext; number: number }) {
   const candidate = ctx.adjust.candidate!;
-  const extra = { candidateId: candidate.id };
+  const extra = { candidateId: candidate.id, at: String(number) };
   return (
     <div role="group" aria-label={`Suggested replacement for question ${number}`} data-testid="candidate-panel" data-candidate={candidate.id} className="space-y-3 rounded-notice border border-border bg-accent/40 p-4">
       <p className="text-sm font-medium">Suggested replacement for question {number}. The original stays until you accept this one.</p>
@@ -89,19 +90,24 @@ export function QuestionControls({ ctx, questionId, number }: { ctx: AdjustConte
   const canRemove = ctx.questionCount > min;
   const showCandidate = ctx.adjust.candidate?.targetQuestionId === questionId;
   return (
-    <div className="space-y-3 print:hidden" data-testid="question-controls" data-question-id={questionId}>
+    <div id={`question-${number}`} className="scroll-mt-4 space-y-3 print:hidden" data-testid="question-controls" data-question-id={questionId}>
       <div className="flex flex-wrap items-center gap-2">
         <form action={requestCandidate}>
-          <Hidden ctx={ctx} extra={{ questionId }} />
+          <Hidden ctx={ctx} extra={{ questionId, at: String(number) }} />
           <Button type="submit" size="sm" variant="outline" aria-label={`Replace question ${number}`} data-testid="replace-btn">
             Replace
           </Button>
         </form>
         <form action={removeQuestion}>
-          <Hidden ctx={ctx} extra={{ questionId }} />
-          <Button type="submit" size="sm" variant="outline" disabled={!canRemove} aria-label={`Remove question ${number}`} title={canRemove ? undefined : `A worksheet keeps at least ${min} questions`} data-testid="remove-btn">
+          <Hidden ctx={ctx} extra={{ questionId, at: String(number) }} />
+          <Button type="submit" size="sm" variant="outline" disabled={!canRemove} aria-label={`Remove question ${number}`} aria-describedby={canRemove ? undefined : `remove-reason-${questionId}`} data-testid="remove-btn">
             Remove
           </Button>
+          {canRemove ? null : (
+            <span id={`remove-reason-${questionId}`} className="ml-2 text-xs text-muted-foreground" data-testid="remove-reason">
+              At least {min} questions are needed
+            </span>
+          )}
         </form>
         <ReplacedBadge ctx={ctx} questionId={questionId} />
       </div>
@@ -110,16 +116,11 @@ export function QuestionControls({ ctx, questionId, number }: { ctx: AdjustConte
   );
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
 /** "3 questions replaced · 1 removed", announced politely when it changes. */
 export function ChangesIndicator({ adjust }: { adjust: DraftViewDto["adjust"] }) {
-  const replaced = adjust.changes.replacedIds.length;
-  const removed = adjust.changes.removedIds.length;
-  const text = replaced === 0 && removed === 0 ? "No questions changed yet" : `${plural(replaced, "question")} replaced · ${removed} removed`;
   return (
-    <p role="status" aria-live="polite" className="text-sm text-muted-foreground" data-testid="changes-indicator">
-      {text}
+    <p id="changes-indicator" role="status" aria-live="polite" className="scroll-mt-4 text-sm text-muted-foreground" data-testid="changes-indicator">
+      {changesText(adjust.changes.replacedIds.length, adjust.changes.removedIds.length)}
     </p>
   );
 }
@@ -127,11 +128,16 @@ export function ChangesIndicator({ adjust }: { adjust: DraftViewDto["adjust"] })
 export function UndoControl({ ctx }: { ctx: AdjustContext }) {
   const label = ctx.adjust.undoLabel;
   return (
-    <form action={undoChange}>
-      <Hidden ctx={ctx} />
-      <Button type="submit" size="sm" variant="outline" disabled={!label} data-testid="undo-btn">
-        {label ? `Undo: ${label}` : "Nothing to undo"}
+    <form action={undoChange} className="flex flex-wrap items-center gap-2">
+      <Hidden ctx={ctx} extra={{ at: "changes" }} />
+      <Button type="submit" size="sm" variant="outline" disabled={!label} aria-describedby={label ? undefined : "undo-reason"} data-testid="undo-btn">
+        {label ? `Undo: ${label}` : "Undo"}
       </Button>
+      {label ? null : (
+        <span id="undo-reason" className="text-xs text-muted-foreground" data-testid="undo-reason">
+          Nothing to undo yet
+        </span>
+      )}
     </form>
   );
 }
