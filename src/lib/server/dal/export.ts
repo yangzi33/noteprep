@@ -32,6 +32,7 @@ import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import { Prisma } from "@/generated/prisma/client";
+import { packageContentHash } from "@/lib/package/adjust";
 import { validatePackage } from "@/lib/package/validate";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
@@ -103,6 +104,8 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
     if (draft.status !== "active" || draft.expiresAt.getTime() <= clock().getTime()) throw new DraftExpired();
     if (version.rev !== input.expectedRev || version.contentHash !== input.expectedContentHash) throw new ExportConflict();
     const state = stateOf(version, draft); // throws InvariantViolation when the stored content does not match its hash
+    // The snapshot stores the PARSED package, so that is what must carry the hash the tutor saw.
+    if (packageContentHash(state.pkg) !== version.contentHash) throw new InvariantViolation("the parsed draft content does not match its hash");
     const report = validatePackage(state.pkg);
     if (report.overall !== "verified") throw new ExportNotVerified();
     let prepared: ReturnType<typeof prepareExport>;
