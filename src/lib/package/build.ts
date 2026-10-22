@@ -3,7 +3,7 @@ import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { LINEAR_GENERAL } from "@/lib/content/blueprints/linear-general";
 import { composeLesson, degenerateExample, exampleLevel } from "@/lib/content/compose";
 import { PackageBuildError } from "@/lib/content/errors";
-import { GENERATOR_VERSION, type GeneratedQuestion } from "@/lib/math/generator";
+import { GENERATOR_VERSION, type Difficulty, type GeneratedQuestion } from "@/lib/math/generator";
 import { sectionContentHash, sectionInputsHash } from "./hash";
 import { PROSE_PROMPT_VERSION, type ProseDraft } from "./prose";
 import {
@@ -130,7 +130,8 @@ export const ALIGNMENT_TITLE = "Curriculum information";
 
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
-export function buildPackage({ request, context, seed, prose }: BuildInput): LessonPackage {
+/** The package and the questions it was drawn from (their own metadata records the level each was drawn at). */
+function buildPackageCore({ request, context, seed, prose }: BuildInput): { pkg: LessonPackage; questions: GeneratedQuestion[] } {
   const concept = context.concepts.find((c) => c.id === LINEAR_CONCEPT_ID);
   if (!concept) throw new PackageBuildError("the selected topic has no concept the engine can generate");
   if (!concept.capability.difficulties.includes(request.difficulty)) throw new PackageBuildError("the engine does not support this difficulty for the selected concept");
@@ -304,7 +305,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
   }
 
   const objectiveIds = context.objectives.map((o) => o.id);
-  return {
+  const pkg: LessonPackage = {
     schemaVersion: PACKAGE_SCHEMA_VERSION,
     request,
     context,
@@ -321,6 +322,21 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
     })),
     deps: EDGES.map((e) => ({ from: sectionId(e.from), to: sectionId(e.to), kind: e.kind })),
   };
+  return { pkg, questions: [...examples, ...exercises] };
+}
+
+export function buildPackage(input: BuildInput): LessonPackage {
+  return buildPackageCore(input).pkg;
+}
+
+/**
+ * `buildPackage` plus the difficulty level each drawn question (worked examples and exercises) was drawn at, by question
+ * id. Drafts store this so a replacement can be drawn at the same level. The package itself is byte-identical to
+ * `buildPackage`'s: the levels are not part of it.
+ */
+export function buildPackageWithMeta(input: Omit<BuildInput, "prose">): { pkg: LessonPackage; levels: Record<string, Difficulty> } {
+  const { pkg, questions } = buildPackageCore(input);
+  return { pkg, levels: Object.fromEntries(questions.map((q) => [q.id, q.meta.difficulty])) };
 }
 
 /** Every section a change to `id` forces to be regenerated: the transitive closure of the edges, excluding `id` itself. */
