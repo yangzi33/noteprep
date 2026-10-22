@@ -12,6 +12,8 @@
 | `app_runtime` | Vercel Web 运行时 | 业务表 SELECT/INSERT/UPDATE;`subscription` 只读;`webhook_event` 只可 SELECT/INSERT;**任何表都没有 DELETE**;无 DDL;无权访问 `_prisma_migrations` |
 | `worker_runtime` | 独立 worker | 业务表 SELECT/INSERT/UPDATE;对 `lesson`、`lesson_revision`、`generation_job`、`idempotency_key`、`rate_limit_window`、`webhook_event` 有 DELETE;**对 `profile`、`usage_*`、`subscription` 没有 DELETE**;可读 `usage_bucket_drift`;无 DDL;无权访问 `_prisma_migrations` |
 
+**草稿表(`*_draft_tables` 迁移)**:`draft`、`draft_version` 对 `app_runtime` 只授予 SELECT/INSERT/UPDATE(**没有 DELETE**),对 `worker_runtime` 授予 SELECT/UPDATE/DELETE(没有 INSERT;worker 只负责清理过期草稿,`draft_version` 随 `draft` 级联删除)。两张表同样启用 RLS 和 `runtime_roles_all` 策略,授权逐表书写,没有使用 `ON ALL TABLES`。
+
 迁移执行者(`migrator`)就是表的所有者,**不在迁移里创建**,只在受保护的发布流程中使用其连接串。`anon`、`authenticated`(Supabase Data API 角色,如存在)与 `PUBLIC` 对业务表没有任何权限,并撤销了默认授权;所有业务表都启用 RLS,对两个运行时角色用 `USING (true)` 的策略放行 —— **owner 隔离由服务端 DAL 负责,不由 RLS 负责**。
 
 角色属性在 `CREATE ROLE` 时指定,**迁移不使用 `ALTER ROLE` 改属性**:Supabase 的 `postgres` 所有者不是真正的超级用户,`ALTER ROLE … NOBYPASSRLS` 会被拒绝(P1-T5 在真实 Supabase 上发现)。如果同名角色已存在,迁移会断言它没有任何提升属性,否则失败。
