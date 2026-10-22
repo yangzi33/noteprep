@@ -77,6 +77,14 @@ Idea (owner, 2026-10-22): keep Prepare exactly as planned and add a **separate**
 ## 7e. Guiding the tutor, and what a prompt can mean
 A prompt is not limited to weaknesses. In the interpreter path (7b) the LLM turns any prompt (for example "grade 10 student studying trigonometry") into a structured selection from vocabularies the system already knows (country, curriculum, grade or course, unit, topic, level, duration, documents, skill and misconception tags), shown as editable chips labelled "AI-suggested". Parts that map to nothing appear in a visible "couldn't use this" list and never reach generation; topics with no content yet show greyed as "not available yet" and are logged as demand. Guidance: example chips under the box, a placeholder that models the format, a length limit with a counter, the no-student-names warning, the chips sharing state with the form's dropdowns, and a log of prompts that mapped to nothing (match results only, not the text) to find vocabulary gaps.
 
+## 7f. Later slice: figures (graphs), recorded not scheduled
+Graph-based topics (piecewise functions, sine and cosine graphs, single variable on the xy plane) need a **figure** type beside MathText. Owner asked on 2026-10-22; recorded as bank slice 5, to be built only if the Beta shows demand for graph topics.
+- **Three uses:** a graph shown in a question; blank axes and grid for the student to sketch (the solutions page then shows the correct graph); a graph as the answer.
+- **A figure is a declarative spec in JSON, never drawing code.** Axes (range, step, labels); one or more curves, each a function written in MathText (for example `3\sin(2x)`); for piecewise functions a list of pieces, each with a MathText formula and a domain condition (`x < 0`, `0 \le x < 2`); markers (open or closed circles at breakpoints, labelled points, dashed asymptotes). Angle unit (radians or degrees) and boundary inclusion are explicit fields, never implied.
+- **Rendering by our code only.** A small safe evaluator (the limited expression AST CLAUDE.md section 7 allows, not a general CAS) samples each curve into points; the PDF draws them as TikZ coordinates and the HTML preview as SVG from the same points, so the two cannot disagree. No pgfplots (it would evaluate expressions inside TeX, widening the compile-time attack surface); TikZ availability in the pinned LaTeX image must be checked, nothing is installed at runtime.
+- **Verification:** the picture always matches its own formula because it is drawn from it. Stated answers (amplitude, period, domain) are verified when we generate the problem from parameters (for example `y = a\sin(bx)`); for LLM-written items they stay in the reviewed tier.
+- **Costs and risks:** figure type in the package schema (new schema version), evaluator, two renderers, discontinuity handling, visual regression tests, plus the item-format field. The item format reserves an optional `figure` field now so existing items do not need a migration later.
+
 ## 8. Decisions for the owner
 1. Approve the three tiers and the file format (sections 1 to 2).
 2. Approve MathText as the only way math enters bank items, and that rejected items stay rejected until the grammar grows (section 3).
@@ -87,3 +95,4 @@ A prompt is not limited to weaknesses. In the interpreter path (7b) the LLM turn
 7. Live top-up at press time (section 7c): open; decide after the offline bank exists.
 8. Separate AI draft box (section 7d): recorded as a later option; decide after the offline bank exists and the Beta shows demand.
 9. MathText as the only way math enters bank items, as a restricted LaTeX-style syntax (section 3): approved in discussion on 2026-10-22.
+10. Figures (section 7f): recorded as a later slice; decide after the Beta shows demand for graph topics.
