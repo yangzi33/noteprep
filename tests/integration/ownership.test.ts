@@ -49,7 +49,7 @@ describe("web data access layer: ownership", () => {
     expect(Object.keys(dal.account).sort()).toEqual([...ACCOUNT_CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.history).sort()).toEqual([...HISTORY_CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.lessons).sort()).toEqual(["getArtifact", "getLessonPackage", "getLessonView"]); // all attacked in lesson-request-v2.test.ts
-    expect(Object.keys(dal.drafts).sort()).toEqual(["createDraft", "getDraftSelection", "getDraftView", "listDrafts"]); // all attacked in drafts.test.ts (R17 part)
+    expect(Object.keys(dal.drafts).sort()).toEqual(["acceptCandidate", "createDraft", "getDraftSelection", "getDraftView", "keepOriginal", "listDrafts", "removeQuestion", "requestCandidate", "tryAnother", "undo"]); // read paths attacked in drafts.test.ts (R17 part), adjustments in drafts-adjust.test.ts
     expect(Object.keys(dal.curriculum).sort()).toEqual([...CURRICULUM_PUBLIC_FUNCTIONS].sort());
   });
 

@@ -1,5 +1,6 @@
 import "server-only";
 import type { GenerationJob } from "@/generated/prisma/client";
+import type { ChangeSummary, PendingCandidate, Slot } from "@/lib/package/draft-ops";
 import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
 
 /** What callers may see of a job: no budgets, lease details or request hash. */
@@ -78,4 +79,24 @@ export interface DraftViewDto {
   /** The choices this draft was made from, as the Prepare page's URL parameters: enough to start the same selection again. */
   selection: DraftSelection;
   package: LessonPackage;
+  /** Question-level adjustment state (S2). Server-side only, like `package`. */
+  adjust: DraftAdjustView;
+}
+
+export interface DraftAdjustView {
+  /** The exercises in worksheet order with the level and origin of each. */
+  slots: Slot[];
+  changes: ChangeSummary;
+  /** What the Undo button would undo, or null when there is nothing to undo. */
+  undoLabel: string | null;
+  /** The single pending candidate, if any (it survives a refresh). */
+  candidate: PendingCandidate | null;
+  /** Remaining question count above which Remove is allowed (the effective minimum). */
+  minExercises: number;
+}
+
+/** What an adjustment returns: the version's new revision and content hash. */
+export interface DraftMutationResult {
+  rev: number;
+  contentHash: string;
 }
