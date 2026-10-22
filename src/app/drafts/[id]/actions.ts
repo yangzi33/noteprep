@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { domainErrorCode } from "@/lib/domain/errors";
+import { domainErrorCode, InvalidRequest } from "@/lib/domain/errors";
 import { DOCUMENT_KINDS } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
@@ -32,9 +32,10 @@ const fragmentOf = (formData: FormData) => {
   return at && /^[1-9]\d?$/.test(at) ? `#question-${at}` : "";
 };
 
-const draftHref = (draftId: string, doc: string | undefined, error?: string, fragment = "") => {
+const draftHref = (draftId: string, doc: string | undefined, error?: string, fragment = "", version?: string) => {
   const q = new URLSearchParams();
   if (doc) q.set("doc", doc);
+  if (version) q.set("v", version); // the version the tab is looking at survives the redirect (and a conflict reload)
   if (error) q.set("error", error);
   // A redirect to the page's own URL plus a fragment would be a hash-only navigation, which the router does not refetch.
   // A changing token makes it a real navigation, so the page is rendered again with the new state.
@@ -54,14 +55,14 @@ async function run(formData: FormData, extra: (formData: FormData) => z.ZodType 
   const { draftId, doc } = base.data;
   const schema = extra(formData);
   const x = schema ? schema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string"))) : null;
-  if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND", fragmentOf(formData)));
-  let target = draftHref(draftId, doc, undefined, fragmentOf(formData));
+  if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND", fragmentOf(formData), base.data.versionId));
+  let target = draftHref(draftId, doc, undefined, fragmentOf(formData), base.data.versionId);
   try {
     await op(webDal().drafts, ctx, base.data, (x?.data ?? {}) as Record<string, string>);
   } catch (error) {
     const code = domainErrorCode(error);
     if (!code) throw error;
-    target = draftHref(draftId, doc, code, fragmentOf(formData));
+    target = draftHref(draftId, doc, code, fragmentOf(formData), base.data.versionId);
   }
   redirect(target); // outside the try: redirect() works by throwing
 }
@@ -92,4 +93,44 @@ export async function removeQuestion(formData: FormData) {
 
 export async function undoChange(formData: FormData) {
   await run(formData, () => null, (dal, ctx, b) => dal.undo(ctx, b.draftId, b.versionId, b.expectedRev));
+}
+
+// --- versions (S3). These name the DRAFT revision the page showed (`expectedDraftRev`); a stale tab gets the conflict notice. ---
+
+const VersionBase = z.object({
+  draftId: z.uuid(),
+  expectedDraftRev: z.coerce.number().int().min(1).max(1_000_000_000),
+  doc: z.enum(DOCUMENT_KINDS).optional(),
+  v: z.uuid().optional(), // the version this tab is showing, kept on errors
+  versionId: z.uuid().optional(),
+});
+
+async function runVersion(formData: FormData, op: (dal: Dal, ctx: Ctx, b: z.infer<typeof VersionBase>) => Promise<{ versionId: string }>) {
+  const { ctx } = await requireAccount();
+  const base = VersionBase.safeParse({ draftId: field(formData, "draftId"), expectedDraftRev: field(formData, "expectedDraftRev"), doc: field(formData, "doc"), v: field(formData, "v"), versionId: field(formData, "versionId") });
+  if (!base.success) redirect(z.uuid().safeParse(field(formData, "draftId")).success ? `/drafts/${field(formData, "draftId")}` : "/prepare");
+  const { draftId, doc, v } = base.data;
+  let target: string;
+  try {
+    const done = await op(webDal().drafts, ctx, base.data);
+    target = draftHref(draftId, doc, undefined, "#editing-version", done.versionId);
+  } catch (error) {
+    const code = domainErrorCode(error);
+    if (!code) throw error;
+    target = draftHref(draftId, doc, code, "#versions", v);
+  }
+  redirect(target);
+}
+
+/** Creates another version (new seed, same lesson configuration); the current version is kept. No confirmation: nothing is lost. */
+export async function createAnotherVersion(formData: FormData) {
+  await runVersion(formData, (dal, ctx, b) => dal.createVersion(ctx, b.draftId, b.expectedDraftRev));
+}
+
+/** Makes another existing version the one the draft opens on. Writes only the draft's pointer. */
+export async function switchToVersion(formData: FormData) {
+  await runVersion(formData, async (dal, ctx, b) => {
+    if (!b.versionId) throw new InvalidRequest();
+    return dal.switchVersion(ctx, b.draftId, b.versionId, b.expectedDraftRev);
+  });
 }

@@ -435,6 +435,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
         versionLimit: limits.maxVersionsPerDraft,
         contentHash: version.contentHash,
         expiresAt: draft.expiresAt,
+        updatedAt: draft.updatedAt,
         documents: pkg.documents.map((d) => d.id),
         title: context.topic.title,
         selection: selectionOf(request, context),

@@ -82,6 +82,8 @@ export interface DraftViewDto {
   versionLimit: number;
   contentHash: string;
   expiresAt: Date;
+  /** When the draft was last changed (any version operation). */
+  updatedAt: Date;
   documents: DocumentKind[];
   title: string;
   /** The choices this draft was made from, as the Prepare page's URL parameters: enough to start the same selection again. */

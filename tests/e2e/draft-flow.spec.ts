@@ -239,3 +239,107 @@ test("a second tab with an older page gets a conflict notice and can reload", as
   await expect(second.getByTestId("draft-conflict")).toHaveCount(0);
   await expect(second.getByTestId("changes-indicator")).toHaveText("1 question removed");
 });
+
+// --- versions (S3) ------------------------------------------------------------------------------------------------
+
+const editing = (page: Page) => page.getByTestId("editing-version");
+
+test("create another version keeps the first, switch back shows the earlier replace, refresh keeps the selected version, all free", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  const draftUrl = await openWorksheetDraft(page);
+  let dialogs = 0;
+  page.on("dialog", async (d) => {
+    dialogs += 1;
+    await d.dismiss();
+  });
+  await expect(editing(page)).toHaveText("You are editing Version 1");
+  await expect(page.getByTestId("saved-status")).toContainText("Saved");
+  await expect(page.getByTestId("version-link")).toHaveCount(1);
+  await expect(page.getByTestId("version-link")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("create-version-btn")).toBeEnabled();
+  await expect(page.getByText("Your current version is kept. You can switch back any time.")).toBeVisible();
+
+  // a replace on version 1
+  await page.getByRole("button", { name: "Replace question 3" }).click();
+  await page.getByTestId("accept-candidate").click();
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced");
+  const v1Equations = await equations(page);
+
+  // create another version: no dialog, now editing version 2 (new questions), version 1 kept with its badge
+  await page.getByTestId("create-version-btn").click();
+  await expect(editing(page)).toHaveText("You are editing Version 2");
+  await expect(page.getByTestId("version-link")).toHaveCount(2);
+  await expect(page.getByTestId("version-link").nth(1)).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("version-link").first()).toContainText("1 replaced");
+  await expect(page.getByTestId("changes-indicator")).toHaveText("No changes yet");
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "worksheet");
+  const v2Equations = await equations(page);
+  expect(v2Equations).not.toEqual(v1Equations);
+  expect(dialogs).toBe(0);
+
+  // edit version 2, then refresh: still version 2
+  await page.getByRole("button", { name: "Remove question 1" }).click();
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question removed");
+  await page.reload();
+  await expect(editing(page)).toHaveText("You are editing Version 2");
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question removed");
+
+  // switch back: version 1 exactly as it was, with its replacement
+  await page.getByTestId("version-link").first().click();
+  await expect(editing(page)).toHaveText("You are editing Version 1");
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced");
+  expect(await equations(page)).toEqual(v1Equations);
+  await page.reload();
+  await expect(editing(page)).toHaveText("You are editing Version 1");
+  await page.goto(draftUrl); // the draft opens on the version last selected
+  await expect(editing(page)).toHaveText("You are editing Version 1");
+  await page.getByTestId("version-link").nth(1).click();
+  await expect(editing(page)).toHaveText("You are editing Version 2");
+  await expect(page.getByTestId("version-link").nth(1)).toContainText("1 removed");
+
+  // nothing was charged
+  await page.goto("/prepare");
+  await expect(page.getByTestId("allowance")).toHaveText(ALLOWANCE);
+  expect(await sql(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [user.id])).toEqual([{ used: 0, reserved: 0 }]);
+  expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
+});
+
+test("a stale second tab gets the conflict notice for a version action, and its reload link works", async ({ page, context }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  const draftUrl = await openWorksheetDraft(page);
+  const second = await context.newPage();
+  await second.goto(`${draftUrl}?doc=worksheet`);
+  await expect(editing(second)).toHaveText("You are editing Version 1");
+
+  await page.getByTestId("create-version-btn").click(); // the first tab moves the draft pointer on
+  await expect(editing(page)).toHaveText("You are editing Version 2");
+
+  await second.getByTestId("create-version-btn").click(); // the second tab still holds the old draft revision
+  const conflict = second.getByTestId("draft-conflict");
+  await expect(conflict).toContainText("This draft changed in another tab or window. Reload to see the latest.");
+  expect(await sql(`SELECT count(*)::int AS n FROM draft_version WHERE owner_id = $1`, [user.id])).toEqual([{ n: 2 }]); // the stale create made nothing
+  await conflict.getByTestId("draft-reload").click();
+  await expect(second.getByTestId("draft-conflict")).toHaveCount(0);
+  await expect(second.getByTestId("version-link")).toHaveCount(2);
+  expect(await sql(`SELECT count(*)::int AS n FROM draft_version WHERE owner_id = $1`, [user.id])).toEqual([{ n: 2 }]);
+});
+
+test("at the version limit the button is disabled and a visible note says why", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  await openWorksheetDraft(page);
+  const limit = 5; // the default MAX_VERSIONS_PER_DRAFT
+  for (let n = 2; n <= limit; n++) {
+    await page.getByTestId("create-version-btn").click();
+    await expect(editing(page)).toHaveText(`You are editing Version ${n}`);
+  }
+  const button = page.getByTestId("create-version-btn");
+  await expect(button).toBeDisabled();
+  const note = page.getByTestId("version-limit-note");
+  await expect(note).toBeVisible();
+  await expect(note).toContainText("the most allowed (5)");
+  await expect(button).toHaveAttribute("aria-describedby", "version-limit-note");
+  await expect(page.getByTestId("version-link")).toHaveCount(limit);
+});

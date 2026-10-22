@@ -160,6 +160,29 @@ Operational notes:
 
 
 **Question-level adjustment (slice S2).** `src/lib/package/draft-ops.ts` holds the pure operations; the DAL runs each one in a transaction that locks the version row, compares `expectedRev` (else `DRAFT_CONFLICT` with the current rev), and writes with `rev = rev + 1`. Candidate requests, try another and keep original change only `pending_candidate` (one per version: `{id, targetQuestionId, baseRev, baseHash, item, attempt, tried[]}`), never `content`. Accept re-verifies the stored item, requires `baseHash` to equal the current content hash (else `CANDIDATE_STALE`), swaps the exercise and its solution at the same position and level under a new id `ex-{next_question_seq}`, rehashes and requires `validatePackage` to be `verified`. Remove keeps ids stable (numbering is positional at render) and respects the minimum. Undo restores the before-image of the exercises and solutions sections, `question_meta` and `changes` from the bounded `history` stack, keeps `next_question_seq`, and asserts the restored content hash equals the recorded `beforeHash`. Remove, accept and undo drop a pending candidate (it was drawn against other content). Drafts never append to `pkg.adjustments[]`. The per-slot candidate cap (`CANDIDATES_PER_SLOT`) is really per session of a slot: it counts `pending_candidate.attempt`, so keeping the original, accepting or asking about another question starts a new count, and the per-account hourly limit (`cand:u:`) is what bounds the total.
+**Versions, sliding expiry and limits (slice S3).** `createVersion(ctx, draftId, expectedDraftRev)` runs in one transaction: it locks the `draft` row `FOR UPDATE` (owner, active and unexpired checks; `DRAFT_EXPIRED`), compares `draft.rev` with the revision the page showed (`DRAFT_CONFLICT` with `currentRev`), refuses at `MAX_VERSIONS_PER_DRAFT` (`VERSION_LIMIT`, no eviction), counts the hourly `ver:u:{owner}` key (`VERSION_RATE_LIMITED`), builds a package from the draft's stored request and context with a fresh random seed (verified only; same size and exercise-count checks as `createDraft`), inserts the version with `ordinal = version_count + 1`, and then sets `version_count + 1`, `active_version_id`, `rev + 1` and the sliding expiry on the draft. Earlier version rows are never written. `switchVersion` takes the same lock and compare, requires the target to belong to the same draft and owner, and writes only the draft row (pointer, `rev + 1`, expiry); it never touches a version row. `getDraftView(ctx, draftId, versionId?)` shows the version named by `?v=` (validated against draft and owner) or the active one, and returns `draftRev`, the version summaries (`listVersions`: id, ordinal, created time, changes summary derived from `question_meta` and `changes`, `isActive`; no content).
+
+Two revision spaces: question operations (S2) name `(versionId, expectedRev)` of the version row, version operations name `expectedDraftRev` of the draft row. A stale tab editing version 1 after another tab created version 2 therefore still edits version 1 correctly and cannot touch version 2; a stale tab creating or switching versions gets the conflict notice. Concurrency: two version operations on one draft serialize on the draft row lock, the second sees the bumped `rev` and fails with `DRAFT_CONFLICT`; a version operation and a question operation touch different rows (the question operation then updates only `expires_at` and `updated_at` of the draft, which waits for the lock) and both succeed. Lock order: version operations take the draft row, then the `ver:u:` counter row; question operations take the version row, then the draft row; no operation takes a version row while holding the draft row, so there is no cycle.
+
+Sliding expiry: every successful mutation (question operations, `createVersion`, `switchVersion`) sets `expires_at = now + DRAFT_TTL_DAYS` and bumps `updated_at` in the same transaction. Question operations change `expires_at` and `updated_at` but NOT `draft.rev` (the guard allows `expires_at` changes only for active, unexpired drafts); version operations change `rev` by exactly one. An expired draft is refused before anything is written, and the guard blocks any attempt to extend it.
+
+Limit keys (all in `src/lib/server/limits.ts`; every enforced one has an N+1 refusal test with no side effects):
+
+| Key | Enforced in | Test |
+|---|---|---|
+| `draftCreatesPerUserPerHour` (`draft:u:`), `draftCreatesPerIpPerHour` (`draft:ip:`, dormant until an IP hash is supplied), `draftCreatesGlobalPerHour` (`draft:global`) | `createDraft` | drafts.test.ts |
+| `maxActiveDraftsPerUser` | `createDraft` (under the profile lock) | drafts.test.ts |
+| `versionCreatesPerUserPerHour` (`ver:u:`) | `createVersion` | drafts-versions.test.ts |
+| `maxVersionsPerDraft` | `createVersion` | drafts-versions.test.ts |
+| `candidatesPerUserPerHour` (`cand:u:`), `candidatesPerSlot` | candidate requests | drafts-adjust.test.ts |
+| `undoDepth`, `minExercises` | question operations | drafts-versions.test.ts (depth), draft-ops and drafts-adjust tests (minimum) |
+| `maxExercises` | `createDraft` and `createVersion` (package build) | drafts-versions.test.ts |
+| `maxDraftBytes` | `createDraft`, `createVersion`, every question operation | drafts.test.ts, drafts-versions.test.ts |
+| `draftTtlDays` | creation and every mutation (sliding) | drafts.test.ts, drafts-versions.test.ts |
+| `purgeGraceDays`, `purgeBatchSize` | worker purge | drafts.test.ts |
+| `exportsPerUserPerHour`, `exportConcurrencyPerUser`, `exportDeadlineMinutes` | reserved for S4 and S5 | none yet |
+| `llmMaxCallsPerDraft`, `llmMaxTokensPerDraft`, `llmMaxCostMicrosPerDraft` | reserved for a future language-model item source | none yet |
+
 ### 5.2 按用户隔离的数据访问规则
 
 1. 所有 DAL 读写函数签名 `(ctx: AuthedCtx, …)`;`where` 必含 `ownerId: ctx.userId`;通过 id 取资源用 `findFirst({ where: { id, ownerId } })`,找不到统一返回 404(不区分"不存在"与"无权限")。
