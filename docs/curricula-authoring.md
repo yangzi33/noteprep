@@ -85,7 +85,7 @@ A curriculum has:
 
 A course has `code` (capitals, digits, `-`; the generator adds the `NP-` prefix), `title`, optional `level` (give it to all courses of a curriculum or to none), optional `ordinal` (order within its level; default is the next number), and `units`. A unit has a `title` and a list of topic keys, in teaching order. Unit titles are unique within a course and a topic appears once per unit.
 
-### Add a curriculum with its own courses (for example IB Math already exists, so imagine a new one)
+### Add a curriculum with its own courses (the way IB and AP are defined)
 
 ```json
 {
