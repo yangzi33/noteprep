@@ -13,7 +13,7 @@ export const ORDINAL_MAX = 1_000_000;
 const Id = z.string();
 const Text = z.string();
 
-export const DATASET_KINDS = ["real", "sample", "synthetic"] as const;
+export const DATASET_KINDS = ["real", "sample", "synthetic", "suggested"] as const;
 export type DatasetKind = (typeof DATASET_KINDS)[number];
 
 export const COVERAGE = ["full", "partial"] as const;

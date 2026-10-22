@@ -17,6 +17,7 @@ export class DatasetRejected extends Error {
 }
 
 export interface LoadOptions {
+  // "suggested" datasets need no option: they are honestly labelled, make no alignment claim, and are meant for production.
   /** Sample data is for development and staging only. */
   allowSample?: boolean;
   /** Synthetic fixtures are for automated tests only. */

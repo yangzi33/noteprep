@@ -1,3 +1,4 @@
+import { noClaimOrigin } from "@/lib/curriculum/notice";
 import { Inlines, MathView } from "@/components/app/math";
 import type { HtmlBlock, HtmlDocument } from "@/lib/package/html-view";
 
@@ -25,7 +26,7 @@ function AlignmentText({ block, compact }: { block: Alignment; compact: boolean 
     );
   }
   if (compact) return <p>No curriculum alignment is claimed.</p>;
-  const origin = block.datasetKind === "real" ? "" : ` It was prepared from ${block.datasetKind === "sample" ? "sample" : "test"} data (${name}) that is not a real curriculum.`;
+  const origin = noClaimOrigin(block.datasetKind, name);
   return <p>{`No curriculum alignment is claimed for this material.${origin}`}</p>;
 }
 

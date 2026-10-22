@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SelectionOption, SelectionStep } from "@/lib/server/dal/curriculum";
-import { buildSelectFields, changeSelection, selectionHref } from "@/lib/ui/prepare-view";
+import { buildSelectFields, datasetBanner, changeSelection, selectionHref } from "@/lib/ui/prepare-view";
 
 const full = { v: "a", level: "l", course: "c", unit: "u", topic: "t" };
 const curricula = [{ id: "cur1", name: "Sample Curriculum", latestVersionId: "ver1" }];
@@ -95,5 +95,14 @@ describe("buildSelectFields", () => {
   it("gives an empty option list when a step has no options loaded", () => {
     const fields = buildSelectFields({ curricula, params: {}, steps: allSteps, stepOptions: {} });
     expect(fields[1]!.options).toEqual([]);
+  });
+});
+
+describe("datasetBanner", () => {
+  it("chooses the banner by dataset kind: sample and synthetic say sample, suggested says unofficial, real has none", () => {
+    expect(datasetBanner("sample")).toBe("sample");
+    expect(datasetBanner("synthetic")).toBe("sample");
+    expect(datasetBanner("suggested")).toBe("suggested");
+    expect(datasetBanner("real")).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DATASET_KINDS } from "@/lib/curriculum/dataset-schema";
 import { ProblemSchema, SolutionSchema, StepSchema } from "@/lib/math/schema";
 
 export const PACKAGE_SCHEMA_VERSION = "lesson-package/1" as const;
@@ -45,7 +46,7 @@ export const AlignmentBlock = z.strictObject({
   claim: z.enum(["aligned", "none"]),
   curriculumName: Text,
   versionLabel: Text,
-  datasetKind: z.enum(["real", "sample", "synthetic"]),
+  datasetKind: z.enum(DATASET_KINDS),
   objectives: z.array(
     z.strictObject({
       id: Id,
@@ -158,7 +159,7 @@ export type LessonPackage = z.infer<typeof PackageSchema>;
  * (the context hash covers all of it); the validator checks this shape first so stored garbage is reported, not thrown on.
  */
 export const StoredContextShape = z.looseObject({
-  curriculum: z.looseObject({ name: z.string(), version: z.looseObject({ label: z.string(), kind: z.enum(["real", "sample", "synthetic"]) }) }),
+  curriculum: z.looseObject({ name: z.string(), version: z.looseObject({ label: z.string(), kind: z.enum(DATASET_KINDS) }) }),
   objectives: z.array(
     z.looseObject({ id: z.string(), officialCode: z.string().nullable(), label: z.string(), coverage: z.enum(["full", "partial"]), note: z.string().nullable() }),
   ),

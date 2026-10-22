@@ -1,6 +1,7 @@
 import "server-only";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
+import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { NotFound } from "@/lib/domain/errors";
 import { parseManifestV2 } from "@/lib/domain/manifest";
 import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
@@ -9,7 +10,7 @@ export interface AlignmentView {
   claim: "aligned" | "none";
   curriculumName: string;
   versionLabel: string;
-  datasetKind: "real" | "sample" | "synthetic";
+  datasetKind: DatasetKind;
   objectives: { id: string; officialCode: string | null; label: string; coverage: "full" | "partial"; note: string | null }[];
 }
 

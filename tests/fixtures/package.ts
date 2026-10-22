@@ -1,11 +1,12 @@
 import { CAPABILITIES } from "@/lib/curriculum/capabilities";
+import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { withContextHash, type CurriculumContext, type UnhashedContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { buildPackage, LINEAR_CONCEPT_ID } from "@/lib/package/build";
 import type { LessonPackage } from "@/lib/package/schema";
 
 /** A fictional curriculum context for tests: nothing here is real curriculum text or user data. */
-export function testContext(kind: "real" | "sample" = "sample", overrides: Partial<UnhashedContext> = {}): CurriculumContext {
+export function testContext(kind: DatasetKind = "sample", overrides: Partial<UnhashedContext> = {}): CurriculumContext {
   const base: UnhashedContext = {
     curriculum: {
       id: "fiction-math",
@@ -41,11 +42,35 @@ export function testRequest(overrides: Partial<LessonRequestV2> = {}): LessonReq
   };
 }
 
-export function testPackage(overrides: Partial<LessonRequestV2> = {}, seed = "seed-1", kind: "real" | "sample" = "sample", context?: CurriculumContext): LessonPackage {
+export function testPackage(overrides: Partial<LessonRequestV2> = {}, seed = "seed-1", kind: DatasetKind = "sample", context?: CurriculumContext): LessonPackage {
   return buildPackage({ request: testRequest(overrides), context: context ?? testContext(kind), seed });
 }
 
 /** The topic title a package's documents use as their running header. */
 export function topicTitleOf(pkg: { context: unknown }): string {
   return (pkg.context as { topic: { title: string } }).topic.title;
+}
+
+/**
+ * A context shaped like the one the DAL resolves for the suggested fixture's supported topic (no objectives, no codes).
+ * Built in memory on purpose: the host test image copies only this file, not tests/fixtures/curricula/. A unit test
+ * (tests/unit/package-suggested.test.ts) checks these values against the fixture dataset so they cannot drift.
+ */
+export function suggestedTestContext(): CurriculumContext {
+  return testContext("suggested", {
+    curriculum: {
+      id: "suggested-fixture",
+      name: "Suggested topics for Test Course (unofficial)",
+      educationSystem: { id: "suggested-system", name: "Suggested Test System", regionCode: "ZZ" },
+      version: {
+        id: "suggested-fixture@v1",
+        label: "Suggested v1 (unofficial)",
+        kind: "suggested",
+        source: { title: "Written by NotePrep for tests: an unofficial mapping, not an official source", url: null, publisher: null, retrievedAt: null },
+      },
+    },
+    topic: { id: "suggested-fixture@v1/course/u1/t1", title: "Solving linear equations" },
+    objectives: [],
+    prerequisites: [],
+  });
 }

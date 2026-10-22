@@ -330,6 +330,7 @@ enum DatasetKind {
   real
   sample
   synthetic
+  suggested
 
   @@map("dataset_kind")
 }

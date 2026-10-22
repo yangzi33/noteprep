@@ -165,6 +165,12 @@ describe("LessonDraft", () => {
     );
   });
 
+  it("notes: a suggested dataset is called an unofficial NotePrep suggestion", () => {
+    const html = render(withAlignment(notes, { ...aligned, claim: "none", datasetKind: "suggested", objectives: [] }));
+    expect(html).toContain("The topic list is an unofficial NotePrep suggestion (“Test Curriculum (v1)”). It is not an official curriculum and is not endorsed by any curriculum authority.");
+    expect(html).not.toMatch(/test data|sample data|This lesson addresses/);
+  });
+
   it("worksheet and solutions: compact alignment wording matches the PDF exactly", () => {
     for (const base of [worksheet, solutions]) {
       const yes = render(withAlignment(base, aligned));

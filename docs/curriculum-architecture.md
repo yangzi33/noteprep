@@ -209,3 +209,26 @@ M1 已按上述设计实现;与设计相比的差异与补充如下,均已落到
 | 镜像 | 基础镜像摘要固定;TeX 包版本在 `packages.lock`(不含 `libc6`/`perl-base`,避免例行安全更新让 CI 无故变红);**生产镜像必须用摘要引用**(worker 配置强制) |
 | 尚未做 | gVisor/Firecracker 的评估与目标主机验证(D-03/D-20);孤儿对象清理(P3);把 `CompileError.detail` 写进作业记录;视觉回归(版面度量)——目前只验证页数与文字;真实课程数据下的字体/符号覆盖 |
 
+
+## 17. Dataset kind `suggested` (English note, added 2026-10-21)
+
+This section is written in English on purpose; the rest of the file stays in Chinese until someone translates it.
+
+A fourth dataset kind, `suggested` (D-74, D-75): an UNOFFICIAL mapping, written by NotePrep, of a named curriculum or course onto NotePrep's own topics.
+
+- It never produces an alignment claim: `alignmentClaimsAllowed` is true only for `real` (`alignmentClaimsAllowedFor`).
+- It needs no official source URL, retrieval date or review record (the `real`-provenance CHECK only constrains `real`).
+- It carries no official codes: the validator rejects any objective or topic-objective link (`SUGGESTED_NO_OBJECTIVES`) and does not require a topic to have an objective. Course codes and unit codes (if present) are NotePrep identifiers and must start with `NP-` (`SUGGESTED_CODE_PREFIX`), so they can never pass for official codes (D-75).
+- It must say so: the version label and the curriculum name must contain the word "suggested" (`KIND_LABEL`, as for sample and synthetic).
+- It is loadable and visible in every environment with no flag (unlike sample and synthetic). The Prepare page shows "Suggested topics, unofficial"; the PDF, the draft view and the lesson page say the topic list is an unofficial NotePrep suggestion, not an official curriculum, not endorsed by any curriculum authority.
+- Lessons: with no objectives, the "Learning objectives" section has exactly one line derived from NotePrep's own topic title (`Practise: <topic title>`, `learningObjectiveItems`). The validator treats it as dataset text (`DATASET_TEXT_ALTERED` still applies); the alignment block stays `none`, `alignmentClaimsAllowed` stays false, and the package validator also fails any package whose context allows alignment while the dataset kind is not `real`.
+- Stored lesson packages: the kind enums were widened, not changed, so old packages parse unchanged. `PACKAGE_SCHEMA_VERSION` is not bumped and no existing hash changes (old packages never contain the new value).
+- Migration `20261021120000_dataset_kind_suggested` is a single `ALTER TYPE dataset_kind ADD VALUE IF NOT EXISTS 'suggested'`.
+
+Rollback and known limitations of the `suggested` kind:
+
+- The migration is forward-only. Postgres cannot drop an enum value, so `dataset_kind` keeps `suggested` even if the code is reverted.
+- Rolling the application code back to a version without `suggested` makes its zod enums reject any stored lesson package or context that contains it (such lessons would show as unreadable until the code is rolled forward again). Old packages are unaffected.
+- A published suggested version is immutable like every other kind; a correction is a new version.
+- Known limitation: the curriculum name is not frozen in the database for a kind, so a later version of the same curriculum id could carry a different kind. Not addressed in this slice.
+- Known limitation: fixture and sample datasets are not blocked from being loaded by file path; the loader's environment options are the only guard for sample and synthetic data, and `suggested` fixtures can be loaded anywhere. Not addressed in this slice.

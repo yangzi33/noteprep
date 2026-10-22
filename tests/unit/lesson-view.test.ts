@@ -46,6 +46,14 @@ describe("the curriculum notice", () => {
       expect(text).not.toMatch(/aligned with|built from/i);
     }
   });
+  it("describes a suggested dataset as an unofficial NotePrep suggestion, never as aligned or built from a curriculum", () => {
+    const text = alignmentNotice({ curriculumName: "Suggested topics for Test Course (unofficial)", versionLabel: "Suggested v1", claim: "aligned", datasetKind: "suggested" });
+    expect(text).toContain("The topic list is an unofficial NotePrep suggestion (“Suggested topics for Test Course (unofficial) (Suggested v1)”).");
+    expect(text).toMatch(/NotePrep/);
+    expect(text).toMatch(/not an official curriculum/i);
+    expect(text).toMatch(/not endorsed by any curriculum authority/i);
+    expect(text).not.toMatch(/aligned with|built from|test dataset|sample dataset/i);
+  });
   const NAME = "Sample Mathematics (not a real curriculum)";
   const SAMPLE_TEXT = `Based on the sample dataset “${NAME}” (sample-1). This is not a real curriculum and makes no claim of alignment.`;
   it("says exactly this for each combination of dataset kind and claim", () => {
