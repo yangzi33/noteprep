@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildExportSpec, contentKey, exportKey, prepareExport, PAGE_FORMAT, renderForExport, RenderError, type ExportSpec } from "@/lib/domain/export-spec";
 import { RENDER_VERSION } from "@/lib/latex/render";
-import type { LessonPackage } from "@/lib/package/schema";
 import { testContext, testPackage } from "../fixtures/package";
 
 const pkg = () => testPackage();
@@ -95,7 +94,7 @@ describe("export identity (rendered-source keyed)", () => {
 
   it("surfaces RenderError for a package the renderer refuses", () => {
     const bad = clone(pkg());
-    const para = bad.sections.flatMap((s) => s.blocks).find((b) => b.type === "paragraph") as { text: string };
+    const para = (bad.sections.flatMap((s) => s.blocks as unknown as { type: string }[])).find((b) => b.type === "paragraph") as unknown as { text: string };
     para.text = "x".repeat(200_000);
     expect(() => renderForExport(bad)).toThrow(RenderError);
   });

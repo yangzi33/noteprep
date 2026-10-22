@@ -1,7 +1,7 @@
 import "server-only";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
-import { resolveAllowanceSource } from "./allowance-source";
+import { readAllowanceBucket } from "./allowance-source";
 
 export interface AllowanceView {
   source: "trial" | "paid";
@@ -35,20 +35,15 @@ export function createHistoryDal(db: Db, deps: HistoryDeps = {}) {
   return {
     async getAllowance(ctx: AuthedCtx): Promise<AllowanceView | null> {
       return db.$transaction(async (tx) => {
-        const source = await resolveAllowanceSource(tx, ctx.userId, clock());
-        const bucket =
-          source.kind === "paid"
-            ? await tx.usageBucket.findFirst({
-                where: { ownerId: ctx.userId, subscriptionId: source.subscriptionId, periodKey: source.periodKey },
-              })
-            : await tx.usageBucket.findFirst({ where: { ownerId: ctx.userId, kind: "trial" } });
-        if (!bucket) return null;
+        const found = await readAllowanceBucket(tx, ctx.userId, clock());
+        if (!found) return null;
+        const { bucket, source } = found;
         return {
-          source: source.kind,
-          limit: bucket.limitCount,
+          source,
+          limit: bucket.limit_count,
           used: bucket.used,
           pending: bucket.reserved,
-          remaining: bucket.limitCount - bucket.used - bucket.reserved,
+          remaining: bucket.limit_count - bucket.used - bucket.reserved,
         };
       });
     },

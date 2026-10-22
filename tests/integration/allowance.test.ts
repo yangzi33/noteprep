@@ -572,6 +572,17 @@ describe("paid period buckets", () => {
     await admin.query(`DELETE FROM usage_bucket WHERE id = $1`, [bucketId]);
     await expect(dal.generation.createGeneration(ctx, input(), key())).rejects.toBeInstanceOf(AllowanceExhausted);
   });
+
+  it("the allowance display applies the same bucket window as the reservation path (M3 display bug)", async () => {
+    const ctx = await account();
+    const { bucketId } = await subscribe(ctx.userId);
+    expect(await dal.history.getAllowance(ctx)).toMatchObject({ source: "paid", limit: 2, used: 0, remaining: 2 });
+    // The subscription period still covers NOW, but the bucket's own window does not: a reservation fails closed,
+    // so the page must not show remaining units either.
+    await admin.query(`UPDATE usage_bucket SET starts_at = $2, ends_at = $3 WHERE id = $1`, [bucketId, new Date("2026-03-20T00:00:00Z"), END]);
+    await expect(dal.generation.createGeneration(ctx, input(), key())).rejects.toBeInstanceOf(AllowanceExhausted);
+    expect(await dal.history.getAllowance(ctx)).toBeNull();
+  });
 });
 
 describe("retryable database errors", () => {
