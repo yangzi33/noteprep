@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { noClaimOrigin } from "@/lib/curriculum/notice";
 import { Inlines, MathView } from "@/components/app/math";
 import type { HtmlBlock, HtmlDocument } from "@/lib/package/html-view";
@@ -122,7 +123,13 @@ function Block({ block, compact }: { block: HtmlBlock; compact: boolean }) {
 // Bounded like the PDF renderer: 1 to 20 lines.
 const lineCount = (lines: number) => (Number.isFinite(lines) ? Math.min(Math.max(Math.trunc(lines), 1), 20) : 1);
 
-export function LessonDraft({ doc }: { doc: HtmlDocument }) {
+/** Optional per-question slots, keyed by the stable question id: the draft page puts its adjustment controls there. */
+export interface QuestionSlots {
+  afterQuestion?: (question: { questionId: string; number: number }) => ReactNode;
+  afterSolution?: (solution: { questionId: string; number: number }) => ReactNode;
+}
+
+export function LessonDraft({ doc, slots }: { doc: HtmlDocument; slots?: QuestionSlots }) {
   return (
     <article
       data-testid="lesson-draft"
@@ -138,7 +145,10 @@ export function LessonDraft({ doc }: { doc: HtmlDocument }) {
         <section key={section.id} className="space-y-3">
           {section.kind === "alignment" ? null : <h2 className="font-heading text-lg font-semibold">{section.title}</h2>}
           {section.blocks.map((block, i) => (
-            <Block key={i} block={block} compact={doc.document !== "notes"} />
+            <Fragment key={i}>
+              <Block block={block} compact={doc.document !== "notes"} />
+              {block.type === "question" ? slots?.afterQuestion?.(block) : block.type === "solution" ? slots?.afterSolution?.(block) : null}
+            </Fragment>
           ))}
         </section>
       ))}

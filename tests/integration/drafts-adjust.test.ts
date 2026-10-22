@@ -10,7 +10,6 @@ import { exerciseIds } from "@/lib/package/draft-ops";
 import { validatePackage } from "@/lib/package/validate";
 import { makeAuthedCtx, type AuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal } from "@/lib/server/dal";
-import type { DraftViewDto } from "@/lib/server/dal/dto";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
@@ -76,6 +75,8 @@ const row = async (versionId: string) =>
   (await admin.query(`SELECT rev, content::text AS content_text, content_hash, next_question_seq, history, changes, question_meta, pending_candidate FROM draft_version WHERE id = $1`, [versionId])).rows[0];
 const one = async (sql: string, params: unknown[] = []) => (await admin.query(sql, params)).rows[0];
 const expireAt = (draftId: string, sqlOffset: string) => admin.query(`UPDATE draft SET expires_at = now() ${sqlOffset} WHERE id = $1`, [draftId]);
+type Err = Error & { code: string; currentRev: number };
+const err = (p: Promise<unknown>) => p.then(() => null as never, (e: unknown) => e as Err);
 async function code(p: Promise<unknown>) {
   try {
     await p;
@@ -291,7 +292,7 @@ describe("concurrency control", () => {
       () => web.drafts.undo(ctx, d.draftId, d.versionId, stale),
     ];
     for (const op of ops) {
-      const error = await op().catch((e) => e);
+      const error = await err(op());
       expect(domainErrorCode(error)).toBe("DRAFT_CONFLICT");
       expect(error.currentRev).toBe(r1.rev);
     }
@@ -339,13 +340,13 @@ describe("R17 (extended): other accounts cannot adjust a draft", () => {
       ["undo", (c, t) => web.drafts.undo(c, t.draftId, t.versionId, r1.rev)],
     ];
     for (const [name, attack] of attacks) {
-      const foreign = await attack(mallory, d).catch((e) => e);
-      const absent = await attack(mallory, missing).catch((e) => e);
+      const foreign = await err(attack(mallory, d));
+      const absent = await err(attack(mallory, missing));
       expect(domainErrorCode(foreign), name).toBe("NOT_FOUND");
       expect({ code: foreign.code, message: foreign.message }, name).toEqual({ code: absent.code, message: absent.message });
       // the right draft id with someone else's version id is also NotFound
       const mine = await newDraft(mallory);
-      expect(domainErrorCode(await attack(mallory, { draftId: mine.draftId, versionId: d.versionId }).catch((e) => e)), name).toBe("NOT_FOUND");
+      expect(domainErrorCode(await err(attack(mallory, { draftId: mine.draftId, versionId: d.versionId }))), name).toBe("NOT_FOUND");
     }
     expect(await row(d.versionId)).toEqual(before);
   });

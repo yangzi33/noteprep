@@ -108,3 +108,131 @@ test("an expired draft says so and offers to start again with the same choices; 
   await expect(page.getByTestId("select-topic")).toHaveValue(TOPIC);
   await expect(page.getByRole("button", { name: "Create draft preview" })).toBeEnabled();
 });
+
+// --- question-level adjustment (S2) ---------------------------------------------------------------------------
+
+async function openWorksheetDraft(page: Page) {
+  await chooseTopic(page);
+  await page.getByRole("button", { name: "Create draft preview" }).click();
+  await expect(page).toHaveURL(/\/drafts\/[0-9a-f-]{36}$/);
+  const draftUrl = page.url();
+  await page.getByTestId("document-tabs").getByRole("link", { name: "Student Practice Worksheet" }).click();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "worksheet");
+  return draftUrl;
+}
+// The TeX of every display equation in the preview, in order (questions and the candidate panel's equation).
+const equations = (page: Page) => page.getByTestId("draft-preview").locator(".katex-display annotation").allTextContents();
+
+test("replace keeps the original visible, try another, accept, remove and undo, all surviving a refresh", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  const draftUrl = await openWorksheetDraft(page);
+  const controls = page.getByTestId("question-controls");
+  const count = await controls.count();
+  expect(count).toBeGreaterThanOrEqual(4);
+  const indicator = page.getByTestId("changes-indicator");
+  await expect(indicator).toHaveText("No questions changed yet");
+  await expect(page.getByTestId("undo-btn")).toBeDisabled();
+  // always-visible real buttons with a 44px target and a name that says which question
+  const replace3 = page.getByRole("button", { name: "Replace question 3" });
+  await expect(replace3).toBeVisible();
+  expect((await replace3.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByRole("button", { name: "Remove question 3" })).toBeVisible();
+
+  const original = await equations(page);
+  expect(original).toHaveLength(count);
+
+  // Replace: the candidate appears under question 3 and the original stays visible
+  await replace3.click();
+  const panel = page.getByTestId("candidate-panel");
+  await expect(panel).toBeVisible();
+  const withCandidate = await equations(page);
+  expect(withCandidate).toHaveLength(count + 1);
+  for (const eq of original) expect(withCandidate).toContain(eq);
+  const first = (await panel.getByTestId("candidate-equation").locator("annotation").textContent())!;
+  expect(original).not.toContain(first);
+  await expect(indicator).toHaveText("No questions changed yet");
+
+  // the candidate survives a refresh; Try another gives a different one
+  await page.reload();
+  await expect(page.getByTestId("candidate-panel").getByTestId("candidate-equation").locator("annotation")).toHaveText(first);
+  await page.getByTestId("try-another").click();
+  await expect(page.getByTestId("candidate-panel")).toBeVisible();
+  const second = (await page.getByTestId("candidate-equation").locator("annotation").textContent())!;
+  expect(second).not.toBe(first);
+  expect(original).not.toContain(second);
+
+  // Keep original clears it, the content is as before
+  await page.getByTestId("keep-original").click();
+  await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
+  expect(await equations(page)).toEqual(original);
+
+  // Replace again and Accept: same count, same position, indicator and badge
+  await page.getByRole("button", { name: "Replace question 3" }).click();
+  const chosen = (await page.getByTestId("candidate-equation").locator("annotation").textContent())!;
+  await page.getByTestId("accept-candidate").click();
+  await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
+  await expect(indicator).toHaveText("1 question replaced · 0 removed");
+  await expect(page.getByTestId("replaced-badge")).toHaveCount(1);
+  const accepted = await equations(page);
+  expect(accepted).toHaveLength(count);
+  expect(accepted[2]).toBe(chosen);
+  expect(accepted.filter((_, i) => i !== 2)).toEqual(original.filter((_, i) => i !== 2));
+  await expect(page.getByTestId("undo-btn")).toHaveText("Undo: Replaced question 3");
+
+  // the answer key shows the paired answer for the new question, marked as replaced
+  const draftId = draftUrl.split("/").pop()!;
+  await page.getByTestId("document-tabs").getByRole("link", { name: "Solutions / Answer Key" }).click();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "solutions");
+  await expect(page.getByTestId("replaced-badge")).toHaveCount(1);
+  expect(await page.getByTestId("draft-preview").locator(".katex-display annotation").allTextContents()).toContain(chosen);
+  await page.getByTestId("document-tabs").getByRole("link", { name: "Student Practice Worksheet" }).click();
+
+  // Remove question 1: positional numbering, the count goes down, the indicator counts both
+  await page.getByRole("button", { name: "Remove question 1" }).click();
+  await expect(controls).toHaveCount(count - 1);
+  await expect(indicator).toHaveText("1 question replaced · 1 removed");
+  await expect(page.getByTestId("undo-btn")).toHaveText("Undo: Removed question 1");
+  expect(await equations(page)).toEqual(accepted.slice(1));
+  await expect(page.getByTestId("draft-preview").locator("strong", { hasText: /^1\.$/ })).toHaveCount(1);
+
+  // a refresh keeps everything
+  await page.reload();
+  await expect(controls).toHaveCount(count - 1);
+  await expect(indicator).toHaveText("1 question replaced · 1 removed");
+
+  // undo the removal, then the replacement: back to the generated draft
+  await page.getByTestId("undo-btn").click();
+  await expect(controls).toHaveCount(count);
+  await expect(indicator).toHaveText("1 question replaced · 0 removed");
+  await page.getByTestId("undo-btn").click();
+  await expect(indicator).toHaveText("No questions changed yet");
+  await expect(page.getByTestId("undo-btn")).toBeDisabled();
+  expect(await equations(page)).toEqual(original);
+
+  // every step was free
+  expect(await sql(`SELECT history, rev FROM draft_version WHERE draft_id = $1`, [draftId])).toEqual([{ history: [], rev: expect.any(Number) }]);
+  await page.goto("/prepare");
+  await expect(page.getByTestId("allowance")).toHaveText(ALLOWANCE);
+  expect(await sql(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [user.id])).toEqual([{ used: 0, reserved: 0 }]);
+  expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
+});
+
+test("a second tab with an older page gets a conflict notice and can reload", async ({ page, context }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  const draftUrl = await openWorksheetDraft(page);
+  const second = await context.newPage();
+  await second.goto(`${draftUrl}?doc=worksheet`);
+  await expect(second.getByTestId("question-controls").first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Remove question 1" }).click(); // the first tab moves the draft on
+  await expect(page.getByTestId("changes-indicator")).toHaveText("0 questions replaced · 1 removed");
+
+  await second.getByRole("button", { name: "Remove question 2" }).click(); // the second tab still holds the old revision
+  const conflict = second.getByTestId("draft-conflict");
+  await expect(conflict).toContainText("This draft changed in another tab or window. Reload to see the latest.");
+  await conflict.getByTestId("draft-reload").click();
+  await expect(second.getByTestId("draft-conflict")).toHaveCount(0);
+  await expect(second.getByTestId("changes-indicator")).toHaveText("0 questions replaced · 1 removed");
+});
