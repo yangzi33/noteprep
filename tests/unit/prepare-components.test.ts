@@ -60,6 +60,9 @@ describe("GenerateButtonView", () => {
     expect(html).not.toMatch(/<button[^>]*\sdisabled=""/);
     expect(html).not.toMatch(/aria-busy/);
   });
+  it("shows a custom label (the draft flow's button)", () => {
+    expect(render(createElement(GenerateButtonView, { exhausted: false, pending: false, label: "Create draft preview" }))).toMatch(/<button[^>]*\stype="submit"[^>]*>Create draft preview<\/button>/);
+  });
   it("is disabled when the allowance is exhausted", () => {
     expect(view({ exhausted: true, pending: false })).toMatch(/<button[^>]*\sdisabled=""/);
   });

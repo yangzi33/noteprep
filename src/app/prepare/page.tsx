@@ -14,6 +14,7 @@ import { domainErrorCode } from "@/lib/domain/errors";
 import { DOCUMENT_IDS } from "@/lib/domain/lesson-request";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { serverEnv } from "@/lib/server/env";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
@@ -53,7 +54,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   let params = rawParams;
   const dal = webDal();
   const allowance = await dal.history.getAllowance(ctx);
-  const exhausted = allowance !== null && allowance.remaining <= 0;
+  // In draft mode a preview is free, so an empty allowance does not block it (D-106).
+  const draftFlow = serverEnv().FLOW_MODE === "draft";
+  const exhausted = !draftFlow && allowance !== null && allowance.remaining <= 0;
   const allowanceText = allowance
     ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
     : "Your account is being set up.";
@@ -195,8 +198,10 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
                 <SelectField label="Difficulty" name="difficulty" options={DIFFICULTIES} defaultValue="mixed" />
               </div>
             </div>
-            <p className="text-[13px] text-muted-foreground">Choosing fewer documents still uses one generation.</p>
-            <GenerateButton exhausted={exhausted} />
+            <p className="text-[13px] text-muted-foreground" data-testid="cost-note">
+              {draftFlow ? "Creating a preview is free" : "Choosing fewer documents still uses one generation."}
+            </p>
+            <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} />
           </form>
         )}
         </PreparePendingProvider>
