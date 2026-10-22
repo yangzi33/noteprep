@@ -1,5 +1,7 @@
 # 重构计划(提案)
 
+> **Status note (2026-10-22, English):** this plan is a historical record and its status lines below are out of date. Current status: M1 to M5, the Figma UI rollout (U1 to U7) and the M6 S1 pure adjustment core are merged to `main`. The current roadmap is [beta-roadmap](beta-roadmap.md); decisions are in [decisions](decisions.md) (D-70 to D-84 and later). The content design is [content-architecture](content-architecture.md).
+
 > 状态:**M1(课程域模型 + 示例数据集)、M2(选择向导 + 请求 v2)、M3a(课包内容模型 + 确定性生成)、M3b(LLM 适配器与文字检查)、M4(三份文档渲染与沙箱编译;本地 runc 沙箱,gVisor/目标主机未验证)与 M5(课包预览与导出:私有 Storage、用户会话签名 URL、预览页)已完成;M6(预设调整与极小更正)尚未开始。前端落地 U1–U4(基础/准备页/作业页/课包页含 HTML 草稿预览)已在栈式分支 `feat/ui-foundation` → `feat/ui-prepare` → `feat/ui-jobs` → `feat/ui-lesson` 上完成,**尚未合并到 main,其 E2E 与集成测试未运行**(见 [ui-verification-checklist](ui-verification-checklist.md))。** 关键决定已批准(2026-10-19):D-30(MVP 目标 Ontario Grade 9;真实数据集为之后的独立里程碑 CM)、D-31(不提供 `.tex`)、D-33(调整计费方案 B);D-36 推迟到 CM。** 既有文档与 `CLAUDE.md` 已按新方向对账。里程碑 M6(预设调整与更正)等待用户的启动批准。
 > 相关:[product-vision](product-vision.md) · [refactor-audit](refactor-audit.md) · [curriculum-architecture](curriculum-architecture.md)
 
