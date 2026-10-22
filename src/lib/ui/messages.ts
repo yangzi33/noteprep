@@ -12,6 +12,11 @@ const GENERATION_ERRORS: Record<string, string> = {
   CURRICULUM_NOT_FOUND: "That curriculum selection is not available. Please choose again.",
   TOPIC_UNSUPPORTED: "We cannot yet generate verified practice for that topic. Please choose another topic.",
   INVALID_SELECTION: "Those choices do not fit together. Please start the selection again.",
+  DRAFT_EXPIRED: "This draft has expired. Start again with the same choices to make a new one.",
+  DRAFT_LIMIT: "You have many drafts open. Open one of them, or wait for older drafts to expire.",
+  DRAFT_RATE_LIMITED: "You have created many drafts recently. Please try again later.",
+  ITEM_REJECTED: "We could not build a fully checked lesson from those choices. Please try again.",
+  PACKAGE_BUILD_FAILED: "We could not build this lesson from the selected topic.",
 };
 
 export function generationErrorMessage(code: string | null | undefined): string | null {

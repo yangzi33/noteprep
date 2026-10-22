@@ -24,7 +24,7 @@ const refusingLegacyCompiler: Compiler = {
 async function main() {
   const config = workerEnv();
   const db = createDb(config.WORKER_DATABASE_URL);
-  const dal = createWorkerDal(db);
+  const dal = createWorkerDal(db, { purgeGraceDays: config.limits.purgeGraceDays });
   const stop = new AbortController();
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.once(signal, () => {
@@ -66,6 +66,7 @@ async function main() {
     pollMs: config.POLL_INTERVAL_MS,
     sweepMs: config.SWEEP_INTERVAL_SECONDS * 1000,
     signal: stop.signal,
+    drafts: { purge: dal.drafts, batchSize: config.limits.purgeBatchSize },
     onAlive: createLiveness(config.WORKER_LIVENESS_FILE),
   });
   await db.$disconnect();

@@ -19,17 +19,17 @@ import {
 } from "@/lib/domain/generation";
 import { requestHash } from "@/lib/domain/hash";
 import { parseLessonRequest } from "@/lib/domain/lesson-request";
-import type { CurriculumContext } from "@/lib/curriculum/context";
 import type { Prisma } from "@/generated/prisma/client";
 import type { AuthedCtx } from "../auth/context";
 import { resolveAllowanceSource } from "./allowance-source";
 import type { Db } from "../db";
 import { toJobDto, type JobDto } from "./dto";
+import { incrementRateLimit } from "./rate-limit";
+import { resolveRequestContext, type ResolveContext } from "./request-context";
 import { releaseReservation } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
-/** Runs on the given client, so inside the enqueue transaction it uses that transaction's connection. */
-export type ResolveContext = (input: { versionId: string; topicId: string; objectiveIds?: string[] }, client?: Tx) => Promise<CurriculumContext>;
+export type { ResolveContext };
 
 export interface GenerationDeps {
   /** Resolves a v2 request's curriculum context (provided by createWebDal). Without it v2 requests are refused. */
@@ -63,12 +63,7 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
   const clock = deps.clock ?? (() => new Date());
 
   async function bumpRateLimit(tx: Tx, key: string, max: number) {
-    const rows = await tx.$queryRaw<{ count: number }[]>`
-      INSERT INTO rate_limit_window (key, window_start, count)
-      VALUES (${key}, date_trunc('hour', now()), 1)
-      ON CONFLICT (key, window_start) DO UPDATE SET count = rate_limit_window.count + 1
-      RETURNING count`;
-    if ((rows[0]?.count ?? 0) > max) throw new RateLimited();
+    if ((await incrementRateLimit(tx, key)) > max) throw new RateLimited();
   }
 
   /** Locks the bucket this job will draw from. The source is fixed here and never re-chosen. */
@@ -143,13 +138,8 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
         if (parsed.version === 1) {
           lessonData = { title: "Linear equations in one variable", inputSpec: parsed.input };
         } else {
-          if (!deps.resolveContext) throw new InvariantViolation("curriculum context resolver is not configured");
           const request = parsed.input;
-          const context = await deps.resolveContext({
-            versionId: request.curriculum.versionId,
-            topicId: request.curriculum.topicId,
-            objectiveIds: request.objectiveIds,
-          }, tx);
+          const context = await resolveRequestContext(deps.resolveContext, request, tx);
           lessonData = {
             title: context.topic.title,
             inputSpec: { requestVersion: 2, request, context } as unknown as Prisma.InputJsonValue,

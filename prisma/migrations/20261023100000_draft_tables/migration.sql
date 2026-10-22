@@ -57,6 +57,8 @@ CREATE UNIQUE INDEX "draft_version_id_draft_id_key" ON "draft_version"("id", "dr
 
 -- The purge sweep looks only at live drafts that have passed their expiry.
 CREATE INDEX "draft_active_expires_at_idx" ON "draft"("expires_at") WHERE status = 'active';
+-- ... and the second purge step looks only at expired drafts that have passed the grace period.
+CREATE INDEX "draft_expired_expires_at_idx" ON "draft"("expires_at") WHERE status = 'expired';
 
 -- Foreign keys. A version always belongs to a draft of the SAME owner; deleting a draft deletes its versions.
 ALTER TABLE "draft" ADD CONSTRAINT "draft_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
