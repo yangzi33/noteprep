@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { AccountNotActive, DraftExpired, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
-import { IdempotencyKeySchema } from "@/lib/domain/generation";
+import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { PackageBuildError } from "@/lib/content/errors";
 import type { CurriculumContext } from "@/lib/curriculum/context";
@@ -18,7 +18,7 @@ import { DEFAULT_LIMITS, type Limits } from "../limits";
 import type { DraftCreated, DraftSelection, DraftSummaryDto, DraftViewDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
-import { inTransaction, type Tx } from "./tx";
+import { inTransaction, isCheckViolation, type Tx } from "./tx";
 
 // Drafts are FREE: nothing in this module may touch the allowance, reservations or jobs. A test pins that by reading
 // this file's imports (tests/unit/drafts-isolation.test.ts); keep it that way.
@@ -92,6 +92,86 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     if ((await incrementRateLimit(tx, key)) > max) throw new DraftRateLimited();
   }
 
+  /** The transaction of createDraft. Lock order is part of the safety contract: see the comments inside. */
+  async function createDraftTx(ownerId: string, request: LessonRequestV2, key: string, hash: string, options: CreateDraftOptions): Promise<CreateDraftResult> {
+    return inTransaction(db, async (tx) => {
+      const now = clock();
+
+      // 0. Per-account serialization point (the same lock the generation flow takes). SAFETY CONTRACT: this lock comes
+      // first and is held to commit. It is what makes "count active drafts, then insert" (the MAX_ACTIVE_DRAFTS cap
+      // below) safe against concurrent creates by one account; do not move the count before it, or take other locks
+      // before it. The shared draft:global counter row is locked from the first increment until commit, after this lock.
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM profile WHERE id = ${ownerId}::uuid AND status = 'active'::profile_status FOR UPDATE`;
+      if (locked.length === 0) throw new AccountNotActive();
+
+      // 1. Idempotency: same key + same request -> the original draft; same key + different request -> conflict.
+      const created = await tx.idempotencyKey.createMany({ data: [{ ownerId, operation: DRAFT_OPERATION, key, requestHash: hash }], skipDuplicates: true });
+      if (created.count === 0) {
+        const previous = await tx.idempotencyKey.findUnique({ where: { ownerId_operation_key: { ownerId, operation: DRAFT_OPERATION, key } } });
+        if (!previous) throw new InvariantViolation("idempotency key vanished");
+        if (previous.requestHash !== hash) throw new IdempotencyConflict();
+        const existing = previous.resourceId ? await tx.draft.findFirst({ where: { id: previous.resourceId, ownerId }, select: { id: true, activeVersionId: true, expiresAt: true } }) : null;
+        if (!existing?.activeVersionId) throw new DraftExpired(); // the draft was purged after it expired
+        return { draft: { draftId: existing.id, versionId: existing.activeVersionId, expiresAt: existing.expiresAt }, replayed: true };
+      }
+
+      // 2. The curriculum context (after the replay check, before anything is stored; a refused topic costs nothing).
+      const context = await resolveRequestContext(deps.resolveContext, request, tx);
+
+      // 3. Durable limits. Counters committed with a draft are not refunded when it is later deleted.
+      await bump(tx, `draft:u:${ownerId}`, limits.draftCreatesPerUserPerHour);
+      if (options.ipHash) await bump(tx, `draft:ip:${options.ipHash}`, limits.draftCreatesPerIpPerHour);
+      await bump(tx, "draft:global", limits.draftCreatesGlobalPerHour);
+      const active = await tx.draft.count({ where: { ownerId, status: "active", expiresAt: { gt: now } } });
+      if (active >= limits.maxActiveDraftsPerUser) throw new DraftLimit();
+
+      // 4. Build and verify. Only a fully verified package may be stored.
+      const seed = newSeed();
+      const { pkg, levels } = buildPackageWithMeta({ request, context, seed });
+      const report = validatePackage(pkg);
+      if (report.overall !== "verified") throw new PackageBuildError("the drafted package did not validate as verified");
+      const content = split(pkg);
+      if (Buffer.byteLength(JSON.stringify(content), "utf8") > limits.maxDraftBytes) throw new PackageBuildError("the drafted package exceeds the size limit");
+
+      // 5. Store: the draft (request and context once), version 1, then the active pointer.
+      const expiresAt = new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
+      const draft = await tx.draft.create({
+        data: {
+          ownerId,
+          request: request as unknown as Prisma.InputJsonValue,
+          requestHash: hash,
+          context: context as unknown as Prisma.InputJsonValue,
+          versionCount: 1,
+          expiresAt,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      const version = await tx.draftVersion.create({
+        data: {
+          draftId: draft.id,
+          ownerId,
+          ordinal: 1,
+          seed,
+          content: content as unknown as Prisma.InputJsonValue,
+          contentHash: packageContentHash(pkg),
+          questionMeta: Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, origin: "initial" }])),
+          nextQuestionSeq: nextExerciseSeq(pkg),
+          validatorVersion: report.validatorVersion,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      await tx.draft.update({ where: { id: draft.id }, data: { activeVersionId: version.id } });
+      await tx.idempotencyKey.update({
+        where: { ownerId_operation_key: { ownerId, operation: DRAFT_OPERATION, key } },
+        data: { resourceType: "draft", resourceId: draft.id },
+      });
+      return { draft: { draftId: draft.id, versionId: version.id, expiresAt }, replayed: false };
+    });
+  }
+
   return {
     /**
      * In ONE transaction: serialize on the account, apply the idempotency key, resolve the curriculum context, enforce
@@ -104,79 +184,13 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
       const hash = requestHash(DRAFT_OPERATION, DRAFT_REQUEST_VERSION, request);
       const ownerId = ctx.userId;
 
-      return inTransaction(db, async (tx) => {
-        const now = clock();
-
-        // 0. Per-account serialization point (the same lock the generation flow takes).
-        const locked = await tx.$queryRaw<{ id: string }[]>`
-          SELECT id FROM profile WHERE id = ${ownerId}::uuid AND status = 'active'::profile_status FOR UPDATE`;
-        if (locked.length === 0) throw new AccountNotActive();
-
-        // 1. Idempotency: same key + same request -> the original draft; same key + different request -> conflict.
-        const created = await tx.idempotencyKey.createMany({ data: [{ ownerId, operation: DRAFT_OPERATION, key, requestHash: hash }], skipDuplicates: true });
-        if (created.count === 0) {
-          const previous = await tx.idempotencyKey.findUnique({ where: { ownerId_operation_key: { ownerId, operation: DRAFT_OPERATION, key } } });
-          if (!previous) throw new InvariantViolation("idempotency key vanished");
-          if (previous.requestHash !== hash) throw new IdempotencyConflict();
-          const existing = previous.resourceId ? await tx.draft.findFirst({ where: { id: previous.resourceId, ownerId }, select: { id: true, activeVersionId: true, expiresAt: true } }) : null;
-          if (!existing?.activeVersionId) throw new DraftExpired(); // the draft was purged after it expired
-          return { draft: { draftId: existing.id, versionId: existing.activeVersionId, expiresAt: existing.expiresAt }, replayed: true };
-        }
-
-        // 2. The curriculum context (after the replay check, before anything is stored; a refused topic costs nothing).
-        const context = await resolveRequestContext(deps.resolveContext, request, tx);
-
-        // 3. Durable limits. Counters committed with a draft are not refunded when it is later deleted.
-        await bump(tx, `draft:u:${ownerId}`, limits.draftCreatesPerUserPerHour);
-        if (options.ipHash) await bump(tx, `draft:ip:${options.ipHash}`, limits.draftCreatesPerIpPerHour);
-        await bump(tx, "draft:global", limits.draftCreatesGlobalPerHour);
-        const active = await tx.draft.count({ where: { ownerId, status: "active", expiresAt: { gt: now } } });
-        if (active >= limits.maxActiveDraftsPerUser) throw new DraftLimit();
-
-        // 4. Build and verify. Only a fully verified package may be stored.
-        const seed = newSeed();
-        const { pkg, levels } = buildPackageWithMeta({ request, context, seed });
-        const report = validatePackage(pkg);
-        if (report.overall !== "verified") throw new PackageBuildError("the drafted package did not validate as verified");
-        const content = split(pkg);
-        if (Buffer.byteLength(JSON.stringify(content), "utf8") > limits.maxDraftBytes) throw new PackageBuildError("the drafted package exceeds the size limit");
-
-        // 5. Store: the draft (request and context once), version 1, then the active pointer.
-        const expiresAt = new Date(now.getTime() + limits.draftTtlDays * MS_PER_DAY);
-        const draft = await tx.draft.create({
-          data: {
-            ownerId,
-            request: request as unknown as Prisma.InputJsonValue,
-            requestHash: hash,
-            context: context as unknown as Prisma.InputJsonValue,
-            versionCount: 1,
-            expiresAt,
-            createdAt: now,
-            updatedAt: now,
-          },
-        });
-        const version = await tx.draftVersion.create({
-          data: {
-            draftId: draft.id,
-            ownerId,
-            ordinal: 1,
-            seed,
-            content: content as unknown as Prisma.InputJsonValue,
-            contentHash: packageContentHash(pkg),
-            questionMeta: Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, origin: "initial" }])),
-            nextQuestionSeq: nextExerciseSeq(pkg),
-            validatorVersion: report.validatorVersion,
-            createdAt: now,
-            updatedAt: now,
-          },
-        });
-        await tx.draft.update({ where: { id: draft.id }, data: { activeVersionId: version.id } });
-        await tx.idempotencyKey.update({
-          where: { ownerId_operation_key: { ownerId, operation: DRAFT_OPERATION, key } },
-          data: { resourceType: "draft", resourceId: draft.id },
-        });
-        return { draft: { draftId: draft.id, versionId: version.id, expiresAt }, replayed: false };
-      });
+      try {
+        return await createDraftTx(ownerId, request, key, hash, options);
+      } catch (error) {
+        // A size CHECK that fires is the last line of defence (the app limit is lower); it is a refusal, not a server error.
+        if (isCheckViolation(error)) throw new PackageBuildError("the drafted package exceeds a storage limit");
+        throw error;
+      }
     },
 
     /**
@@ -246,7 +260,7 @@ export interface PurgeReport {
 }
 
 /**
- * Worker side: marks drafts past `expires_at` as expired, then deletes the ones past `expires_at + grace`, in batches
+ * Worker side: marks drafts past `expires_at` as expired, then deletes the ones past `expires_at + grace` (written as `expires_at <= now() - grace` so the index on expires_at can be used), in batches
  * of `limit` with SKIP LOCKED so concurrent sweepers never block or double-process. The web role cannot delete.
  */
 export function createDraftsPurgeDal(db: Db, options: { graceDays?: number } = {}) {
@@ -261,7 +275,7 @@ export function createDraftsPurgeDal(db: Db, options: { graceDays?: number } = {
         RETURNING id`;
       const deleted = await db.$queryRaw<{ id: string }[]>`
         DELETE FROM draft
-         WHERE id IN (SELECT id FROM draft WHERE status = 'expired'::draft_status AND expires_at + make_interval(days => ${graceDays}::int) <= now()
+         WHERE id IN (SELECT id FROM draft WHERE status = 'expired'::draft_status AND expires_at <= now() - make_interval(days => ${graceDays}::int)
                        ORDER BY expires_at LIMIT ${batch} FOR UPDATE SKIP LOCKED)
         RETURNING id`;
       return { expired: expired.length, deleted: deleted.length };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_EXERCISES } from "@/lib/package/adjust";
-import { DB_CONTENT_BACKSTOP_BYTES, DEFAULT_LIMITS, LIMIT_ENV_NAMES, parseLimits } from "@/lib/server/limits";
+import { DB_CONTENT_BACKSTOP_BYTES, DEFAULT_LIMITS, LIMIT_ENV_NAMES, MAX_DRAFT_BYTES_CEILING, parseLimits } from "@/lib/server/limits";
 import { parseServerEnv } from "@/lib/server/env";
 import { workerEnv } from "../../worker/env";
 
@@ -14,7 +14,8 @@ describe("limits", () => {
     expect(DEFAULT_LIMITS.draftTtlDays).toBe(14);
     expect(DEFAULT_LIMITS.maxExercises).toBeLessThanOrEqual(MAX_EXERCISES);
     expect(DEFAULT_LIMITS.minExercises).toBeLessThanOrEqual(DEFAULT_LIMITS.maxExercises);
-    expect(DEFAULT_LIMITS.maxDraftBytes).toBeLessThanOrEqual(DB_CONTENT_BACKSTOP_BYTES);
+    expect(DEFAULT_LIMITS.maxDraftBytes).toBeLessThanOrEqual(MAX_DRAFT_BYTES_CEILING);
+    expect(MAX_DRAFT_BYTES_CEILING).toBeLessThan(DB_CONTENT_BACKSTOP_BYTES);
     // reserved model budgets are off until a model source exists
     expect([DEFAULT_LIMITS.llmMaxCallsPerDraft, DEFAULT_LIMITS.llmMaxTokensPerDraft, DEFAULT_LIMITS.llmMaxCostMicrosPerDraft]).toEqual([0, 0, 0]);
   });
@@ -23,6 +24,10 @@ describe("limits", () => {
     const names = Object.values(LIMIT_ENV_NAMES);
     expect(new Set(names).size).toBe(names.length);
     expect(Object.keys(LIMIT_ENV_NAMES).sort()).toEqual(Object.keys(DEFAULT_LIMITS).sort());
+  });
+
+  it("accepts the ceiling itself for MAX_DRAFT_BYTES", () => {
+    expect(parseLimits({ MAX_DRAFT_BYTES: String(MAX_DRAFT_BYTES_CEILING) }).maxDraftBytes).toBe(MAX_DRAFT_BYTES_CEILING);
   });
 
   it("reads overrides from strings; blank values count as unset", () => {
@@ -38,7 +43,8 @@ describe("limits", () => {
       { DRAFT_TTL_DAYS: "soon" },
       { MAX_ACTIVE_DRAFTS_PER_USER: "0" },
       { MAX_EXERCISES_PER_DRAFT: String(MAX_EXERCISES + 1) },
-      { MAX_DRAFT_BYTES: String(DB_CONTENT_BACKSTOP_BYTES + 1) },
+      { MAX_DRAFT_BYTES: String(MAX_DRAFT_BYTES_CEILING + 1) },
+      { MAX_DRAFT_BYTES: String(DB_CONTENT_BACKSTOP_BYTES) },
       { MIN_EXERCISES: "9", MAX_EXERCISES_PER_DRAFT: "5" },
       { DRAFT_PURGE_BATCH_SIZE: "0" },
       { DRAFT_TTL_DAYS: "Infinity" },
@@ -62,5 +68,21 @@ describe("FLOW_MODE and the limits in the environment modules", () => {
   });
   it("an invalid limit stops the web app from starting", () => {
     expect(() => parseServerEnv({ DATABASE_URL: db, DRAFT_TTL_DAYS: "0" })).toThrow();
+  });
+});
+
+import { isCheckViolation } from "@/lib/server/dal/tx";
+
+describe("isCheckViolation", () => {
+  it("recognises the shapes the drivers produce, and nothing else", () => {
+    const prisma = Object.assign(new Error("Invalid invocation"), { code: "P2039", meta: { driverAdapterError: { cause: { originalCode: "23514", originalMessage: 'new row violates check constraint "draft_version_content_size"' } } } });
+    expect(isCheckViolation(prisma)).toBe(true);
+    expect(isCheckViolation(prisma, "draft_version_content_size")).toBe(true);
+    expect(isCheckViolation(prisma, "other")).toBe(false);
+    expect(isCheckViolation({ code: "23514", message: 'violates check constraint "x"' }, "x")).toBe(true);
+    expect(isCheckViolation(Object.assign(new Error("wrapped"), { cause: { code: "23514" } }))).toBe(true);
+    expect(isCheckViolation({ code: "23505" })).toBe(false);
+    expect(isCheckViolation(null)).toBe(false);
+    expect(isCheckViolation("23514")).toBe(false);
   });
 });

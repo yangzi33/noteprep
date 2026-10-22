@@ -10,6 +10,7 @@ import { PackageBuildError } from "@/lib/content/errors";
 import { packageContentHash } from "@/lib/package/adjust";
 import { buildPackageWithMeta } from "@/lib/package/build";
 import { validatePackage } from "@/lib/package/validate";
+import { isCheckViolation } from "@/lib/server/dal/tx";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
@@ -87,7 +88,7 @@ async function forceExpiry(draftId: string, sqlOffset: string) {
 const expireAt = (draftId: string, sqlOffset: string) => admin.query(`UPDATE draft SET expires_at = now() ${sqlOffset} WHERE id = $1`, [draftId]);
 
 describe("R1: a draft is free", () => {
-  it("creating drafts, including repeated submits, touches no allowance, reservation or job", async () => {
+  it("creating drafts (several, plus repeated idempotent submits) leaves this account's bucket, reservations, jobs, lessons and drift view untouched", async () => {
     const ctx = await account();
     const before = await bucket(ctx.userId);
     expect(before).toMatchObject({ used: 0, reserved: 0 });
@@ -205,6 +206,33 @@ describe("limits", () => {
     await expireAt(d1.draft.draftId, "- interval '1 minute'");
     await strict.drafts.createDraft(ctx, request({ difficulty: "challenge" }), key());
     expect(await count(`draft WHERE owner_id = $1`, [ctx.userId])).toBe(3);
+  });
+
+  it("MAX_ACTIVE_DRAFTS holds under concurrency: distinct keys fired together, exactly one succeeds per round", async () => {
+    const strict = dal({ maxActiveDraftsPerUser: 1 });
+    for (let round = 0; round < 4; round++) {
+      const ctx = await account(strict);
+      const results = await Promise.allSettled(Array.from({ length: 6 }, (_, i) => strict.drafts.createDraft(ctx, request({ durationMinutes: 30 + i }), key())));
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      for (const r of results) if (r.status === "rejected") expect(r.reason).toBeInstanceOf(DraftLimit);
+      expect(await count(`draft WHERE owner_id = $1`, [ctx.userId])).toBe(1);
+      expect(await count(`idempotency_key WHERE owner_id = $1`, [ctx.userId])).toBe(1);
+    }
+  });
+
+  it("a storage CHECK that fires is recognised (real Prisma error shape) and is not a raw server error", async () => {
+    const ctx = await account();
+    const { draft } = await web.drafts.createDraft(ctx, request(), key());
+    const oversize = appDb.draftVersion.create({
+      data: { draftId: draft.draftId, ownerId: ctx.userId, ordinal: 2, seed: "s", content: { x: "y".repeat(4_100_000) }, contentHash: "h", questionMeta: {}, nextQuestionSeq: 1, validatorVersion: "v" },
+    });
+    const error = await oversize.catch((e) => e);
+    expect(isCheckViolation(error)).toBe(true);
+    expect(isCheckViolation(error, "draft_version_content_size")).toBe(true);
+    expect(isCheckViolation(error, "some_other_constraint")).toBe(false);
+    // another database error is not mistaken for it
+    const dup = await appDb.draftVersion.create({ data: { draftId: draft.draftId, ownerId: ctx.userId, ordinal: 1, seed: "s", content: {}, contentHash: "h", questionMeta: {}, nextQuestionSeq: 1, validatorVersion: "v" } }).catch((e) => e);
+    expect(isCheckViolation(dup)).toBe(false);
   });
 
   it("sets the expiry from the configured TTL", async () => {

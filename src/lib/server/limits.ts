@@ -5,8 +5,14 @@ import { MAX_EXERCISES } from "@/lib/package/adjust";
 // The defaults are PLACEHOLDERS the owner tunes once there is cost and abuse data; none is a product rule.
 // This module does not read process.env itself: src/lib/server/env.ts and worker/env.ts pass their source in.
 
-/** Largest content the database accepts (a CHECK in the draft_tables migration); the configured limit must stay below it. */
+/** Largest content the database accepts (a CHECK in the draft_tables migration; it measures the jsonb text, which is a little longer than compact JSON). */
 export const DB_CONTENT_BACKSTOP_BYTES = 4_000_000;
+/**
+ * The most MAX_DRAFT_BYTES may be set to. The app measures compact JSON bytes, the CHECK measures jsonb::text (which adds a
+ * space after every ":" and ","), so the two are not the same number. Keeping the ceiling well under the backstop means a
+ * draft the app accepts can never trip the CHECK; if it ever does, createDraft maps that to PACKAGE_BUILD_FAILED.
+ */
+export const MAX_DRAFT_BYTES_CEILING = 3_000_000;
 
 const int = (name: string, fallback: number, min: number, max: number) => ({ env: name, schema: z.coerce.number().int().min(min).max(max).default(fallback) });
 
@@ -24,7 +30,7 @@ const SHAPE = {
   undoDepth: int("UNDO_DEPTH", 10, 1, 100),
   minExercises: int("MIN_EXERCISES", 3, 1, MAX_EXERCISES),
   maxExercises: int("MAX_EXERCISES_PER_DRAFT", MAX_EXERCISES, 1, MAX_EXERCISES),
-  maxDraftBytes: int("MAX_DRAFT_BYTES", 1_000_000, 10_000, DB_CONTENT_BACKSTOP_BYTES),
+  maxDraftBytes: int("MAX_DRAFT_BYTES", 1_000_000, 10_000, MAX_DRAFT_BYTES_CEILING),
   // Export (S4, S5): unused for now
   exportsPerUserPerHour: int("EXPORTS_PER_USER_PER_HOUR", 10, 1, 10_000),
   exportConcurrencyPerUser: int("EXPORT_CONCURRENCY_PER_USER", 1, 1, 20),

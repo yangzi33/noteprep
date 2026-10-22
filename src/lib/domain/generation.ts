@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IdempotencyKeySchema } from "./idempotency";
 
 export const GENERATE_OPERATION = "generate";
 export const GENERATE_REQUEST_VERSION = 1;
@@ -17,11 +18,7 @@ export const GenerateInput = z.strictObject({
 });
 export type GenerateInput = z.infer<typeof GenerateInput>;
 
-export const IdempotencyKeySchema = z
-  .string()
-  .min(8)
-  .max(128)
-  .regex(/^[A-Za-z0-9_-]+$/);
+export { IdempotencyKeySchema };
 
 /**
  * Operational limits. These are DEVELOPMENT DEFAULTS, not tuned values: real thresholds

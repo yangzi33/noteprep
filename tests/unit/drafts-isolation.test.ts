@@ -12,11 +12,14 @@ describe("the draft module is isolated from allowance code", () => {
 
   it("imports nothing from reservation, settlement, allowance, job or generation code", () => {
     expect(imports.length).toBeGreaterThan(5);
-    // sibling DAL modules by name; "@/lib/domain/generation" is allowed for its IdempotencyKeySchema only (no allowance code in it)
+    // sibling DAL modules by name
     for (const spec of imports.filter((s) => s.startsWith("./") || s.startsWith("../"))) {
       expect(FORBIDDEN_IMPORTS, spec).not.toContain(spec.split("/").pop()!);
     }
-    expect(imports.filter((s) => /reservation|settlement|allowance|\/jobs$|history/.test(s))).toEqual([]);
+    // by path, wherever it points: no reservation, settlement, allowance, job, generation or history code
+    expect(imports.filter((s) => /reservation|settlement|allowance|jobs|generation|history/.test(s))).toEqual([]);
+    // and not through the DAL barrel or the process-wide instance, which pull in everything
+    expect(imports.filter((s) => /^\.\.?\/(index|instance)$|^\.\/?$|\/dal$|\/dal\/(index|instance)$/.test(s))).toEqual([]);
   });
 
   it("never names an allowance, reservation, job or subscription table", () => {

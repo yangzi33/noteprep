@@ -32,3 +32,22 @@ export async function inTransaction<T>(db: Db, fn: (tx: Tx) => Promise<T>, optio
     }
   }
 }
+
+/**
+ * True when the error is a Postgres CHECK violation (SQLSTATE 23514), whichever way the driver wraps it (Prisma reports it as
+ * P2039 with the original code under meta.driverAdapterError.cause, raw queries put it on `code` or `meta.code`).
+ * With `constraint`, only a violation of that constraint counts.
+ */
+export function isCheckViolation(error: unknown, constraint?: string): boolean {
+  const seen = new Set<unknown>();
+  const walk = (value: unknown, depth: number): boolean => {
+    if (!value || typeof value !== "object" || depth > 6 || seen.has(value)) return false;
+    seen.add(value);
+    const v = value as Record<string, unknown>;
+    const code = v.originalCode ?? v.code;
+    const message = typeof v.originalMessage === "string" ? v.originalMessage : typeof v.message === "string" ? v.message : "";
+    if (code === "23514" && (!constraint || message.includes(`"${constraint}"`))) return true;
+    return Object.values(v).some((child) => walk(child, depth + 1)) || (value instanceof Error && walk(value.cause, depth + 1));
+  };
+  return walk(error, 0);
+}
