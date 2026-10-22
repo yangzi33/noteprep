@@ -20,6 +20,12 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 const DIFFICULTIES = ["basic", "mixed", "challenge"] as const;
 const DURATIONS = [15, 45, 60, 120] as const;
 const DOCS: DocumentKind[] = ["notes", "worksheet", "solutions"];
+const RETRY_CASES = [
+  ["basic", 15, "m0-retry-905"],
+  ["basic", 60, "m0-retry-657"],
+  ["mixed", 45, "m0-retry-1283"],
+  ["challenge", 120, "m0-retry-2296"],
+] as const;
 const SEEDS = Array.from({ length: 8 }, (_, i) => `m0-seed-${i}`);
 
 function fingerprint(pkg: LessonPackage) {
@@ -44,6 +50,9 @@ function computeAll(): Record<string, ReturnType<typeof fingerprint>> {
       const seed = SEEDS[0]!;
       out[`llm/${difficulty}/${durationMinutes}/${seed}`] = fingerprint(build(testRequest({ difficulty, durationMinutes }), seed, { draft: { ...FAKE_PROSE, explanation: [...FAKE_PROSE.explanation], derivation: [...FAKE_PROSE.derivation], teachingSequence: [...FAKE_PROSE.teachingSequence], commonMistakes: [...FAKE_PROSE.commonMistakes] }, model: "fake-model" }));
     }
+
+  // Combinations whose exercise draw needs retry attempt 1 (found by instrumenting the unmodified builder).
+  for (const [difficulty, durationMinutes, seed] of RETRY_CASES) out[`retry/${difficulty}/${durationMinutes}/${seed}`] = fingerprint(build(testRequest({ difficulty, durationMinutes }), seed));
 
   const changes: ApplicableChange[] = [{ action: "make_easier" }, { action: "make_harder" }, { action: "add_exercises", count: 2 }, { action: "add_worked_example" }];
   for (const difficulty of DIFFICULTIES)

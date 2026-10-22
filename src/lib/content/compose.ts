@@ -11,12 +11,18 @@ export const exampleLevel = (difficulty: "basic" | "mixed" | "challenge"): "basi
 export const degenerateExample = (seed: string, id: string): GeneratedQuestion =>
   generateLinearQuestion({ id, difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: `${seed}:we-degenerate` });
 
+/** Pinned by a test: the message of the build error when no distinct exercises can be drawn. */
+export const EXERCISE_DRAW_FAILED = "could not draw exercises that differ from the worked examples";
+
 const fingerprint = (q: GeneratedQuestion) => JSON.stringify(q.problem.equation);
 
 export interface ComposedLesson {
   examples: GeneratedQuestion[];
   exercises: GeneratedQuestion[];
-  /** One entry per exercise, in order: which family produced it. */
+  /**
+   * One entry per exercise, in order: which family produced it. M0 discards slots, and the placeholder part "all" is
+   * outside the design's part keys: never persist or display it (M6 replaces it with real parts).
+   */
   slots: { position: number; part: string; familyId: FamilyId; questionId: string }[];
 }
 
@@ -43,5 +49,5 @@ export function composeLesson(bp: ContentBlueprint, req: Pick<LessonRequestV2, "
       return { examples, exercises, slots };
     }
   }
-  throw new PackageBuildError("could not draw exercises that differ from the worked examples");
+  throw new PackageBuildError(EXERCISE_DRAW_FAILED);
 }

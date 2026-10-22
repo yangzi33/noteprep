@@ -917,6 +917,42 @@
    "solutions": "a86f3adea7697091b6f814b1e91ec3ba3fdbdee00f34d19a95aed4d225157724"
   }
  },
+ "retry/basic/15/m0-retry-905": {
+  "content": "sha256:a62267bb9530e098550df35ad8db0969b746930413ed189ab5f0aa10fe1eabb7",
+  "inputs": "bba8a79942dcb04004582dea51062405f02059f4ccee7bd42aa4010ddb7fffcc",
+  "tex": {
+   "notes": "d1dffc3ebefca1bd8ea4cc3a6202aa740aee446e0d88fb4576465148004ccff1",
+   "worksheet": "2721ff6edbebb8c8b4bd313b6c1f2ec08f0b1b9736f20347e2fbc61d62a6cbc9",
+   "solutions": "f1c39035384167cdf34ff69e130d407bf4ae6f41e4678755b224b15db381b687"
+  }
+ },
+ "retry/basic/60/m0-retry-657": {
+  "content": "sha256:6df406931e26bd2ab7b07d42eccdd723664b22ae8e17d0e63182dda4c1df1f19",
+  "inputs": "81c4c232da0b917ff3505e04b05cab4365fae870ddbd6e0543b4060ab2b39cd8",
+  "tex": {
+   "notes": "8c8fc057205f343bd5b70a80bfa2895095dabeb5e8c9e2006aea8c966b203581",
+   "worksheet": "8e1e8ad38aaf60c6c8445e0c8ef49087e77ebbe71a7bf7933f2fc1513e7c606d",
+   "solutions": "25d0cf99a15c49d26d1bf8eb83866dcc9aa92760b32c874010fb0dce28a6e088"
+  }
+ },
+ "retry/mixed/45/m0-retry-1283": {
+  "content": "sha256:47fa41f3d5712e912412227cc8702ccaa86e44a952984ab72723e7148bbc93d1",
+  "inputs": "053e63c08900ae2b880dd1082d1c689832fc30d8fb58d0d6178f5d925306e47a",
+  "tex": {
+   "notes": "318de0a5348f844ce71adc3a6f11fd45364dc5319aadb2e87d74520839900acc",
+   "worksheet": "70b623dbd1837b813c427f0d45d895c7b8fa94953f0a13ab7d156ba3f15a9d98",
+   "solutions": "71bbf78e1c154d51a0f39369133c5803e192d77e8a201f435fb643cab9b702f4"
+  }
+ },
+ "retry/challenge/120/m0-retry-2296": {
+  "content": "sha256:bf3680a84320da787f1d7640442313b98aa4e44e2080148c7d01d24dc643be96",
+  "inputs": "7fc83024a018ca003b001a325215bf2018fba37b5ccad8215c8b801c0db34d87",
+  "tex": {
+   "notes": "af924271e4a8b6c0dfb1b18bf0ae8b9e73ce74b6405733531361a16a8eeb097e",
+   "worksheet": "382bc816ba183ab9f7d66acbfd1264be1b8fbdca8e0e4cd0467fe572de0ca196",
+   "solutions": "b0b6801a28d7e2cb1e8b50fc349d5ba3db23ae273a9a5da1af4c2ecd8666b669"
+  }
+ },
  "adjust/make_easier/basic/45/m0-seed-0": {
   "content": "not-applicable",
   "inputs": "",

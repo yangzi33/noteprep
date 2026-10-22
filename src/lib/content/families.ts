@@ -98,11 +98,22 @@ export const LEGACY_FAMILIES: readonly QuestionFamily[] = [
     paceMinutes: 5,
     draw: (rng) => asStrings(chooseDegenerate(rng, "no_solution")),
   },
+  {
+    id: "legacy.identity@1",
+    conceptId: CONCEPT,
+    form: TWO_SIDED,
+    skills: ["special-outcomes", "collect-unknowns"],
+    features: { steps: 1, negatives: true, fractions: "none", xBothSides: true, likeTerms: false, outcome: "identity" },
+    rung: 3,
+    paceMinutes: 5,
+    draw: (rng) => asStrings(chooseDegenerate(rng, "identity")),
+  },
 ];
 
 /** The legacy family that produced a question, from the metadata the generator records. */
 export function legacyFamilyId(meta: { difficulty: string; form: Form; outcome: Outcome }): FamilyId {
-  if (meta.outcome !== "unique") return "legacy.degenerate@1";
+  if (meta.outcome === "identity") return "legacy.identity@1";
+  if (meta.outcome === "no_solution") return "legacy.degenerate@1";
   if (meta.difficulty === "basic") return "legacy.basic@1";
   return `legacy.${meta.difficulty}.${meta.form === ONE_SIDED ? "one-sided" : "two-sided"}@1`;
 }

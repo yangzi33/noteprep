@@ -116,6 +116,7 @@ describe("legacy families", () => {
       expect(byId.get("legacy.challenge.one-sided@1")!.draw(rng())).toEqual(strings(chooseChallenge(rng(), "ax+b=c")));
       expect(byId.get("legacy.challenge.two-sided@1")!.draw(rng())).toEqual(strings(chooseChallenge(rng(), "ax+b=cx+d")));
       expect(byId.get("legacy.degenerate@1")!.draw(rng())).toEqual(strings(chooseDegenerate(rng(), "no_solution")));
+      expect(byId.get("legacy.identity@1")!.draw(rng())).toEqual(strings(chooseDegenerate(rng(), "identity")));
     }
   });
 
@@ -123,6 +124,10 @@ describe("legacy families", () => {
     const ids = new Set(LEGACY_FAMILIES.map((f) => f.id));
     for (const difficulty of DIFFICULTIES)
       for (const q of generateExerciseSet({ jobSeed: "fam", count: 9, difficulty })) expect(ids.has(legacyFamilyId(q.meta)), q.id).toBe(true);
-    expect(ids.has(legacyFamilyId(generateLinearQuestion({ id: "d", difficulty: "mixed", form: "ax+b=cx+d", outcome: "no_solution", seed: "d" }).meta))).toBe(true);
+    for (const outcome of ["no_solution", "identity"] as const) {
+      const q = generateLinearQuestion({ id: "d", difficulty: "mixed", form: "ax+b=cx+d", outcome, seed: "d" });
+      const family = LEGACY_FAMILIES.find((f) => f.id === legacyFamilyId(q.meta))!;
+      expect(family.features.outcome, outcome).toBe(outcome);
+    }
   });
 });
