@@ -26,7 +26,7 @@ import type { Db } from "../db";
 import { toJobDto, type JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
-import { releaseReservation } from "./reservation";
+import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
 export type { ResolveContext };
@@ -181,12 +181,8 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
         const row = rows[0];
         if (!row) throw new NotFound();
         if (row.state === "queued") {
-          await releaseReservation(tx, jobId, "canceled");
-          const job = await tx.generationJob.update({
-            where: { id: jobId },
-            data: { state: "canceled", errorCode: "canceled", finishedAt: new Date(), cancelRequestedAt: new Date() },
-          });
-          return toJobDto(job);
+          await finishLockedJob(tx, jobId, "canceled", "canceled", { markCancelRequested: true });
+          return toJobDto(await tx.generationJob.findUniqueOrThrow({ where: { id: jobId } }));
         }
         if (row.state === "running") {
           await tx.$executeRaw`

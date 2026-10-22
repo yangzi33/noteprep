@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import {
+  DeadlineExceeded,
   InvariantViolation,
   ManifestIncomplete,
   NotCompleteSuccess,
@@ -8,7 +9,8 @@ import {
   StaleOrCanceled,
 } from "@/lib/domain/errors";
 import { assertManifestComplete, assertManifestV2Complete, type ManifestEntry, type ManifestV2 } from "@/lib/domain/manifest";
-import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
+import type { ExportSpec, TexShas } from "@/lib/domain/export-spec";
+import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, type DocumentKind } from "@/lib/package/schema";
 import type { Db } from "../db";
 import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
@@ -38,6 +40,18 @@ export interface CommitSuccessInput {
   requestedDocuments?: readonly DocumentKind[];
 }
 
+export interface CommitExportInput {
+  jobId: string;
+  /** The fencing token received when this attempt claimed the job. */
+  fencingToken: bigint;
+  attemptId: string;
+  /** Pre-generated before upload so object paths can include it. */
+  revisionId: string;
+  manifest: ManifestV2;
+  /** The compiler identity recorded in generation_meta (image, version): never used for any decision. */
+  compiler?: unknown;
+}
+
 export interface FinishJobInput {
   jobId: string;
   fencingToken: bigint;
@@ -53,6 +67,8 @@ interface JobLockRow {
   fencing_token: bigint;
   cancel_requested_at: Date | null;
   revision_id: string | null;
+  /** deadline_at > now() on the DATABASE clock. */
+  before_deadline: boolean;
 }
 
 const DOCUMENTS = new Set<string>(DOCUMENT_KINDS);
@@ -68,7 +84,8 @@ const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.l
 
 async function lockJob(tx: Tx, jobId: string): Promise<JobLockRow> {
   const rows = await tx.$queryRaw<JobLockRow[]>`
-    SELECT state::text AS state, kind::text AS kind, owner_id, lesson_id, fencing_token, cancel_requested_at, revision_id
+    SELECT state::text AS state, kind::text AS kind, owner_id, lesson_id, fencing_token, cancel_requested_at, revision_id,
+           (deadline_at > now()) AS before_deadline
       FROM generation_job WHERE id = ${jobId}::uuid FOR UPDATE`;
   const row = rows[0];
   if (!row) throw new NotFound();
@@ -161,6 +178,96 @@ export function createSettlementDal(db: Db) {
             finishedAt: new Date(),
           },
         });
+        return { revisionId: input.revisionId, replayed: false };
+      });
+    },
+
+    /**
+     * The export counterpart of commitSuccess, in ONE transaction and at most once. Lock order: job X, export X, lesson S,
+     * profile S, revision insert, lesson U, reservation X, bucket X. A stale, canceled, late (past the job's deadline on the
+     * database clock) or mismatching attempt changes nothing; the caller then finishes the job as failed (finishJob), which
+     * releases the reservation. Everything the revision holds comes from the immutable snapshot, never from the worker's say-so.
+     */
+    async commitExport(input: CommitExportInput): Promise<{ revisionId: string; replayed: boolean }> {
+      return inTransaction(db, async (tx) => {
+        const job = await lockJob(tx, input.jobId);
+
+        if (job.state === "succeeded" && job.fencing_token === input.fencingToken && job.revision_id === input.revisionId) {
+          return { revisionId: input.revisionId, replayed: true };
+        }
+        if (job.state !== "running" || job.fencing_token !== input.fencingToken || job.cancel_requested_at) throw new StaleOrCanceled();
+        if (job.kind !== "export") throw new InvariantViolation("commitExport is for export jobs");
+        if (!job.before_deadline) throw new DeadlineExceeded();
+
+        const exports = await tx.$queryRaw<{ id: string; state: string; snapshot_id: string; export_key: string }[]>`
+          SELECT id, state, snapshot_id, export_key FROM export WHERE job_id = ${input.jobId}::uuid FOR UPDATE`;
+        const exportRow = exports[0];
+        if (!exportRow || exportRow.state !== "pending") throw new InvariantViolation("a running export job has no pending export");
+
+        const lesson = await tx.$queryRaw<{ deleted_at: Date | null }[]>`
+          SELECT deleted_at FROM lesson WHERE id = ${job.lesson_id}::uuid FOR SHARE`;
+        const profile = await tx.$queryRaw<{ status: string }[]>`
+          SELECT status::text AS status FROM profile WHERE id = ${job.owner_id}::uuid FOR SHARE`;
+        if (!lesson[0] || lesson[0].deleted_at || profile[0]?.status !== "active") throw new StaleOrCanceled();
+
+        const snapshot = await tx.exportSnapshot.findFirst({ where: { id: exportRow.snapshot_id, ownerId: job.owner_id } });
+        if (!snapshot) throw new InvariantViolation("the export has no snapshot");
+        const spec = snapshot.spec as unknown as ExportSpec;
+        const texShas = snapshot.texSha256 as unknown as TexShas;
+
+        const manifest = input.manifest;
+        const scope = { ownerId: job.owner_id, lessonId: job.lesson_id, revisionId: input.revisionId, attemptId: input.attemptId };
+        assertManifestV2Complete(manifest, scope, spec.documents); // exactly the documents the snapshot froze
+        if (manifest.templateVersion !== spec.templateVersion) throw new ManifestIncomplete("the manifest and the snapshot use different templates");
+        // The render chain: what was compiled and stored is the source the tutor was shown and charged for.
+        for (const doc of manifest.documents) {
+          if (doc.tex.sha256 !== texShas[doc.document]) throw new ManifestIncomplete(`${doc.document} was not rendered from the confirmed snapshot`);
+        }
+
+        await tx.lessonRevision.create({
+          data: {
+            id: input.revisionId,
+            lessonId: job.lesson_id,
+            ownerId: job.owner_id,
+            number: 1,
+            status: "finalized",
+            schemaVersion: PACKAGE_REVISION_SCHEMA_VERSION,
+            content: snapshot.content as Prisma.InputJsonValue,
+            contentHash: snapshot.packageHash,
+            validationReport: snapshot.validationReport as Prisma.InputJsonValue,
+            validationStatus: "verified",
+            templateVersion: spec.templateVersion,
+            validatorVersion: snapshot.validatorVersion,
+            generationMeta: {
+              exportId: exportRow.id,
+              snapshotId: snapshot.id,
+              exportKey: exportRow.export_key,
+              spec,
+              compiler: input.compiler ?? null,
+              documents: manifest.documents.map((d) => ({ document: d.document, pages: d.pdf.pages })),
+            } as unknown as Prisma.InputJsonValue,
+            artifactManifest: manifest as unknown as Prisma.InputJsonValue,
+            createdByJobId: input.jobId,
+          },
+        });
+        await tx.lesson.update({ where: { id: job.lesson_id }, data: { currentRevisionId: input.revisionId } });
+
+        const consumed = await tx.$queryRaw<{ bucket_id: string }[]>`
+          UPDATE usage_reservation
+             SET state = 'consumed'::reservation_state, settle_reason = 'succeeded', settled_at = now()
+           WHERE job_id = ${input.jobId}::uuid AND state = 'reserved'::reservation_state
+       RETURNING bucket_id`;
+        const bucketId = consumed[0]?.bucket_id;
+        if (!bucketId) throw new InvariantViolation("reservation was not in the reserved state"); // rolls back everything
+        await tx.$executeRaw`UPDATE usage_bucket SET reserved = reserved - 1, used = used + 1 WHERE id = ${bucketId}::uuid`;
+
+        await tx.generationJob.update({
+          where: { id: input.jobId },
+          data: { state: "succeeded", stage: null, revisionId: input.revisionId, leaseOwner: null, leaseExpiresAt: null, finishedAt: new Date() },
+        });
+        await tx.$executeRaw`
+          UPDATE export SET state = 'succeeded', revision_id = ${input.revisionId}::uuid, settled_at = now()
+           WHERE id = ${exportRow.id}::uuid AND state = 'pending'`;
         return { revisionId: input.revisionId, replayed: false };
       });
     },
