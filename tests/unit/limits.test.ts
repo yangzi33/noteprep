@@ -62,6 +62,13 @@ describe("FLOW_MODE and the limits in the environment modules", () => {
     expect(parseServerEnv({ DATABASE_URL: db, FLOW_MODE: "draft" }).FLOW_MODE).toBe("draft");
     for (const bad of ["Draft", "on", "", "both"]) expect(() => parseServerEnv({ DATABASE_URL: db, FLOW_MODE: bad })).toThrow();
   });
+
+  it("EXPORT_ENABLED is strict like FLOW_MODE and off by default", () => {
+    const db = "postgresql://u:p@localhost:5432/x";
+    expect(parseServerEnv({ DATABASE_URL: db }).EXPORT_ENABLED).toBe("0");
+    expect(parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: "1" }).EXPORT_ENABLED).toBe("1");
+    for (const bad of ["true", "on", "", "yes", "2"]) expect(() => parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: bad })).toThrow();
+  });
   it("the web and worker configurations carry the parsed limits", () => {
     expect(parseServerEnv({ DATABASE_URL: db, DRAFT_TTL_DAYS: "21" }).limits.draftTtlDays).toBe(21);
     expect(parseServerEnv({ DATABASE_URL: db }).limits).toEqual(DEFAULT_LIMITS);
