@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseLimits, type Limits } from "@/lib/server/limits";
 
 // With src/lib/server/env.ts, the only place that reads process.env (enforced by lint).
 const WorkerEnv = z
@@ -76,7 +77,7 @@ export function dockerClientEnv(source: Record<string, string | undefined> = pro
   return Object.fromEntries(DOCKER_CLIENT_VARS.flatMap((k) => (source[k] === undefined ? [] : [[k, source[k]!]])));
 }
 
-export type WorkerConfig = z.infer<typeof WorkerEnv> & { workerId: string; dockerClientEnv: Record<string, string> };
+export type WorkerConfig = z.infer<typeof WorkerEnv> & { workerId: string; dockerClientEnv: Record<string, string>; limits: Limits };
 
 export function workerEnv(source: Record<string, string | undefined> = process.env): WorkerConfig {
   const parsed = WorkerEnv.parse(source);
@@ -84,5 +85,6 @@ export function workerEnv(source: Record<string, string | undefined> = process.e
     ...parsed,
     workerId: parsed.WORKER_ID ?? `worker-${process.pid}-${Math.random().toString(36).slice(2, 8)}`,
     dockerClientEnv: dockerClientEnv(source),
+    limits: parseLimits(source),
   };
 }
