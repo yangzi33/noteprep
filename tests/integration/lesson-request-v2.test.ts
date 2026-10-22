@@ -53,6 +53,7 @@ const appDb = createDb(info.appUrl);
 const workerDb = createDb(info.workerUrl);
 
 const SAMPLE: Dataset = readDatasetDir(path.join(__dirname, "../../data/curricula/sample-math/sample-1"));
+const SUGGESTED: Dataset = readDatasetDir(path.join(__dirname, "../fixtures/curricula/suggested-fixture/v1"));
 const versionId = SAMPLE.meta.version.id;
 const base = `${versionId}/level-a/course-1`;
 const TOPIC = `${base}/equations/both-sides`;
@@ -68,6 +69,7 @@ let deps: PipelineDeps;
 
 beforeAll(async () => {
   await loadDataset(ownerDb, SAMPLE, { allowSample: true });
+  await loadDataset(ownerDb, SUGGESTED);
   storeDir = await mkdtemp(path.join(os.tmpdir(), "noteprep-v2-"));
   deps = { jobs: worker.jobs, settlement: worker.settlement, llm: new FakeLlmProvider(), compiler: new SkeletonCompiler(), documentCompiler: new SkeletonDocumentCompiler(), store: new FsObjectStore(storeDir), leaseMs: 30_000 };
   await admin.query(
@@ -323,6 +325,24 @@ describe("running a curriculum lesson", () => {
     expect(rev.validation_report).toMatchObject({ overall: "verified", math: { overall: "verified" }, prose: { overall: "pass" }, structure: { overall: "pass" } });
     expect(rev.generation_meta).toMatchObject({ llm: false, contextHash: pkg.context.contextHash });
     expect((await workerPg.query(`SELECT d.* FROM usage_bucket_drift d JOIN usage_bucket b ON b.id = d.bucket_id WHERE b.owner_id = $1`, [ctx.userId])).rows).toEqual([]);
+  });
+
+  it("a suggested topic builds a verified lesson through the real pipeline, in an environment with no sample data, claiming no alignment", async () => {
+    const ctx = await account();
+    const body = request({ curriculum: { versionId: SUGGESTED.meta.version.id, topicId: SUGGESTED.structure.topics[0]!.id } });
+    const { job } = await production.generation.createGeneration(ctx, body, key());
+    expect(await runToEnd(job.id)).toMatchObject({ state: "succeeded", calls_used: 0 });
+    expect(await bucket(ctx.userId)).toEqual({ used: 1, reserved: 0 });
+    const rev = (await admin.query(`SELECT r.* FROM lesson_revision r JOIN generation_job j ON j.lesson_id = r.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+    expect(rev).toMatchObject({ validation_status: "verified", status: "finalized" });
+    expect(rev.validation_report).toMatchObject({ overall: "verified", prose: { overall: "pass" }, structure: { overall: "pass" } });
+    const pkg = rev.content;
+    expect(pkg.context.alignmentClaimsAllowed).toBe(false);
+    expect(pkg.context.objectives).toEqual([]);
+    const objectives = pkg.sections.find((s: { kind: string }) => s.kind === "objectives").blocks.find((b: { type: string }) => b.type === "list");
+    expect(objectives.items).toEqual(["Practise: Solving linear equations"]);
+    const alignment = pkg.sections.find((s: { kind: string }) => s.kind === "alignment").blocks[0];
+    expect(alignment).toMatchObject({ claim: "none", datasetKind: "suggested", objectives: [] });
   });
 
   it("the same lesson always builds the same package, so a retried attempt cannot change the content", async () => {

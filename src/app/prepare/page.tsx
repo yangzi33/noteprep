@@ -1,3 +1,4 @@
+import { learningObjectiveItems } from "@/lib/curriculum/context";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { GenerateButton } from "@/components/app/generate-button";
@@ -16,7 +17,7 @@ import { webDal } from "@/lib/server/dal/instance";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
-import { buildSelectFields } from "@/lib/ui/prepare-view";
+import { buildSelectFields, datasetBanner } from "@/lib/ui/prepare-view";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 import { prepareLesson } from "./actions";
 
@@ -111,7 +112,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   }
 
   const fields = buildSelectFields({ curricula, params, steps, stepOptions });
-  const sample = path !== null && path.curriculum.kind !== "real";
+  const banner = path !== null ? datasetBanner(path.curriculum.kind) : null;
+  const sample = banner === "sample";
+  const suggested = banner === "suggested";
   const topic = path?.topic ?? null;
   const topicSupported = topic !== null && topic.supported;
   const topicOptions = stepOptions.topic ?? [];
@@ -130,6 +133,11 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         {sample && (
           <Notice intent="info" data-testid="sample-banner">
             Sample data, not a real curriculum. No curriculum alignment is claimed for lessons made from it.
+          </Notice>
+        )}
+        {suggested && (
+          <Notice intent="info" data-testid="suggested-banner">
+            Suggested topics, unofficial. NotePrep wrote this list; it is not an official curriculum, and no curriculum alignment is claimed for lessons made from it.
           </Notice>
         )}
         <SelectionFields fields={fields} params={params} />
@@ -183,6 +191,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
             <h2 className="font-heading text-lg">{context.topic.title}</h2>
             <h3 className="text-sm font-medium">Learning objectives</h3>
             <ul className="list-disc pl-5 text-sm">
+              {context.objectives.length === 0 && learningObjectiveItems(context).map((item) => <li key={item}>{item}</li>)}
               {context.objectives.map((o) => (
                 <li key={o.id}>
                   {o.label}

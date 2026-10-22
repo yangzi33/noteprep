@@ -1,6 +1,6 @@
 import "server-only";
 import { capabilityFor } from "@/lib/curriculum/capabilities";
-import { withContextHash, type CurriculumContext } from "@/lib/curriculum/context";
+import { alignmentClaimsAllowedFor, withContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import type { Coverage, DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { CurriculumNotFound, InvalidSelection, TopicUnsupported } from "@/lib/domain/errors";
 import type { Db } from "../db";
@@ -58,6 +58,11 @@ export interface CurriculumSummary {
   latestVersionId: string;
 }
 
+/** Which dataset kinds this environment may show. Suggested topics are unofficial but honest, so they are visible everywhere. */
+export function visibleKinds(options: CurriculumDalOptions): DatasetKind[] {
+  return ["real", "suggested", ...(options.allowSample ? (["sample"] as const) : []), ...(options.allowSynthetic ? (["synthetic"] as const) : [])];
+}
+
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 
 /**
@@ -65,7 +70,7 @@ const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
  * published versions, and only dataset kinds allowed in this environment.
  */
 export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions = {}) {
-  const kinds: DatasetKind[] = ["real", ...(options.allowSample ? (["sample"] as const) : []), ...(options.allowSynthetic ? (["synthetic"] as const) : [])];
+  const kinds = visibleKinds(options);
 
   async function loadTree(versionId: string, db: CurriculumClient = defaultDb) {
     const version = await db.curriculumVersion.findFirst({
@@ -284,7 +289,7 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
             capability: { generatorVersion: cap.generatorVersion, validatorVersion: cap.validatorVersion, forms: cap.forms, difficulties: cap.difficulties, outcomes: cap.outcomes },
           };
         }),
-        alignmentClaimsAllowed: version.datasetKind === "real",
+        alignmentClaimsAllowed: alignmentClaimsAllowedFor(version.datasetKind),
       });
     },
   };

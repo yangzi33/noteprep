@@ -1,10 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { renderDocument, renderPackage } from "@/lib/latex/render";
 import { solutionText } from "@/lib/latex/math";
-import { testPackage } from "../fixtures/package";
+import { buildPackage } from "@/lib/package/build";
+import { validatePackage } from "@/lib/package/validate";
+import { suggestedTestContext, testPackage, testRequest } from "../fixtures/package";
 import { compiler, compileRaw, leftoverContainers, pdfText } from "./helpers";
 
 const docs = (p: ReturnType<typeof testPackage>) => renderPackage(p).map((d) => ({ id: d.id, tex: d.tex }));
+
+describe("a lesson from a suggested topic, end to end", () => {
+  it("builds, validates as verified, renders and compiles all three PDFs with the real sandbox compiler", async () => {
+    const pkg = buildPackage({ request: testRequest(), context: suggestedTestContext(), seed: "suggested-e2e" });
+    expect(validatePackage(JSON.parse(JSON.stringify(pkg))).overall).toBe("verified");
+    const result = await compiler().compile({ documents: docs(pkg) });
+    expect(result.map((r) => r.id)).toEqual(["notes", "worksheet", "solutions"]);
+    for (const r of result) {
+      expect(Buffer.from(r.pdf.subarray(0, 5)).toString()).toBe("%PDF-");
+      expect(r.pages).toBeGreaterThanOrEqual(1);
+    }
+    const notes = (await pdfText(result[0]!.pdf)).replace(/-\s+/g, "").replace(/\s+/g, " "); // sentences wrap across lines and words are hyphenated
+    expect(notes).toContain("Practise: Solving linear equations");
+    expect(notes).toContain("unofficial NotePrep suggestion");
+    expect(notes).toContain("not endorsed by any curriculum authority");
+    expect(notes).not.toMatch(/This lesson addresses/);
+  });
+});
 
 describe("compiling a real lesson package in the sandbox", () => {
   it("produces a valid PDF for each of the three documents", async () => {

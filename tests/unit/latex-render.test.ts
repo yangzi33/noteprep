@@ -186,6 +186,15 @@ describe("curriculum statements in the documents", () => {
     expect(renderDocument(p, "worksheet").tex).toContain("No curriculum alignment is claimed.");
     expect(renderDocument(p, "solutions").tex).toContain("No curriculum alignment is claimed.");
   });
+  it("a suggested dataset is described as an unofficial NotePrep suggestion, with no claim and no objectives", () => {
+    const p = testPackage({}, "s", "suggested", testContext("suggested", { objectives: [] }));
+    const notes = renderDocument(p, "notes").tex;
+    expect(notes).toContain("No curriculum alignment is claimed for this material.");
+    expect(notes).toContain("unofficial NotePrep suggestion (``Fictional Mathematics Programme (Fiction Edition 7)'')");
+    expect(notes).toContain("not endorsed by any curriculum authority");
+    expect(notes).not.toMatch(/This lesson addresses objectives|test data|sample data/);
+    expect(renderDocument(p, "worksheet").tex).toContain("No curriculum alignment is claimed.");
+  });
   it("a dataset that allows alignment produces the full statement in the notes and a short one elsewhere", () => {
     const p = testPackage({}, "s", "real");
     const notes = renderDocument(p, "notes").tex;

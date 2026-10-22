@@ -33,9 +33,23 @@ export interface CurriculumContext {
   }[];
   prerequisites: { topicId: string; title: string }[];
   concepts: { id: string; name: string; coverage: Coverage; note: string | null; capability: Pick<Capability, "generatorVersion" | "validatorVersion" | "forms" | "difficulties" | "outcomes"> }[];
-  /** False for sample and synthetic data: such lessons must not render any curriculum alignment claim. */
+  /** False for sample, synthetic and suggested data: such lessons must not render any curriculum alignment claim. */
   alignmentClaimsAllowed: boolean;
   contextHash: string;
+}
+
+/** Only a real, reviewed dataset may ever allow a curriculum alignment claim; sample, synthetic and suggested data never do. */
+export function alignmentClaimsAllowedFor(kind: DatasetKind): boolean {
+  return kind === "real";
+}
+
+/**
+ * The learning-objective lines a lesson lists. Normally the dataset's own objective labels. A suggested dataset has none
+ * (it carries no official objectives), so the one line comes from NotePrep's own topic title: no code, no claim.
+ */
+export function learningObjectiveItems(context: Pick<UnhashedContext, "objectives" | "topic" | "curriculum">): string[] {
+  if (context.objectives.length === 0 && context.curriculum.version.kind === "suggested") return [`Practise: ${context.topic.title}`];
+  return context.objectives.map((o) => o.label);
 }
 
 export type UnhashedContext = Omit<CurriculumContext, "contextHash">;

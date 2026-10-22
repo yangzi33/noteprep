@@ -1,4 +1,4 @@
-import type { CurriculumContext } from "@/lib/curriculum/context";
+import { learningObjectiveItems, type CurriculumContext } from "@/lib/curriculum/context";
 import { DomainError } from "@/lib/domain/errors";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { GENERATOR_VERSION, generateExerciseSet, generateLinearQuestion, type GeneratedQuestion } from "@/lib/math/generator";
@@ -173,7 +173,7 @@ export function buildPackage({ request, context, seed, prose }: BuildInput): Les
       title: "Learning objectives",
       blocks: [
         { type: "paragraph", text: "By the end of this lesson the learner should be able to work towards the following objectives." },
-        { type: "list", items: context.objectives.map((o) => o.label) },
+        { type: "list", items: learningObjectiveItems(context) },
       ],
       method: "deterministic",
       minutes: 0,

@@ -1,4 +1,5 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
+import { noClaimOrigin } from "@/lib/curriculum/notice";
 import type { LessonPackage, Section } from "@/lib/package/schema";
 import { effectiveSettings } from "@/lib/package/effective";
 import { documentView, type DocumentView } from "@/lib/package/views";
@@ -34,7 +35,7 @@ function alignmentTex(block: Extract<Block, { type: "alignment" }>, compact: boo
     return [`This lesson addresses objectives from ${name}:`, "\\begin{itemize}", ...items, "\\end{itemize}"].join("\n");
   }
   // No claim is made for sample or test data, and the document says so in plain words.
-  const origin = block.datasetKind === "real" ? "" : ` It was prepared from ${block.datasetKind === "sample" ? "sample" : "test"} data (${name}) that is not a real curriculum.`;
+  const origin = noClaimOrigin(block.datasetKind, name, ["``", "''"]);
   return compact ? "No curriculum alignment is claimed." : `No curriculum alignment is claimed for this material.${origin}`;
 }
 

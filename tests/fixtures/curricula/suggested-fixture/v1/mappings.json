@@ -1,0 +1,12 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "suggested-fixture@v1/course/u1/t1",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "full",
+      "note": "Mapped by NotePrep from the topic title."
+    }
+  ],
+  "prerequisites": []
+}

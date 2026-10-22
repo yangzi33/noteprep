@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CurriculumContext } from "@/lib/curriculum/context";
+import { learningObjectiveItems, type CurriculumContext } from "@/lib/curriculum/context";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { checkText, curriculumNames } from "./prose-rules";
 
@@ -69,7 +69,7 @@ export function buildProseInput(context: CurriculumContext, request: LessonReque
     promptVersion: PROSE_PROMPT_VERSION,
     topic: concept?.name ?? context.topic.title,
     conceptIds: context.concepts.map((c) => c.id),
-    learningGoals: context.objectives.map((o) => o.label),
+    learningGoals: learningObjectiveItems(context),
     earlierTopics: context.prerequisites.map((p) => p.title),
     equationKinds: (concept?.capability.forms ?? []).map((f) => FORM_WORDS[f] ?? f),
     outcomes: (concept?.capability.outcomes ?? []).map((o) => OUTCOME_WORDS[o] ?? o),
