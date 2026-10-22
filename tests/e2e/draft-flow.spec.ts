@@ -319,6 +319,8 @@ test("a stale second tab gets the conflict notice for a version action, and its 
   await second.getByTestId("create-version-btn").click(); // the second tab still holds the old draft revision
   const conflict = second.getByTestId("draft-conflict");
   await expect(conflict).toContainText("This draft changed in another tab or window. Reload to see the latest.");
+  await expect(second).toHaveURL(/#draft-error$/); // the notice is the redirect anchor
+  await expect(conflict).toBeInViewport();
   expect(await sql(`SELECT count(*)::int AS n FROM draft_version WHERE owner_id = $1`, [user.id])).toEqual([{ n: 2 }]); // the stale create made nothing
   await conflict.getByTestId("draft-reload").click();
   await expect(second.getByTestId("draft-conflict")).toHaveCount(0);

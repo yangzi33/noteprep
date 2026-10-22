@@ -108,14 +108,14 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
       </Notice>
 
       {parsed.data.error === "DRAFT_CONFLICT" ? (
-        <Notice intent="error" className="mt-3" data-testid="draft-conflict">
+        <Notice id="draft-error" intent="error" className="mt-3 scroll-mt-4" data-testid="draft-conflict">
           {errorMessage}{" "}
           <a href={reloadUrl} className="underline" data-testid="draft-reload">
             Reload
           </a>
         </Notice>
       ) : errorMessage ? (
-        <Notice intent="error" className="mt-3" data-testid="draft-error">
+        <Notice id="draft-error" intent="error" className="mt-3 scroll-mt-4" data-testid="draft-error">
           {errorMessage}
         </Notice>
       ) : null}

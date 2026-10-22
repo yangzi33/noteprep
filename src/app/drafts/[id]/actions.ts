@@ -117,7 +117,7 @@ async function runVersion(formData: FormData, op: (dal: Dal, ctx: Ctx, b: z.infe
   } catch (error) {
     const code = domainErrorCode(error);
     if (!code) throw error;
-    target = draftHref(draftId, doc, code, "#versions", v);
+    target = draftHref(draftId, doc, code, "#draft-error", v); // the error notice is the redirect anchor, so it is on screen
   }
   redirect(target);
 }
