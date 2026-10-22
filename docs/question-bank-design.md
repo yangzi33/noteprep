@@ -58,6 +58,17 @@ Idea: when a tutor presses Generate, serve from the bank if the topic and level 
 - **Risks:** LLM-assigned level and skill tags are not verifiable; items may resemble textbook problems (originality check, duplicate detection, a "report a problem" button tied to the item that quarantines it at once, sampled human review).
 - Not part of the build slices above. Decide after the offline bank exists.
 
+## 7d. Later option: a separate AI draft box (recorded, not scheduled)
+Idea (owner, 2026-10-22): keep Prepare exactly as planned and add a **separate** feature, a blank text box that generates problems from a free-text prompt with an LLM.
+- **Separate promise, separate label.** Prepare means verified or human-reviewed math. The AI draft box means "AI-generated draft, not machine-verified, check every answer", shown on screen and in the PDF. It never shares a page, a pack or a "verified" label with Prepare. Where the validator covers the problem type (today: linear equations), passing items may be marked verified individually; everything else stays an unverified draft.
+- **Separate budget.** Its own allowance or budget, rate limits and cost cap; a failed or rejected generation releases it, as for other jobs.
+- **Needs written exceptions to CLAUDE.md** for this feature only: section 1 (selection-first, no free text, validation coverage) and section 7 (math validated, unsupported AI output not billed as a complete success). Not approved.
+- **Depends on:** the MathText parser and renderers (section 3), so LLM math enters LaTeX only through a safe grammar; the OpenAI adapter and a per-job cost cap; the student-data rules of section 7b (anonymity warning, no raw-text storage, LLM as sub-processor, prompt-injection handling); a "report a problem" button that quarantines an item at once.
+- **Decision point:** after the offline bank exists and the Beta shows what tutors ask for. Until then it is only a recorded option.
+
+## 7e. Guiding the tutor, and what a prompt can mean
+A prompt is not limited to weaknesses. In the interpreter path (7b) the LLM turns any prompt (for example "grade 10 student studying trigonometry") into a structured selection from vocabularies the system already knows (country, curriculum, grade or course, unit, topic, level, duration, documents, skill and misconception tags), shown as editable chips labelled "AI-suggested". Parts that map to nothing appear in a visible "couldn't use this" list and never reach generation; topics with no content yet show greyed as "not available yet" and are logged as demand. Guidance: example chips under the box, a placeholder that models the format, a length limit with a counter, the no-student-names warning, the chips sharing state with the form's dropdowns, and a log of prompts that mapped to nothing (match results only, not the text) to find vocabulary gaps.
+
 ## 8. Decisions for the owner
 1. Approve the three tiers and the file format (sections 1 to 2).
 2. Approve MathText as the only way math enters bank items, and that rejected items stay rejected until the grammar grows (section 3).
@@ -66,3 +77,4 @@ Idea: when a tutor presses Generate, serve from the bank if the topic and level 
 5. First bank topics: which ones do you plan to generate first?
 6. Tags (section 2): approved in discussion on 2026-10-22; vocabulary per topic to be written with the first bank topics.
 7. Live top-up at press time (section 7c): open; decide after the offline bank exists.
+8. Separate AI draft box (section 7d): recorded as a later option; decide after the offline bank exists and the Beta shows demand.
