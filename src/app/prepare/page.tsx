@@ -17,7 +17,7 @@ import { webDal } from "@/lib/server/dal/instance";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
-import { buildSelectFields, datasetBanner } from "@/lib/ui/prepare-view";
+import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepare-view";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 import { prepareLesson } from "./actions";
 
@@ -49,7 +49,8 @@ function PageFrame({ allowanceText, error, children }: { allowanceText: string; 
 
 export default async function PreparePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
-  const params = readPrepareParams(await searchParams);
+  const rawParams = readPrepareParams(await searchParams);
+  let params = rawParams;
   const dal = webDal();
   const allowance = await dal.history.getAllowance(ctx);
   const exhausted = allowance !== null && allowance.remaining <= 0;
@@ -76,6 +77,22 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
       </Card>,
     );
   }
+
+  // The country is only a UI filter: with one country it is chosen for the user (no step, no URL param); with several
+  // it comes from the URL or from `v`. An unknown country or one that does not match `v` is a polite notice.
+  // Access is never decided here: the version and topic ids are still checked by the data layer and the action.
+  const countryState = resolveCountry({ curricula, params: rawParams });
+  if (!countryState.ok) {
+    return frame(
+      <Notice intent="error" data-testid="bad-selection">
+        {generationErrorMessage("INVALID_SELECTION")}{" "}
+        <Link href="/prepare" className="underline">
+          Start again
+        </Link>
+      </Notice>,
+    );
+  }
+  params = { ...rawParams, country: countryState.showStep ? countryState.country : undefined };
 
   // Resolve the selection path and the options of every step whose earlier values are present.
   // A bad or inconsistent selection (hand-edited URL) becomes a Notice, never an error page.
@@ -111,7 +128,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
     }
   }
 
-  const fields = buildSelectFields({ curricula, params, steps, stepOptions });
+  const fields = buildSelectFields({ curricula, params, steps, stepOptions, country: { showStep: countryState.showStep, country: countryState.country } });
   const banner = path !== null ? datasetBanner(path.curriculum.kind) : null;
   const sample = banner === "sample";
   const suggested = banner === "suggested";

@@ -28,7 +28,6 @@ export function SelectionFields({ fields, params }: { fields: SelectFieldView[];
     if (!pending) setValues(JSON.parse(serverValues) as Record<string, string>);
   }
 
-  const hasLevel = fields.some((f) => f.key === "level");
   const renderField = (field: SelectFieldView) => (
     <SelectField
       key={field.key}
@@ -46,11 +45,12 @@ export function SelectionFields({ fields, params }: { fields: SelectFieldView[];
       }}
     />
   );
-  const row = fields.filter((f) => f.key === "v" || f.key === "level" || f.key === "course");
+  const row = fields.filter((f) => f.key === "country" || f.key === "v" || f.key === "level" || f.key === "course");
+  const cols = ["", "", "grid gap-4 sm:grid-cols-2", "grid gap-4 sm:grid-cols-3", "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"][row.length] ?? "grid gap-4";
   const rest = fields.filter((f) => f.key === "unit" || f.key === "topic");
   return (
     <div data-testid="selection-fields" data-hydrated={hydrated ? "true" : undefined} className="flex flex-col gap-4">
-      <div className={hasLevel ? "grid gap-4 sm:grid-cols-3" : "grid gap-4 sm:grid-cols-2"}>{row.map(renderField)}</div>
+      <div className={cols}>{row.map(renderField)}</div>
       {rest.map(renderField)}
     </div>
   );
