@@ -44,12 +44,13 @@ const input = {
 
 describe("web data access layer: ownership", () => {
   it("exposes exactly the classified functions (guard against unreviewed additions)", () => {
-    expect(Object.keys(dal).sort()).toEqual(["account", "curriculum", "drafts", "generation", "history", "lessons"]);
+    expect(Object.keys(dal).sort()).toEqual(["account", "curriculum", "drafts", "exports", "generation", "history", "lessons"]);
     expect(Object.keys(dal.generation).sort()).toEqual([...Object.keys(RESOURCE_FUNCTIONS), ...CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.account).sort()).toEqual([...ACCOUNT_CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.history).sort()).toEqual([...HISTORY_CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.lessons).sort()).toEqual(["getArtifact", "getLessonPackage", "getLessonView"]); // all attacked in lesson-request-v2.test.ts
     expect(Object.keys(dal.drafts).sort()).toEqual(["acceptCandidate", "createDraft", "createVersion", "getDraftSelection", "getDraftView", "keepOriginal", "listDrafts", "listVersions", "removeQuestion", "requestCandidate", "switchVersion", "tryAnother", "undo"]); // read paths attacked in drafts.test.ts (R17 part), adjustments in drafts-adjust.test.ts, versions in drafts-versions.test.ts
+    expect(Object.keys(dal.exports).sort()).toEqual(["confirmExport", "getExportStatus"]); // both attacked in export-security.test.ts
     expect(Object.keys(dal.curriculum).sort()).toEqual([...CURRICULUM_PUBLIC_FUNCTIONS].sort());
   });
 
