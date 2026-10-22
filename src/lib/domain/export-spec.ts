@@ -75,3 +75,25 @@ export function prepareExport(pkg: LessonPackage) {
   const texShas = renderForExport(pkg, spec.documents);
   return { spec, texShas, exportKey: exportKey(spec, texShas), contentKey: contentKey(spec, texShas) };
 }
+
+// --- failure memo (I10) -------------------------------------------------------------------------------------------
+
+/**
+ * Failure codes of an export that retrying cannot fix: the same snapshot renders, validates or compiles the same way
+ * again. This is the ONE place the set is defined; confirmExport counts failed exports of one key whose code is in it.
+ * Everything else (cancel, deadline, attempts used up, storage, sandbox, timeouts, internal errors, the S4a
+ * `export_not_supported` safety net) is transient or ours, and never blocks a retry.
+ */
+export const NON_RETRYABLE_EXPORT_FAILURES = [
+  "render_failed",
+  "render_mismatch",
+  "compile_failed",
+  "validation_failed",
+  "package_build_failed",
+  "invalid_output",
+  "snapshot_invalid",
+] as const;
+
+/** After this many non-retryable failures of one (owner, export key) inside the window, confirmExport refuses. */
+export const EXPORT_FAILURE_MEMO_THRESHOLD = 3;
+export const EXPORT_FAILURE_MEMO_WINDOW_HOURS = 24;

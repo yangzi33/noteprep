@@ -32,10 +32,15 @@ const SHAPE = {
   minExercises: int("MIN_EXERCISES", 3, 1, MAX_EXERCISES),
   maxExercises: int("MAX_EXERCISES_PER_DRAFT", MAX_EXERCISES, 1, MAX_EXERCISES),
   maxDraftBytes: int("MAX_DRAFT_BYTES", 1_000_000, 10_000, MAX_DRAFT_BYTES_CEILING),
-  // Export (S4, S5): unused for now
+  // Export (S4): exports per user per hour (key exp:u:, counted only when a NEW export is created), active export jobs per
+  // user, the deadline of one export job, attempts per job, how long past its deadline a running export job may stay before
+  // the sweeper fails it, and the global cap on queued export jobs (placeholders)
   exportsPerUserPerHour: int("EXPORTS_PER_USER_PER_HOUR", 10, 1, 10_000),
   exportConcurrencyPerUser: int("EXPORT_CONCURRENCY_PER_USER", 1, 1, 20),
   exportDeadlineMinutes: int("EXPORT_DEADLINE_MINUTES", 10, 1, 120),
+  exportMaxAttempts: int("EXPORT_MAX_ATTEMPTS", 3, 1, 10),
+  exportDeadlineGraceSeconds: int("EXPORT_DEADLINE_GRACE_SECONDS", 60, 0, 3_600),
+  exportMaxQueuedGlobal: int("EXPORT_MAX_QUEUED_GLOBAL", 200, 1, 100_000),
   // Expiry and purge
   draftTtlDays: int("DRAFT_TTL_DAYS", 14, 1, 365),
   // Hard cap on sliding expiry: expires_at never goes beyond created_at + this many days (placeholder)
