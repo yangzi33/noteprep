@@ -380,3 +380,56 @@ describe("property: random sequences of replace / remove / undo", () => {
     }, 60_000);
   }
 });
+
+describe("accept re-checks the stored candidate against the slot, not against its own claims", () => {
+  const rawFrom = (item: { problem: unknown; solution: unknown; steps: unknown }, id: string) => ({
+    problem: structuredClone(item.problem),
+    solution: structuredClone(item.solution),
+    steps: (structuredClone(item.steps) as { id: string }[]).map((st, i) => ({ ...st, id: `${id}.s${i + 1}` })),
+  });
+  const forged = (s: DraftState, target: string, item: { problem: unknown; solution: unknown; steps: unknown }, level: "basic" | "mixed" | "challenge") =>
+    ({
+      id: "c",
+      targetQuestionId: target,
+      baseRev: 1,
+      baseHash: packageContentHash(s.pkg),
+      item: { id: `ex-${s.nextSeq}`, level, fingerprint: "irrelevant", ...rawFrom(item, `ex-${s.nextSeq}`) },
+      attempt: 1,
+      tried: [],
+    }) as unknown as Parameters<typeof acceptReplacement>[1];
+  const exerciseItem = (s: DraftState, id: string) => {
+    const q = blocks(s.pkg, "exercises").find((b) => b.type === "question" && b.questionId === id) as { problem: unknown };
+    const a = blocks(s.pkg, "solutions").find((b) => b.type === "solution" && b.questionId === id) as { solution: unknown; steps: unknown };
+    return { problem: q.problem, solution: a.solution, steps: a.steps };
+  };
+  const slotsAt = (s: DraftState, level: string) => questionSlots(s.pkg, s.meta).filter((x) => x.level === level).map((x) => x.questionId);
+  const rejectedAs = (fn: () => unknown, code: string) => expect(fn).toThrowError(expect.objectContaining({ code }));
+
+  it("rejects a candidate that duplicates another exercise, one that equals the original, and one that duplicates a worked example", () => {
+    const s = makeState("mixed", 120);
+    const [target, other] = slotsAt(s, "mixed");
+    rejectedAs(() => acceptReplacement(s, forged(s, target!, exerciseItem(s, other!), "mixed"), CFG, NOW), "ITEM_REJECTED"); // another exercise
+    rejectedAs(() => acceptReplacement(s, forged(s, target!, exerciseItem(s, target!), "mixed"), CFG, NOW), "ITEM_REJECTED"); // the original
+    const example = blocks(s.pkg, "worked_examples").find((b) => b.type === "worked_example" && b.solution.kind === "unique") as { problem: unknown; solution: unknown; steps: unknown };
+    rejectedAs(() => acceptReplacement(s, forged(s, target!, example, "mixed"), CFG, NOW), "ITEM_REJECTED"); // a worked example's equation
+  });
+
+  it("rejects a candidate whose real level differs from the slot's even when its item.level claims the slot's level", async () => {
+    const s = makeState("mixed", 120);
+    const fresh = async (level: "basic" | "mixed" | "challenge", want: (form: string) => boolean) => {
+      for (let i = 0; i < 200; i++) {
+        const raw = await deterministicLinearSource.draw({ role: "exercise", index: s.nextSeq, level, seed: `forge-${level}-${i}`, exclude: new Set(fingerprints(s.pkg)) });
+        if (want((raw.problem as { form: string }).form)) return raw;
+      }
+      throw new Error("no sample found");
+    };
+    const basicSlot = slotsAt(s, "basic")[0]!;
+    const mixedSlot = slotsAt(s, "mixed")[0]!;
+    const twoSided = await fresh("mixed", (f) => f === "ax+b=cx+d"); // not a basic-looking question
+    rejectedAs(() => acceptReplacement(s, forged(s, basicSlot, twoSided, "basic"), CFG, NOW), "ITEM_REJECTED");
+    rejectedAs(() => acceptReplacement(s, forged(s, basicSlot, twoSided, "mixed"), CFG, NOW), "ITEM_REJECTED"); // claims its own level
+    const challenge = await fresh("challenge", () => true);
+    rejectedAs(() => acceptReplacement(s, forged(s, mixedSlot, challenge, "challenge"), CFG, NOW), "ITEM_REJECTED"); // claims its own level
+    rejectedAs(() => acceptReplacement(s, forged(s, basicSlot, challenge, "basic"), CFG, NOW), "ITEM_REJECTED");
+  });
+});
