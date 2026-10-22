@@ -1,0 +1,299 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc",
+      "code": "NP-AP-PRECALC",
+      "title": "AP Precalculus",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab",
+      "code": "NP-AP-CALC-AB",
+      "title": "AP Calculus AB",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc",
+      "code": "NP-AP-CALC-BC",
+      "title": "AP Calculus BC",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats",
+      "code": "NP-AP-STATS",
+      "title": "AP Statistics",
+      "ordinal": 4
+    }
+  ],
+  "units": [
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "courseId": "ap-mathematics@suggested-1/ap-precalc",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/geometry-and-measurement",
+      "courseId": "ap-mathematics@suggested-1/ap-precalc",
+      "title": "Geometry and measurement",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/functions",
+      "courseId": "ap-mathematics@suggested-1/ap-calc-ab",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics",
+      "courseId": "ap-mathematics@suggested-1/ap-calc-ab",
+      "title": "Calculus basics",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/functions",
+      "courseId": "ap-mathematics@suggested-1/ap-calc-bc",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "courseId": "ap-mathematics@suggested-1/ap-calc-bc",
+      "title": "Calculus basics",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "courseId": "ap-mathematics@suggested-1/ap-stats",
+      "title": "Data and probability",
+      "ordinal": 1
+    }
+  ],
+  "topics": [
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/function-notation",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/function-transformations",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/polynomial-functions",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/rational-expressions",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 4
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/exponential-functions",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 5
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/logarithms",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 6
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/functions/sequences-series",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/functions",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 7
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/geometry-and-measurement/trigonometric-functions",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/geometry-and-measurement",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-precalc/geometry-and-measurement/trigonometric-identities",
+      "unitId": "ap-mathematics@suggested-1/ap-precalc/geometry-and-measurement",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/functions/function-notation",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/functions/exponential-functions",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/functions/logarithms",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics/limits",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics/derivative-rules",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics/derivative-applications",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics/integrals",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-ab/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/functions/function-notation",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/functions/exponential-functions",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/functions/logarithms",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics/limits",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics/derivative-rules",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics/derivative-applications",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics/integrals",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics/sequences-series",
+      "unitId": "ap-mathematics@suggested-1/ap-calc-bc/calculus-basics",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 5
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/measures-of-centre",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/data-displays",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/scatter-plots-best-fit",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/standard-deviation",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Spread and standard deviation",
+      "summary": "Measure and compare the spread of data using quartiles and standard deviation.",
+      "ordinal": 4
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/simple-probability",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 5
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/compound-probability",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 6
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/normal-distribution",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 7
+    },
+    {
+      "id": "ap-mathematics@suggested-1/ap-stats/data-and-probability/sampling-inference",
+      "unitId": "ap-mathematics@suggested-1/ap-stats/data-and-probability",
+      "title": "Sampling and inference",
+      "summary": "Describe sampling methods and draw cautious conclusions from sample data.",
+      "ordinal": 8
+    }
+  ]
+}

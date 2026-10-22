@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "international",
+    "name": "International",
+    "regionCode": "INT"
+  },
+  "curriculum": {
+    "id": "ib-mathematics",
+    "name": "IB Mathematics (suggested topics)",
+    "subject": "math"
+  },
+  "version": {
+    "id": "ib-mathematics@suggested-1",
+    "label": "IB Mathematics suggested topics v1 (unofficial)",
+    "kind": "suggested",
+    "source": {
+      "title": "Written by NotePrep as an unofficial suggestion; the topic placement is a NotePrep estimate, not taken from any official source"
+    },
+    "licenseNote": "NotePrep's own unofficial mapping. The course name is used only to describe the course; no official text, codes, logos or syllabus wording is included. Grade placement is an unofficial NotePrep estimate: tutors must check it against their own course outline."
+  }
+}

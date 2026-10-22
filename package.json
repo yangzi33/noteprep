@@ -71,6 +71,7 @@
     "test:e2e": "playwright test",
     "smoke:staging": "playwright test --config playwright.smoke.config.ts",
     "samples:build": "tsx --conditions=react-server scripts/build-marketing-samples.ts",
+    "curricula:build": "tsx scripts/curricula-build.ts",
     "curriculum:validate": "tsx scripts/curriculum-validate.ts",
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
     "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",

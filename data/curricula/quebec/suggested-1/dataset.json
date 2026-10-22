@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "canada",
+    "name": "Canada",
+    "regionCode": "CA"
+  },
+  "curriculum": {
+    "id": "quebec",
+    "name": "Quebec (suggested topics)",
+    "subject": "math"
+  },
+  "version": {
+    "id": "quebec@suggested-1",
+    "label": "Quebec suggested topics v1 (unofficial)",
+    "kind": "suggested",
+    "source": {
+      "title": "Written by NotePrep as an unofficial suggestion; the topic placement is a NotePrep estimate, not taken from any official source"
+    },
+    "licenseNote": "NotePrep's own unofficial mapping. The course name is used only to describe the course; no official text, codes, logos or syllabus wording is included. Grade placement is an unofficial NotePrep estimate: tutors must check it against their own course outline."
+  }
+}
