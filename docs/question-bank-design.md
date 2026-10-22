@@ -1,5 +1,7 @@
 # Question bank design (proposal for approval; **no implementation yet**)
 
+> **Status update (2026-10-22):** deferred by decision D-85. The content path now starts with question families and per-topic blueprints ([content-architecture](content-architecture.md)). This design stays on file and is revisited when tutor feedback shows content that families cannot generate. Its closed skill vocabulary and verified/reviewed/draft tiers are reused by the new design.
+
 Owner request (2026-10-22): topics and their content fully configurable; the owner generates finished questions, answers and steps with an LLM and loads them as configuration. Decision on unverifiable items: **a reviewed-draft tier** (imported, hidden from tutors until a human marks them approved, then shown with a "not machine-verified" label). This design needs owner approval, including two deliberate exceptions to CLAUDE.md (section 6 below).
 
 ## 1. Tiers
