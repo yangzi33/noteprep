@@ -12,6 +12,8 @@
             {
               "title": "Number",
               "topics": [
+                "whole-number-operations",
+                "factors-multiples",
                 "integer-operations",
                 "fractions-add-subtract",
                 "fractions-multiply-divide",
@@ -84,6 +86,7 @@
             {
               "title": "Geometry and measurement",
               "topics": [
+                "triangle-properties",
                 "pythagorean-theorem",
                 "volume-surface-area",
                 "geometric-transformations"
@@ -322,6 +325,8 @@
             {
               "title": "Number",
               "topics": [
+                "whole-number-operations",
+                "factors-multiples",
                 "integer-operations",
                 "fractions-add-subtract",
                 "fractions-multiply-divide",
@@ -394,6 +399,7 @@
             {
               "title": "Geometry and measurement",
               "topics": [
+                "triangle-properties",
                 "pythagorean-theorem",
                 "volume-surface-area",
                 "geometric-transformations"

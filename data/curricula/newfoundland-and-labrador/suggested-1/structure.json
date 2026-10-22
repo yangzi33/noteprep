@@ -265,53 +265,67 @@
   ],
   "topics": [
     {
+      "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/whole-number-operations",
+      "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
+      "title": "Operations with whole numbers",
+      "summary": "Add, subtract, multiply and divide whole numbers, including multi-digit and word problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/factors-multiples",
+      "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
+      "title": "Factors, multiples and primes",
+      "summary": "Find factors, multiples, common factors, common multiples and prime factorizations.",
+      "ordinal": 2
+    },
+    {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/integer-operations",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Operations with integers",
       "summary": "Add, subtract, multiply and divide positive and negative whole numbers.",
-      "ordinal": 1
+      "ordinal": 3
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/fractions-add-subtract",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Adding and subtracting fractions",
       "summary": "Add and subtract fractions and mixed numbers using common denominators.",
-      "ordinal": 2
+      "ordinal": 4
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/fractions-multiply-divide",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Multiplying and dividing fractions",
       "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
-      "ordinal": 3
+      "ordinal": 5
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/decimal-operations",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Operations with decimals",
       "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
-      "ordinal": 4
+      "ordinal": 6
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/order-of-operations",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Order of operations",
       "summary": "Evaluate expressions with brackets, exponents and several operations in the correct order.",
-      "ordinal": 5
+      "ordinal": 7
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/ratios-and-rates",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Ratios and rates",
       "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
-      "ordinal": 6
+      "ordinal": 8
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number/percent-of-quantity",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/number",
       "title": "Percent of a quantity",
       "summary": "Find a percent of a number and relate fractions, decimals and percents.",
-      "ordinal": 7
+      "ordinal": 9
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-7/g7-math/algebra/evaluate-expressions",
@@ -468,25 +482,32 @@
       "ordinal": 1
     },
     {
+      "id": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement/triangle-properties",
+      "unitId": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement",
+      "title": "Properties of triangles",
+      "summary": "Classify triangles and use their properties, including congruence.",
+      "ordinal": 1
+    },
+    {
       "id": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement/pythagorean-theorem",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement",
       "title": "Pythagorean theorem",
       "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
-      "ordinal": 1
+      "ordinal": 2
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement/volume-surface-area",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement",
       "title": "Volume and surface area",
       "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
-      "ordinal": 2
+      "ordinal": 3
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement/geometric-transformations",
       "unitId": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/geometry-and-measurement",
       "title": "Translations, reflections and rotations",
       "summary": "Describe and perform transformations of shapes on a coordinate grid.",
-      "ordinal": 3
+      "ordinal": 4
     },
     {
       "id": "newfoundland-and-labrador@suggested-1/grade-8/g8-math/data-and-probability/scatter-plots-best-fit",
