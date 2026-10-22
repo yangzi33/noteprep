@@ -157,7 +157,7 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   await page.reload();
   await expect(page.getByTestId("candidate-panel").getByTestId("candidate-equation").locator("annotation")).toHaveText(first);
   await page.getByTestId("try-another").click();
-  await expect(page.getByTestId("candidate-panel")).toBeVisible();
+  await expect(page.getByTestId("candidate-equation").locator("annotation")).not.toHaveText(first);
   const second = (await page.getByTestId("candidate-equation").locator("annotation").textContent())!;
   expect(second).not.toBe(first);
   expect(original).not.toContain(second);
@@ -169,6 +169,7 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
 
   // Replace again and Accept: same count, same position, indicator and badge
   await page.getByRole("button", { name: "Replace question 3" }).click();
+  await expect(page.getByTestId("candidate-panel")).toBeVisible();
   const chosen = (await page.getByTestId("candidate-equation").locator("annotation").textContent())!;
   await page.getByTestId("accept-candidate").click();
   await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
