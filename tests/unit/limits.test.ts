@@ -48,6 +48,8 @@ describe("limits", () => {
       { MIN_EXERCISES: "9", MAX_EXERCISES_PER_DRAFT: "5" },
       { DRAFT_PURGE_BATCH_SIZE: "0" },
       { DRAFT_TTL_DAYS: "Infinity" },
+      { DRAFT_TTL_DAYS: "30", DRAFT_MAX_LIFETIME_DAYS: "29" }, // the cap cannot be below the sliding window
+      { DRAFT_LOCK_TIMEOUT_MS: "0" },
     ];
     for (const source of bad) expect(() => parseLimits(source), JSON.stringify(source)).toThrow();
   });
@@ -84,5 +86,10 @@ describe("isCheckViolation", () => {
     expect(isCheckViolation({ code: "23505" })).toBe(false);
     expect(isCheckViolation(null)).toBe(false);
     expect(isCheckViolation("23514")).toBe(false);
+  });
+
+  it("has a lifetime cap above the TTL and a bounded lock timeout by default", () => {
+    expect(DEFAULT_LIMITS.draftMaxLifetimeDays).toBeGreaterThanOrEqual(DEFAULT_LIMITS.draftTtlDays);
+    expect(parseLimits({ DRAFT_MAX_LIFETIME_DAYS: "90", DRAFT_LOCK_TIMEOUT_MS: "250" })).toMatchObject({ draftMaxLifetimeDays: 90, draftLockTimeoutMs: 250 });
   });
 });

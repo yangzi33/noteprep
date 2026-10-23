@@ -234,6 +234,27 @@ export class CandidateRateLimited extends DomainError {
   }
 }
 
+/** The draft row (or one of its versions) stayed locked by another request for longer than the lock timeout: safe to retry. */
+export class DraftBusy extends DomainError {
+  constructor() {
+    super("DRAFT_BUSY", "This draft is busy");
+  }
+}
+
+/** The draft already holds the maximum number of versions (nothing is evicted automatically). */
+export class VersionLimit extends DomainError {
+  constructor(readonly max: number) {
+    super("VERSION_LIMIT", "This draft has reached its limit of versions");
+  }
+}
+
+/** Too many versions were created recently across the account. */
+export class VersionRateLimited extends DomainError {
+  constructor() {
+    super("VERSION_RATE_LIMITED", "Too many versions created recently");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);
