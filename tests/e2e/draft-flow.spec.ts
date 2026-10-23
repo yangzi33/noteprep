@@ -223,14 +223,16 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
 // The screen must stay where the tutor was: the adjust controls update the page in place instead of navigating to a fragment.
 const MAX_JUMP_PX = 4;
 async function viewport(page: Page, anchor: ReturnType<Page["locator"]>) {
-  return { scrollY: await page.evaluate(() => window.scrollY), top: (await anchor.boundingBox())!.y - (await page.evaluate(() => window.scrollY)) };
+  // boundingBox() is already relative to the viewport, which is what the tutor sees
+  return { scrollY: await page.evaluate(() => window.scrollY), top: (await anchor.boundingBox())!.y };
 }
 async function expectStill(page: Page, anchor: ReturnType<Page["locator"]>, before: { scrollY: number; top: number }, what: string) {
   await page.waitForTimeout(600); // let any (unwanted) scroll-to-fragment happen before measuring
   const after = await viewport(page, anchor);
   const jump = { scroll: Math.abs(after.scrollY - before.scrollY), anchor: Math.abs(after.top - before.top) };
   console.log(`[scroll-stability] ${what}: scrollY ${before.scrollY} -> ${after.scrollY}, anchor top ${before.top} -> ${after.top}`);
-  expect(jump.scroll, `${what}: scrollY changed`).toBeLessThanOrEqual(MAX_JUMP_PX);
+  // What the tutor sees is the anchored control's position in the viewport. scrollY alone can legitimately change when the
+  // page above the viewport changes height (the browser compensates), so it is logged, not asserted.
   expect(jump.anchor, `${what}: anchored control moved in the viewport`).toBeLessThanOrEqual(MAX_JUMP_PX);
 }
 
@@ -272,10 +274,10 @@ test("adjust controls do not move the screen: replace, try another, keep, accept
 
   // Remove a question other than the replaced one: removing question 3 would drop its "replaced" mark too.
   await centre(3);
-  before = await viewport(page, q(2));
+  before = await viewport(page, q(3)); // a control that stays on screen and keeps its number
   await page.getByRole("button", { name: "Remove question 4" }).click();
   await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced · 1 removed");
-  await expectStill(page, q(2), before, "remove");
+  await expectStill(page, q(3), before, "remove");
 
   // Undo sits above the questions: bring it into the middle of the viewport first
   await page.getByTestId("undo-btn").evaluate((el) => el.scrollIntoView({ block: "center" }));
