@@ -208,6 +208,7 @@
 | D-106 | **Migration path**: `FLOW_MODE` set to `legacy` or `draft` (default `legacy`) keeps `main` working; S6 flips the default; legacy generate code is retired after a staging rehearsal | **Approved** (plan, 2026-10-23) |
 | D-107 | **Item-source gate**: only `VerifiedItem`s (admitted by `admitItem`: schema-parsed structured math, exact re-solve, validator `verified`) can enter a package; raw model-generated LaTeX or HTML never reaches rendering | **Approved** (plan, 2026-10-23) |
 | D-108 | **Limits and expiry**: every threshold (draft/version/candidate/export frequency, concurrency, sizes, undo depth, min/max questions, draft TTL default 14 days sliding, purge grace) is configuration in one module with placeholder defaults; enforcement reuses `rate_limit_window`; no cross-user question cache reads; no CAPTCHA or fingerprinting | **Approved** (owner, 2026-10-23) |
+| D-109 | **Export key as implemented (note, 2026-10-22):** S4a follows the hardened S4 spec (docs/superpowers/plans/2026-10-24-s4-export-billing-spec.md), not D-105's wording: the key is built from the RENDERED source of each document plus the spec (sorted documents, locale, page format, template version, render version), and the validator version is NOT part of the key. This supersedes the D-105 text above. | **Pending owner confirmation** |
 
 **已推迟的限制(诚实清单,均为 UNVERIFIED 或未做)**:
 - 没有 gVisor;沙箱与 worker 共享宿主内核。

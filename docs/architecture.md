@@ -691,3 +691,6 @@ Vercel Functions 有最大时长(Pro 默认 300 s、上限 800 s,Beta 可到 180
 - **Worker 发布**:不可变镜像(按 git SHA 标记)+ 主机上滚动替换:旧 worker 收到终止信号后停止领取、在宽限期内完成,未完成的任务靠租约过期被新 worker 接管。任务载荷带 `schemaVersion`,worker 至少兼容 N−1。
 - **备份与恢复**:使用 Supabase 提供的备份能力(套餐、PITR 与保留期**待核实**);上线前必须做一次真实恢复演练(含 Storage 与数据库一致性检查)。
 - **Stripe**:webhook 端点固定 API 版本;测试/生产密钥与签名密钥分离;`stripe listen` 仅用于本地。
+
+## S4 export billing: release note (English, 2026-10-22)
+Charging moves from job start to a confirmed export (`confirmExport` reserves one generation and freezes a snapshot; the worker's commit consumes it only when the complete requested PDF set is stored). The feature is behind `EXPORT_ENABLED` (default `0`) and the `EXPORT_*` limits in `src/lib/server/limits.ts`. Migrations are forward-only; see "Release and rollback" in [the S4 spec](superpowers/plans/2026-10-24-s4-export-billing-spec.md) for the deploy order and the precondition (zero pending exports) for rolling application code back.

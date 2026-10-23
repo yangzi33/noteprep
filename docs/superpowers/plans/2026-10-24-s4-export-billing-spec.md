@@ -79,3 +79,32 @@ Drafts never charged; pay for exactly what was seen (mutation between view and c
 
 ## Owner decisions (defaults adopted; none blocks S4a/S4b implementation)
 1. `ADD VALUE 'export'` is irreversible: approve before it is applied to staging or production (recommended). 2. Validator version excluded from the export key (adopted). 3. Template/render change = new paid export (adopted, literal brief). 4. Cross-version reuse follow-up: cheap because `content_key` is stored (config flag + lookup, about a day, no migration); the choice is yours since reuse returns PDFs made with an older template. 5. Subset of an already exported pack is a new paid export (adopted). 6. Failure-memo threshold and export rate limits: defaults approved. 7. CLAUDE.md section 5 edit in S4b as a separate commit. 8. Rollout: migrate -> worker -> web -> enable `EXPORT_ENABLED`.
+
+
+## Release and rollback (S4a)
+
+**Deploy order:** migrate, then worker, then web, then set `EXPORT_ENABLED=1`. With the flag off nothing in the web app calls the export code (`confirmExport` throws `EXPORT_DISABLED` first), so the migrations and the new worker are safe to run ahead of enabling it.
+
+**Forward-only.** `ALTER TYPE "job_kind" ADD VALUE 'export'` (migration `20261024100000_job_kind_export`, kept as its own statement) and the export tables (`20261024100100_export_tables`) have no down migration. Postgres cannot drop an enum value, and published export rows are never deleted (no DELETE grant for either runtime role). A rollback means rolling the *application* back, never the schema.
+
+**Rolling the application back after exports exist.**
+1. Set `EXPORT_ENABLED=0` first.
+2. Let every pending export settle, or cancel each one with the *new* code (`cancelJob` settles the export, the reservation and the job together).
+3. Only when there are **zero pending exports**, run a pre-S4a worker or web build against the database.
+
+Why: a pre-S4a sweep or `finishLockedJob` still fails or cancels an overdue export job and releases its reservation, but it does not mark the export row failed. The deferred consistency trigger (`export_consistency_job`) then raises SQLSTATE 23514 at COMMIT. The old sweep has no per-row catch, so the whole sweep throws every cycle, the same oldest row is selected first each time (`ORDER BY created_at`), and recovery stalls for **all** jobs, legacy ones included, leaving their free reservations held. An old web build calling `cancelJob` on a queued export fails the same way.
+
+**Check before downgrading (read-only):**
+```sql
+SELECT count(*) FROM "export" WHERE state = 'pending';   -- must be 0
+SELECT * FROM "export_state_drift";                       -- must be empty
+SELECT * FROM "usage_bucket_drift";                       -- must be empty
+```
+
+## Known limits and follow-ups (found in the S4a independent review; not implemented)
+- **Sweep starvation:** the sweep selects `ORDER BY created_at LIMIT 50` and a poisoned row stays eligible, so with 50 or more poisoned rows nothing behind them is recovered. Poisoned rows are now logged with the job id and SQLSTATE (`sweep_row_error`); an alert on that event is advised.
+- **M-1:** the in-transaction `rev`/content-hash re-check in `confirmExport` has no test (a hook between preparation and the transaction is needed). It is not load-bearing for billing because the snapshot is the version the tutor saw.
+- **M-4:** `confirmExport` can join a queued export that the sweep will fail (`attempt >= max_attempts`). Nobody is charged; the tutor sees a failure and must confirm again.
+- **M-5:** `prepare()` (validation plus rendering three documents) runs before any limit and confirms that join, reuse, conflict or are refused are not counted: the S4b route must add a per-request or per-IP limit.
+- **M-7:** the golden render test pins one fixture; nothing ties the compiler image or compile flags to `RENDER_VERSION`.
+- **M-8:** the reuse lookup does not check `lesson.deleted_at`; there is no deletion path yet. S5's `retired` state must cover it.
