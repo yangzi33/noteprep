@@ -323,3 +323,10 @@ export function domainErrorCode(error: unknown): string | null {
   if (error instanceof Error && e?.isDomainError === true && typeof e.code === "string") return e.code;
   return null;
 }
+
+/** The lesson still has a queued or running job; deleting it never cancels work implicitly (cancel the export first). */
+export class LessonBusy extends DomainError {
+  constructor() {
+    super("LESSON_BUSY", "This lesson still has work in progress");
+  }
+}

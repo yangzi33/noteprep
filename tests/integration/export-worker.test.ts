@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { ManifestIncomplete } from "@/lib/domain/errors";
 import { renderForExport, type ExportSpec } from "@/lib/domain/export-spec";
 import { sha256Hex } from "@/lib/domain/hash";
-import { parseManifestV2 } from "@/lib/domain/manifest";
+import { parseManifest } from "@/lib/domain/manifest";
 import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, type DocumentCompiler } from "@/lib/latex/compiler";
 import { FakeLlmProvider } from "@/lib/llm/fake";
 import { renderDocument } from "@/lib/latex/render";
@@ -116,8 +116,14 @@ class WrappedStore implements ObjectStore {
     const lie = this.hooks.stat?.(p, n);
     return lie === undefined ? this.inner.stat(p) : lie;
   }
+  deleteObject(p: string) {
+    return this.inner.deleteObject(p);
+  }
   deletePrefix(p: string) {
     return this.inner.deletePrefix(p);
+  }
+  list(p: string, o: { limit: number; cursor?: string | null }) {
+    return this.inner.list(p, o);
   }
 }
 
@@ -137,7 +143,8 @@ describe("the worker runs export jobs", () => {
     expect(rev.content).toEqual(snap.content);
     expect(rev.content_hash).toBe(snap.package_hash);
     expect(rev.generation_meta.compiler).toEqual({ id: "skeleton", image: "test-image" });
-    const manifest = parseManifestV2(rev.artifact_manifest)!;
+    expect(rev.artifact_manifest).toMatchObject({ manifestVersion: 3, pageFormat: "letter", compile: { profile: "compile/1", image: "test-image" }, exportKey: exp.export_key });
+    const manifest = parseManifest(rev.artifact_manifest)!;
     expect(manifest.documents.map((d) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
     for (const d of manifest.documents) {
       expect(d.tex.sha256).toBe(snap.tex_sha256[d.document]);

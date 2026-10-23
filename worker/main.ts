@@ -11,6 +11,7 @@ import { workerEnv } from "./env";
 import { createLiveness } from "./liveness";
 import { log } from "./log";
 import { runWorkerLoop } from "./loop";
+import { createReconciler } from "./reconcile";
 
 /** Placeholder files must never become a real lesson's result; the pipeline refuses legacy jobs before it gets here. */
 const refusingLegacyCompiler: Compiler = {
@@ -46,7 +47,7 @@ async function main() {
       ? new DockerLatexCompiler({ ...DEFAULT_SANDBOX, image: config.LATEX_IMAGE, wallClockMs: config.LATEX_WALL_CLOCK_SECONDS * 1000, clientEnv: config.dockerClientEnv })
       : new SkeletonDocumentCompiler(config.SKELETON_COMPILER_FAIL ? [new CompileError(config.SKELETON_COMPILER_FAIL, false)] : ["ok"]);
   const legacyCompiler: Compiler = config.COMPILER === "docker" ? refusingLegacyCompiler : new SkeletonCompiler();
-  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id, store: config.OBJECT_STORE });
+  log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id, store: config.OBJECT_STORE, reconcile: config.RECONCILE_ENABLED === "1" });
   await runWorkerLoop({
     deps: {
       jobs: dal.jobs,
@@ -68,6 +69,10 @@ async function main() {
     sweepMs: config.SWEEP_INTERVAL_SECONDS * 1000,
     signal: stop.signal,
     drafts: { purge: dal.drafts, batchSize: config.limits.purgeBatchSize },
+    reconcile:
+      config.RECONCILE_ENABLED === "1"
+        ? { step: createReconciler({ jobs: dal.jobs, store, batchSize: config.RECONCILE_BATCH_LESSONS, budgetMs: config.RECONCILE_STEP_BUDGET_SECONDS * 1000, graceMs: config.RECONCILE_GRACE_SECONDS * 1000 }).step, intervalMs: config.RECONCILE_INTERVAL_SECONDS * 1000 }
+        : undefined,
     onAlive: createLiveness(config.WORKER_LIVENESS_FILE),
   });
   await db.$disconnect();

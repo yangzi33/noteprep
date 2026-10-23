@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { sha256Of, StorageError, type ObjectStore, type StoredObjectInfo } from "./store";
+import { checkedListLimit, sha256Of, StorageError, type ObjectStore, type StoredObjectInfo, type StoreListPage } from "./store";
 
 export const ARTIFACT_BUCKET = "lesson-artifacts";
 
@@ -79,24 +79,57 @@ export class SupabaseObjectStore implements ObjectStore {
     return { bytes: bytes.byteLength, sha256: sha256Of(bytes) };
   }
 
-  async deletePrefix(prefix: string): Promise<void> {
-    const files = await this.listFiles(this.checked(prefix.replace(/\/+$/, "")), 0);
+  /**
+   * Exactly one object: remove([path]). Verified against the pinned @supabase/storage-js 2.118.0 typings and source only
+   * (not a live project): remove() POSTs `{ prefixes: paths }` to DELETE /object/<bucket>, names objects (not folders), and
+   * documents `data: []` when nothing matched, so a missing object is not an error; a 404 is also treated as missing.
+   * remove() takes no fetch options, so the signal is checked only before the call.
+   */
+  async deleteObject(objectPath: string, options?: { signal?: AbortSignal }): Promise<void> {
+    options?.signal?.throwIfAborted();
+    const { error } = await this.client.storage.from(this.bucket).remove([this.checked(objectPath)]);
+    if (error && !isNotFound(error)) throw storageErrorFrom("remove", error);
+  }
+
+  async deletePrefix(prefix: string, options?: { signal?: AbortSignal }): Promise<void> {
+    const signal = options?.signal;
+    const files = await this.listFiles(this.checked(prefix.replace(/\/+$/, "")), 0, signal);
     for (let i = 0; i < files.length; i += 100) {
+      signal?.throwIfAborted(); // remove() takes no fetch parameters in storage-js 2.118.0, so only the gap between batches is checked
       const { error } = await this.client.storage.from(this.bucket).remove(files.slice(i, i + 100));
       if (error) throw storageErrorFrom("remove", error);
     }
   }
 
+  /**
+   * One level, ordered by name. Verified against the pinned @supabase/storage-js 2.118.0 typings only (not against a live
+   * project): list(path, {limit, offset, sortBy}) is non-recursive, a folder entry has `id === null`, and pagination is
+   * offset based, so the cursor is the offset as a decimal string.
+   */
+  async list(prefix: string, options: { limit: number; cursor?: string | null; signal?: AbortSignal }): Promise<StoreListPage> {
+    const limit = checkedListLimit(options.limit);
+    const offset = options.cursor ? Number(options.cursor) : 0;
+    if (!Number.isInteger(offset) || offset < 0) throw new StorageError(false, { op: "list", message: "invalid list cursor" });
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .list(this.checked(prefix.replace(/\/+$/, "")), { limit, offset, sortBy: { column: "name", order: "asc" } }, { signal: options.signal });
+    if (error) throw storageErrorFrom("list", error);
+    return {
+      entries: data.map((e) => ({ name: e.name, kind: e.id ? ("file" as const) : ("folder" as const) })),
+      nextCursor: data.length === limit ? String(offset + limit) : null,
+    };
+  }
+
   /** Every object under a prefix. Folders come back without an id; a depth limit keeps a hostile layout from looping. */
-  private async listFiles(prefix: string, depth: number): Promise<string[]> {
+  private async listFiles(prefix: string, depth: number, signal?: AbortSignal): Promise<string[]> {
     if (depth > 6) throw new StorageError(false, { op: "list", message: "listing too deep" });
     const out: string[] = [];
     for (let offset = 0; ; offset += 100) {
-      const { data, error } = await this.client.storage.from(this.bucket).list(prefix, { limit: 100, offset });
+      const { data, error } = await this.client.storage.from(this.bucket).list(prefix, { limit: 100, offset }, { signal });
       if (error) throw storageErrorFrom("list", error);
       for (const entry of data) {
         if (entry.id) out.push(`${prefix}/${entry.name}`);
-        else out.push(...(await this.listFiles(`${prefix}/${entry.name}`, depth + 1)));
+        else out.push(...(await this.listFiles(`${prefix}/${entry.name}`, depth + 1, signal)));
       }
       if (data.length < 100) return out;
     }

@@ -29,6 +29,16 @@ const WorkerEnv = z
     /** Only for OBJECT_STORE=supabase. The secret key bypasses Storage RLS, so it is held by the worker alone. */
     SUPABASE_URL: z.url().optional(),
     SUPABASE_SECRET_KEY: z.string().min(1).optional(),
+    /**
+     * Orphan object reconciler (deletes only unreferenced stored objects; writes no database rows). Off by default because it
+     * is destructive: enable it per environment after a rehearsal. The grace is checked against the lease and export deadline grace.
+     */
+    RECONCILE_ENABLED: z.enum(["0", "1"]).default("0"),
+    RECONCILE_BATCH_LESSONS: z.coerce.number().int().min(1).max(500).default(20),
+    RECONCILE_INTERVAL_SECONDS: z.coerce.number().int().min(30).max(86_400).default(300),
+    /** Wall-clock budget of one reconcile pass; after it no further storage call or delete starts. */
+    RECONCILE_STEP_BUDGET_SECONDS: z.coerce.number().int().min(5).max(600).default(60),
+    RECONCILE_GRACE_SECONDS: z.coerce.number().int().min(60).max(604_800).default(1_800),
     /** "fake" needs no credentials. "anthropic" calls the real API and needs the four settings below. */
     LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
     /** "template" never calls a model; "llm" asks the provider for the wording of curriculum lessons. */
@@ -84,12 +94,20 @@ export function dockerClientEnv(source: Record<string, string | undefined> = pro
 
 export type WorkerConfig = z.infer<typeof WorkerEnv> & { workerId: string; dockerClientEnv: Record<string, string>; limits: Limits };
 
+/** Safety margin on top of the lease and the export deadline grace before a lesson's objects may be reconciled. */
+export const RECONCILE_GRACE_MARGIN_SECONDS = 60;
+
 export function workerEnv(source: Record<string, string | undefined> = process.env): WorkerConfig {
   const parsed = WorkerEnv.parse(source);
+  const limits = parseLimits(source);
+  const minGrace = parsed.LEASE_SECONDS + limits.exportDeadlineGraceSeconds + RECONCILE_GRACE_MARGIN_SECONDS;
+  if (parsed.RECONCILE_ENABLED === "1" && parsed.RECONCILE_GRACE_SECONDS < minGrace) {
+    throw new Error(`RECONCILE_GRACE_SECONDS must be at least LEASE_SECONDS + EXPORT_DEADLINE_GRACE_SECONDS + ${RECONCILE_GRACE_MARGIN_SECONDS} (${minGrace})`);
+  }
   return {
     ...parsed,
     workerId: parsed.WORKER_ID ?? `worker-${process.pid}-${Math.random().toString(36).slice(2, 8)}`,
     dockerClientEnv: dockerClientEnv(source),
-    limits: parseLimits(source),
+    limits,
   };
 }

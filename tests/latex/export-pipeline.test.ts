@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { DEFAULT_LIMITS_FOR_TESTS } from "./limits";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
-import { MAX_PDF_PAGES, parseManifestV2 } from "@/lib/domain/manifest";
+import { MAX_PDF_PAGES, parseManifest } from "@/lib/domain/manifest";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
@@ -20,6 +20,7 @@ import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pools } from "../integration/helpers";
 import { compiler, IMAGE, leftoverContainers, pdfText } from "./helpers";
+import { provePdf } from "./pdf-proof";
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
@@ -69,7 +70,7 @@ describe("a confirmed draft exported to real PDFs with the real compiler", () =>
     const exp = (await admin.query(`SELECT * FROM export WHERE id = $1`, [exportId])).rows[0];
     expect(exp).toMatchObject({ state: "succeeded" });
     const rev = (await admin.query(`SELECT * FROM lesson_revision WHERE id = $1`, [exp.revision_id])).rows[0];
-    const manifest = parseManifestV2(rev.artifact_manifest)!;
+    const manifest = parseManifest(rev.artifact_manifest)!;
     expect(manifest.documents.map((d) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
     const pkg = PackageSchema.parse(rev.content);
 
@@ -90,6 +91,22 @@ describe("a confirmed draft exported to real PDFs with the real compiler", () =>
     expect(texts.worksheet!.match(/Solve for x:/g)?.length ?? 0).toBeGreaterThanOrEqual(questions); // every exercise prompt is on the worksheet
     expect(texts.worksheet).not.toContain("Answer:");
     expect(texts.solutions).toContain("Answer:");
+
+    // The stored PDFs prove against the FROZEN SNAPSHOT (what the tutor confirmed), not only against the published revision.
+    const snap = (await admin.query(`SELECT content, spec FROM export_snapshot WHERE id = $1`, [exp.snapshot_id])).rows[0];
+    const frozen = PackageSchema.parse(snap.content);
+    for (const d of manifest.documents) {
+      const pdf = new Uint8Array(await readFile(path.join(storeDir, d.pdf.path)));
+      const proof = await provePdf(pdf, frozen, d.document);
+      expect(proof.failures, `${d.document}\n${proof.failures.join("\n")}`).toEqual([]);
+      expect(proof.pages).toBe(d.pdf.pages);
+    }
+    // Recompiling the stored source reproduces the manifest's PDF hash.
+    const stored = await Promise.all(manifest.documents.map(async (d) => ({ id: d.document, tex: await readFile(path.join(storeDir, d.tex.path), "utf8") })));
+    const again = await compiler().compile({ documents: stored });
+    for (const d of manifest.documents) {
+      expect(sha256Of(again.find((r) => r.id === d.document)!.pdf), `${d.document} recompiled`).toBe(d.pdf.sha256);
+    }
 
     expect((await admin.query(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [ctx.userId])).rows[0]).toEqual({ used: 1, reserved: 0 });
     expect(await leftoverContainers()).toEqual([]);

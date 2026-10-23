@@ -37,6 +37,19 @@ const done = view({ state: "succeeded", revisionId: R }, { state: "succeeded" },
 const failed = view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, "not_used");
 const canceled = view({ state: "failed" }, { state: "canceled", errorCode: "canceled" }, "not_used");
 
+describe("ExportStatusView retired", () => {
+  it("says the lesson was deleted and offers no files, lesson link or cancel", () => {
+    const retired = view({ state: "retired", revisionId: R }, { state: "succeeded" }, "used");
+    const m = html(retired, { documents: docs });
+    expect(phaseOf(m)).toBe("retired");
+    expect(m).toContain("This lesson was deleted.");
+    expect(m).not.toContain("export-files");
+    expect(m).not.toContain("export-download");
+    expect(m).not.toContain("/lessons/" + L);
+    expect(m).not.toMatch(cancelForm);
+  });
+});
+
 describe("ExportStatusView states", () => {
   const cases: [string, string, ExportView, ExportPhase][] = [
     ["queued", "in the queue", view(), "queued"],
@@ -156,10 +169,10 @@ describe("links", () => {
 });
 
 describe("a free re-export does not read like a new charge", () => {
-  it("reused + succeeded + consumed says the first export used 1 generation and this one none", () => {
+  it("reused + succeeded + consumed says an export with the same content and format already used 1 generation and this one none", () => {
     const m = html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"), { outcome: "reused" });
     expect(m).toContain("This one used none");
-    expect(m).toContain("Your first export of this draft used 1 generation.");
+    expect(m).toContain("An export with the same content and page format already used 1 generation.");
     expect(m).not.toContain("This used 1 generation.");
   });
   it("without the reused outcome the ordinary sentence stays, and a spoofed reused on a failed export never shows it", () => {

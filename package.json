@@ -67,6 +67,7 @@
     "worker:image": "docker build --platform linux/amd64 -f docker/worker/Dockerfile --target runtime -t noteprep-worker:dev .",
     "worker:hosttest-image": "docker build --platform linux/amd64 -f docker/worker/Dockerfile --target hosttest -t noteprep-hosttest:dev .",
     "worker:start": "node --conditions=react-server --enable-source-maps dist/worker/main.mjs",
+    "worker:recover": "node --conditions=react-server --enable-source-maps dist/worker/recover.mjs",
     "worker:dev": "tsx --conditions=react-server --env-file-if-exists=.env worker/main.ts",
     "test:e2e": "playwright test",
     "smoke:staging": "playwright test --config playwright.smoke.config.ts",

@@ -72,6 +72,20 @@ export interface ExportInput {
   deadlineAt: Date;
 }
 
+export interface ReconcileCandidate {
+  lessonId: string;
+  ownerId: string;
+}
+
+export interface ReconcileLessonState {
+  ownerId: string;
+  /** Not deleted, no queued or running job, and no job activity inside the grace window (all read in one statement). */
+  eligible: boolean;
+  revisions: { id: string; manifest: unknown }[];
+}
+
+const toGraceSeconds = (graceMs: number) => Math.max(0, Math.ceil(graceMs / 1000));
+
 export interface JobsOptions {
   /** How long past deadline_at a RUNNING export job may stay before the sweeper fails it (the worker checks the deadline itself). */
   exportDeadlineGraceSeconds?: number;
@@ -136,6 +150,43 @@ export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF, 
         maxAttempts: row.max_attempts,
         deadlineAt: row.deadline_at,
       };
+    },
+
+    /**
+     * Lessons whose stored objects the reconciler may inspect: not deleted, at least one job, none queued or running, and the
+     * newest job activity older than `graceMs` (database clock). Keyset order by id; pass the last id as `afterLessonId`.
+     * Read only.
+     */
+    async listReconcileCandidates(limit: number, graceMs: number, afterLessonId?: string | null): Promise<ReconcileCandidate[]> {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new RangeError("limit out of range");
+      const grace = toGraceSeconds(graceMs);
+      // "Quiet": every job is terminal and the newest activity of any job (created, started or finished) is older than the grace.
+      const rows = await db.$queryRaw<{ id: string; owner_id: string }[]>`
+        SELECT l.id, l.owner_id FROM lesson l
+         WHERE l.deleted_at IS NULL AND (${afterLessonId ?? null}::uuid IS NULL OR l.id > ${afterLessonId ?? null}::uuid)
+           AND NOT EXISTS (SELECT 1 FROM generation_job j WHERE j.lesson_id = l.id AND j.state IN ('queued'::job_state, 'running'::job_state))
+            AND (SELECT max(GREATEST(j.created_at, COALESCE(j.started_at, j.created_at), COALESCE(j.finished_at, j.created_at))) FROM generation_job j WHERE j.lesson_id = l.id)
+                < now() - make_interval(secs => ${grace}::int)
+         ORDER BY l.id LIMIT ${limit}::int`;
+      return rows.map((r) => ({ lessonId: r.id, ownerId: r.owner_id }));
+    },
+
+    /**
+     * One-statement snapshot the reconciler re-reads immediately before it deletes: is the lesson still quiet, and which revisions
+     * (with their manifests) exist. Read only; null when the lesson does not exist.
+     */
+    async readLessonForReconcile(lessonId: string, graceMs: number): Promise<ReconcileLessonState | null> {
+      const grace = toGraceSeconds(graceMs);
+      const rows = await db.$queryRaw<{ owner_id: string; eligible: boolean; revisions: { id: string; manifest: unknown }[] }[]>`
+        SELECT l.owner_id,
+               (l.deleted_at IS NULL
+                AND NOT EXISTS (SELECT 1 FROM generation_job j WHERE j.lesson_id = l.id AND j.state IN ('queued'::job_state, 'running'::job_state))
+            AND (SELECT max(GREATEST(j.created_at, COALESCE(j.started_at, j.created_at), COALESCE(j.finished_at, j.created_at))) FROM generation_job j WHERE j.lesson_id = l.id)
+                < now() - make_interval(secs => ${grace}::int)) AS eligible,
+               COALESCE((SELECT json_agg(json_build_object('id', r.id, 'manifest', r.artifact_manifest)) FROM lesson_revision r WHERE r.lesson_id = l.id), '[]'::json) AS revisions
+          FROM lesson l WHERE l.id = ${lessonId}::uuid`;
+      const row = rows[0];
+      return row ? { ownerId: row.owner_id, eligible: row.eligible, revisions: row.revisions } : null;
     },
 
     /** Extends the lease. `lost` means another claim superseded this attempt: stop immediately. */

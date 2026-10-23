@@ -408,7 +408,9 @@ function failingStore(error: StorageError, failures: number): ObjectStore {
       return store.put(p, data);
     },
     stat: (p) => store.stat(p),
+    deleteObject: (p) => store.deleteObject(p),
     deletePrefix: (p) => store.deletePrefix(p),
+    list: (p, o) => store.list(p, o),
   };
 }
 

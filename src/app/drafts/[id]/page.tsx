@@ -65,7 +65,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   const tabUrl = (d: DocumentKind) => `/drafts/${view.draftId}?doc=${d}${versionParam ? `&${versionParam}` : ""}`;
   const reloadQuery = [active === available[0] ? "" : `doc=${active}`, parsed.data.v ? `v=${parsed.data.v}` : ""].filter(Boolean).join("&");
   const reloadUrl = `/drafts/${view.draftId}${reloadQuery ? `?${reloadQuery}` : ""}`;
-  const adjustCtx: AdjustContext = { draftId: view.draftId, versionId: view.versionId, rev: view.rev, doc: active, adjust: view.adjust, questionCount: view.adjust.slots.length };
+  const adjustCtx: AdjustContext = { draftId: view.draftId, versionId: view.versionId, rev: view.rev, doc: active, adjust: view.adjust, questionCount: view.adjust.slots.length, hasError: Boolean(parsed.data.error) };
   const slots =
     active === "worksheet"
       ? { afterQuestion: (q: { questionId: string; number: number }) => <QuestionControls ctx={adjustCtx} questionId={q.questionId} number={q.number} /> }
@@ -125,7 +125,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
           <VersionSwitcher view={view} doc={active} />
           <nav aria-label="Documents" className="mt-4 flex flex-wrap gap-2" data-testid="document-tabs">
             {available.map((d) => (
-              <Link key={d} href={tabUrl(d)} aria-current={d === active ? "page" : undefined} className={`${linkBase} ${d === active ? linkActive : ""}`}>
+              <Link key={d} href={tabUrl(d)} scroll={false} aria-current={d === active ? "page" : undefined} className={`${linkBase} ${d === active ? linkActive : ""}`}>
                 {DOCUMENT_LABELS[d]}
               </Link>
             ))}

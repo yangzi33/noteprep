@@ -2,11 +2,14 @@ import Link from "next/link";
 import { ExportConfirmButton } from "@/components/app/export-confirm-button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
+import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import type { DocumentKind } from "@/lib/package/schema";
 import { DOCUMENT_LABELS } from "@/lib/ui/lesson-view";
 import { generationErrorMessage } from "@/lib/ui/messages";
 
 export const EXPORT_PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
+
+export const PAGE_FORMAT_LABELS: Record<PageFormat, string> = { letter: "US Letter (8.5 x 11 in)", a4: "A4 (210 x 297 mm)" };
 
 export interface ExportConfirmProps {
   draftId: string;
@@ -78,6 +81,16 @@ export function ExportConfirmView(p: ExportConfirmProps) {
           <input type="hidden" name="expectedRev" value={p.rev} />
           <input type="hidden" name="expectedContentHash" value={p.contentHash} />
           <input type="hidden" name="key" value={p.formKey} />
+          <fieldset className="flex flex-col gap-2" data-testid="export-page-format">
+            <legend className="text-sm font-semibold">Page format</legend>
+            {PAGE_FORMATS.map((f) => (
+              <label key={f} className="flex min-h-11 items-center gap-2 text-sm">
+                <input type="radio" name="pageFormat" value={f} defaultChecked={f === "letter"} data-testid={`export-format-${f}`} />
+                {PAGE_FORMAT_LABELS[f]}
+              </label>
+            ))}
+            <p className="text-sm text-muted-foreground">All PDFs of this export use the format you choose. Exporting the same lesson in another format uses another generation. Exporting the same content in the same page format again is free (already-exported content is reused).</p>
+          </fieldset>
           <p className="text-sm font-semibold" data-testid="export-promise">
             {EXPORT_PROMISE}
           </p>

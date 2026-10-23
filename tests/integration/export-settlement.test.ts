@@ -3,8 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import type { ManifestV2 } from "@/lib/domain/manifest";
-import { parseManifestV2 } from "@/lib/domain/manifest";
+import { parseManifest, type ManifestV2, type ManifestV3 } from "@/lib/domain/manifest";
 import { createWorkerDal } from "@/lib/server/dal";
 import { SkeletonCompiler, SkeletonDocumentCompiler } from "@/lib/latex/compiler";
 import { FakeLlmProvider } from "@/lib/llm/fake";
@@ -64,10 +63,11 @@ describe("commitExport", () => {
       { document: "worksheet", pages: 2 },
       { document: "solutions", pages: 2 },
     ]);
-    expect(parseManifestV2(rev.artifact_manifest)).toEqual(input.manifest);
+    expect(parseManifest(rev.artifact_manifest)).toEqual(input.manifest);
+    expect(rev.artifact_manifest).toMatchObject({ manifestVersion: 3, exportKey: snap.export_key, renderVersion: snap.spec.renderVersion, pageFormat: snap.spec.pageFormat, templateVersion: snap.spec.templateVersion });
     expect((await h.admin.query(`SELECT current_revision_id FROM lesson WHERE id = $1`, [lessonId])).rows[0].current_revision_id).toBe(input.revisionId);
 
-    // The existing view, package and download paths work unchanged on an export's lesson (manifest v2, no reader change).
+    // The existing view, package and download paths work unchanged on an export's lesson (manifest v3 through the S5-1 reader).
     const view = await h.web.lessons.getLessonView(ctx, lessonId);
     expect(view).toMatchObject({ lessonId, revisionId: input.revisionId, revisionNumber: 1, isCurrent: true, templateVersion: "classic/2", validationStatus: "verified" });
     expect(view.documents.map((x) => x.document)).toEqual(["notes", "worksheet", "solutions"]);
@@ -156,7 +156,7 @@ describe("the render chain and the manifest are checked against the snapshot", (
     const { ctx, jobId } = await newExport();
     const token = await h.claim(jobId);
     const good = await h.commitInput(jobId, token);
-    const mutate = (fn: (m: ManifestV2) => void) => {
+    const mutate = (fn: (m: ManifestV3) => void) => {
       const manifest = structuredClone(good.manifest);
       fn(manifest);
       return { ...good, manifest };
@@ -176,6 +176,39 @@ describe("the render chain and the manifest are checked against the snapshot", (
     await expectUnchanged(ctx, { used: 1, reserved: 0 });
   });
 
+  it("a v2 manifest or a v3 manifest that differs from the snapshot spec, page format or export key is refused with the reservation still reserved", async () => {
+    const { ctx, exportId, jobId } = await newExport();
+    const token = await h.claim(jobId);
+    const good = await h.commitInput(jobId, token);
+    const withManifest = (fn: (m: Record<string, unknown>) => void) => {
+      const manifest = structuredClone(good.manifest) as unknown as Record<string, unknown>;
+      fn(manifest);
+      return { ...good, manifest: manifest as unknown as ManifestV3 };
+    };
+    const cases = [
+      withManifest((m) => {
+        m.manifestVersion = 2;
+        delete m.renderVersion;
+        delete m.pageFormat;
+        delete m.compile;
+        delete m.exportKey;
+      }),
+      withManifest((m) => (m.renderVersion = "render/other")),
+      withManifest((m) => (m.pageFormat = "a4")), // the snapshot froze letter
+      withManifest((m) => (m.pageFormat = "tabloid")),
+      withManifest((m) => (m.templateVersion = "classic/1")),
+      withManifest((m) => (m.exportKey = "e".repeat(64))),
+      withManifest((m) => delete m.compile),
+    ];
+    for (const c of cases) expect(await code(h.worker.settlement.commitExport(c))).toBe("MANIFEST_INCOMPLETE");
+    await expectUnchanged(ctx, { used: 0, reserved: 1 });
+    expect(await h.reservationRow(jobId)).toMatchObject({ state: "reserved" });
+    expect(await h.exportRow(exportId)).toMatchObject({ state: "pending", revision_id: null });
+    expect(await h.count(`SELECT count(*) AS n FROM lesson_revision WHERE created_by_job_id = $1`, [jobId])).toBe(0);
+    await h.worker.settlement.commitExport(good);
+    await expectUnchanged(ctx, { used: 1, reserved: 0 });
+  });
+
   it("commitExport refuses a generate job, and commitSuccess refuses an export job", async () => {
     const { ctx, jobId } = await newExport();
     const token = await h.claim(jobId);
@@ -188,7 +221,7 @@ describe("the render chain and the manifest are checked against the snapshot", (
           attemptId: input.attemptId,
           revisionId: input.revisionId,
           revision: { schemaVersion: 2, content: {}, contentHash: "x", validationReport: {}, validationStatus: "verified", templateVersion: "classic/2", validatorVersion: "v" },
-          manifest: input.manifest,
+          manifest: input.manifest as unknown as ManifestV2, // the job-kind guard fires before the manifest is read
           requestedDocuments: ["notes", "worksheet", "solutions"],
         }),
       ),
@@ -208,9 +241,25 @@ describe("the render chain and the manifest are checked against the snapshot", (
     const { ctx, jobId, lessonId } = await newExport();
     const token = await h.claim(jobId);
     const input = await h.commitInput(jobId, token);
-    await h.admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [lessonId]);
+    // Since S5-6 the database refuses a deleted lesson with a pending export, so this state is forced with triggers off
+    // (replica role, one transaction, superuser): it stands in for a deletion that raced past the DAL.
+    const forceDeleted = async (value: string) => {
+      const client = await h.admin.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query("SET LOCAL session_replication_role = replica");
+        await client.query(`UPDATE lesson SET deleted_at = ${value} WHERE id = $1`, [lessonId]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    };
+    await forceDeleted("now()");
     expect(await code(h.worker.settlement.commitExport(input))).toBe("STALE_OR_CANCELED");
-    await h.admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lessonId]);
+    await forceDeleted("NULL");
     await h.admin.query(`UPDATE profile SET status = 'deleting' WHERE id = $1`, [ctx.userId]);
     expect(await code(h.worker.settlement.commitExport(input))).toBe("STALE_OR_CANCELED");
     await h.admin.query(`UPDATE profile SET status = 'active' WHERE id = $1`, [ctx.userId]);

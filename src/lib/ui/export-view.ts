@@ -4,7 +4,7 @@ import { FAILURE_REASONS } from "./messages";
 /** What the browser may know about an export: no snapshot, export key, job id, reservation row, storage path or tex. */
 export interface ExportView {
   exportId: string;
-  state: "pending" | "succeeded" | "failed";
+  state: "pending" | "succeeded" | "failed" | "retired";
   job: {
     state: "queued" | "running" | "succeeded" | "failed" | "canceled";
     stage: "generating" | "validating" | "compiling" | "storing" | null;
@@ -51,6 +51,7 @@ export type ExportPhase =
   | "succeeded"
   | "failed"
   | "canceled"
+  | "retired"
   | "confirming"
   | "stalled"
   | "unknown"
@@ -68,7 +69,7 @@ export interface ExportNet {
   stalled?: boolean;
 }
 
-export const isFinalPhase = (phase: ExportPhase): boolean => phase === "succeeded" || phase === "failed" || phase === "canceled" || phase === "not_found";
+export const isFinalPhase = (phase: ExportPhase): boolean => phase === "succeeded" || phase === "failed" || phase === "canceled" || phase === "retired" || phase === "not_found";
 
 /** True when polling can stop: the export row itself is settled (the job and reservation settle in the same transaction). */
 export const isSettledExport = (view: Pick<ExportView, "state">): boolean => view.state !== "pending";
@@ -77,6 +78,7 @@ export const isSettledExport = (view: Pick<ExportView, "state">): boolean => vie
 function basePhase(view: ExportView): ExportPhase {
   const { job } = view;
   if (view.state === "succeeded") return "succeeded";
+  if (view.state === "retired") return "retired";
   if (view.state === "failed") return job.state === "canceled" ? "canceled" : "failed";
   // The export is still pending. A terminal job here is a state between two commits or a drift: never say more than "finishing".
   if (job.state === "succeeded" || job.state === "failed" || job.state === "canceled") return "confirming";
@@ -109,14 +111,14 @@ export interface ExportDescription {
 
 const NOT_USED = "No generation was used.";
 const USED = "This used 1 generation.";
-export const REUSED_CHARGE = "Your first export of this draft used 1 generation. This one used none.";
+export const REUSED_CHARGE = "An export with the same content and page format already used 1 generation. This one used none.";
 
 /**
  * The charge sentence, for SETTLED phases only and only when the server's reservation state agrees. A live, stopping,
  * confirming or unknown phase never prints one, whatever the charge says.
  */
 function chargeSentence(view: ExportView, phase: ExportPhase): string | null {
-  if (phase === "succeeded" && view.charge === "used") return USED;
+  if ((phase === "succeeded" || phase === "retired") && view.charge === "used") return USED;
   if ((phase === "failed" || phase === "canceled") && view.charge === "not_used") return NOT_USED;
   return null;
 }
@@ -168,6 +170,8 @@ function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
       return { heading: "We cannot confirm the final state.", detail: "Refresh this page later to see the result.", charge: null, lastKnown: null, intent: "info" };
     case "succeeded":
       return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
+    case "retired":
+      return { heading: "This lesson was deleted.", detail: "The PDFs of this export are no longer available. Exporting the same draft again starts a new export and uses another generation.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "canceled":
       return { heading: "Export canceled.", detail: "You stopped this export.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "failed": {

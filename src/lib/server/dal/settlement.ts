@@ -8,7 +8,7 @@ import {
   NotFound,
   StaleOrCanceled,
 } from "@/lib/domain/errors";
-import { assertManifestComplete, assertManifestV2Complete, type ManifestEntry, type ManifestV2 } from "@/lib/domain/manifest";
+import { assertManifestComplete, assertManifestV2Complete, assertManifestV3Complete, type ManifestEntry, type ManifestV2, type ManifestV3 } from "@/lib/domain/manifest";
 import type { ExportSpec, TexShas } from "@/lib/domain/export-spec";
 import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, type DocumentKind } from "@/lib/package/schema";
 import type { Db } from "../db";
@@ -47,7 +47,7 @@ export interface CommitExportInput {
   attemptId: string;
   /** Pre-generated before upload so object paths can include it. */
   revisionId: string;
-  manifest: ManifestV2;
+  manifest: ManifestV3;
   /** The compiler identity recorded in generation_meta (image, version): never used for any decision. */
   compiler?: unknown;
 }
@@ -217,8 +217,11 @@ export function createSettlementDal(db: Db) {
 
         const manifest = input.manifest;
         const scope = { ownerId: job.owner_id, lessonId: job.lesson_id, revisionId: input.revisionId, attemptId: input.attemptId };
-        assertManifestV2Complete(manifest, scope, spec.documents); // exactly the documents the snapshot froze
+        assertManifestV3Complete(manifest, scope, spec.documents); // v3 only, exactly the documents the snapshot froze
         if (manifest.templateVersion !== spec.templateVersion) throw new ManifestIncomplete("the manifest and the snapshot use different templates");
+        if (manifest.renderVersion !== spec.renderVersion) throw new ManifestIncomplete("the manifest and the snapshot use different render versions");
+        if (manifest.pageFormat !== spec.pageFormat) throw new ManifestIncomplete("the manifest and the snapshot use different page formats");
+        if (manifest.exportKey !== exportRow.export_key) throw new ManifestIncomplete("the manifest belongs to a different export");
         // The render chain: what was compiled and stored is the source the tutor was shown and charged for.
         for (const doc of manifest.documents) {
           if (doc.tex.sha256 !== texShas[doc.document]) throw new ManifestIncomplete(`${doc.document} was not rendered from the confirmed snapshot`);

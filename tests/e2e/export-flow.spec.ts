@@ -140,7 +140,7 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     await page.getByTestId("export-confirm").click();
     await expect(page).toHaveURL(new RegExp(`/exports/${exportId}\\?outcome=reused$`));
     await expect(page.getByTestId("export-outcome-note")).toContainText("Downloading again is free");
-    await expect(page.getByTestId("export-charge")).toHaveText("Your first export of this draft used 1 generation. This one used none.");
+    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 generation. This one used none.");
     expect(await page.content()).not.toContain("This used 1 generation.");
     expect(await allowanceText(page)).toBe("2 of 3 generations left.");
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
@@ -177,6 +177,49 @@ test("double submit makes one export and one charge", async ({ page }) => {
     expect(rows).toHaveLength(1);
     expect(rows[0]!.state).toBe("succeeded");
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
+  });
+});
+
+test("a4: the radio group defaults to letter; confirming a4 exports once and a letter export of the same draft is a separate one", async ({ page }) => {
+  const user = await createUser();
+  await withWorker(async () => {
+    const draftId = await newDraft(page, user);
+    await openConfirm(page);
+    await expect(page.getByTestId("export-format-letter")).toBeChecked();
+    await expect(page.getByTestId("export-format-a4")).not.toBeChecked();
+    await page.getByTestId("export-format-a4").check();
+    await page.getByTestId("export-confirm").click();
+    await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}$/);
+    const a4Url = page.url();
+    await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
+    expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
+    const snap = await sql<{ page_format: string }>(`SELECT s.spec->>'pageFormat' AS page_format FROM export e JOIN export_snapshot s ON s.id = e.snapshot_id WHERE s.draft_id = $1`, [draftId]);
+    expect(snap).toEqual([{ page_format: "a4" }]);
+
+    // download one PDF; with the real compiler it is a real PDF
+    const href = await page.getByTestId("export-files").getByTestId("export-download-worksheet").getAttribute("href");
+    const redirect = await page.request.get(href!, { maxRedirects: 0 });
+    expect(redirect.status()).toBe(302);
+    const file = await fetch(redirect.headers()["location"]!);
+    expect(file.status).toBe(200);
+    if (process.env.E2E_COMPILER === "docker") expect(Buffer.from(await file.arrayBuffer()).subarray(0, 5).toString()).toBe("%PDF-");
+
+    // the same draft in letter is another export and another charge; a4 again is free and reuses the first
+    await page.goto(`/drafts/${draftId}`);
+    await openConfirm(page);
+    await page.getByTestId("export-confirm").click();
+    await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}$/);
+    expect(page.url()).not.toBe(a4Url);
+    await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
+    expect(await bucketOf(user.id)).toEqual([{ used: 2, reserved: 0 }]);
+    expect(await exportsOf(draftId)).toHaveLength(2);
+
+    await page.goto(`/drafts/${draftId}`);
+    await openConfirm(page);
+    await page.getByTestId("export-format-a4").check();
+    await page.getByTestId("export-confirm").click();
+    await expect(page).toHaveURL(new RegExp(`${a4Url.split("/").pop()}\\?outcome=reused$`));
+    expect(await bucketOf(user.id)).toEqual([{ used: 2, reserved: 0 }]);
   });
 });
 

@@ -15,6 +15,9 @@ const serverEnv = {
   NEXT_PUBLIC_SITE_URL: env.webUrl,
   DATABASE_URL: env.webDatabaseUrl,
   CURRICULUM_ALLOW_SAMPLE: "1",
+  // Pinned so a developer's own .env (for example EXPORT_ENABLED=1 for manual testing) cannot change what these servers do.
+  FLOW_MODE: "legacy",
+  EXPORT_ENABLED: "0",
 };
 
 // Real browser, real local Supabase (Auth + Postgres), a production build of the app and, inside the

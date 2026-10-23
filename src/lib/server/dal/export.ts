@@ -23,8 +23,12 @@ import {
 import {
   EXPORT_FAILURE_MEMO_THRESHOLD,
   EXPORT_FAILURE_MEMO_WINDOW_HOURS,
+  confirmRequestPayload,
+  isPageFormat,
   NON_RETRYABLE_EXPORT_FAILURES,
+  PAGE_FORMAT,
   prepareExport,
+  type PageFormat,
   RenderError,
 } from "@/lib/domain/export-spec";
 import { requestHash } from "@/lib/domain/hash";
@@ -73,6 +77,8 @@ export interface ConfirmExportInput {
   /** The version revision and content hash the confirmation page was rendered from: the tutor pays for exactly that. */
   expectedRev: number;
   expectedContentHash: string;
+  /** Export option (not draft content). Absent means letter; anything outside the allowlist is refused before anything is reserved. */
+  pageFormat?: string;
 }
 
 const uuid = z.uuid();
@@ -98,7 +104,7 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
    * Everything expensive and read-only, BEFORE the transaction: ids, the draft and version (owner filtered), the staleness
    * check against what the tutor saw, verification, rendering and hashing. Nothing here locks a row.
    */
-  async function prepare(ownerId: string, input: ConfirmExportInput): Promise<Prepared> {
+  async function prepare(ownerId: string, input: ConfirmExportInput, pageFormat: PageFormat): Promise<Prepared> {
     const draft = await db.draft.findFirst({ where: { id: input.draftId, ownerId } });
     if (!draft) throw new NotFound();
     const version = await db.draftVersion.findFirst({ where: { id: input.versionId, draftId: draft.id, ownerId } });
@@ -112,7 +118,7 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
     if (report.overall !== "verified") throw new ExportNotVerified();
     let prepared: ReturnType<typeof prepareExport>;
     try {
-      prepared = prepareExport(state.pkg);
+      prepared = prepareExport(state.pkg, pageFormat);
     } catch (error) {
       if (error instanceof RenderError) throw new ExportRenderFailed(error.code);
       throw error;
@@ -179,11 +185,14 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
 
       const { prepared, pkg, report } = prep;
 
-      // 4. Reuse or join WITHOUT locking any job row (C2). A succeeded equivalent export is free; a pending one is joined,
+      // 4. Reuse or join WITHOUT locking any job row (C2). The lesson must not be deleted: a retired export no longer
+      // matches, and a lesson that is still alive may be reused (deleteLesson locks job -> export -> lesson and commits atomically, so
+      // this plain read sees either all of the deletion or none of it).
       // unless it is doomed (cancel requested, or past its deadline and not yet swept): then the tutor must wait.
       const live = await tx.$queryRaw<{ id: string; state: string; job_id: string; lesson_id: string; cancel: boolean; past: boolean }[]>`
         SELECT e.id, e.state, e.job_id, e.lesson_id, (j.cancel_requested_at IS NOT NULL) AS cancel, (j.deadline_at <= now()) AS past
           FROM export e JOIN generation_job j ON j.id = e.job_id
+           JOIN lesson l ON l.id = e.lesson_id AND l.deleted_at IS NULL
          WHERE e.owner_id = ${ownerId}::uuid AND e.export_key = ${prepared.exportKey} AND e.state IN ('pending', 'succeeded')`;
       const found = live[0];
       if (found) {
@@ -285,13 +294,10 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
       if (typeof input.expectedContentHash !== "string" || input.expectedContentHash.length === 0 || input.expectedContentHash.length > 200) {
         throw new InvalidRequest("expectedContentHash is required");
       }
+      const pageFormat = input.pageFormat ?? PAGE_FORMAT;
+      if (!isPageFormat(pageFormat)) throw new InvalidRequest("unsupported page format");
       // The hash is of what the client SENT, so a replay compares like with like whatever the server has since learned.
-      const hash = requestHash(EXPORT_CONFIRM_OPERATION, EXPORT_CONFIRM_VERSION, {
-        draftId: input.draftId,
-        versionId: input.versionId,
-        expectedRev: input.expectedRev,
-        expectedContentHash: input.expectedContentHash,
-      });
+      const hash = requestHash(EXPORT_CONFIRM_OPERATION, EXPORT_CONFIRM_VERSION, confirmRequestPayload({ ...input, pageFormat }));
 
       // Attempt limit (M-5), BEFORE the CPU-heavy prepare. Only a NEW key counts: a replay (double click, retry) is never
       // refused. The increment runs in its own short transaction that holds no profile lock (rate_limit_window is a leaf
@@ -310,7 +316,7 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
 
       let prep: Prepared | { deferred: DomainError };
       try {
-        prep = await prepare(ownerId, input);
+        prep = await prepare(ownerId, input, pageFormat);
       } catch (error) {
         const code = domainErrorCode(error);
         if (!code || !DEFERRABLE.has(code)) throw error;

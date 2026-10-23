@@ -61,6 +61,13 @@ describe("worker configuration", () => {
     expect(() => workerEnv({ ...base, OBJECT_STORE: "supabase", SUPABASE_URL: "http://127.0.0.1:54321" })).toThrow(/SUPABASE_SECRET_KEY/);
     expect(workerEnv({ ...base, OBJECT_STORE: "supabase", SUPABASE_URL: "http://127.0.0.1:54321", SUPABASE_SECRET_KEY: "k" }).OBJECT_STORE).toBe("supabase");
   });
+  it("the grace minimum applies only when the reconciler is on; the step budget is bounded", () => {
+    expect(workerEnv({ ...base, EXPORT_DEADLINE_GRACE_SECONDS: "3600" }).RECONCILE_ENABLED).toBe("0");
+    expect(() => workerEnv({ ...base, RECONCILE_ENABLED: "1", EXPORT_DEADLINE_GRACE_SECONDS: "3600" })).toThrow(/RECONCILE_GRACE_SECONDS/);
+    expect(workerEnv(base).RECONCILE_STEP_BUDGET_SECONDS).toBe(60);
+    expect(() => workerEnv({ ...base, RECONCILE_STEP_BUDGET_SECONDS: "4" })).toThrow();
+    expect(() => workerEnv({ ...base, RECONCILE_STEP_BUDGET_SECONDS: "601" })).toThrow();
+  });
   it("refuses local-disk storage in production", () => {
     const digest = `registry.example.test/noteprep-latex@sha256:${"a".repeat(64)}`;
     const prod = { WORKER_DATABASE_URL: base.WORKER_DATABASE_URL, NODE_ENV: "production", COMPILER: "docker", LATEX_IMAGE: digest };
@@ -70,6 +77,13 @@ describe("worker configuration", () => {
   it("rejects an unknown compiler and out-of-range limits", () => {
     expect(() => workerEnv({ ...base, COMPILER: "latex" })).toThrow();
     expect(() => workerEnv({ ...base, COMPILER: "docker", LATEX_WALL_CLOCK_SECONDS: "1" })).toThrow();
+  });
+  it("the reconciler is off by default, bounded, and its grace must cover lease + export deadline grace + margin", () => {
+    expect(workerEnv(base)).toMatchObject({ RECONCILE_ENABLED: "0", RECONCILE_BATCH_LESSONS: 20, RECONCILE_INTERVAL_SECONDS: 300, RECONCILE_GRACE_SECONDS: 1800 });
+    expect(() => workerEnv({ ...base, RECONCILE_BATCH_LESSONS: "501" })).toThrow();
+    expect(() => workerEnv({ ...base, RECONCILE_INTERVAL_SECONDS: "1" })).toThrow();
+    expect(() => workerEnv({ ...base, RECONCILE_ENABLED: "1", LEASE_SECONDS: "300", EXPORT_DEADLINE_GRACE_SECONDS: "60", RECONCILE_GRACE_SECONDS: "419" })).toThrow(/RECONCILE_GRACE_SECONDS/);
+    expect(workerEnv({ ...base, RECONCILE_ENABLED: "1", LEASE_SECONDS: "300", EXPORT_DEADLINE_GRACE_SECONDS: "60", RECONCILE_GRACE_SECONDS: "420" }).RECONCILE_GRACE_SECONDS).toBe(420);
   });
   it("rejects a missing or malformed database URL and out-of-range timings", () => {
     expect(() => workerEnv({ ALLOW_FAKE_COMPILER: "1" })).toThrow();

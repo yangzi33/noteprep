@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { ManifestIncomplete } from "./errors";
 
@@ -69,6 +70,19 @@ export interface ManifestDocument {
   tex: StoredFile;
 }
 
+export const MANIFEST_V3 = 3;
+
+/** Written by the export path from S5-4 on; readers accept it from S5-1 on. */
+export interface ManifestV3 {
+  manifestVersion: typeof MANIFEST_V3;
+  templateVersion: string;
+  renderVersion: string;
+  pageFormat: PageFormat;
+  compile: { profile: string; image: string | null };
+  exportKey: string;
+  documents: ManifestDocument[];
+}
+
 export interface ManifestV2 {
   manifestVersion: typeof MANIFEST_V2;
   templateVersion: string;
@@ -80,14 +94,10 @@ export function artifactPathV2(scope: ManifestScope, document: DocumentKind, for
   return `${scope.ownerId}/${scope.lessonId}/${scope.revisionId}/${scope.attemptId}/${document}.${format}`;
 }
 
-/**
- * A complete pack is exactly the requested documents, each with its PDF and its source, all under this attempt's own
- * prefix, with real hashes, sizes and page counts. A missing, extra or misplaced file means nothing is published.
- */
-export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestScope, requested: readonly DocumentKind[]): void {
-  if (manifest.manifestVersion !== MANIFEST_V2) throw new ManifestIncomplete("unknown manifest version");
-  if (typeof manifest.templateVersion !== "string" || manifest.templateVersion.length === 0) throw new ManifestIncomplete("no template version");
+/** The document set and file checks shared by v2 and v3. */
+function assertDocumentsComplete(manifest: { documents: ManifestDocument[] }, scope: ManifestScope, requested: readonly DocumentKind[]): void {
   if (requested.length === 0 || new Set(requested).size !== requested.length) throw new ManifestIncomplete("invalid requested documents");
+  if (!Array.isArray(manifest.documents)) throw new ManifestIncomplete("no documents");
   const got = manifest.documents.map((d) => d.document);
   if (got.length !== requested.length || new Set(got).size !== got.length || !requested.every((r) => got.includes(r))) {
     throw new ManifestIncomplete(`expected documents ${[...requested].sort().join(",")}, got ${[...got].sort().join(",")}`);
@@ -104,20 +114,68 @@ export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestSc
   }
 }
 
+/**
+ * A complete pack is exactly the requested documents, each with its PDF and its source, all under this attempt's own
+ * prefix, with real hashes, sizes and page counts. A missing, extra or misplaced file means nothing is published.
+ */
+export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestScope, requested: readonly DocumentKind[]): void {
+  if (manifest.manifestVersion !== MANIFEST_V2) throw new ManifestIncomplete("unknown manifest version");
+  if (typeof manifest.templateVersion !== "string" || manifest.templateVersion.length === 0) throw new ManifestIncomplete("no template version");
+  assertDocumentsComplete(manifest, scope, requested);
+}
+
+/**
+ * The export manifest: the v2 document checks plus the render and compile identity. That it matches the frozen snapshot
+ * (versions, page format, export key, source hashes) is checked by commitExport, which has the snapshot.
+ */
+export function assertManifestV3Complete(manifest: ManifestV3, scope: ManifestScope, requested: readonly DocumentKind[]): void {
+  if (manifest.manifestVersion !== MANIFEST_V3) throw new ManifestIncomplete("unknown manifest version");
+  const nonEmpty = (v: unknown) => typeof v === "string" && v.length > 0;
+  if (!nonEmpty(manifest.templateVersion)) throw new ManifestIncomplete("no template version");
+  if (!nonEmpty(manifest.renderVersion)) throw new ManifestIncomplete("no render version");
+  if (!(PAGE_FORMATS as readonly unknown[]).includes(manifest.pageFormat)) throw new ManifestIncomplete("invalid page format");
+  if (!manifest.compile || !nonEmpty(manifest.compile.profile) || (manifest.compile.image !== null && !nonEmpty(manifest.compile.image))) {
+    throw new ManifestIncomplete("invalid compile record");
+  }
+  if (!nonEmpty(manifest.exportKey)) throw new ManifestIncomplete("no export key");
+  assertDocumentsComplete(manifest, scope, requested);
+}
+
 // --- reading a stored manifest back ----------------------------------------------------------------------------------
 
 const storedFile = z.strictObject({ path: z.string().min(1).max(400), sha256: z.string().regex(/^[0-9a-f]{64}$/), bytes: z.number().int().positive() });
+const documents = z
+  .array(z.strictObject({ document: z.enum(DOCUMENT_KINDS), pdf: storedFile.extend({ pages: z.number().int().min(1).max(MAX_PDF_PAGES) }), tex: storedFile }))
+  .min(1)
+  .max(3);
 const ManifestV2Schema = z.strictObject({
   manifestVersion: z.literal(MANIFEST_V2),
   templateVersion: z.string().min(1).max(60),
-  documents: z
-    .array(z.strictObject({ document: z.enum(DOCUMENT_KINDS), pdf: storedFile.extend({ pages: z.number().int().min(1).max(MAX_PDF_PAGES) }), tex: storedFile }))
-    .min(1)
-    .max(3),
+  documents,
+});
+const ManifestV3Schema = z.strictObject({
+  manifestVersion: z.literal(MANIFEST_V3),
+  templateVersion: z.string().min(1).max(60),
+  renderVersion: z.string().min(1).max(60),
+  pageFormat: z.enum(PAGE_FORMATS),
+  compile: z.strictObject({ profile: z.string().min(1).max(60), image: z.string().min(1).max(300).nullable() }),
+  exportKey: z.string().min(1).max(200),
+  documents,
 });
 
 /** A stored v2 manifest, or null for anything else (a legacy v1 pack, a missing manifest, a damaged one). */
 export function parseManifestV2(value: unknown): ManifestV2 | null {
   const parsed = ManifestV2Schema.safeParse(value);
   return parsed.success ? parsed.data : null;
+}
+
+/** Any stored manifest a reader can use: v2 and v3 share `templateVersion` and `documents`. */
+export type StoredManifest = ManifestV2 | ManifestV3;
+
+/** A stored v2 or v3 manifest, or null for anything else (v1, an unknown version, a missing or damaged manifest). */
+export function parseManifest(value: unknown): StoredManifest | null {
+  const v2 = ManifestV2Schema.safeParse(value);
+  if (v2.success) return v2.data;
+  const v3 = ManifestV3Schema.safeParse(value);
+  return v3.success ? v3.data : null;
 }

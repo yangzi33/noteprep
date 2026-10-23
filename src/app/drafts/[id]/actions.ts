@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { domainErrorCode, InvalidRequest } from "@/lib/domain/errors";
@@ -56,7 +57,8 @@ async function run(formData: FormData, extra: (formData: FormData) => z.ZodType 
   const schema = extra(formData);
   const x = schema ? schema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string"))) : null;
   if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND", fragmentOf(formData), base.data.versionId));
-  let target = draftHref(draftId, doc, undefined, fragmentOf(formData), base.data.versionId);
+  // Normally success does not navigate (below). When the page still shows an earlier error notice, success returns to the clean URL.
+  let target = draftHref(draftId, doc, undefined, "", base.data.versionId);
   try {
     await op(webDal().drafts, ctx, base.data, (x?.data ?? {}) as Record<string, string>);
   } catch (error) {
@@ -64,7 +66,10 @@ async function run(formData: FormData, extra: (formData: FormData) => z.ZodType 
     if (!code) throw error;
     target = draftHref(draftId, doc, code, fragmentOf(formData), base.data.versionId);
   }
-  redirect(target); // outside the try: redirect() works by throwing
+  if (target.includes("error=") || field(formData, "clearError")) redirect(target); // outside the try: redirect() works by throwing
+  // Success: no navigation. The page is re-rendered in place with the new state, so the window stays where the tutor was.
+  // Without JavaScript the form is a plain POST and the same page is simply rendered again.
+  revalidatePath(`/drafts/${draftId}`);
 }
 
 const forQuestion = () => z.object({ questionId: QuestionId });

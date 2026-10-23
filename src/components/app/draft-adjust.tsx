@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { acceptCandidate, keepOriginal, removeQuestion, requestCandidate, tryAnother, undoChange } from "@/app/drafts/[id]/actions";
+import { PanelFocus } from "@/components/app/panel-focus";
 import { MathView } from "@/components/app/math";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ export interface AdjustContext {
   doc: DocumentKind;
   adjust: DraftViewDto["adjust"];
   questionCount: number;
+  /** The page URL carries an error notice from an earlier action; a successful action then returns to the clean URL. */
+  hasError?: boolean;
 }
 
 function Hidden({ ctx, extra }: { ctx: AdjustContext; extra?: Record<string, string> }) {
@@ -27,6 +30,7 @@ function Hidden({ ctx, extra }: { ctx: AdjustContext; extra?: Record<string, str
       <input type="hidden" name="versionId" value={ctx.versionId} />
       <input type="hidden" name="expectedRev" value={ctx.rev} />
       <input type="hidden" name="doc" value={ctx.doc} />
+      {ctx.hasError ? <input type="hidden" name="clearError" value="1" /> : null}
       {Object.entries(extra ?? {}).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
@@ -52,7 +56,8 @@ function CandidatePanel({ ctx, number }: { ctx: AdjustContext; number: number })
   const candidate = ctx.adjust.candidate!;
   const extra = { candidateId: candidate.id, at: String(number) };
   return (
-    <div role="group" aria-label={`Suggested replacement for question ${number}`} data-testid="candidate-panel" data-candidate={candidate.id} className="space-y-3 rounded-notice border border-border bg-accent/40 p-4">
+    <div id={`candidate-panel-${number}`} tabIndex={-1} role="group" aria-label={`Suggested replacement for question ${number}`} data-testid="candidate-panel" data-candidate={candidate.id} className="space-y-3 rounded-notice border border-border bg-accent/40 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <PanelFocus number={number} />
       <p className="text-sm font-medium">Suggested replacement for question {number}. The original stays until you accept this one.</p>
       <p>
         Solve for <MathView tex="x" mode="inline" />:
@@ -94,7 +99,7 @@ export function QuestionControls({ ctx, questionId, number }: { ctx: AdjustConte
       <div className="flex flex-wrap items-center gap-2">
         <form action={requestCandidate}>
           <Hidden ctx={ctx} extra={{ questionId, at: String(number) }} />
-          <Button type="submit" size="sm" variant="outline" aria-label={`Replace question ${number}`} data-testid="replace-btn">
+          <Button type="submit" size="sm" variant="outline" id={`replace-${number}`} aria-label={`Replace question ${number}`} data-testid="replace-btn">
             Replace
           </Button>
         </form>
@@ -119,7 +124,7 @@ export function QuestionControls({ ctx, questionId, number }: { ctx: AdjustConte
 /** "3 questions replaced · 1 removed", announced politely when it changes. */
 export function ChangesIndicator({ adjust }: { adjust: DraftViewDto["adjust"] }) {
   return (
-    <p id="changes-indicator" role="status" aria-live="polite" className="scroll-mt-4 text-sm text-muted-foreground" data-testid="changes-indicator">
+    <p id="changes-indicator" tabIndex={-1} role="status" aria-live="polite" className="scroll-mt-4 text-sm text-muted-foreground" data-testid="changes-indicator">
       {changesText(adjust.changes.replacedIds.length, adjust.changes.removedIds.length)}
     </p>
   );
