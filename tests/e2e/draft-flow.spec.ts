@@ -220,6 +220,95 @@ test("replace keeps the original visible, try another, accept, remove and undo, 
   expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
 });
 
+// The screen must stay where the tutor was: the adjust controls update the page in place instead of navigating to a fragment.
+const MAX_JUMP_PX = 4;
+async function viewport(page: Page, anchor: ReturnType<Page["locator"]>) {
+  return { scrollY: await page.evaluate(() => window.scrollY), top: (await anchor.boundingBox())!.y - (await page.evaluate(() => window.scrollY)) };
+}
+async function expectStill(page: Page, anchor: ReturnType<Page["locator"]>, before: { scrollY: number; top: number }, what: string) {
+  await page.waitForTimeout(600); // let any (unwanted) scroll-to-fragment happen before measuring
+  const after = await viewport(page, anchor);
+  const jump = { scroll: Math.abs(after.scrollY - before.scrollY), anchor: Math.abs(after.top - before.top) };
+  console.log(`[scroll-stability] ${what}: scrollY ${before.scrollY} -> ${after.scrollY}, anchor top ${before.top} -> ${after.top}`);
+  expect(jump.scroll, `${what}: scrollY changed`).toBeLessThanOrEqual(MAX_JUMP_PX);
+  expect(jump.anchor, `${what}: anchored control moved in the viewport`).toBeLessThanOrEqual(MAX_JUMP_PX);
+}
+
+test("adjust controls do not move the screen: replace, try another, keep, accept, remove and undo keep scroll and position", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  await openWorksheetDraft(page);
+  await page.setViewportSize({ width: 1280, height: 500 });
+  const q = (n: number) => page.getByRole("button", { name: `Replace question ${n}` });
+  const centre = (n: number) => q(n).evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const panel = page.getByTestId("candidate-panel");
+  await centre(3);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeGreaterThan(300); // the page scrolls
+
+  let before = await viewport(page, q(3));
+  expect(before.scrollY).toBeGreaterThan(100);
+  await q(3).click();
+  await expect(panel).toBeVisible();
+  await expectStill(page, q(3), before, "replace");
+
+  before = await viewport(page, q(3));
+  const first = await page.getByTestId("candidate-equation").locator("annotation").textContent();
+  await page.getByTestId("try-another").click();
+  await expect(page.getByTestId("candidate-equation").locator("annotation")).not.toHaveText(first!);
+  await expectStill(page, q(3), before, "try another");
+
+  before = await viewport(page, q(3));
+  await page.getByTestId("keep-original").click();
+  await expect(panel).toHaveCount(0);
+  await expectStill(page, q(3), before, "keep original");
+
+  await q(3).click();
+  await expect(panel).toBeVisible();
+  before = await viewport(page, q(3));
+  await page.getByTestId("accept-candidate").click();
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced");
+  await expectStill(page, q(3), before, "accept");
+
+  await centre(3);
+  before = await viewport(page, q(2));
+  await page.getByRole("button", { name: "Remove question 3" }).click();
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced · 1 removed");
+  await expectStill(page, q(2), before, "remove");
+
+  // Undo sits above the questions: bring it into the middle of the viewport first
+  await page.getByTestId("undo-btn").evaluate((el) => el.scrollIntoView({ block: "center" }));
+  before = await viewport(page, page.getByTestId("undo-btn"));
+  await page.getByTestId("undo-btn").click();
+  await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced");
+  await expectStill(page, page.getByTestId("undo-btn"), before, "undo");
+});
+
+test("switching the document tab keeps the tab row where it was and keeps ?doc=, back and refresh", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  await openWorksheetDraft(page);
+  await page.setViewportSize({ width: 1280, height: 500 });
+  const tabs = page.getByTestId("document-tabs");
+  const tab = (name: string) => tabs.getByRole("link", { name });
+  await tabs.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await page.evaluate(() => window.scrollBy(0, 40)); // some distance from the top, so a jump to the top is visible
+  let before = await viewport(page, tabs);
+  expect(before.scrollY).toBeGreaterThan(100);
+  await tab("Solutions / Answer Key").click();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "solutions");
+  await expectStill(page, tabs, before, "tab to solutions");
+  await expect(page).toHaveURL(/\?doc=solutions$/);
+  before = await viewport(page, tabs);
+  await tab("Tutor Lesson Notes").click();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "notes");
+  await expectStill(page, tabs, before, "tab to notes");
+  await page.goBack();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "solutions");
+  await page.reload();
+  await expect(page.getByTestId("draft-preview")).toHaveAttribute("data-document", "solutions");
+});
+
 test("a second tab with an older page gets a conflict notice and can reload", async ({ page, context }) => {
   const user = await createUser();
   await signIn(page, user);
