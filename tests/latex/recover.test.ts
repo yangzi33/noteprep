@@ -70,6 +70,7 @@ describe("artifact recovery with the real compiler", () => {
     const manifest = parseManifest((await admin.query(`SELECT artifact_manifest FROM lesson_revision WHERE id = $1`, [exp.revision_id])).rows[0].artifact_manifest)!;
     const state = async () => JSON.stringify((await admin.query(`SELECT b.used, b.reserved, r.state FROM usage_bucket b JOIN usage_reservation r ON r.bucket_id = b.id WHERE b.owner_id = $1`, [ctx.userId])).rows);
     const before = await state();
+    const containersBefore = new Set(await leftoverContainers());
 
     const [a, b] = manifest.documents;
     await unlink(path.join(storeDir, a!.pdf.path));
@@ -83,6 +84,6 @@ describe("artifact recovery with the real compiler", () => {
     }
     expect((await verifyRevisionArtifacts({ recovery: worker.recovery, store }, exp.revision_id)).ok).toBe(true);
     expect(await state()).toBe(before);
-    expect(await leftoverContainers()).toEqual([]);
+    expect((await leftoverContainers()).filter((n) => !containersBefore.has(n))).toEqual([]); // only containers created by this run
   });
 });

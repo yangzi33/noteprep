@@ -53,6 +53,8 @@ export class RecoveryRefused extends Error {
   }
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface ManifestFile {
   document: string;
   format: "pdf" | "tex";
@@ -113,13 +115,19 @@ function assertRecoverable(row: RecoveryRevision, deps: RecoverDeps): ManifestV3
   const meta = row.generationMeta as { snapshotId?: unknown; exportId?: unknown } | null;
   if (!meta || typeof meta.snapshotId !== "string" || typeof meta.exportId !== "string") throw new RecoveryRefused("not_export_revision");
   if (row.lessonDeleted) throw new RecoveryRefused("lesson_deleted");
+  if (row.exportCount > 1) throw new RecoveryRefused("export_ambiguous");
   if (row.exportState === "retired") throw new RecoveryRefused("export_retired");
   if (row.exportState !== "succeeded") throw new RecoveryRefused("export_not_succeeded");
   if (!row.snapshot || row.snapshot.id !== meta.snapshotId) throw new RecoveryRefused("snapshot_missing");
+  // The export entitlement, the revision's generation metadata and the snapshot must all name each other.
+  if (row.exportId !== meta.exportId || row.exportSnapshotId !== row.snapshot.id) throw new RecoveryRefused("export_mismatch");
 
   // The manifest's paths must be exactly this revision's own (owner/lesson/revision/attempt/<document>.<format>).
   const first = manifest.documents[0]!.pdf.path.split("/");
-  const scope: ManifestScope = { ownerId: row.ownerId, lessonId: row.lessonId, revisionId: row.revisionId, attemptId: first[3] ?? "" };
+  const attemptId = first[3] ?? "";
+  // The attempt segment is a uuid (never "", "." or ".."); equality across every path is enforced by the manifest check below.
+  if (first.length !== 5 || !UUID.test(attemptId)) throw new RecoveryRefused("manifest_invalid");
+  const scope: ManifestScope = { ownerId: row.ownerId, lessonId: row.lessonId, revisionId: row.revisionId, attemptId };
   try {
     assertManifestV3Complete(manifest, scope, manifest.documents.map((d) => d.document));
   } catch (error) {
@@ -190,16 +198,39 @@ export async function recoverRevision(deps: RecoverDeps, revisionId: string, opt
 
   const wanted = new Map([...pdfs, ...texBytes]);
   const targets = manifestFiles(row.manifest)!.filter((f) => damaged.some((d) => d.document === f.document && d.format === f.format));
+  const written: string[] = []; // only paths this run wrote, all of them manifest paths
   try {
     for (const f of targets) {
       const data = wanted.get(f.path)!;
       await store.put(f.path, data);
+      written.push(f.path);
       const stored = await store.stat(f.path);
       if (!stored || stored.bytes !== data.byteLength || stored.sha256 !== sha256Of(data)) throw new RecoveryRefused("verify_failed");
     }
   } catch (error) {
     if (error instanceof StorageError) throw new RecoveryRefused("store_failed");
     throw error;
+  }
+
+  // Deleted (or retired) while we were writing: take back exactly what this run wrote, so a deleted lesson is not resurrected.
+  const settled = await deps.recovery.readRevisionForRecovery(revisionId);
+  let still = false;
+  try {
+    if (settled) {
+      assertRecoverable(settled, deps);
+      still = true;
+    }
+  } catch (error) {
+    if (!(error instanceof RecoveryRefused)) throw error;
+  }
+  if (!still) {
+    try {
+      for (const p of written) await store.deletePrefix(p);
+    } catch (error) {
+      if (!(error instanceof StorageError)) throw error;
+      throw new RecoveryRefused("cleanup_failed_after_lesson_deleted");
+    }
+    throw new RecoveryRefused("lesson_deleted_during_recovery");
   }
   const after = await verifyRevisionArtifacts(deps, revisionId);
   if (!after.ok) throw new RecoveryRefused("verify_failed");

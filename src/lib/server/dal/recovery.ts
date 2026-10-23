@@ -13,6 +13,10 @@ export interface RecoveryRevision {
   generationMeta: unknown;
   lessonDeleted: boolean;
   exportState: string | null;
+  /** The export row for this revision, and how many rows reference it (more than one is a refusal, never rows[0]). */
+  exportId: string | null;
+  exportSnapshotId: string | null;
+  exportCount: number;
   snapshot: { id: string; spec: unknown; texSha256: unknown; content: unknown; packageHash: string; validatorVersion: string } | null;
 }
 
@@ -28,6 +32,8 @@ export function createRecoveryDal(db: Db) {
           generation_meta: unknown;
           lesson_deleted: boolean;
           export_state: string | null;
+          export_id: string | null;
+          export_snapshot_id: string | null;
           snapshot_id: string | null;
           spec: unknown;
           tex_sha256: unknown;
@@ -37,12 +43,13 @@ export function createRecoveryDal(db: Db) {
         }[]
       >`
         SELECT r.lesson_id, r.owner_id, r.artifact_manifest, r.generation_meta, (l.deleted_at IS NOT NULL) AS lesson_deleted,
-               e.state AS export_state, s.id AS snapshot_id, s.spec, s.tex_sha256, s.content, s.package_hash, s.validator_version
+               e.state AS export_state, e.id AS export_id, e.snapshot_id AS export_snapshot_id, s.id AS snapshot_id, s.spec, s.tex_sha256, s.content, s.package_hash, s.validator_version
           FROM lesson_revision r
           JOIN lesson l ON l.id = r.lesson_id AND l.owner_id = r.owner_id
           LEFT JOIN export e ON e.revision_id = r.id AND e.owner_id = r.owner_id
           LEFT JOIN export_snapshot s ON s.id::text = (r.generation_meta ->> 'snapshotId') AND s.owner_id = r.owner_id
-         WHERE r.id = ${revisionId}::uuid`;
+         WHERE r.id = ${revisionId}::uuid
+         ORDER BY e.created_at, e.id`;
       const row = rows[0];
       if (!row) return null;
       return {
@@ -53,6 +60,9 @@ export function createRecoveryDal(db: Db) {
         generationMeta: row.generation_meta,
         lessonDeleted: row.lesson_deleted,
         exportState: row.export_state,
+        exportId: row.export_id,
+        exportSnapshotId: row.export_snapshot_id,
+        exportCount: rows.filter((r) => r.export_id !== null).length,
         snapshot: row.snapshot_id
           ? { id: row.snapshot_id, spec: row.spec, texSha256: row.tex_sha256, content: row.content, packageHash: row.package_hash!, validatorVersion: row.validator_version! }
           : null,

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { mkdtemp, readdir, readFile, rm, writeFile, unlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -5,11 +6,12 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { parseManifest, type ManifestV3 } from "@/lib/domain/manifest";
 import { SkeletonCompiler, SkeletonDocumentCompiler, type CompiledDocument, type DocumentCompiler } from "@/lib/latex/compiler";
 import { FakeLlmProvider } from "@/lib/llm/fake";
-import { FsObjectStore, sha256Of } from "@/lib/storage/store";
+import { FsObjectStore, sha256Of, type ObjectStore, type StoredObjectInfo } from "@/lib/storage/store";
+import type { RecoveryDal, RecoveryRevision } from "@/lib/server/dal/recovery";
 import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { RecoveryRefused, recoverRevision, verifyRevisionArtifacts, type RecoverDeps } from "../../worker/recover";
-import { createHarness, sleep, type Harness } from "./export-helpers";
+import { createHarness, request, freshKey, sleep, type Harness } from "./export-helpers";
 
 let h: Harness;
 let storeDir: string;
@@ -105,6 +107,63 @@ class DifferentCompiler implements DocumentCompiler {
   }
 }
 
+/** Wraps the real read; `before(n, row)` may await side effects (n is 1-based) and return a modified row. */
+function hookedRecovery(before: (n: number, row: RecoveryRevision | null) => Promise<RecoveryRevision | null | void> | RecoveryRevision | null | void): Pick<RecoveryDal, "readRevisionForRecovery"> {
+  let n = 0;
+  return {
+    async readRevisionForRecovery(id: string) {
+      const row = await h.worker.recovery.readRevisionForRecovery(id);
+      const out = await before(++n, row);
+      return out === undefined ? row : out;
+    },
+  };
+}
+
+/** Records every call; `onPut` runs after the real put; `mangle` changes the bytes actually stored. */
+class SpyStore implements ObjectStore {
+  puts: string[] = [];
+  deletes: string[] = [];
+  /** Paths whose next stat after a put reports the bytes that were INTENDED (a store that lies once). */
+  lieOnce = new Map<string, StoredObjectInfo>();
+  constructor(
+    private readonly inner: ObjectStore,
+    private readonly opts: { mangle?: boolean; lie?: boolean; onPut?: (p: string) => Promise<void> } = {},
+  ) {}
+  async put(p: string, data: Uint8Array) {
+    this.puts.push(p);
+    if (this.opts.lie) this.lieOnce.set(p, { bytes: data.byteLength, sha256: sha256Of(data) });
+    const stored = this.opts.mangle ? Uint8Array.from(data, (b, i) => (i === 0 ? b ^ 1 : b)) : data;
+    await this.inner.put(p, stored);
+    await this.opts.onPut?.(p);
+  }
+  async stat(p: string) {
+    const lie = this.lieOnce.get(p);
+    if (lie) {
+      this.lieOnce.delete(p);
+      return lie;
+    }
+    return this.inner.stat(p);
+  }
+  async deletePrefix(prefix: string, o?: { signal?: AbortSignal }) {
+    this.deletes.push(prefix);
+    await this.inner.deletePrefix(prefix, o);
+  }
+  list(prefix: string, o: Parameters<ObjectStore["list"]>[1]) {
+    return this.inner.list(prefix, o);
+  }
+}
+
+/** Same length, same page count, one bit different. */
+class BitFlipCompiler implements DocumentCompiler {
+  readonly id = "bitflip";
+  compiles = 0;
+  async compile(r: Parameters<DocumentCompiler["compile"]>[0]): Promise<CompiledDocument[]> {
+    this.compiles++;
+    const real = await new SkeletonDocumentCompiler().compile(r);
+    return real.map((d) => ({ ...d, pdf: Uint8Array.from(d.pdf, (b, i) => (i === d.pdf.length - 1 ? b ^ 1 : b)) }));
+  }
+}
+
 describe("verifyRevisionArtifacts", () => {
   it("reports ok, missing, size_mismatch and sha_mismatch per file", async () => {
     const x = await exported();
@@ -157,8 +216,12 @@ describe("recoverRevision", () => {
     await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
     const filesBefore = await files();
     const stateBefore = await dbState(x.ctx.userId);
-    const report = await recoverRevision(recoverDeps(), x.revisionId, { check: true });
+    const compiler = new SkeletonDocumentCompiler();
+    const spy = new SpyStore(store);
+    const report = await recoverRevision(recoverDeps({ documentCompiler: compiler, store: spy }), x.revisionId, { check: true });
     expect(report.status).toBe("would_restore");
+    expect(compiler.compiles).toBeGreaterThan(0); // --check really recompiles
+    expect(spy.puts).toEqual([]);
     expect(await files()).toEqual(filesBefore);
     expect(await dbState(x.ctx.userId)).toEqual(stateBefore);
   });
@@ -196,13 +259,21 @@ describe("recoverRevision", () => {
     expect(await dbState(x.ctx.userId)).toEqual(stateBefore);
   });
 
-  it("refuses a revision that is not an export revision (manifest v2)", async () => {
-    const x = await exported();
-    const v2 = { manifestVersion: 2, templateVersion: x.manifest.templateVersion, documents: x.manifest.documents };
-    await forceManifest(x.revisionId, v2);
-    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+  it("refuses a revision that is not an export revision (a real manifest v2 from the generate pipeline)", async () => {
+    const ctx = await h.account();
+    const { job } = await h.web.generation.createGeneration(ctx, request(), freshKey());
+    for (let i = 0; i < 10 && (await h.jobRow(job.id)).state !== "succeeded"; i++) {
+      if ((await runOnce(pipelineDeps(), "w-recover-v2")) === null) await sleep(15);
+    }
+    expect((await h.jobRow(job.id)).state).toBe("succeeded");
+    const rev = (await h.admin.query(`SELECT r2.id, r2.artifact_manifest FROM lesson_revision r2 JOIN generation_job j ON j.lesson_id = r2.lesson_id WHERE j.id = $1`, [job.id])).rows[0];
+    expect(rev.artifact_manifest.manifestVersion).toBe(2);
+    const v2 = parseManifest(rev.artifact_manifest)!;
+    await unlink(path.join(storeDir, v2.documents[0]!.pdf.path));
     const filesBefore = await files();
-    expect(await refusal(recoverRevision(recoverDeps(), x.revisionId))).toBe("not_export_revision");
+    const spy = new SpyStore(store);
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy }), rev.id))).toBe("not_export_revision");
+    expect(spy.puts).toEqual([]);
     expect(await files()).toEqual(filesBefore);
   });
 
@@ -213,5 +284,108 @@ describe("recoverRevision", () => {
     await forceManifest(x.revisionId, tampered);
     await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
     expect(await refusal(recoverRevision(recoverDeps(), x.revisionId))).toBe("tex_mismatch");
+  });
+});
+
+describe("recoverRevision, the central checks", () => {
+  it("refuses a recompile with the same size and page count but one flipped bit (the PDF sha is compared)", async () => {
+    const x = await exported();
+    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+    const spy = new SpyStore(store);
+    const filesBefore = await files();
+    expect(await refusal(recoverRevision(recoverDeps({ documentCompiler: new BitFlipCompiler(), store: spy }), x.revisionId))).toBe("recompile_not_identical");
+    expect(spy.puts).toEqual([]);
+    expect(await files()).toEqual(filesBefore);
+  });
+
+  it("does not report restored when the store keeps different bytes than it was given, and stops at the first bad file", async () => {
+    const x = await exported();
+    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+    await unlink(path.join(storeDir, x.manifest.documents[1]!.pdf.path));
+    const spy = new SpyStore(store, { mangle: true });
+    const code = await refusal(recoverRevision(recoverDeps({ store: spy }), x.revisionId));
+    expect(["verify_failed", "store_failed"]).toContain(code);
+    expect(spy.puts).toHaveLength(1);
+  });
+
+  it("verifies the whole revision again at the end even when each put looked fine", async () => {
+    const x = await exported();
+    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+    const spy = new SpyStore(store, { mangle: true, lie: true }); // the first stat after each put reports the intended bytes
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy }), x.revisionId))).toBe("verify_failed");
+  });
+
+  it("reads the revision again right before writing: a lesson deleted during the compile gets no put", async () => {
+    const x = await exported();
+    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+    const spy = new SpyStore(store);
+    const recovery = hookedRecovery(async (n) => {
+      if (n === 1) await h.web.lessonDelete.deleteLesson(x.ctx, x.lessonId);
+    });
+    // The first read still shows a live lesson; only the fresh read can refuse, and it must do so with the plain code.
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy, recovery }), x.revisionId))).toBe("lesson_deleted");
+    expect(spy.puts).toEqual([]);
+  });
+
+  it("takes back exactly the files it wrote when the lesson is deleted after the writes", async () => {
+    const x = await exported();
+    const [a, b] = x.manifest.documents;
+    const before = await files();
+    await unlink(path.join(storeDir, a!.pdf.path));
+    await unlink(path.join(storeDir, b!.tex.path));
+    const survivors = await files();
+    let deleted = false;
+    const spy = new SpyStore(store, {
+      onPut: async () => {
+        if (!deleted) {
+          deleted = true;
+          await h.web.lessonDelete.deleteLesson(x.ctx, x.lessonId);
+        }
+      },
+    });
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy }), x.revisionId))).toBe("lesson_deleted_during_recovery");
+    expect(spy.puts.length).toBe(2);
+    expect([...spy.deletes].sort()).toEqual([...spy.puts].sort());
+    expect(spy.puts.every((p) => p in before)).toBe(true); // only manifest paths
+    expect(await files()).toEqual(survivors); // nothing it wrote is left, nothing else was touched
+  });
+
+  it.each([
+    ["snapshot_missing", (r: RecoveryRevision) => ({ ...r, snapshot: null })],
+    ["export_not_succeeded", (r: RecoveryRevision) => ({ ...r, exportState: "failed" })],
+    ["export_not_succeeded", (r: RecoveryRevision) => ({ ...r, exportState: null, exportId: null })],
+    ["export_ambiguous", (r: RecoveryRevision) => ({ ...r, exportCount: 2 })],
+    ["export_mismatch", (r: RecoveryRevision) => ({ ...r, exportId: randomUUID() })],
+    ["export_mismatch", (r: RecoveryRevision) => ({ ...r, exportSnapshotId: randomUUID() })],
+  ])("refuses with %s and writes nothing", async (expected, change) => {
+    const x = await exported();
+    await unlink(path.join(storeDir, x.manifest.documents[0]!.pdf.path));
+    const spy = new SpyStore(store);
+    const recovery = hookedRecovery((_n, row) => (row ? change(row) : row));
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy, recovery }), x.revisionId))).toBe(expected);
+    expect(spy.puts).toEqual([]);
+  });
+
+  it.each([["dotdot", ".."], ["empty", ""], ["dot", "."], ["not a uuid", "attempt-1"]])("refuses a manifest whose attempt segment is %s", async (_label, segment) => {
+    const x = await exported();
+    const forged = {
+      ...x.manifest,
+      documents: x.manifest.documents.map((d) => {
+        const fix = (p: string) => p.split("/").map((part, i) => (i === 3 ? segment : part)).join("/");
+        return { ...d, pdf: { ...d.pdf, path: fix(d.pdf.path) }, tex: { ...d.tex, path: fix(d.tex.path) } };
+      }),
+    };
+    await forceManifest(x.revisionId, forged);
+    const spy = new SpyStore(store);
+    expect(await refusal(recoverRevision(recoverDeps({ store: spy }), x.revisionId))).toBe("manifest_invalid");
+    expect(spy.puts).toEqual([]);
+  });
+
+  it("refuses attempt segments that differ between documents", async () => {
+    const x = await exported();
+    const other = randomUUID();
+    const forged = { ...x.manifest, documents: x.manifest.documents.map((d, i) => (i === 0 ? d : { ...d, pdf: { ...d.pdf, path: d.pdf.path.replace(d.pdf.path.split("/")[3]!, other) } })) };
+    await forceManifest(x.revisionId, forged);
+    expect(await refusal(recoverRevision(recoverDeps(), x.revisionId))).toBe("manifest_invalid");
   });
 });

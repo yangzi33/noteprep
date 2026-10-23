@@ -6,7 +6,7 @@ import { DockerLatexCompiler } from "@/lib/latex/docker-compiler";
 import { DEFAULT_SANDBOX } from "@/lib/latex/sandbox";
 import { FsObjectStore, type ObjectStore } from "@/lib/storage/store";
 import { SupabaseObjectStore } from "@/lib/storage/supabase-store";
-import { workerEnv } from "./env";
+import { workerEnv, type WorkerConfig } from "./env";
 import { log } from "./log";
 import { recoverRevision, RecoveryRefused } from "./recover";
 
@@ -36,7 +36,7 @@ export function parseRecoverArgs(argv: readonly string[]): RecoverArgs {
  * 1 refused or failed (nothing written unless a verified restore was interrupted); 2 usage or configuration error.
  * Opens one database connection through the worker role and performs no database write.
  */
-export async function runRecover(argv: readonly string[]): Promise<number> {
+export async function runRecover(argv: readonly string[], loadConfig: () => WorkerConfig = workerEnv): Promise<number> {
   let args: RecoverArgs;
   try {
     args = parseRecoverArgs(argv);
@@ -44,7 +44,14 @@ export async function runRecover(argv: readonly string[]): Promise<number> {
     log("recover_usage", { status: "bad_arguments" });
     return 2;
   }
-  const config = workerEnv();
+  let config: WorkerConfig;
+  try {
+    config = loadConfig();
+  } catch {
+    // The validation error can quote values of the environment; say only that it is invalid.
+    log("recover_usage", { status: "invalid_configuration" });
+    return 2;
+  }
   if (config.COMPILER !== "docker") {
     log("recover_refused", { revisionId: args.revisionId, code: "compiler_not_docker" });
     return 2;
