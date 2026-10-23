@@ -270,9 +270,10 @@ test("adjust controls do not move the screen: replace, try another, keep, accept
   await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced");
   await expectStill(page, q(3), before, "accept");
 
+  // Remove a question other than the replaced one: removing question 3 would drop its "replaced" mark too.
   await centre(3);
   before = await viewport(page, q(2));
-  await page.getByRole("button", { name: "Remove question 3" }).click();
+  await page.getByRole("button", { name: "Remove question 4" }).click();
   await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced · 1 removed");
   await expectStill(page, q(2), before, "remove");
 
