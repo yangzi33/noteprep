@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { ManifestIncomplete } from "./errors";
 
@@ -70,15 +71,13 @@ export interface ManifestDocument {
 }
 
 export const MANIFEST_V3 = 3;
-/** The page formats a v3 manifest may record. */
-export const PAGE_FORMAT_VALUES = ["letter", "a4"] as const;
 
 /** Written by the export path from S5-4 on; readers accept it from S5-1 on. */
 export interface ManifestV3 {
   manifestVersion: typeof MANIFEST_V3;
   templateVersion: string;
   renderVersion: string;
-  pageFormat: (typeof PAGE_FORMAT_VALUES)[number];
+  pageFormat: PageFormat;
   compile: { profile: string; image: string | null };
   exportKey: string;
   documents: ManifestDocument[];
@@ -134,7 +133,7 @@ export function assertManifestV3Complete(manifest: ManifestV3, scope: ManifestSc
   const nonEmpty = (v: unknown) => typeof v === "string" && v.length > 0;
   if (!nonEmpty(manifest.templateVersion)) throw new ManifestIncomplete("no template version");
   if (!nonEmpty(manifest.renderVersion)) throw new ManifestIncomplete("no render version");
-  if (!(PAGE_FORMAT_VALUES as readonly unknown[]).includes(manifest.pageFormat)) throw new ManifestIncomplete("invalid page format");
+  if (!(PAGE_FORMATS as readonly unknown[]).includes(manifest.pageFormat)) throw new ManifestIncomplete("invalid page format");
   if (!manifest.compile || !nonEmpty(manifest.compile.profile) || (manifest.compile.image !== null && !nonEmpty(manifest.compile.image))) {
     throw new ManifestIncomplete("invalid compile record");
   }
@@ -158,7 +157,7 @@ const ManifestV3Schema = z.strictObject({
   manifestVersion: z.literal(MANIFEST_V3),
   templateVersion: z.string().min(1).max(60),
   renderVersion: z.string().min(1).max(60),
-  pageFormat: z.enum(PAGE_FORMAT_VALUES),
+  pageFormat: z.enum(PAGE_FORMATS),
   compile: z.strictObject({ profile: z.string().min(1).max(60), image: z.string().min(1).max(300).nullable() }),
   exportKey: z.string().min(1).max(200),
   documents,

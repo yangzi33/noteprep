@@ -399,6 +399,17 @@ describe("page format", () => {
     expect(await h.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
   });
 
+  it("the same key first without a format and then with explicit letter is a replay (same request hash)", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    const key = freshKey();
+    const first = await confirmIn(ctx, d, undefined, key);
+    const second = await confirmIn(ctx, d, "letter", key);
+    expect(first.outcome).toBe("created");
+    expect(second).toMatchObject({ outcome: "replayed", exportId: first.exportId });
+    expect(await h.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
+  });
+
   it("an unknown page format is refused before anything is reserved, recorded or counted", async () => {
     const ctx = await h.account();
     const d = await h.newDraft(ctx);

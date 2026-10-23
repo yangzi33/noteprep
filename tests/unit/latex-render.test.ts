@@ -344,3 +344,13 @@ const TITLE_FOR_BODY = "Solving with one unknown";
 // type-level: the helper must hand back a real LessonPackage
 const _typed: LessonPackage = testPackage();
 void _typed;
+
+describe("preamble page format guard", () => {
+  it("refuses inherited and unknown formats with a RenderError, so no paper option is invented", () => {
+    for (const bad of ["constructor", "legal", "__proto__", "toString", "A4", ""]) {
+      expect(() => preamble("notes", "T", bad as never), JSON.stringify(bad)).toThrow(RenderError);
+    }
+    expect(preamble("notes", "T", "a4")).toContain("a4paper");
+    expect(preamble("notes", "T")).toContain("letterpaper");
+  });
+});

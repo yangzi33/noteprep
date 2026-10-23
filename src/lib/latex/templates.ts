@@ -1,5 +1,5 @@
 import type { DocumentKind } from "@/lib/package/schema";
-import { escapeText } from "./escape";
+import { escapeText, RenderError } from "./escape";
 
 /**
  * The only preamble that ever reaches the compiler. It lives in version control; neither model output nor user input
@@ -51,6 +51,8 @@ export function runningTitleTex(topicTitle: string): string {
 }
 
 export function preamble(document: DocumentKind, runningTitle: string, pageFormat: PageFormat = "letter"): string {
+  // Second guard behind the callers' allowlists: an inherited key such as "constructor" must never reach the document class line.
+  if (!Object.hasOwn(PAPER_OPTION, pageFormat)) throw new RenderError("invalid_page_format");
   return [
     // Object compression off: every PDF dictionary stays readable text, so the host can scan for active content (an
     // object stream would hide dictionaries inside compressed bytes) and reject any PDF that has one.

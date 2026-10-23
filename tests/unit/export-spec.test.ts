@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { requestHash } from "@/lib/domain/hash";
 import { buildExportSpec, confirmRequestPayload, contentKey, exportKey, PAGE_FORMATS, prepareExport, PAGE_FORMAT, renderForExport, RenderError, type ExportSpec } from "@/lib/domain/export-spec";
 import { RENDER_VERSION } from "@/lib/latex/render";
 import { testContext, testPackage } from "../fixtures/package";
@@ -133,5 +134,14 @@ describe("page format (S5-3)", () => {
     expect(confirmRequestPayload(base)).toEqual(base);
     expect("pageFormat" in confirmRequestPayload({ ...base, pageFormat: "letter" })).toBe(false);
     expect(confirmRequestPayload({ ...base, pageFormat: "a4" })).toEqual({ ...base, pageFormat: "a4" });
+  });
+
+  it("the no-format confirm request hash is pinned to its value from before page formats existed", () => {
+    // Computed from the pre-S5-3 payload; if this changes, every recorded idempotency key stops replaying.
+    const payload = confirmRequestPayload({ draftId: "d", versionId: "v", expectedRev: 2, expectedContentHash: "h" });
+    expect(requestHash("export.confirm", 1, payload)).toBe("c646b2eb3b440d34666543d8a993888fcb9b38040e4c07c8898f637e877cedf0");
+    expect(requestHash("export.confirm", 1, confirmRequestPayload({ ...{ draftId: "d", versionId: "v", expectedRev: 2, expectedContentHash: "h" }, pageFormat: "letter" }))).toBe(
+      "c646b2eb3b440d34666543d8a993888fcb9b38040e4c07c8898f637e877cedf0",
+    );
   });
 });
