@@ -6,10 +6,10 @@ import { documentView, type DocumentView } from "@/lib/package/views";
 import type { DocumentKind } from "@/lib/package/schema";
 import { equationTex, operationText, solutionText } from "./math";
 import { escapeText, RenderError } from "./escape";
-import { ALLOWED_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, preamble, TEMPLATE_VERSION } from "./templates";
+import { ALLOWED_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, preamble, TEMPLATE_VERSION, type PageFormat } from "./templates";
 
 export { RenderError } from "./escape";
-export { TEMPLATE_VERSION } from "./templates";
+export { TEMPLATE_VERSION, PAGE_FORMATS, type PageFormat } from "./templates";
 
 /**
  * Identity of the renderer's OUTPUT for a given package: the code in this file and in escape.ts / math.ts, the compile
@@ -114,9 +114,9 @@ function headerTex(view: DocumentView, pkg: LessonPackage): string {
  * ^^ notation, no stray `#`, bounded size. It never replaces the sandbox; it makes a rendering defect fail loudly
  * before anything is compiled.
  */
-export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitle: string): void {
+export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitle: string, pageFormat: PageFormat = "letter"): void {
   if (Buffer.byteLength(tex, "utf8") > MAX_SOURCE_BYTES) throw new RenderError("source_too_large");
-  const head = preamble(document, runningTitle);
+  const head = preamble(document, runningTitle, pageFormat);
   if (!tex.startsWith(head)) throw new RenderError("preamble_changed");
   const body = tex.slice(head.length);
   for (const match of body.matchAll(/\\([A-Za-z@]+|.)/gs)) {
@@ -134,7 +134,7 @@ export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitl
  * Renders one document of a package as LaTeX source. Pure and deterministic: no dates, no randomness, no I/O. The
  * worksheet is built from `WorksheetView`, which has no solution sections, so it cannot contain an answer.
  */
-export function renderDocument(pkg: LessonPackage, id: DocumentKind): RenderedDocument {
+export function renderDocument(pkg: LessonPackage, id: DocumentKind, pageFormat: PageFormat = "letter"): RenderedDocument {
   const view = documentView(pkg, id);
   const problems = new Map<string, string>();
   for (const section of pkg.sections) {
@@ -160,8 +160,8 @@ export function renderDocument(pkg: LessonPackage, id: DocumentKind): RenderedDo
     return `${heading}${body}`;
   });
   const runningTitle = (pkg.context as CurriculumContext).topic.title;
-  const tex = [preamble(id, runningTitle), "\\begin{document}", headerTex(view, pkg), ...sections, "\\end{document}", ""].join("\n");
-  assertTexIsSafe(tex, id, runningTitle);
+  const tex = [preamble(id, runningTitle, pageFormat), "\\begin{document}", headerTex(view, pkg), ...sections, "\\end{document}", ""].join("\n");
+  assertTexIsSafe(tex, id, runningTitle, pageFormat);
   return { id, tex, templateVersion: TEMPLATE_VERSION };
 }
 

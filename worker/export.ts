@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DeadlineExceeded, ManifestIncomplete } from "@/lib/domain/errors";
-import { PAGE_FORMAT, RENDER_VERSION, type ExportSpec } from "@/lib/domain/export-spec";
+import { PAGE_FORMATS, RENDER_VERSION, type ExportSpec, type PageFormat } from "@/lib/domain/export-spec";
 import { sha256Hex } from "@/lib/domain/hash";
 import { renderDocument, TEMPLATE_VERSION, type RenderedDocument } from "@/lib/latex/render";
 import { packageContentHash } from "@/lib/package/adjust";
@@ -18,7 +18,7 @@ const SpecSchema = z.object({
     .min(1)
     .refine((docs) => new Set(docs).size === docs.length),
   locale: z.string(),
-  pageFormat: z.literal(PAGE_FORMAT),
+  pageFormat: z.enum(PAGE_FORMATS),
   templateVersion: z.string(),
   renderVersion: z.string(),
 });
@@ -28,7 +28,7 @@ const HEX64 = /^[0-9a-f]{64}$/;
 export interface VerifyEnv {
   renderVersion: string;
   templateVersion: string;
-  render: (pkg: LessonPackage, id: DocumentKind) => RenderedDocument;
+  render: (pkg: LessonPackage, id: DocumentKind, pageFormat: PageFormat) => RenderedDocument;
 }
 const DEFAULT_ENV: VerifyEnv = { renderVersion: RENDER_VERSION, templateVersion: TEMPLATE_VERSION, render: renderDocument };
 
@@ -68,7 +68,7 @@ export function verifyExportInput(input: ExportInput, env: VerifyEnv & { jobId?:
   for (const doc of spec.documents) {
     let out: RenderedDocument;
     try {
-      out = env.render(pkg, doc);
+      out = env.render(pkg, doc, spec.pageFormat);
     } catch {
       throw new PipelineError("render_failed", false); // deterministic: it will fail the same way again
     }

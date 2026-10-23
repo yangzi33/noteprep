@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildExportSpec, contentKey, exportKey, prepareExport, PAGE_FORMAT, renderForExport, RenderError, type ExportSpec } from "@/lib/domain/export-spec";
+import { buildExportSpec, confirmRequestPayload, contentKey, exportKey, PAGE_FORMATS, prepareExport, PAGE_FORMAT, renderForExport, RenderError, type ExportSpec } from "@/lib/domain/export-spec";
 import { RENDER_VERSION } from "@/lib/latex/render";
 import { testContext, testPackage } from "../fixtures/package";
 
@@ -97,5 +97,41 @@ describe("export identity (rendered-source keyed)", () => {
     const para = (bad.sections.flatMap((s) => s.blocks as unknown as { type: string }[])).find((b) => b.type === "paragraph") as unknown as { text: string };
     para.text = "x".repeat(200_000);
     expect(() => renderForExport(bad)).toThrow(RenderError);
+  });
+});
+
+describe("page format (S5-3)", () => {
+  // Pinned from the S4b code BEFORE page formats existed: recorded letter exports must keep replaying under these keys.
+  const LETTER_EXPORT_KEY = "e149b8c3f5e3a003ccd57df85f1d0bb42b32cb9e68c8be77d63575651fe160fa";
+  const LETTER_CONTENT_KEY = "0e77d8357ca14fd9046e9258a292c92860f1d35d11e7801b4469086f752fc3ff";
+
+  it("offers exactly letter and a4, letter first", () => {
+    expect([...PAGE_FORMATS]).toEqual(["letter", "a4"]);
+  });
+
+  it("letter keys are byte-identical to the S4b fixtures, with or without an explicit format", () => {
+    const implicit = prepareExport(pkg());
+    const explicit = prepareExport(pkg(), "letter");
+    for (const p of [implicit, explicit]) {
+      expect(p.exportKey).toBe(LETTER_EXPORT_KEY);
+      expect(p.contentKey).toBe(LETTER_CONTENT_KEY);
+    }
+  });
+
+  it("a4 gives another spec, other rendered sources and another key; the same format twice is stable", () => {
+    const letter = prepareExport(pkg(), "letter");
+    const a4 = prepareExport(pkg(), "a4");
+    expect(a4.spec.pageFormat).toBe("a4");
+    expect(a4.exportKey).not.toBe(letter.exportKey);
+    expect(a4.contentKey).not.toBe(letter.contentKey);
+    for (const doc of a4.spec.documents) expect(a4.texShas[doc]).not.toBe(letter.texShas[doc]);
+    expect(prepareExport(clone(pkg()), "a4").exportKey).toBe(a4.exportKey);
+  });
+
+  it("the confirm request payload gains pageFormat only when it is not letter", () => {
+    const base = { draftId: "d", versionId: "v", expectedRev: 2, expectedContentHash: "h" };
+    expect(confirmRequestPayload(base)).toEqual(base);
+    expect("pageFormat" in confirmRequestPayload({ ...base, pageFormat: "letter" })).toBe(false);
+    expect(confirmRequestPayload({ ...base, pageFormat: "a4" })).toEqual({ ...base, pageFormat: "a4" });
   });
 });

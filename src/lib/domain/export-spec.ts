@@ -1,4 +1,4 @@
-import { RENDER_VERSION, renderDocument, TEMPLATE_VERSION } from "@/lib/latex/render";
+import { PAGE_FORMATS, RENDER_VERSION, renderDocument, TEMPLATE_VERSION, type PageFormat } from "@/lib/latex/render";
 import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
 import { canonicalJson, sha256Hex } from "./hash";
 
@@ -10,15 +10,20 @@ import { canonicalJson, sha256Hex } from "./hash";
 export { RENDER_VERSION, RenderError } from "@/lib/latex/render";
 
 export const EXPORT_SPEC_VERSION = 1;
-/** The page format of every export in S4a/S4b (S5 turns it into a template parameter). */
+export { PAGE_FORMATS, type PageFormat };
+/** The default page format; its rendered source, keys and request hashes are those of S4b. */
 export const PAGE_FORMAT = "letter" as const;
+
+export function isPageFormat(value: unknown): value is PageFormat {
+  return typeof value === "string" && (PAGE_FORMATS as readonly string[]).includes(value);
+}
 
 export interface ExportSpec {
   v: typeof EXPORT_SPEC_VERSION;
   /** The package's documents in canonical order. */
   documents: DocumentKind[];
   locale: string;
-  pageFormat: typeof PAGE_FORMAT;
+  pageFormat: PageFormat;
   templateVersion: string;
   renderVersion: string;
 }
@@ -27,18 +32,22 @@ export interface ExportSpec {
 export type TexShas = Record<string, string>;
 
 /** Renders every document of the package (pure string generation) and hashes each source. */
-export function renderForExport(pkg: LessonPackage, documents: readonly DocumentKind[] = pkg.documents.map((d) => d.id)): TexShas {
+export function renderForExport(
+  pkg: LessonPackage,
+  documents: readonly DocumentKind[] = pkg.documents.map((d) => d.id),
+  pageFormat: PageFormat = PAGE_FORMAT,
+): TexShas {
   const out: TexShas = {};
-  for (const doc of documents) out[doc] = sha256Hex(renderDocument(pkg, doc).tex);
+  for (const doc of documents) out[doc] = sha256Hex(renderDocument(pkg, doc, pageFormat).tex);
   return out;
 }
 
-export function buildExportSpec(pkg: LessonPackage): ExportSpec {
+export function buildExportSpec(pkg: LessonPackage, pageFormat: PageFormat = PAGE_FORMAT): ExportSpec {
   return {
     v: EXPORT_SPEC_VERSION,
     documents: pkg.documents.map((d) => d.id),
     locale: (pkg.request as { locale: string }).locale,
-    pageFormat: PAGE_FORMAT,
+    pageFormat,
     templateVersion: TEMPLATE_VERSION,
     renderVersion: RENDER_VERSION,
   };
@@ -70,10 +79,25 @@ export function contentKey(spec: ExportSpec, texShas: TexShas): string {
 }
 
 /** Everything confirmExport derives from a package before it opens a transaction. */
-export function prepareExport(pkg: LessonPackage) {
-  const spec = buildExportSpec(pkg);
-  const texShas = renderForExport(pkg, spec.documents);
+export function prepareExport(pkg: LessonPackage, pageFormat: PageFormat = PAGE_FORMAT) {
+  const spec = buildExportSpec(pkg, pageFormat);
+  const texShas = renderForExport(pkg, spec.documents, pageFormat);
   return { spec, texShas, exportKey: exportKey(spec, texShas), contentKey: contentKey(spec, texShas) };
+}
+
+/**
+ * The body hashed into the idempotency request hash of a confirm. pageFormat is part of it ONLY when it is not the default,
+ * so every request recorded before page formats existed (always letter) hashes exactly as it did and still replays.
+ */
+export function confirmRequestPayload(input: {
+  draftId: string;
+  versionId: string;
+  expectedRev: number;
+  expectedContentHash: string;
+  pageFormat?: PageFormat;
+}) {
+  const base = { draftId: input.draftId, versionId: input.versionId, expectedRev: input.expectedRev, expectedContentHash: input.expectedContentHash };
+  return input.pageFormat && input.pageFormat !== PAGE_FORMAT ? { ...base, pageFormat: input.pageFormat } : base;
 }
 
 // --- failure memo (I10) -------------------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { domainErrorCode } from "@/lib/domain/errors";
+import { PAGE_FORMATS } from "@/lib/domain/export-spec";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
@@ -15,6 +16,7 @@ const Input = z.object({
   versionId: z.uuid(),
   expectedRev: z.coerce.number().int().min(1).max(1_000_000_000),
   expectedContentHash: z.string().min(1).max(200),
+  pageFormat: z.enum(PAGE_FORMATS).optional(),
   key: IdempotencyKeySchema,
 });
 
@@ -35,6 +37,8 @@ export async function confirmExportAction(formData: FormData) {
     expectedRev: field(formData, "expectedRev"),
     expectedContentHash: field(formData, "expectedContentHash"),
     key: field(formData, "key"),
+    // An old form without the field means letter; any other value must be on the allowlist or the request is refused.
+    pageFormat: formData.get("pageFormat") ?? undefined,
   });
   if (!parsed.success) {
     const draftId = z.uuid().safeParse(field(formData, "draftId"));

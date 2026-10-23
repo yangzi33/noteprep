@@ -40,6 +40,16 @@ describe("verifyExportInput", () => {
     for (const d of out.rendered) expect(sha256Hex(d.tex)).toBe(shas[d.id]);
   });
 
+  it("renders with the spec's page format: an a4 snapshot verifies, and an a4 spec over letter hashes is render_mismatch", () => {
+    const pkg = testPackage();
+    const out = verifyExportInput(inputFor(pkg, { ...(({ spec, texShas }) => ({ spec: clone(spec), texSha256: clone(texShas) }))(prepareExport(pkg, "a4")) }));
+    expect(out.spec.pageFormat).toBe("a4");
+    for (const d of out.rendered) expect(d.tex).toContain("\\documentclass[11pt,a4paper]{article}");
+    const letterHashes = inputFor(pkg);
+    letterHashes.spec = { ...(letterHashes.spec as ExportSpec), pageFormat: "a4" };
+    expect(failure(() => verifyExportInput(letterHashes))).toMatchObject({ code: "render_mismatch", retryable: false });
+  });
+
   it("a render or template version change is retryable (a newer worker will not match, an older one may)", () => {
     for (const patch of [{ renderVersion: "render/0" }, { templateVersion: "classic/1" }]) {
       const input = inputFor();
@@ -64,7 +74,7 @@ describe("verifyExportInput", () => {
       { spec: { ...spec(), documents: ["worksheet", "notes", "solutions"] } },
       { spec: { ...spec(), documents: ["notes"] } },
       { spec: { ...spec(), documents: ["notes", "notes", "solutions"] } },
-      { spec: { ...spec(), pageFormat: "a4" } },
+      { spec: { ...spec(), pageFormat: "legal" } },
       { spec: { ...spec(), v: 2 } },
       { spec: "nonsense" },
       { texSha256: { notes: "a".repeat(64), worksheet: "b".repeat(64) } },

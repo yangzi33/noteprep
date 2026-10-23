@@ -56,6 +56,20 @@ describe("export confirmation view", () => {
     expect(html).not.toMatch(/don.?t show/i);
   });
 
+  it("offers a page format radio group inside the form, letter checked by default, and names both formats", () => {
+    const html = render();
+    const radios = [...html.matchAll(/<input[^>]*type="radio"[^>]*>/g)].map((m) => m[0]);
+    expect(radios).toHaveLength(2);
+    expect(radios.every((r) => r.includes('name="pageFormat"'))).toBe(true);
+    const letter = radios.find((r) => r.includes('value="letter"'))!;
+    const a4 = radios.find((r) => r.includes('value="a4"'))!;
+    expect(letter).toContain("checked");
+    expect(a4).not.toContain("checked");
+    expect(html).toContain("US Letter");
+    expect(html).toContain("A4");
+    expect(html.indexOf("<form")).toBeLessThan(html.indexOf('value="a4"'));
+  });
+
   it("flag off: the disabled message and no form", () => {
     const html = render({ enabled: false });
     expect(html).toContain(generationErrorMessage("EXPORT_DISABLED")!);

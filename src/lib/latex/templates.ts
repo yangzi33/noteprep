@@ -8,6 +8,11 @@ import { escapeText } from "./escape";
  */
 export const TEMPLATE_VERSION = "classic/2";
 
+/** Page formats of an export (an export option, not draft content). Letter is the default and its source never changes. */
+export const PAGE_FORMATS = ["letter", "a4"] as const;
+export type PageFormat = (typeof PAGE_FORMATS)[number];
+const PAPER_OPTION: Record<PageFormat, string> = { letter: "letterpaper", a4: "a4paper" };
+
 export const DOCUMENT_TITLES: Record<DocumentKind, string> = {
   notes: "Tutor Lesson Notes",
   worksheet: "Student Practice Worksheet",
@@ -45,12 +50,12 @@ export function runningTitleTex(topicTitle: string): string {
   return escapeText(cut);
 }
 
-export function preamble(document: DocumentKind, runningTitle: string): string {
+export function preamble(document: DocumentKind, runningTitle: string, pageFormat: PageFormat = "letter"): string {
   return [
     // Object compression off: every PDF dictionary stays readable text, so the host can scan for active content (an
     // object stream would hide dictionaries inside compressed bytes) and reject any PDF that has one.
     "\\pdfobjcompresslevel=0",
-    "\\documentclass[11pt,letterpaper]{article}",
+    `\\documentclass[11pt,${PAPER_OPTION[pageFormat]}]{article}`,
     "\\usepackage[T1]{fontenc}",
     "\\usepackage[utf8]{inputenc}",
     "\\usepackage{lmodern}",

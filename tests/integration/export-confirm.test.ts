@@ -16,9 +16,9 @@ vi.mock("@/lib/latex/render", async (importOriginal) => {
   const { RenderError: RE } = await import("@/lib/latex/escape");
   return {
     ...real,
-    renderDocument: (pkg: Parameters<typeof real.renderDocument>[0], id: Parameters<typeof real.renderDocument>[1]) => {
+    renderDocument: (pkg: Parameters<typeof real.renderDocument>[0], id: Parameters<typeof real.renderDocument>[1], pageFormat?: Parameters<typeof real.renderDocument>[2]) => {
       if (flags.renderThrows) throw new RE(flags.renderThrows);
-      return real.renderDocument(pkg, id);
+      return real.renderDocument(pkg, id, pageFormat);
     },
   };
 });
@@ -354,6 +354,62 @@ describe("retry after failure", () => {
       await h.admin.query(`ALTER TABLE export ENABLE TRIGGER export_guard`);
     }
     expect((await h.confirm(ctx, d)).outcome).toBe("created");
+  });
+});
+
+describe("page format", () => {
+  const confirmIn = (ctx: Parameters<Harness["confirm"]>[0], d: Parameters<Harness["confirm"]>[1], pageFormat: string | undefined, key = freshKey()) =>
+    h.web.exports.confirmExport(ctx, { draftId: d.draftId, versionId: d.versionId, expectedRev: d.rev, expectedContentHash: d.contentHash, pageFormat }, key);
+
+  it("letter and a4 of one draft are two exports with two reservations; explicit letter equals the default", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    const letter = await h.confirm(ctx, d);
+    const explicit = await confirmIn(ctx, d, "letter");
+    const a4 = await confirmIn(ctx, d, "a4");
+    expect(letter.outcome).toBe("created");
+    expect(explicit).toMatchObject({ outcome: "joined", exportId: letter.exportId });
+    expect(a4.outcome).toBe("created");
+    expect(a4.exportId).not.toBe(letter.exportId);
+    const rows = await h.exportsOf(ctx.userId);
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((r) => r.export_key)).size).toBe(2);
+    expect(await h.count(`SELECT count(*) AS n FROM export_snapshot WHERE owner_id = $1 AND spec->>'pageFormat' = 'a4'`, [ctx.userId])).toBe(1);
+    expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 2 });
+  });
+
+  it("ten parallel submits of the a4 form (one key) make one export and one reservation", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    const key = freshKey();
+    const results = await Promise.all(Array.from({ length: 10 }, () => confirmIn(ctx, d, "a4", key)));
+    expect(results.filter((r) => r.outcome === "created")).toHaveLength(1);
+    expect(results.filter((r) => r.outcome === "replayed")).toHaveLength(9);
+    expect(new Set(results.map((r) => r.exportId)).size).toBe(1);
+    expect(await h.count(`SELECT count(*) AS n FROM export WHERE owner_id = $1`, [ctx.userId])).toBe(1);
+    expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 1 });
+  });
+
+  it("the same key with letter and then a4 is an idempotency conflict", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    const key = freshKey();
+    await confirmIn(ctx, d, undefined, key);
+    expect(await code(confirmIn(ctx, d, "a4", key))).toBe("IDEMPOTENCY_KEY_REUSED");
+    expect(await h.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
+  });
+
+  it("an unknown page format is refused before anything is reserved, recorded or counted", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    for (const bad of ["legal", "A4", "", "a4 ", "letter\u0000", "__proto__"]) {
+      expect(await code(confirmIn(ctx, d, bad)), JSON.stringify(bad)).toBe("INVALID_REQUEST");
+    }
+    expect(await h.count(`SELECT count(*) AS n FROM export WHERE owner_id = $1`, [ctx.userId])).toBe(0);
+    expect(await h.count(`SELECT count(*) AS n FROM export_snapshot WHERE owner_id = $1`, [ctx.userId])).toBe(0);
+    expect(await h.count(`SELECT count(*) AS n FROM generation_job WHERE owner_id = $1`, [ctx.userId])).toBe(0);
+    expect(await h.count(`SELECT count(*) AS n FROM idempotency_key WHERE owner_id = $1 AND operation = 'export.confirm'`, [ctx.userId])).toBe(0);
+    expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
   });
 });
 
