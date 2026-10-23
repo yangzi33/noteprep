@@ -6,6 +6,7 @@ import { IdempotencyKeySchema } from "@/lib/domain/generation";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { serverEnv } from "@/lib/server/env";
 import { prepareHref, readPrepareParams } from "@/lib/ui/prepare-url";
 
 const field = (formData: FormData, name: string) => {
@@ -39,14 +40,21 @@ export async function prepareLesson(formData: FormData) {
   });
   if (!key.success || !request.success) redirect(prepareHref({ ...back, error: "invalid" }));
 
-  let jobId: string;
+  // FLOW_MODE=draft (D-106): a free draft with an HTML preview; nothing is reserved and no job is queued.
+  // The default "legacy" flow is unchanged.
+  let target: string;
   try {
-    const { job } = await webDal().generation.createGeneration(ctx, request.data, key.data);
-    jobId = job.id;
+    if (serverEnv().FLOW_MODE === "draft") {
+      const { draft } = await webDal().drafts.createDraft(ctx, request.data, key.data);
+      target = `/drafts/${draft.draftId}`;
+    } else {
+      const { job } = await webDal().generation.createGeneration(ctx, request.data, key.data);
+      target = `/jobs/${job.id}`;
+    }
   } catch (error) {
     const code = domainErrorCode(error);
     if (code) redirect(prepareHref({ ...back, error: code }));
     throw error;
   }
-  redirect(`/jobs/${jobId}`); // outside the try: redirect() works by throwing
+  redirect(target); // outside the try: redirect() works by throwing
 }

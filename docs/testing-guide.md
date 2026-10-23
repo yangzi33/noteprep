@@ -18,10 +18,10 @@
 | `pnpm lint` | ESLint(含禁用 `process.env` 的规则) | — |
 | `pnpm typecheck` | `next typegen` + `tsc --noEmit` | — |
 | `pnpm test` | 单元测试(约 424 个):课包、文字规则、LLM 适配器、渲染、沙箱参数、清单 v2、表单 | — |
-| `pnpm test:integration` | 真实 Postgres(约 162 个):额度并发、幂等、课程、请求 v2、结算、旧路径 | `pnpm db:up` |
+| `pnpm test:integration` | 真实 Postgres:额度并发、幂等、课程、请求 v2、结算、旧路径;**草稿**(`tests/integration/drafts.test.ts`:免费、幂等、限流、过期清理、跨用户)与草稿表的触发器/授权(`schema.test.ts`) | `pnpm db:up` |
 | `pnpm test:supabase` | 登录、Storage(私有桶、签名 URL、仅 PDF)、RLS、Data API 边界(26 个) | `pnpm supabase:start`(Storage 已在 `config.toml` 启用;改配置后需 stop 再 start) |
 | `pnpm test:latex` | **真实容器**(40 个):OS 隔离、恶意 TeX、完整链路、可复现性 | `pnpm latex:image` |
-| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑 | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
+| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑。`draft-flow.spec.ts` 跑在第二个 project(`chromium-draft`),它连接另一个以 `FLOW_MODE=draft` 启动的服务器(端口 3101);其余 spec 仍连默认的 `legacy` 服务器(3100) | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
@@ -46,6 +46,10 @@
 
 7. 看结果:任务页依次显示排队 → 生成 → 验证 → 编译 → 保存 → 完成,**完成后自动跳转到 `/lessons/[id]` 预览页**(标签页切换三份文档、新标签页打开、下载 PDF、课程信息面板)。预览要求 worker 用 `OBJECT_STORE=supabase`;用默认的 `fs` 时页面能打开但文件取不到(会显示"暂时无法提供")。
 8. 额度:成功后"剩余生成次数"减 1;失败后不扣("This did not use one of your generations");第 4 次应被拒绝。同一幂等键重复提交只产生一个任务。
+
+### 草稿流程(`FLOW_MODE=draft`,免费预览)
+
+在 `.env` 设置 `FLOW_MODE=draft` 并重启 Web:`/prepare` 的按钮变为 "Create draft preview",提交后进入 `/drafts/[id]`(HTML 预览、三个文档标签页、"Draft expires …"、禁用的 "Export is coming next")。不预留额度、不入队、不需要 worker;"剩余生成次数"不变。默认(`legacy` 或不设置)行为与之前完全相同。所有阈值见 `src/lib/server/limits.ts`(环境变量,例如 `DRAFT_TTL_DAYS`);worker 的清扫循环会把过期草稿标记为 expired,宽限期(`DRAFT_PURGE_GRACE_DAYS`)后删除。
 
 ## 4. 失败时看哪里
 

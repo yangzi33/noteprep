@@ -110,3 +110,24 @@ export async function seedJobWithReservation(db: Db, ownerId: string, lessonId: 
   }
   return jobId;
 }
+
+/** A draft with a placeholder request and context (the guards and grants do not look inside them). */
+export async function seedDraft(db: Db, ownerId: string, expiresInSql = "interval '14 days'") {
+  const id = randomUUID();
+  await db.query(
+    `INSERT INTO draft (id, owner_id, request, request_hash, context, expires_at)
+     VALUES ($1, $2, '{"fictional":true}', 'h', '{}', now() + ${expiresInSql})`,
+    [id, ownerId],
+  );
+  return id;
+}
+
+export async function seedDraftVersion(db: Db, draftId: string, ownerId: string, ordinal: number) {
+  const id = randomUUID();
+  await db.query(
+    `INSERT INTO draft_version (id, draft_id, owner_id, ordinal, seed, content, content_hash, question_meta, next_question_seq, validator_version)
+     VALUES ($1, $2, $3, $4, 'seed', '{}', 'sha256:test', '{}', 1, 'test/0')`,
+    [id, draftId, ownerId, ordinal],
+  );
+  return id;
+}

@@ -6,6 +6,8 @@ import {
   seedJobWithReservation,
   seedLesson,
   seedOwner,
+  seedDraft,
+  seedDraftVersion,
   seedRevision,
   seedTrialBucket,
 } from "./helpers";
@@ -31,6 +33,8 @@ const TABLES = [
   "subscription",
   "webhook_event",
   "rate_limit_window",
+  "draft",
+  "draft_version",
   // curriculum reference data (public, read-only for the runtime roles)
   "education_system",
   "curriculum",
@@ -457,5 +461,200 @@ describe("idempotency, subscriptions and rate limits", () => {
       );
     const results = await Promise.all(Array.from({ length: 10 }, bump));
     expect(results.map((r) => r.rows[0].count).sort((x, y) => x - y)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+});
+
+describe("drafts (D-103)", () => {
+  it("app_runtime can read, insert and update but never delete; worker_runtime can purge but not insert", async () => {
+    const privs = async (t: string, r: string) =>
+      (
+        await Promise.all(
+          ["SELECT", "INSERT", "UPDATE", "DELETE"].map(async (p) => [
+            p,
+            (await admin.query(`SELECT has_table_privilege($1, $2, $3) AS ok`, [r, `public.${t}`, p])).rows[0].ok,
+          ]),
+        )
+      )
+        .filter(([, ok]) => ok)
+        .map(([p]) => p);
+    for (const t of ["draft", "draft_version"]) {
+      expect(await privs(t, "app_runtime")).toEqual(["SELECT", "INSERT", "UPDATE"]);
+      expect(await privs(t, "worker_runtime")).toEqual(["SELECT", "UPDATE", "DELETE"]);
+    }
+  });
+
+  it("app_runtime really cannot delete drafts or versions (permission denied), the worker can", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    const version = await seedDraftVersion(admin, draft, owner, 1);
+    expect(await pgErrorCode(() => app.query(`DELETE FROM draft_version WHERE id = $1`, [version]))).toBe("42501");
+    expect(await pgErrorCode(() => app.query(`DELETE FROM draft WHERE id = $1`, [draft]))).toBe("42501");
+    expect(await pgErrorCode(() => worker.query(`INSERT INTO draft_version (draft_id, owner_id, ordinal, seed, content, content_hash, question_meta, next_question_seq, validator_version)
+      VALUES ($1, $2, 2, 's', '{}', 'h', '{}', 1, 'v')`, [draft, owner]))).toBe("42501");
+    expect(await pgErrorCode(() => worker.query(`DELETE FROM draft WHERE id = $1`, [draft]))).toBeNull();
+  });
+
+  it("deleting a draft cascades to its versions, even when it has an active version", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    const v1 = await seedDraftVersion(admin, draft, owner, 1);
+    await seedDraftVersion(admin, draft, owner, 2);
+    await admin.query(`UPDATE draft SET active_version_id = $2, version_count = 2 WHERE id = $1`, [draft, v1]);
+    await admin.query(`DELETE FROM draft WHERE id = $1`, [draft]);
+    const { rows } = await admin.query(`SELECT count(*)::int AS n FROM draft_version WHERE draft_id = $1`, [draft]);
+    expect(rows[0].n).toBe(0);
+  });
+
+  it("a version must belong to a draft of the same owner, and the active version to the same draft", async () => {
+    const a = await seedOwner(admin);
+    const b = await seedOwner(admin);
+    const draftA = await seedDraft(admin, a);
+    const draftB = await seedDraft(admin, b);
+    expect(await pgErrorCode(() => seedDraftVersion(admin, draftA, b, 1))).toBe(FK_VIOLATION);
+    const vB = await seedDraftVersion(admin, draftB, b, 1);
+    expect(await pgErrorCode(() => admin.query(`UPDATE draft SET active_version_id = $2 WHERE id = $1`, [draftA, vB]))).toBe(FK_VIOLATION);
+  });
+
+  it("draft request, request_hash, context and owner are immutable; status only moves active -> expired", async () => {
+    const owner = await seedOwner(admin);
+    const other = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    for (const [column, value] of [
+      ["request", '{"x":1}'],
+      ["request_hash", "other"],
+      ["context", '{"x":1}'],
+      ["owner_id", other],
+    ] as const) {
+      expect(await pgErrorCode(() => app.query(`UPDATE draft SET ${column} = $2 WHERE id = $1`, [draft, value]))).toBe(STATE_VIOLATION);
+    }
+    // ordinary updates (pointer, expiry, rev) are fine
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET rev = rev + 1, expires_at = now() + interval '1 day', updated_at = now() WHERE id = $1`, [draft]))).toBeNull();
+    expect(await pgErrorCode(() => worker.query(`UPDATE draft SET status = 'expired' WHERE id = $1`, [draft]))).toBeNull();
+    expect(await pgErrorCode(() => admin.query(`UPDATE draft SET status = 'active' WHERE id = $1`, [draft]))).toBe(STATE_VIOLATION);
+  });
+
+  it("draft_version identity is immutable and every update must be a rev + 1 compare-and-swap step", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    const v = await seedDraftVersion(admin, draft, owner, 1);
+    for (const set of ["ordinal = 9", "seed = 'x'", `owner_id = '${await seedOwner(admin)}'`, `draft_id = '${await seedDraft(admin, owner)}'`]) {
+      expect(await pgErrorCode(() => admin.query(`UPDATE draft_version SET ${set}, rev = rev + 1 WHERE id = $1`, [v]))).toBe(STATE_VIOLATION);
+    }
+    // an update that does not advance rev, or skips it, is refused
+    expect(await pgErrorCode(() => app.query(`UPDATE draft_version SET content_hash = 'x' WHERE id = $1`, [v]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => app.query(`UPDATE draft_version SET content_hash = 'x', rev = rev + 2 WHERE id = $1`, [v]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => app.query(`UPDATE draft_version SET content_hash = 'x', rev = rev + 1 WHERE id = $1`, [v]))).toBeNull();
+    // two writers that both read rev 2: only one compare-and-swap matches
+    const first = await app.query(`UPDATE draft_version SET content_hash = 'a', rev = rev + 1 WHERE id = $1 AND rev = 2`, [v]);
+    const second = await app.query(`UPDATE draft_version SET content_hash = 'b', rev = rev + 1 WHERE id = $1 AND rev = 2`, [v]);
+    expect([first.rowCount, second.rowCount]).toEqual([1, 0]);
+  });
+
+  it("CHECK constraints: ordinal unique per draft, history is an array, size backstop, positive counters", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    await seedDraftVersion(admin, draft, owner, 1);
+    expect(await pgErrorCode(() => seedDraftVersion(admin, draft, owner, 1))).toBe(UNIQUE_VIOLATION);
+    const insert = (extra: string, ordinal: number) =>
+      admin.query(
+        `INSERT INTO draft_version (draft_id, owner_id, ordinal, seed, content, content_hash, question_meta, next_question_seq, validator_version ${extra.split("|")[0]})
+         VALUES ($1, $2, $3, 's', '{}', 'h', '{}', 1, 'v' ${extra.split("|")[1] ?? ""})`,
+        [draft, owner, ordinal],
+      );
+    expect(await pgErrorCode(() => insert(`, history|, '{}'::jsonb`, 2))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert(`, rev|, 0`, 3))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => admin.query(
+      `INSERT INTO draft_version (draft_id, owner_id, ordinal, seed, content, content_hash, question_meta, next_question_seq, validator_version)
+       VALUES ($1, $2, 4, 's', jsonb_build_object('big', repeat('x', 4100000)), 'h', '{}', 1, 'v')`, [draft, owner]))).toBe(CHECK_VIOLATION);
+    // (an UPDATE to rev = 0 is stopped earlier by draft_guard; the CHECK is the backstop for inserts)
+    expect(await pgErrorCode(() => admin.query(`INSERT INTO draft (owner_id, request, request_hash, context, expires_at, rev) VALUES ($1, '{}', 'h', '{}', now() + interval '1 day', 0)`, [owner]))).toBe(CHECK_VIOLATION);
+  });
+});
+
+describe("draft guard hardening", () => {
+  const upd = (db: typeof app, id: string, set: string) => pgErrorCode(() => db.query(`UPDATE draft SET ${set} WHERE id = $1`, [id]));
+
+  it("expiry can be extended while the draft is active and unexpired, never once it is past due or expired", async () => {
+    const owner = await seedOwner(admin);
+    const live = await seedDraft(admin, owner);
+    expect(await upd(app, live, `expires_at = now() + interval '30 days'`)).toBeNull();
+
+    const pastDue = await seedDraft(admin, owner, "interval '-1 hour'");
+    expect(await upd(app, pastDue, `expires_at = now() + interval '30 days'`)).toBe(STATE_VIOLATION);
+    expect(await upd(app, pastDue, `status = 'expired'`)).toBeNull(); // the sweep's mark still works
+    expect(await upd(app, pastDue, `expires_at = now() + interval '30 days'`)).toBe(STATE_VIOLATION);
+    expect(await upd(app, pastDue, `status = 'active', expires_at = now() + interval '30 days'`)).toBe(STATE_VIOLATION);
+    expect(await upd(app, pastDue, `status = 'active'`)).toBe(STATE_VIOLATION);
+
+    // an expired draft whose stored expiry is still in the future (marked early) cannot be extended either
+    const early = await seedDraft(admin, owner);
+    await admin.query(`UPDATE draft SET status = 'expired' WHERE id = $1`, [early]);
+    expect(await upd(app, early, `expires_at = now() + interval '30 days'`)).toBe(STATE_VIOLATION);
+  });
+
+  it("draft.rev may only stay or go up by exactly one; version_count never decreases; the active pointer is never cleared", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    const v1 = await seedDraftVersion(admin, draft, owner, 1);
+    const v2 = await seedDraftVersion(admin, draft, owner, 2);
+    await admin.query(`UPDATE draft SET active_version_id = $2, version_count = 2 WHERE id = $1`, [draft, v1]);
+
+    expect(await upd(app, draft, `rev = rev + 2`)).toBe(STATE_VIOLATION);
+    expect(await upd(app, draft, `rev = 1`)).toBeNull(); // unchanged is fine
+    expect(await upd(app, draft, `rev = rev + 1`)).toBeNull();
+    expect(await upd(app, draft, `rev = rev - 1`)).toBe(STATE_VIOLATION);
+    expect(await upd(app, draft, `rev = rev + 0, status = 'expired'`)).toBeNull(); // the worker's status-only mark
+    expect((await admin.query(`SELECT rev FROM draft WHERE id = $1`, [draft])).rows[0].rev).toBe(2);
+
+    const d2 = await seedDraft(admin, owner);
+    const w1 = await seedDraftVersion(admin, d2, owner, 1);
+    const w2 = await seedDraftVersion(admin, d2, owner, 2);
+    await admin.query(`UPDATE draft SET active_version_id = $2, version_count = 2 WHERE id = $1`, [d2, w1]);
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET version_count = 1 WHERE id = $1`, [d2]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET version_count = 3 WHERE id = $1`, [d2]))).toBeNull();
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET active_version_id = NULL WHERE id = $1`, [d2]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET active_version_id = $2 WHERE id = $1`, [d2, w2]))).toBeNull(); // another version of the same draft
+    expect(await pgErrorCode(() => app.query(`UPDATE draft SET active_version_id = $2 WHERE id = $1`, [d2, v2]))).toBe(FK_VIOLATION); // a version of another draft
+  });
+
+  it("versions of an expired or past-due draft cannot be updated, and purging still deletes them", async () => {
+    const owner = await seedOwner(admin);
+    const bump = (db: typeof app, id: string) => pgErrorCode(() => db.query(`UPDATE draft_version SET content_hash = 'x', rev = rev + 1 WHERE id = $1`, [id]));
+
+    const live = await seedDraft(admin, owner);
+    const lv = await seedDraftVersion(admin, live, owner, 1);
+    expect(await bump(app, lv)).toBeNull();
+
+    const pastDue = await seedDraft(admin, owner, "interval '-1 hour'");
+    const pv = await seedDraftVersion(admin, pastDue, owner, 1);
+    expect(await bump(app, pv)).toBe(STATE_VIOLATION);
+    for (const set of [`history = '[1]'`, `pending_candidate = '{}'`, `changes = '{"replacedIds":["a"],"removedIds":[]}'`, `content = '{"a":1}'`]) {
+      expect(await pgErrorCode(() => app.query(`UPDATE draft_version SET ${set}, rev = rev + 1 WHERE id = $1`, [pv]))).toBe(STATE_VIOLATION);
+    }
+
+    const expired = await seedDraft(admin, owner);
+    const ev = await seedDraftVersion(admin, expired, owner, 1);
+    await admin.query(`UPDATE draft SET status = 'expired' WHERE id = $1`, [expired]);
+    expect(await bump(app, ev)).toBe(STATE_VIOLATION);
+    expect(await bump(worker, ev)).toBe(STATE_VIOLATION);
+
+    // deletion (the purge path) is unaffected, versions cascade
+    expect(await pgErrorCode(() => worker.query(`DELETE FROM draft WHERE id = ANY($1::uuid[])`, [[expired, pastDue]]))).toBeNull();
+    expect((await admin.query(`SELECT count(*)::int AS n FROM draft_version WHERE id = ANY($1::uuid[])`, [[ev, pv]])).rows[0].n).toBe(0);
+  });
+
+  it("size backstops: history, pending_candidate, changes and question_meta are bounded", async () => {
+    const owner = await seedOwner(admin);
+    const draft = await seedDraft(admin, owner);
+    const v = await seedDraftVersion(admin, draft, owner, 1);
+    const big = (n: number) => `jsonb_build_object('x', repeat('y', ${n}))`;
+    const set = (col: string, expr: string) => pgErrorCode(() => admin.query(`UPDATE draft_version SET ${col} = ${expr}, rev = rev + 1 WHERE id = $1`, [v]));
+    expect(await set("history", `jsonb_build_array(${big(2_100_000)})`)).toBe(CHECK_VIOLATION);
+    expect(await set("pending_candidate", big(2_100_000))).toBe(CHECK_VIOLATION);
+    expect(await set("changes", big(110_000))).toBe(CHECK_VIOLATION);
+    expect(await set("question_meta", big(210_000))).toBe(CHECK_VIOLATION);
+    expect(await set("history", `jsonb_build_array(${big(1_000_000)})`)).toBeNull();
+    expect(await set("pending_candidate", big(1_000_000))).toBeNull();
+    expect(await set("pending_candidate", "NULL")).toBeNull();
   });
 });

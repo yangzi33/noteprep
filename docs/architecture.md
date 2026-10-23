@@ -139,6 +139,25 @@ docs/
 
 `Subscription` 与 `Profile.stripeCustomerId` 共同承担"billing customer mapping":客户 ID 永远从已验证的 owner 解析,从不接受客户端传入。
 
+### 5.3 Drafts (slice S1 of the preview-first flow; D-102 to D-108, [plan](superpowers/plans/2026-10-23-preview-adjust-export.md))
+
+Two additive tables, independent of `lesson`, `lesson_revision`, the job queue and the allowance:
+
+| Table | Holds | Guarded by |
+|---|---|---|
+| `draft` | the validated request, the curriculum context snapshot (stored once), `rev`, `active_version_id`, `version_count`, `status` (`active`/`expired`), `expires_at` | trigger: owner, request, request hash and context are immutable; status only moves `active` -> `expired`; unique `(id, owner_id)`; partial indexes on `expires_at` for live and for expired rows |
+| `draft_version` | one verified package (stored without the request and context, which live on the draft), `content_hash`, `question_meta`, `next_question_seq`, undo `history`, `changes`, `pending_candidate` | composite FK `(draft_id, owner_id)` with cascade; trigger: identity is immutable and every update must set `rev = rev + 1` (optimistic concurrency); unique `(draft_id, ordinal)` |
+
+`app_runtime` can read, insert and update but never delete; `worker_runtime` can read, update and delete, and purges drafts in the sweep loop: first it marks drafts past `expires_at` as expired, then deletes the ones past `expires_at + grace` (batches with `FOR UPDATE SKIP LOCKED`). Versions cascade.
+
+With `FLOW_MODE=draft` the Prepare action calls `createDraft`: one transaction that locks the profile, applies the idempotency key (operation `draft`), checks the limits (`rate_limit_window` keys `draft:u:`, `draft:ip:`, `draft:global`, plus the active-draft cap), builds the package with a random server-side seed, runs `validatePackage` (only `verified` is stored) and inserts the draft and version 1. It never touches `usage_bucket`, `usage_reservation` or `generation_job` (a test pins that). `/drafts/[id]` renders the HTML preview server-side; the package itself is never sent to client components. With the default `FLOW_MODE=legacy` nothing changes. Every threshold (rates, caps, TTL default 14 days, purge grace and batch) is configuration in `src/lib/server/limits.ts`; the defaults are placeholders for the owner to tune. Export from drafts arrives in later slices.
+
+Operational notes:
+- An unset `FLOW_MODE` means `legacy`. A blank or invalid `FLOW_MODE`, or an invalid `DRAFT_*` / limit value, makes `serverEnv()` throw on every request, including the legacy flow (fail fast at configuration time, not at first use).
+- The per-IP draft limit is dormant: `createDraft` supports a hashed address, but no IP-hash helper exists yet (the same is true of legacy generation), so only the per-user and global limits are active.
+- The `draft:global` counter row is locked from the first increment until commit, so concurrent draft creations queue briefly on it; the per-account profile lock is always taken first (a documented lock-order contract in `createDraft`).
+- The database also freezes expired drafts: the expiry of an expired or past-due draft cannot be changed, `draft.rev` moves by exactly one, and versions of an expired draft cannot be updated (migration `draft_guard_hardening`).
+
 ### 5.2 按用户隔离的数据访问规则
 
 1. 所有 DAL 读写函数签名 `(ctx: AuthedCtx, …)`;`where` 必含 `ownerId: ctx.userId`;通过 id 取资源用 `findFirst({ where: { id, ownerId } })`,找不到统一返回 404(不区分"不存在"与"无权限")。

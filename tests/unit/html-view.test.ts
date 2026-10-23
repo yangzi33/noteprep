@@ -4,7 +4,8 @@ import { renderDocument } from "@/lib/latex/render";
 import { equationTex, operationText, solutionText } from "@/lib/latex/math";
 import { htmlDocument, type HtmlBlock, type Inline } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type LessonPackage, type Section } from "@/lib/package/schema";
-import { testPackage } from "../fixtures/package";
+import { buildPackage } from "@/lib/package/build";
+import { testContext, testPackage, testRequest } from "../fixtures/package";
 
 type Block = Section["blocks"][number];
 const pkg = testPackage();
@@ -210,6 +211,33 @@ describe("htmlDocument", () => {
     for (const b of paragraphs) {
       expect(b).toEqual({ type: "paragraph", text: "Say $x$ aloud." });
       expect(typeof (b as { text: unknown }).text).toBe("string");
+    }
+  });
+
+  // R19: the worksheet is what a student sees. Nothing of any solution may reach it, for any generated package.
+  it("R19: the worksheet view carries no solution content (answers, steps, worked examples) for any difficulty", () => {
+    for (const difficulty of ["basic", "mixed", "challenge"] as const) {
+      for (const seed of ["r19-a", "r19-b", "r19-c"]) {
+        const full = buildPackage({ request: testRequest({ difficulty, durationMinutes: 90 }), context: testContext(), seed });
+        const doc = htmlDocument(full, "worksheet");
+        const text = JSON.stringify(doc);
+        expect(new Set(blocksOf(doc).map((b) => b.type))).toEqual(new Set(["paragraph", "question", "writing_space", "alignment"]));
+        expect(doc.sections.map((s) => s.kind)).toEqual(["exercises", "alignment"]);
+
+        const solutions = full.sections.flatMap((sec) => sec.blocks.flatMap((b) => (b.type === "solution" || b.type === "worked_example" ? [b] : [])));
+        expect(solutions.length).toBeGreaterThan(3);
+        for (const sol of solutions) {
+          expect(text).not.toContain(JSON.stringify(solutionText(sol.solution)).slice(1, -1));
+          for (const step of sol.steps) {
+            expect(text).not.toContain(JSON.stringify(operationText(step.op)).slice(1, -1));
+          }
+          const final = sol.steps.at(-1);
+          if (final && sol.type === "solution") expect(text).not.toContain(JSON.stringify(equationTex(final.result)).slice(1, -1));
+        }
+        // and the stored section ids of the solutions never appear
+        expect(text).not.toContain("sec-solutions");
+        expect(text).not.toContain("sec-worked-examples");
+      }
     }
   });
 });

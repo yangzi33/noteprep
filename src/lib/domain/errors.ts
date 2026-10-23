@@ -141,6 +141,37 @@ export class CorrectionRejected extends DomainError {
   }
 }
 
+/** The draft passed its expiry (or was already purged): it can no longer be opened. */
+export class DraftExpired extends DomainError {
+  constructor() {
+    super("DRAFT_EXPIRED", "This draft has expired");
+  }
+}
+
+/** The account already holds the maximum number of active drafts. */
+export class DraftLimit extends DomainError {
+  constructor() {
+    super("DRAFT_LIMIT", "Too many active drafts");
+  }
+}
+
+/** Too many drafts were created recently (per account, per address or service-wide). */
+export class DraftRateLimited extends DomainError {
+  constructor() {
+    super("DRAFT_RATE_LIMITED", "Too many drafts created recently");
+  }
+}
+
+/** A drawn question did not pass the item gate (structured shape, exact re-solve, validator "verified"). */
+export class ItemRejected extends DomainError {
+  constructor(
+    /** A machine-readable reason (never question content). */
+    readonly reason: string,
+  ) {
+    super("ITEM_REJECTED", "A question did not pass verification");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

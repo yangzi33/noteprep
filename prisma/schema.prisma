@@ -98,6 +98,7 @@ model Profile {
   reservations  UsageReservation[]
   subscriptions Subscription[]
   idempotency   IdempotencyKey[]
+  drafts        Draft[]
 
   @@map("profile")
 }
@@ -309,6 +310,77 @@ model RateLimitWindow {
 
   @@id([key, windowStart])
   @@map("rate_limit_window")
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Drafts (D-103): free previews before any export. Guards, CHECKs and grants are in *_draft_tables.
+// ---------------------------------------------------------------------------------------------------
+
+enum DraftStatus {
+  active
+  expired
+
+  @@map("draft_status")
+}
+
+/// One preparation: immutable request and curriculum snapshot, a pointer to the active version, an expiry.
+model Draft {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId         String      @map("owner_id") @db.Uuid
+  /// Validated LessonRequestV2. Immutable (trigger).
+  request         Json
+  requestHash     String      @map("request_hash")
+  /// Curriculum context snapshot, stored once for all versions. Immutable (trigger).
+  context         Json
+  /// Pointer compare-and-swap counter (used from S3).
+  rev             Int         @default(1)
+  /// Must point at a version of this same draft: FK (active_version_id, id) -> (id, draft_id).
+  activeVersionId String?     @map("active_version_id") @db.Uuid
+  /// Monotonic ordinal allocator for versions; never reused.
+  versionCount    Int         @default(0) @map("version_count")
+  status          DraftStatus @default(active)
+  expiresAt       DateTime    @map("expires_at") @db.Timestamptz(6)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  owner         Profile        @relation(fields: [ownerId], references: [id])
+  activeVersion DraftVersion?  @relation("ActiveVersion", fields: [activeVersionId, id], references: [id, draftId], onDelete: NoAction, onUpdate: NoAction)
+  versions      DraftVersion[] @relation("DraftVersions")
+
+  // Partial index on expires_at WHERE status = 'active' is added in SQL.
+  @@unique([id, ownerId])
+  @@index([ownerId, updatedAt(sort: Desc)])
+  @@map("draft")
+}
+
+/// One version of a draft. Every update must be a compare-and-swap step (rev = rev + 1, trigger).
+model DraftVersion {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId          String   @map("draft_id") @db.Uuid
+  ownerId          String   @map("owner_id") @db.Uuid
+  ordinal          Int
+  seed             String
+  rev              Int      @default(1)
+  /// A LessonPackage that passed validatePackage with overall "verified".
+  content          Json
+  contentHash      String   @map("content_hash")
+  /// { questionId: { level, origin } }
+  questionMeta     Json     @map("question_meta")
+  nextQuestionSeq  Int      @map("next_question_seq")
+  /// Bounded undo history of before-images (S2).
+  history          Json     @default("[]")
+  changes          Json     @default("{\"replacedIds\":[],\"removedIds\":[]}")
+  pendingCandidate Json?    @map("pending_candidate")
+  validatorVersion String   @map("validator_version")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  draft     Draft   @relation("DraftVersions", fields: [draftId, ownerId], references: [id, ownerId], onDelete: Cascade)
+  activeFor Draft[] @relation("ActiveVersion")
+
+  @@unique([draftId, ordinal])
+  @@unique([id, draftId])
+  @@map("draft_version")
 }
 
 // ---------------------------------------------------------------------------------------------------
