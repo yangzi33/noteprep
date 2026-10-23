@@ -93,7 +93,10 @@ describe("reconcileLesson", () => {
   });
 
   it("a revision row that appeared after the listing keeps its folder", async () => {
-    const stray = randomUUID();
+    // Folders are visited in name order. The stray id sorts before REV so its iteration holds the first read; with a random
+    // id it came after REV about half the time and the row was already known, which made this test flaky.
+    const stray = "00000000-0000-4000-8000-000000000000";
+    expect(stray < REV).toBe(true);
     await store.put(`${base}/${stray}/${ORPHAN}/notes.pdf`, new Uint8Array([1]));
     let reads = 0;
     // The first read (before any delete is considered) does not know the revision; every later read (the re-read) does.
