@@ -422,6 +422,48 @@ describe("limits apply only to the create path; refusals roll back", () => {
     }
   });
 
+  it("confirm attempts per hour: new keys are counted before prepare, refused ones too, and the count stays committed", async () => {
+    const lim = await createHarness({ limits: { exportConfirmAttemptsPerUserPerHour: 3 } });
+    try {
+      const ctx = await lim.account();
+      const d = await lim.newDraft(ctx);
+      const counter = async () => lim.count(`SELECT coalesce(sum(count), 0) AS n FROM rate_limit_window WHERE key = $1`, [`exp:try:u:${ctx.userId}`]);
+      const stale = { ...d, rev: d.rev + 7 };
+      expect(await code(lim.confirm(ctx, stale))).toBe("EXPORT_CONFLICT"); // refused by prepare, still counted
+      expect(await counter()).toBe(1);
+      const okKey = freshKey();
+      expect((await lim.confirm(ctx, d, okKey)).outcome).toBe("created");
+      expect(await counter()).toBe(2);
+      // a replay of a recorded key is never counted
+      expect((await lim.confirm(ctx, d, okKey)).outcome).toBe("replayed");
+      expect(await counter()).toBe(2);
+      expect(await code(lim.confirm(ctx, stale))).toBe("EXPORT_CONFLICT");
+      expect(await counter()).toBe(3);
+      // limit reached: a confirm that WOULD conflict is refused by the limit instead (it runs before prepare)
+      const refusedKey = freshKey();
+      expect(await code(lim.confirm(ctx, stale, refusedKey))).toBe("RATE_LIMITED");
+      expect(await counter()).toBe(4); // committed even though refused
+      expect(await lim.count(`SELECT count(*) AS n FROM idempotency_key WHERE owner_id = $1 AND key = $2`, [ctx.userId, refusedKey])).toBe(0);
+      // a replay still answers while the limit is exceeded
+      expect((await lim.confirm(ctx, d, okKey)).outcome).toBe("replayed");
+      expect(await counter()).toBe(4);
+      expect(await lim.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
+    } finally {
+      await lim.close();
+    }
+  });
+
+  it("10 parallel confirms with the same key give one export and one reservation", async () => {
+    const ctx = await h.account();
+    const d = await h.newDraft(ctx);
+    const key = freshKey();
+    const results = await Promise.all(Array.from({ length: 10 }, () => h.confirm(ctx, d, key)));
+    expect(new Set(results.map((r) => r.exportId)).size).toBe(1);
+    expect(results.filter((r) => r.outcome === "created")).toHaveLength(1);
+    expect((await h.exportsOf(ctx.userId)).length).toBe(1);
+    expect(await h.bucket(ctx.userId)).toMatchObject({ reserved: 1, used: 0 });
+  });
+
   it("active export jobs per user", async () => {
     const lim = await createHarness({ limits: { exportConcurrencyPerUser: 1 } });
     try {

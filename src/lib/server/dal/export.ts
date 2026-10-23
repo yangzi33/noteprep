@@ -291,6 +291,18 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         expectedContentHash: input.expectedContentHash,
       });
 
+      // Attempt limit (M-5), BEFORE the CPU-heavy prepare. Only a NEW key counts: a replay (double click, retry) is never
+      // refused. The increment runs in its own short transaction that holds no profile lock (rate_limit_window is a leaf
+      // lock taken alone), so it stays committed whether the confirm later succeeds or is refused.
+      const recorded = await db.idempotencyKey.findUnique({
+        where: { ownerId_operation_key: { ownerId, operation: EXPORT_CONFIRM_OPERATION, key: key.data } },
+        select: { requestHash: true },
+      });
+      if (!recorded) {
+        const attempts = await inTransaction(db, (tx) => incrementRateLimit(tx, `exp:try:u:${ownerId}`));
+        if (attempts > limits.exportConfirmAttemptsPerUserPerHour) throw new RateLimited();
+      }
+
       let prep: Prepared | { deferred: DomainError };
       try {
         prep = await prepare(ownerId, input);

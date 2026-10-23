@@ -36,6 +36,9 @@ const SHAPE = {
   // user, the deadline of one export job, attempts per job, how long past its deadline a running export job may stay before
   // the sweeper fails it, and the global cap on queued export jobs (placeholders)
   exportsPerUserPerHour: int("EXPORTS_PER_USER_PER_HOUR", 10, 1, 10_000),
+  // Confirm attempts per user per hour (key exp:try:u:), counted for every NEW idempotency key BEFORE the CPU-heavy prepare,
+  // whether the attempt later succeeds or is refused; a replay of a recorded key is not counted (placeholder)
+  exportConfirmAttemptsPerUserPerHour: int("EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR", 60, 1, 100_000),
   exportConcurrencyPerUser: int("EXPORT_CONCURRENCY_PER_USER", 1, 1, 20),
   exportDeadlineMinutes: int("EXPORT_DEADLINE_MINUTES", 10, 1, 120),
   exportMaxAttempts: int("EXPORT_MAX_ATTEMPTS", 3, 1, 10),

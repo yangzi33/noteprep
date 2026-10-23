@@ -20,6 +20,14 @@ describe("limits", () => {
     expect([DEFAULT_LIMITS.llmMaxCallsPerDraft, DEFAULT_LIMITS.llmMaxTokensPerDraft, DEFAULT_LIMITS.llmMaxCostMicrosPerDraft]).toEqual([0, 0, 0]);
   });
 
+  it("has the confirm-attempt limit with its own variable, default and bounds", () => {
+    expect(DEFAULT_LIMITS.exportConfirmAttemptsPerUserPerHour).toBe(60);
+    expect(LIMIT_ENV_NAMES.exportConfirmAttemptsPerUserPerHour).toBe("EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR");
+    expect(parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "5" }).exportConfirmAttemptsPerUserPerHour).toBe(5);
+    expect(() => parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "0" })).toThrow();
+    expect(() => parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "100001" })).toThrow();
+  });
+
   it("every key has its own environment variable name", () => {
     const names = Object.values(LIMIT_ENV_NAMES);
     expect(new Set(names).size).toBe(names.length);
