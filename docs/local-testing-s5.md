@@ -18,8 +18,9 @@ pnpm supabase:status         # copy the publishable key and the secret key
 pnpm db:migrate:deploy       # applies all migrations, including the two S5 ones
 pnpm db:dev-roles            # creates web_login and worker_login (dev-only passwords)
 pnpm latex:image             # builds the sandbox image noteprep-latex:dev
-pnpm curriculum:load data/curricula/sample-math/sample-1 --allow-sample
+CURRICULUM_TARGET_ENV=development pnpm curriculum:load data/curricula/sample-math/sample-1 --allow-sample
 ```
+`CURRICULUM_TARGET_ENV` is deliberately not in `.env.example`: the loader refuses sample data unless you name a non-production target explicitly, so give it inline on this one command and do not put it in `.env`.
 Check: `SELECT migration_name FROM _prisma_migrations WHERE migration_name LIKE '202610241%';` returns 2 rows (`psql "$MIGRATION_DATABASE_URL"`).
 
 ## 2. Edit `.env`
