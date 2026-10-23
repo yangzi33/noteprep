@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artifactPathV2, parseManifestV2 } from "@/lib/domain/manifest";
+import { artifactPathV2, parseManifest, parseManifestV2 } from "@/lib/domain/manifest";
 import { alignmentNotice, DOCUMENT_LABELS, succeededPanel } from "@/lib/ui/lesson-view";
 
 const file = (n: number) => ({ path: `o/l/r/a/${n}`, sha256: "a".repeat(64), bytes: 10 });
@@ -20,7 +20,7 @@ describe("reading a stored manifest", () => {
       undefined,
       "x",
       { manifestVersion: 1, files: [] },
-      manifest({ manifestVersion: 3 }),
+      manifest({ manifestVersion: 4 }),
       manifest({ documents: [] }),
       manifest({ documents: [{ document: "answers", pdf: { ...file(1), pages: 1 }, tex: file(2) }] }),
       manifest({ documents: [{ document: "notes", pdf: { ...file(1), pages: 0 }, tex: file(2) }] }),
@@ -34,6 +34,48 @@ describe("reading a stored manifest", () => {
     const pdf = { path: artifactPathV2(scope, "worksheet", "pdf"), sha256: "b".repeat(64), bytes: 5, pages: 1 };
     const tex = { path: artifactPathV2(scope, "worksheet", "tex"), sha256: "c".repeat(64), bytes: 5 };
     expect(parseManifestV2({ manifestVersion: 2, templateVersion: "classic/1", documents: [{ document: "worksheet", pdf, tex }] })).not.toBeNull();
+  });
+});
+
+const v3 = (over: Record<string, unknown> = {}) => ({
+  ...manifest({ manifestVersion: 3 }),
+  renderVersion: "render/1",
+  pageFormat: "letter",
+  compile: { profile: "compile/1", image: null },
+  exportKey: "k".repeat(64),
+  ...over,
+});
+
+describe("parseManifest (v2 and v3)", () => {
+  it("reads a v2 manifest exactly as parseManifestV2 does", () => {
+    const parsed = parseManifest(manifest());
+    expect(parsed?.manifestVersion).toBe(2);
+    expect(parsed?.documents).toEqual(parseManifestV2(manifest())?.documents);
+  });
+  it("reads a v3 manifest and keeps its export fields", () => {
+    const parsed = parseManifest(v3());
+    expect(parsed).toMatchObject({ manifestVersion: 3, templateVersion: "classic/1", renderVersion: "render/1", pageFormat: "letter" });
+    expect(parsed?.documents[0]?.pdf.pages).toBe(2);
+    expect(parseManifest(v3({ pageFormat: "a4", compile: { profile: "compile/1", image: "img@sha256:" + "a".repeat(64) } }))).toMatchObject({ pageFormat: "a4" });
+  });
+  it("rejects v1, unknown versions, extra keys, missing v3 fields and bad formats", () => {
+    const noKey: Record<string, unknown> = v3();
+    delete noKey.exportKey;
+    const bad: unknown[] = [
+      null,
+      { manifestVersion: 1, files: [] },
+      manifest({ manifestVersion: 4 }),
+      manifest({ extra: 1 }),
+      v3({ extra: 1 }),
+      v3({ pageFormat: "legal" }),
+      v3({ compile: { profile: "p", image: null, extra: 1 } }),
+      v3({ compile: undefined }),
+      noKey,
+    ];
+    for (const value of bad) expect(parseManifest(value), JSON.stringify(value)).toBeNull();
+  });
+  it("parseManifestV2 still refuses a v3 manifest", () => {
+    expect(parseManifestV2(v3())).toBeNull();
   });
 });
 

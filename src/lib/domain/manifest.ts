@@ -69,6 +69,21 @@ export interface ManifestDocument {
   tex: StoredFile;
 }
 
+export const MANIFEST_V3 = 3;
+/** The page formats a v3 manifest may record. */
+export const PAGE_FORMAT_VALUES = ["letter", "a4"] as const;
+
+/** Written by the export path from S5-4 on; readers accept it from S5-1 on. */
+export interface ManifestV3 {
+  manifestVersion: typeof MANIFEST_V3;
+  templateVersion: string;
+  renderVersion: string;
+  pageFormat: (typeof PAGE_FORMAT_VALUES)[number];
+  compile: { profile: string; image: string | null };
+  exportKey: string;
+  documents: ManifestDocument[];
+}
+
 export interface ManifestV2 {
   manifestVersion: typeof MANIFEST_V2;
   templateVersion: string;
@@ -107,17 +122,38 @@ export function assertManifestV2Complete(manifest: ManifestV2, scope: ManifestSc
 // --- reading a stored manifest back ----------------------------------------------------------------------------------
 
 const storedFile = z.strictObject({ path: z.string().min(1).max(400), sha256: z.string().regex(/^[0-9a-f]{64}$/), bytes: z.number().int().positive() });
+const documents = z
+  .array(z.strictObject({ document: z.enum(DOCUMENT_KINDS), pdf: storedFile.extend({ pages: z.number().int().min(1).max(MAX_PDF_PAGES) }), tex: storedFile }))
+  .min(1)
+  .max(3);
 const ManifestV2Schema = z.strictObject({
   manifestVersion: z.literal(MANIFEST_V2),
   templateVersion: z.string().min(1).max(60),
-  documents: z
-    .array(z.strictObject({ document: z.enum(DOCUMENT_KINDS), pdf: storedFile.extend({ pages: z.number().int().min(1).max(MAX_PDF_PAGES) }), tex: storedFile }))
-    .min(1)
-    .max(3),
+  documents,
+});
+const ManifestV3Schema = z.strictObject({
+  manifestVersion: z.literal(MANIFEST_V3),
+  templateVersion: z.string().min(1).max(60),
+  renderVersion: z.string().min(1).max(60),
+  pageFormat: z.enum(PAGE_FORMAT_VALUES),
+  compile: z.strictObject({ profile: z.string().min(1).max(60), image: z.string().min(1).max(300).nullable() }),
+  exportKey: z.string().min(1).max(200),
+  documents,
 });
 
 /** A stored v2 manifest, or null for anything else (a legacy v1 pack, a missing manifest, a damaged one). */
 export function parseManifestV2(value: unknown): ManifestV2 | null {
   const parsed = ManifestV2Schema.safeParse(value);
   return parsed.success ? parsed.data : null;
+}
+
+/** Any stored manifest a reader can use: v2 and v3 share `templateVersion` and `documents`. */
+export type StoredManifest = ManifestV2 | ManifestV3;
+
+/** A stored v2 or v3 manifest, or null for anything else (v1, an unknown version, a missing or damaged manifest). */
+export function parseManifest(value: unknown): StoredManifest | null {
+  const v2 = ManifestV2Schema.safeParse(value);
+  if (v2.success) return v2.data;
+  const v3 = ManifestV3Schema.safeParse(value);
+  return v3.success ? v3.data : null;
 }

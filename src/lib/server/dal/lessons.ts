@@ -3,7 +3,7 @@ import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
 import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { NotFound } from "@/lib/domain/errors";
-import { parseManifestV2 } from "@/lib/domain/manifest";
+import { parseManifest } from "@/lib/domain/manifest";
 import { DOCUMENT_KINDS, PACKAGE_REVISION_SCHEMA_VERSION, PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
 
 export interface AlignmentView {
@@ -73,7 +73,7 @@ export function createLessonsDal(db: Db) {
   return {
     async getLessonView(ctx: AuthedCtx, lessonId: string, revisionId?: string): Promise<LessonView> {
       const { lesson, revision } = await findRevision(ctx, lessonId, revisionId);
-      const manifest = parseManifestV2(revision.artifactManifest);
+      const manifest = parseManifest(revision.artifactManifest);
       if (!manifest) throw new NotFound(); // a legacy placeholder pack has nothing to preview
       return {
         lessonId: lesson.id,
@@ -107,7 +107,7 @@ export function createLessonsDal(db: Db) {
     /** The one PDF of a revision a caller may fetch. Only PDFs: the sources are never offered (decision D-31). */
     async getArtifact(ctx: AuthedCtx, lessonId: string, revisionId: string, document: DocumentKind): Promise<ArtifactRef> {
       const { lesson, revision } = await findRevision(ctx, lessonId, revisionId);
-      const entry = parseManifestV2(revision.artifactManifest)?.documents.find((d) => d.document === document);
+      const entry = parseManifest(revision.artifactManifest)?.documents.find((d) => d.document === document);
       if (!entry) throw new NotFound();
       return { path: entry.pdf.path, filename: `${DOCUMENT_FILENAMES[document]}-${slug(lesson.title)}-r${revision.number}.pdf`, bytes: entry.pdf.bytes, sha256: entry.pdf.sha256 };
     },
