@@ -409,6 +409,7 @@ function failingStore(error: StorageError, failures: number): ObjectStore {
     },
     stat: (p) => store.stat(p),
     deletePrefix: (p) => store.deletePrefix(p),
+    list: (p, o) => store.list(p, o),
   };
 }
 

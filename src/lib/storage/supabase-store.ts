@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { sha256Of, StorageError, type ObjectStore, type StoredObjectInfo } from "./store";
+import { checkedListLimit, sha256Of, StorageError, type ObjectStore, type StoredObjectInfo, type StoreListPage } from "./store";
 
 export const ARTIFACT_BUCKET = "lesson-artifacts";
 
@@ -85,6 +85,25 @@ export class SupabaseObjectStore implements ObjectStore {
       const { error } = await this.client.storage.from(this.bucket).remove(files.slice(i, i + 100));
       if (error) throw storageErrorFrom("remove", error);
     }
+  }
+
+  /**
+   * One level, ordered by name. Verified against the pinned @supabase/storage-js 2.118.0 typings only (not against a live
+   * project): list(path, {limit, offset, sortBy}) is non-recursive, a folder entry has `id === null`, and pagination is
+   * offset based, so the cursor is the offset as a decimal string.
+   */
+  async list(prefix: string, options: { limit: number; cursor?: string | null }): Promise<StoreListPage> {
+    const limit = checkedListLimit(options.limit);
+    const offset = options.cursor ? Number(options.cursor) : 0;
+    if (!Number.isInteger(offset) || offset < 0) throw new StorageError(false, { op: "list", message: "invalid list cursor" });
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .list(this.checked(prefix.replace(/\/+$/, "")), { limit, offset, sortBy: { column: "name", order: "asc" } });
+    if (error) throw storageErrorFrom("list", error);
+    return {
+      entries: data.map((e) => ({ name: e.name, kind: e.id ? ("file" as const) : ("folder" as const) })),
+      nextCursor: data.length === limit ? String(offset + limit) : null,
+    };
   }
 
   /** Every object under a prefix. Folders come back without an id; a depth limit keeps a hostile layout from looping. */

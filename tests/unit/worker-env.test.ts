@@ -71,6 +71,13 @@ describe("worker configuration", () => {
     expect(() => workerEnv({ ...base, COMPILER: "latex" })).toThrow();
     expect(() => workerEnv({ ...base, COMPILER: "docker", LATEX_WALL_CLOCK_SECONDS: "1" })).toThrow();
   });
+  it("the reconciler is off by default, bounded, and its grace must cover lease + export deadline grace + margin", () => {
+    expect(workerEnv(base)).toMatchObject({ RECONCILE_ENABLED: "0", RECONCILE_BATCH_LESSONS: 20, RECONCILE_INTERVAL_SECONDS: 300, RECONCILE_GRACE_SECONDS: 1800 });
+    expect(() => workerEnv({ ...base, RECONCILE_BATCH_LESSONS: "501" })).toThrow();
+    expect(() => workerEnv({ ...base, RECONCILE_INTERVAL_SECONDS: "1" })).toThrow();
+    expect(() => workerEnv({ ...base, LEASE_SECONDS: "300", EXPORT_DEADLINE_GRACE_SECONDS: "60", RECONCILE_GRACE_SECONDS: "419" })).toThrow(/RECONCILE_GRACE_SECONDS/);
+    expect(workerEnv({ ...base, LEASE_SECONDS: "300", EXPORT_DEADLINE_GRACE_SECONDS: "60", RECONCILE_GRACE_SECONDS: "420" }).RECONCILE_GRACE_SECONDS).toBe(420);
+  });
   it("rejects a missing or malformed database URL and out-of-range timings", () => {
     expect(() => workerEnv({ ALLOW_FAKE_COMPILER: "1" })).toThrow();
     expect(() => workerEnv({ ...base, WORKER_DATABASE_URL: "not a url" })).toThrow();

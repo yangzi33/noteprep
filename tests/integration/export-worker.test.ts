@@ -119,6 +119,9 @@ class WrappedStore implements ObjectStore {
   deletePrefix(p: string) {
     return this.inner.deletePrefix(p);
   }
+  list(p: string, o: { limit: number; cursor?: string | null }) {
+    return this.inner.list(p, o);
+  }
 }
 
 describe("the worker runs export jobs", () => {

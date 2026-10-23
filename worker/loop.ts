@@ -3,6 +3,7 @@ import type { JobsDal } from "@/lib/server/dal/jobs";
 import { log } from "./log";
 import { processJob, type JobOutcome } from "./runner";
 import type { PipelineDeps } from "./pipeline";
+import type { ReconcileReport } from "./reconcile";
 
 export interface LoopOptions {
   deps: PipelineDeps;
@@ -14,6 +15,8 @@ export interface LoopOptions {
   onAlive?: () => void;
   /** Expired-draft purge, run as a second step of each sweep (its failure never affects job recovery or liveness). */
   drafts?: { purge: DraftsPurgeDal; batchSize: number };
+  /** Orphan-object reconcile, run as a third step of each sweep, at most once per `intervalMs` (its failure never affects job recovery or liveness). */
+  reconcile?: { step: () => Promise<ReconcileReport>; intervalMs: number };
   /** Test seam; defaults to `runOnce`. */
   runOnce?: (deps: PipelineDeps, workerId: string) => Promise<JobOutcome | null>;
 }
@@ -33,7 +36,8 @@ const sleep = (ms: number, signal: AbortSignal) =>
     signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
   });
 
-async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal, onAlive?: () => void, drafts?: LoopOptions["drafts"]) {
+async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal, onAlive?: () => void, drafts?: LoopOptions["drafts"], reconcile?: LoopOptions["reconcile"]) {
+  let lastReconcile = Number.NEGATIVE_INFINITY;
   while (!signal.aborted) {
     try {
       const report = await jobs.sweep();
@@ -52,6 +56,15 @@ async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal,
         log("draft_purge_error", { code: error instanceof Error ? error.name : "unknown" });
       }
     }
+    if (reconcile && !signal.aborted && Date.now() - lastReconcile >= reconcile.intervalMs) {
+      lastReconcile = Date.now();
+      try {
+        const r = await reconcile.step();
+        if (r.revisionsDeleted || r.attemptsDeleted || r.errors) log("reconcile", { ...r });
+      } catch (error) {
+        log("reconcile_error", { code: error instanceof Error ? error.name : "unknown" });
+      }
+    }
     await sleep(sweepMs, signal);
   }
 }
@@ -60,7 +73,7 @@ async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal,
 export async function runWorkerLoop(options: LoopOptions): Promise<void> {
   const { deps, workerId, pollMs, sweepMs, signal } = options;
   const step = options.runOnce ?? runOnce;
-  const sweeper = sweepForever(deps.jobs, sweepMs, signal, options.onAlive, options.drafts);
+  const sweeper = sweepForever(deps.jobs, sweepMs, signal, options.onAlive, options.drafts, options.reconcile);
   while (!signal.aborted) {
     try {
       const outcome = await step(deps, workerId);
