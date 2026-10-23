@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessByStdio } from "node:child_process";
 import type { Readable, Writable } from "node:stream";
 import { randomBytes } from "node:crypto";
+import { COMPILE_PROFILE } from "./compile-profile";
 
 /**
  * One container per compilation, started with every restriction CLAUDE.md section 8 asks for. The container gets no
@@ -45,8 +46,8 @@ export const DEFAULT_SANDBOX: Omit<SandboxConfig, "clientEnv"> = {
   maxStdoutBytes: 30_000_000,
 };
 
-/** A fixed timestamp makes the PDFs reproducible: the same source gives the same bytes. */
-export const SOURCE_DATE_EPOCH = "1704067200";
+/** A fixed timestamp makes the PDFs reproducible: the same source gives the same bytes (pinned in compile-profile.ts). */
+export const SOURCE_DATE_EPOCH = COMPILE_PROFILE.sourceDateEpoch;
 
 /** The container name prefix; cleanup and tests find leftovers by it. */
 export const CONTAINER_PREFIX = "noteprep-tex-";
@@ -77,7 +78,7 @@ export function dockerRunArgs(config: SandboxConfig, name: string, entrypoint?: 
     "--log-driver", "none",
     "--tmpfs", `/work:rw,noexec,nosuid,nodev,size=${config.workMb}m,uid=65534,gid=65534`,
     "--env", `SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}`,
-    "--env", "FORCE_SOURCE_DATE=1",
+    "--env", `FORCE_SOURCE_DATE=${COMPILE_PROFILE.forceSourceDate}`,
     "--env", "HOME=/work",
     "--env", "TEXMFVAR=/work/.texmf-var",
     "--env", "TEXMFCONFIG=/work/.texmf-config",
