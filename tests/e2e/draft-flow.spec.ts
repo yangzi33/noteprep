@@ -273,9 +273,12 @@ test("adjust controls do not move the screen: replace, try another, keep, accept
   await expectStill(page, q(3), before, "accept");
 
   // Remove a question other than the replaced one: removing question 3 would drop its "replaced" mark too.
-  await centre(3);
+  // Bring the button into the middle of the viewport first: Playwright scrolls a button that is cut off at the edge into view
+  // before clicking it, and that scroll is the test's own, not the page's.
+  const remove4 = page.getByRole("button", { name: "Remove question 4" });
+  await remove4.evaluate((el) => el.scrollIntoView({ block: "center" }));
   before = await viewport(page, q(3)); // a control that stays on screen and keeps its number
-  await page.getByRole("button", { name: "Remove question 4" }).click();
+  await remove4.click();
   await expect(page.getByTestId("changes-indicator")).toHaveText("1 question replaced · 1 removed");
   await expectStill(page, q(3), before, "remove");
 
