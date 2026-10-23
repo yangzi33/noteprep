@@ -35,10 +35,10 @@ export async function withAttemptCleanup<T>(store: ObjectStore, scope: { ownerId
   }
 }
 
-export interface CompileStoreCommit {
+export interface CompileStoreCommit<M = ManifestV2> {
   revisionId: string;
   attemptId: string;
-  manifest: ManifestV2;
+  manifest: M;
   documents: ManifestDocument[];
   compilerId: string;
 }
@@ -49,7 +49,7 @@ export interface CompileStoreCommit {
  * `finalStatPass` every stored object is checked once more after ALL puts and right before the commit. The caller
  * performs its own "compiling" checkpoint first; this function runs the "storing" one.
  */
-export async function compileStoreCommit<R>(args: {
+export async function compileStoreCommit<R, M = ManifestV2>(args: {
   job: ClaimedJob;
   deps: PipelineDeps;
   signal: AbortSignal;
@@ -57,7 +57,9 @@ export async function compileStoreCommit<R>(args: {
   rendered: { id: DocumentKind; tex: string }[];
   templateVersion: string;
   finalStatPass?: boolean;
-  commit: (r: CompileStoreCommit) => Promise<R>;
+  /** Builds the manifest from the stored documents; defaults to v2 (the generate path). The export path passes its v3 builder. */
+  buildManifest?: (documents: ManifestDocument[]) => M;
+  commit: (r: CompileStoreCommit<M>) => Promise<R>;
 }): Promise<R> {
   const { job, deps, signal, checkpoint, rendered, templateVersion, commit } = args;
   const { documentCompiler, store } = deps;
@@ -108,7 +110,7 @@ export async function compileStoreCommit<R>(args: {
       if (error instanceof StorageError) throw new PipelineError("storage_failed", error.retryable, error.detail);
       throw error;
     }
-    const manifest: ManifestV2 = { manifestVersion: MANIFEST_V2, templateVersion, documents };
+    const manifest = (args.buildManifest ? args.buildManifest(documents) : ({ manifestVersion: MANIFEST_V2, templateVersion, documents } satisfies ManifestV2)) as M;
     return commit({ revisionId, attemptId, manifest, documents, compilerId: documentCompiler.id });
   });
 }

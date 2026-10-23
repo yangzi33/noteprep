@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { COMPILE_PROFILE } from "@/lib/latex/compile-profile";
+import { MANIFEST_V3, type ManifestV3 } from "@/lib/domain/manifest";
 import { DeadlineExceeded, ManifestIncomplete } from "@/lib/domain/errors";
 import { PAGE_FORMATS, RENDER_VERSION, type ExportSpec, type PageFormat } from "@/lib/domain/export-spec";
 import { sha256Hex } from "@/lib/domain/hash";
@@ -111,6 +113,15 @@ export async function runExport(job: ClaimedJob, deps: PipelineDeps, signal: Abo
       rendered,
       templateVersion: spec.templateVersion,
       finalStatPass: true,
+      buildManifest: (documents): ManifestV3 => ({
+        manifestVersion: MANIFEST_V3,
+        templateVersion: spec.templateVersion,
+        renderVersion: spec.renderVersion,
+        pageFormat: spec.pageFormat,
+        compile: { profile: COMPILE_PROFILE.id, image: deps.compilerImage ?? null },
+        exportKey: input.exportKey,
+        documents,
+      }),
       commit: (r) =>
         settlement.commitExport({
           jobId: job.id,

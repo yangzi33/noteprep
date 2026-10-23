@@ -6,7 +6,7 @@ import { readDatasetDir } from "@/lib/curriculum/files";
 import { domainErrorCode } from "@/lib/domain/errors";
 import type { ExportSpec, TexShas } from "@/lib/domain/export-spec";
 import { DEV_DEFAULT_LIMITS, type GenerationLimits } from "@/lib/domain/generation";
-import { artifactPathV2, MANIFEST_V2, type ManifestV2 } from "@/lib/domain/manifest";
+import { artifactPathV2, MANIFEST_V3, type ManifestV3 } from "@/lib/domain/manifest";
 import { makeAuthedCtx, type AuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import type { CommitExportInput } from "@/lib/server/dal";
@@ -117,7 +117,7 @@ export async function createHarness(options: HarnessOptions = {}) {
     return BigInt(rows[0].fencing_token);
   }
 
-  /** The worker's side of a successful export, without the compiler: a valid v2 manifest whose source hashes come from the snapshot. */
+  /** The worker's side of a successful export, without the compiler: a valid v3 manifest whose source hashes come from the snapshot. */
   async function manifestFor(jobId: string, token: bigint, patch: { revisionId?: string; attemptId?: string; texOverride?: Record<string, string> } = {}) {
     const input = await worker.jobs.getExportInput(jobId, token);
     const spec = input.spec as ExportSpec;
@@ -125,9 +125,13 @@ export async function createHarness(options: HarnessOptions = {}) {
     const revisionId = patch.revisionId ?? randomUUID();
     const attemptId = patch.attemptId ?? randomUUID();
     const scope = { ownerId: input.ownerId, lessonId: input.lessonId, revisionId, attemptId };
-    const manifest: ManifestV2 = {
-      manifestVersion: MANIFEST_V2,
+    const manifest: ManifestV3 = {
+      manifestVersion: MANIFEST_V3,
       templateVersion: spec.templateVersion,
+      renderVersion: spec.renderVersion,
+      pageFormat: spec.pageFormat,
+      compile: { profile: "compile/1", image: null },
+      exportKey: input.exportKey,
       documents: spec.documents.map((document) => ({
         document,
         pdf: { path: artifactPathV2(scope, document, "pdf"), sha256: "c".repeat(64), bytes: 4096, pages: 2 },

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { DEFAULT_LIMITS_FOR_TESTS } from "./limits";
 import type { Dataset } from "@/lib/curriculum/dataset-schema";
 import { readDatasetDir } from "@/lib/curriculum/files";
-import { MAX_PDF_PAGES, parseManifestV2 } from "@/lib/domain/manifest";
+import { MAX_PDF_PAGES, parseManifest } from "@/lib/domain/manifest";
 import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
@@ -69,7 +69,7 @@ describe("a confirmed draft exported to real PDFs with the real compiler", () =>
     const exp = (await admin.query(`SELECT * FROM export WHERE id = $1`, [exportId])).rows[0];
     expect(exp).toMatchObject({ state: "succeeded" });
     const rev = (await admin.query(`SELECT * FROM lesson_revision WHERE id = $1`, [exp.revision_id])).rows[0];
-    const manifest = parseManifestV2(rev.artifact_manifest)!;
+    const manifest = parseManifest(rev.artifact_manifest)!;
     expect(manifest.documents.map((d) => d.document)).toEqual(["notes", "worksheet", "solutions"]);
     const pkg = PackageSchema.parse(rev.content);
 
