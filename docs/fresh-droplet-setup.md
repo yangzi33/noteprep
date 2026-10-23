@@ -224,6 +224,18 @@ Release procedure for the export feature. Background and rollback rules: [S4 spe
 - **Database role:** `worker_runtime` already has SELECT on `lesson`, `lesson_revision` and `generation_job`; no migration is needed. It needs the Storage secret key it already holds for uploads (list and remove).
 - **Not verified against a live Supabase project:** the list call follows the pinned `@supabase/storage-js` 2.118.0 typings (one level, offset pagination, folders have no id). Rehearse on staging first: make an export, put a stray object under a random uuid folder of that lesson (Storage dashboard), wait one interval, and confirm only the stray is gone and the PDFs still download. Switch it off again with `RECONCILE_ENABLED=0` and a restart.
 
+### S5-8 artifact recovery (English note; operator script, no database writes)
+- **When:** a published export's stored PDF or source is missing or damaged (a bucket mishap, a partial restore). The command rebuilds it from the frozen snapshot and writes back ONLY to the manifest's own paths. It never writes a database row (no billing, job, revision or export change) and adds no job kind.
+- **Run it on the worker host, as the operator, inside the running worker container** (same pinned `LATEX_IMAGE`, same environment, same sandbox runner socket; it needs nothing new). Dry run first (does every check including the recompile, writes nothing):
+  ```sh
+  docker exec noteprep-worker node --conditions=react-server --enable-source-maps /app/dist/worker/recover.mjs --revision <revision-uuid> --check
+  docker exec noteprep-worker node --conditions=react-server --enable-source-maps /app/dist/worker/recover.mjs --revision <revision-uuid>
+  ```
+  The revision id is `lesson_revision.id` of the export (`SELECT revision_id FROM "export" WHERE id = '<export-uuid>';`, read only). Only a strict uuid is accepted; there is no shell and no other option. The worker image must be built from the S5-8 commit; the host's `releases.log` and step 31 apply.
+- **Exit codes and log events:** 0 and `recover_done` with `status` `intact`, `restored`, or (with `--check`) `would_restore`; 1 and `recover_refused` with a `code`; 2 for bad arguments or `COMPILER` not `docker`. Logs carry ids and codes only.
+- **It refuses (and writes nothing) when:** the running `LATEX_IMAGE` differs from the image recorded in the manifest (`image_mismatch`; run it from a host that pins the manifest's image, which is why old images are not deleted at once), the compile profile differs (`profile_mismatch`), the render or template version differs from this worker (`render_*`), the rebuilt source does not equal both the snapshot's and the manifest's hash (`tex_mismatch`), the recompiled PDF is not byte-identical to the manifest's hash, size and page count (`recompile_not_identical`), the revision is not an export revision (manifest v1 or v2: `not_export_revision`), the lesson is deleted or its export is retired (`lesson_deleted`, `export_retired`). A manifest that records no image (written before images were recorded) is accepted without an image check; the byte-identical rule still applies.
+- **Not verified:** that two different hosts always produce identical PDFs (risk R3 of the S5 plan; a refusal with `recompile_not_identical` is the safe outcome) and the Supabase Storage adapter under this command (only the local-disk store was exercised in tests).
+
 ## Known gaps (recorded, not fixed)
 - No gVisor; the sandbox shares the host kernel.
 - The runner account has no outbound firewall; a compromised runner daemon could reach the network through rootless networking.

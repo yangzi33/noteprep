@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { build } from "esbuild";
 
 await build({
-  entryPoints: { main: "worker/main.ts", healthcheck: "worker/healthcheck.ts" },
+  entryPoints: { main: "worker/main.ts", healthcheck: "worker/healthcheck.ts", recover: "worker/recover-main.ts" },
   outdir: "dist/worker",
   outExtension: { ".js": ".mjs" },
   bundle: true,
@@ -19,6 +19,6 @@ await build({
   sourcemap: true,
   logLevel: "info",
 });
-for (const file of ["dist/worker/main.mjs", "dist/worker/healthcheck.mjs"]) {
+for (const file of ["dist/worker/main.mjs", "dist/worker/healthcheck.mjs", "dist/worker/recover.mjs"]) {
   if (/(from\s*|import\(\s*)["']@\//.test(readFileSync(file, "utf8"))) throw new Error(`${file}: an @/ alias was left unresolved`);
 }
