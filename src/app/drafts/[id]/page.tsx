@@ -2,6 +2,7 @@ import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { ChangesIndicator, QuestionControls, ReplacedBadge, UndoControl, type AdjustContext } from "@/components/app/draft-adjust";
 import { LessonDraft } from "@/components/app/lesson-draft";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
 import { prepareHref } from "@/lib/ui/prepare-url";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
-const Search = z.object({ doc: z.enum(DOCUMENT_KINDS).optional() });
+const Search = z.object({ doc: z.enum(DOCUMENT_KINDS).optional(), error: z.string().regex(/^[A-Z_]{1,40}$/).optional() });
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
@@ -59,6 +60,15 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   // Only the one document's view tree reaches the (server) draft component; the package itself stays here.
   const doc = htmlDocument(view.package, active);
   const tabUrl = (d: DocumentKind) => `/drafts/${view.draftId}?doc=${d}`;
+  const reloadUrl = `/drafts/${view.draftId}${active === available[0] ? "" : `?doc=${active}`}`;
+  const adjustCtx: AdjustContext = { draftId: view.draftId, versionId: view.versionId, rev: view.rev, doc: active, adjust: view.adjust, questionCount: view.adjust.slots.length };
+  const slots =
+    active === "worksheet"
+      ? { afterQuestion: (q: { questionId: string; number: number }) => <QuestionControls ctx={adjustCtx} questionId={q.questionId} number={q.number} /> }
+      : active === "solutions"
+        ? { afterSolution: (q: { questionId: string }) => <ReplacedBadge ctx={adjustCtx} questionId={q.questionId} /> }
+        : undefined;
+  const errorMessage = generationErrorMessage(parsed.data.error);
   const exportPending = serverEnv().FLOW_MODE === "draft";
 
   return (
@@ -86,6 +96,19 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         Read everything before you use it with a student.
       </Notice>
 
+      {parsed.data.error === "DRAFT_CONFLICT" ? (
+        <Notice intent="error" className="mt-3" data-testid="draft-conflict">
+          {errorMessage}{" "}
+          <a href={reloadUrl} className="underline" data-testid="draft-reload">
+            Reload
+          </a>
+        </Notice>
+      ) : errorMessage ? (
+        <Notice intent="error" className="mt-3" data-testid="draft-error">
+          {errorMessage}
+        </Notice>
+      ) : null}
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <nav aria-label="Documents" className="flex flex-wrap gap-2" data-testid="document-tabs">
@@ -95,10 +118,14 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
               </Link>
             ))}
           </nav>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <ChangesIndicator adjust={view.adjust} />
+            <UndoControl ctx={adjustCtx} />
+          </div>
           <section className="mt-4" data-testid="draft-preview" data-document={active} data-version={view.versionId}>
             <p className="text-sm text-muted-foreground">{DOCUMENT_PURPOSE[active]}</p>
             <div className="mt-3">
-              <LessonDraft doc={doc} />
+              <LessonDraft doc={doc} slots={slots} />
             </div>
           </section>
         </div>

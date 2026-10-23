@@ -206,7 +206,7 @@ type ExerciseBlock = ExercisesSection["blocks"][number];
 type SolutionBlock = SolutionsSection["blocks"][number];
 
 /** Fingerprints of every question in the package: worked examples and exercises. */
-function takenFingerprints(pkg: LessonPackage): Set<string> {
+export function takenFingerprints(pkg: LessonPackage): Set<string> {
   const out = new Set<string>();
   for (const section of pkg.sections) {
     for (const block of section.blocks as Block[]) {
@@ -429,7 +429,10 @@ function exerciseChange(source: LessonPackage, change: Extract<ApplicableChange,
   const exercises = sectionOfKind(source, "exercises");
   const solutions = sectionOfKind(source, "solutions");
   const count = exercises.blocks.filter((b) => b.type === "question").length;
-  const added = drawNewQuestions(seed, { count: change.count, difficulty: current, startIndex: count + 1, ramp: false }, taken);
+  // The largest ex-N plus one (not the count plus one: after a removal that would collide), as addWorkedExample does.
+  const numbers = exercises.blocks.flatMap((b) => (b.type === "question" ? [/^ex-(\d+)$/.exec(b.questionId)] : [])).map((m) => (m ? Number(m[1]) : 0));
+  const startIndex = Math.max(count, ...numbers) + 1;
+  const added = drawNewQuestions(seed, { count: change.count, difficulty: current, startIndex, ramp: false }, taken);
   const ids = new Set(exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : [])));
   if (added.some((q) => ids.has(q.id))) throw new Error("applyAdjustment: a new question id is already taken");
   // After add_exercises the section mixes questions drawn from earlier seeds with new ones and `seed` is only the

@@ -172,6 +172,68 @@ export class ItemRejected extends DomainError {
   }
 }
 
+/** An operation was called with arguments that cannot be valid (for example a revision that is not a positive integer). */
+export class InvalidRequest extends DomainError {
+  constructor(detail = "Invalid request") {
+    super("INVALID_REQUEST", detail);
+  }
+}
+
+/** The version changed since the page was rendered (another tab or window): the caller names the current revision. */
+export class DraftConflict extends DomainError {
+  constructor(readonly currentRev: number) {
+    super("DRAFT_CONFLICT", "This draft changed in another tab or window");
+  }
+}
+
+/** The pending candidate is gone, is not the one named, or was made for content the draft no longer has. */
+export class CandidateStale extends DomainError {
+  constructor() {
+    super("CANDIDATE_STALE", "This candidate is no longer current");
+  }
+}
+
+/** Removing the question would leave fewer exercises than the configured (and builder) minimum. */
+export class MinQuestionCount extends DomainError {
+  constructor(readonly minimum: number) {
+    super("ADJUSTMENT_MIN_COUNT", "A worksheet needs a minimum number of questions");
+  }
+}
+
+/** No other question at this level is available (the draw found nothing outside the exclusion set). */
+export class DrawExhausted extends DomainError {
+  constructor() {
+    super("DRAW_EXHAUSTED", "No other question at this level is available");
+  }
+}
+
+/** The question id is not an exercise of this version (worked examples cannot be adjusted). */
+export class QuestionNotFound extends DomainError {
+  constructor() {
+    super("QUESTION_NOT_FOUND", "Question not found");
+  }
+}
+
+export class NothingToUndo extends DomainError {
+  constructor() {
+    super("NOTHING_TO_UNDO", "There is nothing to undo");
+  }
+}
+
+/** Too many alternatives were requested for one question in this session. */
+export class CandidateLimit extends DomainError {
+  constructor() {
+    super("CANDIDATE_LIMIT", "Too many alternatives requested for this question");
+  }
+}
+
+/** Too many alternatives were requested recently across the account. */
+export class CandidateRateLimited extends DomainError {
+  constructor() {
+    super("CANDIDATE_RATE_LIMITED", "Too many alternative questions requested recently");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

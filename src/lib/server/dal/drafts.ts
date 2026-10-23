@@ -1,21 +1,37 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { AccountNotActive, DraftExpired, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
+import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { PackageBuildError } from "@/lib/content/errors";
 import type { CurriculumContext } from "@/lib/curriculum/context";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { packageContentHash } from "@/lib/package/adjust";
 import { buildPackageWithMeta } from "@/lib/package/build";
+import {
+  acceptReplacement,
+  BUILDER_MIN_EXERCISES,
+  changeSummary,
+  drawReplacement,
+  questionSlots,
+  removeQuestion as removeQuestionOp,
+  undoLabel,
+  undoLast,
+  type DraftState,
+  type HistoryEntry,
+  type MetaMap,
+  type OpsConfig,
+  type PendingCandidate,
+  type StoredChanges,
+} from "@/lib/package/draft-ops";
 import { PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
 import { DEFAULT_LIMITS, type Limits } from "../limits";
-import type { DraftCreated, DraftSelection, DraftSummaryDto, DraftViewDto } from "./dto";
+import type { DraftCreated, DraftMutationResult, DraftSelection, DraftSummaryDto, DraftViewDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
 import { inTransaction, isCheckViolation, type Tx } from "./tx";
@@ -82,6 +98,24 @@ function nextExerciseSeq(pkg: LessonPackage): number {
   }
   return max + 1;
 }
+
+
+const asMeta = (value: unknown): MetaMap => (value && typeof value === "object" ? (value as MetaMap) : {});
+function asChanges(value: unknown): StoredChanges {
+  const c = (value && typeof value === "object" ? value : {}) as Partial<StoredChanges>;
+  return { replacedIds: c.replacedIds ?? [], removedIds: c.removedIds ?? [], modifiedIds: c.modifiedIds ?? [] };
+}
+
+/** The state of a version row (with its draft's request and context) for the pure operations; the stored hash must match. */
+function stateOf(row: { content: unknown; contentHash: string; questionMeta: unknown; nextQuestionSeq: number; history: unknown; changes: unknown }, draft: { request: unknown; context: unknown }): DraftState {
+  const full = { ...(row.content as object), request: draft.request, context: draft.context };
+  if (packageContentHash(full as LessonPackage) !== row.contentHash) throw new InvariantViolation("stored draft content does not match its hash");
+  const parsed = PackageSchema.safeParse(full);
+  if (!parsed.success) throw new InvariantViolation("stored draft content is not a package");
+  return { pkg: parsed.data, meta: asMeta(row.questionMeta), nextSeq: row.nextQuestionSeq, history: (Array.isArray(row.history) ? row.history : []) as HistoryEntry[], changes: asChanges(row.changes) };
+}
+
+const asCandidate = (value: unknown): PendingCandidate | null => (value && typeof value === "object" ? (value as PendingCandidate) : null);
 
 export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
   const limits = deps.limits ?? DEFAULT_LIMITS;
@@ -172,6 +206,89 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     });
   }
 
+
+  // --- question-level adjustment (S2) -----------------------------------------------------------------
+
+  const opsConfig = (): OpsConfig => ({ minExercises: limits.minExercises, undoDepth: limits.undoDepth });
+
+  interface Locked {
+    draft: { request: unknown; context: unknown };
+    version: { id: string; rev: number; seed: string; content: unknown; contentHash: string; questionMeta: unknown; nextQuestionSeq: number; history: unknown; changes: unknown; pendingCandidate: unknown };
+    state: DraftState;
+  }
+  interface Outcome {
+    state: DraftState;
+    candidate: PendingCandidate | null;
+  }
+
+  /**
+   * One adjustment: lock the version row (owner filtered, draft active and unexpired), compare the revision the caller saw,
+   * run the pure operation and write the result with rev = rev + 1 (the table guard requires exactly +1). Nothing is
+   * persisted unless the operation succeeded; a thrown error rolls the whole transaction back.
+   */
+  async function mutate(ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, op: (locked: Locked, tx: Tx) => Promise<Outcome>): Promise<DraftMutationResult> {
+    if (!uuid.safeParse(draftId).success || !uuid.safeParse(versionId).success) throw new NotFound();
+    if (!Number.isInteger(expectedRev) || expectedRev < 1) throw new InvalidRequest("expectedRev must be a positive integer");
+    const ownerId = ctx.userId;
+    return inTransaction(db, async (tx) => {
+      const rows = await tx.$queryRaw<
+        { id: string; rev: number; seed: string; content: unknown; content_hash: string; question_meta: unknown; next_question_seq: number; history: unknown; changes: unknown; pending_candidate: unknown; status: string; expires_at: Date; request: unknown; context: unknown }[]
+      >`SELECT v.id, v.rev, v.seed, v.content, v.content_hash, v.question_meta, v.next_question_seq, v.history, v.changes, v.pending_candidate,
+               d.status::text AS status, d.expires_at, d.request, d.context
+          FROM draft_version v JOIN draft d ON d.id = v.draft_id AND d.owner_id = v.owner_id
+         WHERE v.id = ${versionId}::uuid AND v.draft_id = ${draftId}::uuid AND v.owner_id = ${ownerId}::uuid
+         FOR UPDATE OF v`;
+      const row = rows[0];
+      if (!row) throw new NotFound();
+      const now = clock();
+      if (row.status !== "active" || row.expires_at.getTime() <= now.getTime()) throw new DraftExpired();
+      if (row.rev !== expectedRev) throw new DraftConflict(row.rev);
+
+      const version = { id: row.id, rev: row.rev, seed: row.seed, content: row.content, contentHash: row.content_hash, questionMeta: row.question_meta, nextQuestionSeq: row.next_question_seq, history: row.history, changes: row.changes, pendingCandidate: row.pending_candidate };
+      const draft = { request: row.request, context: row.context };
+      const { state, candidate } = await op({ draft, version, state: stateOf(version, draft) }, tx);
+
+      const content = split(state.pkg);
+      if (Buffer.byteLength(JSON.stringify(content), "utf8") > limits.maxDraftBytes) throw new PackageBuildError("the drafted package exceeds the size limit");
+      const contentHash = packageContentHash(state.pkg);
+      const updated = await tx.draftVersion.updateMany({
+        where: { id: version.id, ownerId, rev: expectedRev },
+        data: {
+          content: content as unknown as Prisma.InputJsonValue,
+          contentHash,
+          questionMeta: state.meta as unknown as Prisma.InputJsonValue,
+          nextQuestionSeq: state.nextSeq,
+          history: state.history as unknown as Prisma.InputJsonValue,
+          changes: state.changes as unknown as Prisma.InputJsonValue,
+          pendingCandidate: candidate ? (candidate as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+          rev: { increment: 1 },
+          updatedAt: now,
+        },
+      });
+      if (updated.count !== 1) throw new DraftConflict(expectedRev + 1);
+      await tx.draft.updateMany({ where: { id: draftId, ownerId }, data: { updatedAt: now } });
+      return { rev: expectedRev + 1, contentHash };
+    });
+  }
+
+  /** The candidate for `questionId`: the next attempt of the current session of that slot, or the first attempt of a new one. */
+  async function drawFor(locked: Locked, tx: Tx, ownerId: string, questionId: string, attemptOf: PendingCandidate | null): Promise<PendingCandidate> {
+    const { state, version } = locked;
+    const session = attemptOf && attemptOf.targetQuestionId === questionId && attemptOf.baseHash === packageContentHash(state.pkg) ? attemptOf : null;
+    const attempt = session ? session.attempt + 1 : 1;
+    if (attempt > limits.candidatesPerSlot) throw new CandidateLimit();
+    if ((await incrementRateLimit(tx, `cand:u:${ownerId}`)) > limits.candidatesPerUserPerHour) throw new CandidateRateLimited();
+    const tried = session ? [...session.tried, session.item.fingerprint] : [];
+    return drawReplacement(state, questionId, { versionSeed: version.seed, attempt, tried, baseRev: version.rev + 1, candidateId: randomUUID() });
+  }
+
+  const pendingOf = (locked: Locked) => asCandidate(locked.version.pendingCandidate);
+  function requirePending(locked: Locked, candidateId: string): PendingCandidate {
+    const pending = pendingOf(locked);
+    if (!pending || pending.id !== candidateId) throw new CandidateStale();
+    return pending;
+  }
+
   return {
     /**
      * In ONE transaction: serialize on the account, apply the idempotency key, resolve the curriculum context, enforce
@@ -208,11 +325,8 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
       const version = await db.draftVersion.findFirst({ where: { id: wanted, draftId: draft.id, ownerId: ctx.userId } });
       if (!version) throw new NotFound();
 
-      const full = { ...(version.content as object), request: draft.request, context: draft.context };
-      if (packageContentHash(full as LessonPackage) !== version.contentHash) throw new InvariantViolation("stored draft content does not match its hash");
-      const parsed = PackageSchema.safeParse(full);
-      if (!parsed.success) throw new InvariantViolation("stored draft content is not a package");
-      const pkg = parsed.data;
+      const state = stateOf(version, draft);
+      const pkg = state.pkg;
       const context = draft.context as unknown as CurriculumContext;
       const request = draft.request as unknown as LessonRequestV2;
       return {
@@ -226,8 +340,52 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
         title: context.topic.title,
         selection: selectionOf(request, context),
         package: pkg,
+        adjust: {
+          slots: questionSlots(pkg, state.meta),
+          changes: changeSummary(state),
+          undoLabel: undoLabel(state),
+          candidate: asCandidate(version.pendingCandidate),
+          minExercises: Math.max(limits.minExercises, BUILDER_MIN_EXERCISES),
+        },
       };
     },
+
+
+    /**
+     * Asks for an alternative to one exercise (same level). The original stays in the draft until the candidate is accepted.
+     * Asking again for the same question draws the next attempt; asking for another question replaces the pending candidate.
+     */
+    requestCandidate: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, questionId: string) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked, tx) => ({ state: locked.state, candidate: await drawFor(locked, tx, ctx.userId, questionId, pendingOf(locked)) })),
+
+    /** Draws the next alternative for the pending candidate's question, excluding everything tried. */
+    tryAnother: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, candidateId: string) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked, tx) => {
+        const pending = requirePending(locked, candidateId);
+        return { state: locked.state, candidate: await drawFor(locked, tx, ctx.userId, pending.targetQuestionId, pending) };
+      }),
+
+    /** Drops the pending candidate; the draft content is untouched. */
+    keepOriginal: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, candidateId: string) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked) => {
+        requirePending(locked, candidateId);
+        return { state: locked.state, candidate: null };
+      }),
+
+    /** Applies the pending candidate (exercise and solution together) if the content is still what it was drawn against. */
+    acceptCandidate: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, candidateId: string) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked) => {
+        const pending = requirePending(locked, candidateId);
+        return { state: acceptReplacement(locked.state, pending, opsConfig(), clock()), candidate: null };
+      }),
+
+    /** Removes one exercise and its solution (configured minimum applies). A pending candidate is dropped (it was drawn against other content). */
+    removeQuestion: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, questionId: string) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked) => ({ state: removeQuestionOp(locked.state, questionId, opsConfig(), clock()), candidate: null })),
+
+    /** Undoes the most recent question-level change. A pending candidate is dropped. */
+    undo: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked) => ({ state: undoLast(locked.state), candidate: null })),
 
     /** The selection a draft was made from, for a "start again" link. Works for an expired draft (until it is purged); null otherwise. */
     async getDraftSelection(ctx: AuthedCtx, draftId: string): Promise<DraftSelection | null> {
