@@ -8,12 +8,17 @@ import {
   seedOwner,
   seedDraft,
   seedDraftVersion,
+  seedExportRows,
   seedRevision,
   seedTrialBucket,
+  settleAllPendingExports,
+  txErrorCode,
 } from "./helpers";
 
 const { admin, app, worker } = pools();
 afterAll(async () => {
+  // The export fixtures below leave pending exports with queued jobs; other files park queued jobs with a plain UPDATE.
+  await settleAllPendingExports(admin);
   await Promise.all([admin.end(), app.end(), worker.end()]);
 });
 
@@ -35,6 +40,8 @@ const TABLES = [
   "rate_limit_window",
   "draft",
   "draft_version",
+  "export_snapshot",
+  "export",
   // curriculum reference data (public, read-only for the runtime roles)
   "education_system",
   "curriculum",
@@ -113,7 +120,7 @@ describe("roles, grants and row level security", () => {
         ),
       ),
     ).toBe("42501");
-    for (const table of ["usage_bucket", "usage_reservation", "subscription", "profile"]) {
+    for (const table of ["usage_bucket", "usage_reservation", "subscription", "profile", "export", "export_snapshot"]) {
       expect(await pgErrorCode(() => worker.query(`DELETE FROM ${table}`))).toBe("42501");
     }
   });
@@ -656,5 +663,249 @@ describe("draft guard hardening", () => {
     expect(await set("history", `jsonb_build_array(${big(1_000_000)})`)).toBeNull();
     expect(await set("pending_candidate", big(1_000_000))).toBeNull();
     expect(await set("pending_candidate", "NULL")).toBeNull();
+  });
+});
+
+describe("export tables (S4a migration)", () => {
+  async function exportFixture(limit = 3) {
+    const owner = await seedOwner(admin);
+    const bucket = await seedTrialBucket(admin, owner, limit);
+    const rows = await seedExportRows(admin, owner, bucket);
+    return { owner, bucket, ...rows };
+  }
+  const settleFailed = (jobId: string, exportId: string): Array<[string, unknown[]?]> => [
+    [`UPDATE export SET state = 'failed', failure_code = 'x', settled_at = now() WHERE id = $1`, [exportId]],
+    [`UPDATE usage_reservation SET state = 'released', settled_at = now() WHERE job_id = $1`, [jobId]],
+    [`UPDATE generation_job SET state = 'failed', error_code = 'x', finished_at = now() WHERE id = $1`, [jobId]],
+  ];
+
+  it("the job_kind enum has the export value, and nothing else changed about it", async () => {
+    const { rows } = await admin.query(`SELECT enumlabel FROM pg_enum WHERE enumtypid = 'job_kind'::regtype ORDER BY enumsortorder`);
+    expect(rows.map((r) => r.enumlabel)).toEqual(["generate", "compile", "export"]);
+  });
+
+  it("generate and export jobs need a reservation; a compile job must not hold one; an export job needs its export row", async () => {
+    const owner = await seedOwner(admin);
+    const bucket = await seedTrialBucket(admin, owner);
+    const lesson = await seedLesson(admin, owner);
+    const job = (kind: string, id: string): [string, unknown[]] => [
+      `INSERT INTO generation_job (id, owner_id, kind, lesson_id, request_hash, max_attempts, deadline_at, max_calls, max_tokens, max_cost_micros)
+       VALUES ($1,$2,$3,$4,'h',3, now() + interval '1 hour', 0, 0, 0)`,
+      [id, owner, kind, lesson],
+    ];
+    const reservation = (id: string): [string, unknown[]] => [`INSERT INTO usage_reservation (owner_id, bucket_id, job_id) VALUES ($1,$2,$3)`, [owner, bucket, id]];
+    const counter: [string, unknown[]] = [`UPDATE usage_bucket SET reserved = reserved + 1 WHERE id = $1`, [bucket]];
+
+    // generate without a reservation
+    expect(await txErrorCode(admin, [job("generate", randomUUID())])).toBe(CHECK_VIOLATION);
+    // compile WITH a reservation
+    const compile = randomUUID();
+    expect(await txErrorCode(admin, [job("compile", compile), reservation(compile), counter])).toBe(CHECK_VIOLATION);
+    // export without a reservation, and without an export row
+    expect(await txErrorCode(admin, [job("export", randomUUID())])).toBe(CHECK_VIOLATION);
+    // export with a reservation but without its export row
+    const noRow = randomUUID();
+    expect(await txErrorCode(admin, [job("export", noRow), reservation(noRow), counter])).toBe(CHECK_VIOLATION);
+    // a compile job without a reservation is still fine
+    expect(await txErrorCode(admin, [job("compile", randomUUID())])).toBeNull();
+  });
+
+  it("an export row for a job without a reservation is refused at commit", async () => {
+    const owner = await seedOwner(admin);
+    const lesson = await seedLesson(admin, owner);
+    const snap = randomUUID();
+    const jobId = randomUUID();
+    const code = await txErrorCode(admin, [
+      [`INSERT INTO export_snapshot (id, owner_id, draft_id, draft_version_id, draft_version_rev, content, package_hash, question_meta, change_summary, spec, tex_sha256, export_key, content_key, validation_report, validator_version)
+        VALUES ($1,$2,$3,$4,1,'{}','h','{}','{}','{}','{}','k','c','{"overall":"verified"}','v')`, [snap, owner, randomUUID(), randomUUID()]],
+      [`INSERT INTO generation_job (id, owner_id, kind, lesson_id, request_hash, max_attempts, deadline_at, max_calls, max_tokens, max_cost_micros)
+        VALUES ($1,$2,'export',$3,'k',3, now() + interval '1 hour', 0, 0, 0)`, [jobId, owner, lesson]],
+      [`INSERT INTO export (owner_id, snapshot_id, export_key, lesson_id, job_id) VALUES ($1,$2,'k',$3,$4)`, [owner, snap, lesson, jobId]],
+    ]);
+    expect(code).toBe(CHECK_VIOLATION);
+  });
+
+  it("composite foreign keys keep an export inside one owner", async () => {
+    const a = await exportFixture();
+    const other = await seedOwner(admin);
+    // The same snapshot, lesson and job, claimed by another owner, are refused.
+    for (const sql of [
+      `INSERT INTO export (owner_id, snapshot_id, export_key, lesson_id, job_id) VALUES ($1, $2, 'k1', $3, gen_random_uuid())`,
+    ]) {
+      expect(await pgErrorCode(() => admin.query(sql, [other, a.snapshotId, a.lessonId]))).toBe("23503");
+    }
+  });
+
+  it("export_snapshot is immutable and only verified, object-shaped snapshots can be stored", async () => {
+    const f = await exportFixture();
+    expect(await pgErrorCode(() => admin.query(`UPDATE export_snapshot SET content_key = 'z' WHERE id = $1`, [f.snapshotId]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => app.query(`UPDATE export_snapshot SET content_key = content_key WHERE id = $1`, [f.snapshotId]))).toBe("42501"); // the web role has no UPDATE on it at all
+    const insert = (report: string, spec = "{}") =>
+      admin.query(
+        `INSERT INTO export_snapshot (owner_id, draft_id, draft_version_id, draft_version_rev, content, package_hash, question_meta, change_summary, spec, tex_sha256, export_key, content_key, validation_report, validator_version)
+         VALUES ($1,$2,$3,1,'{}','h','{}','{}',$5,'{}','k','c',$4,'v')`,
+        [f.owner, randomUUID(), randomUUID(), report, spec],
+      );
+    expect(await pgErrorCode(() => insert('{"overall":"failed"}'))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert('{"overall":"unverified"}'))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert('{"overall":"verified"}', "[]"))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert('{"overall":"verified"}'))).toBeNull();
+  });
+
+  it("export rows settle once, from pending only, and their identity never changes", async () => {
+    const f = await exportFixture();
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET state = 'pending' WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION); // no-op pending update
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET export_key = 'other' WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION);
+    const otherLesson = await seedLesson(admin, f.owner);
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET lesson_id = $2 WHERE id = $1`, [f.exportId, otherLesson]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET failure_code = 'x' WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION);
+    // shape checks come first for a half-settled row
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET state = 'failed' WHERE id = $1`, [f.exportId]))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET state = 'succeeded', settled_at = now() WHERE id = $1`, [f.exportId]))).toBe(CHECK_VIOLATION);
+    expect(await txErrorCode(admin, settleFailed(f.jobId, f.exportId))).toBeNull();
+    for (const sql of [`UPDATE export SET state = 'pending', failure_code = NULL, settled_at = NULL`, `UPDATE export SET failure_code = 'y'`, `UPDATE export SET state = 'succeeded'`]) {
+      expect(await pgErrorCode(() => admin.query(`${sql} WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION);
+    }
+  });
+
+  it("the live-key partial unique index: pending and succeeded occupy the key, failed releases it", async () => {
+    const f = await exportFixture(5);
+    const key = (await admin.query(`SELECT export_key FROM export WHERE id = $1`, [f.exportId])).rows[0].export_key as string;
+    // a second pending export of the same key for the same owner
+    expect(await pgErrorCode(() => seedExportRows(admin, f.owner, f.bucket, key))).toBe(UNIQUE_VIOLATION);
+    // another owner may use the key
+    const o2 = await seedOwner(admin);
+    const b2 = await seedTrialBucket(admin, o2);
+    expect(await pgErrorCode(() => seedExportRows(admin, o2, b2, key))).toBeNull();
+    // fail the first: the key is free, a new export is allowed, and the failed one stays as history
+    expect(await txErrorCode(admin, settleFailed(f.jobId, f.exportId))).toBeNull();
+    await admin.query(`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]);
+    expect(await pgErrorCode(() => seedExportRows(admin, f.owner, f.bucket, key))).toBeNull();
+    const states = await admin.query(`SELECT state FROM export WHERE owner_id = $1 AND export_key = $2 ORDER BY created_at`, [f.owner, key]);
+    expect(states.rows.map((r) => r.state)).toEqual(["failed", "pending"]);
+  });
+
+  it("the consistency triggers reject every inconsistent state at COMMIT (23514) and accept the consistent ones", async () => {
+    const reservationReleased = (jobId: string): [string, unknown[]] => [`UPDATE usage_reservation SET state = 'released', settled_at = now() WHERE job_id = $1`, [jobId]];
+    const jobFailed = (jobId: string): [string, unknown[]] => [`UPDATE generation_job SET state = 'failed', error_code = 'x', finished_at = now() WHERE id = $1`, [jobId]];
+    const exportFailed = (id: string): [string, unknown[]] => [`UPDATE export SET state = 'failed', failure_code = 'x', settled_at = now() WHERE id = $1`, [id]];
+
+    // 1. export failed, but job queued and reservation reserved
+    let f = await exportFixture();
+    expect(await txErrorCode(admin, [exportFailed(f.exportId)])).toBe(CHECK_VIOLATION);
+    // 2. export failed and job failed, reservation still reserved
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [exportFailed(f.exportId), jobFailed(f.jobId)])).toBe(CHECK_VIOLATION);
+    // 3. export failed and reservation released, job still queued
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [exportFailed(f.exportId), reservationReleased(f.jobId)])).toBe(CHECK_VIOLATION);
+    // 4. job failed with the export still pending (the job-side trigger)
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [jobFailed(f.jobId), reservationReleased(f.jobId)])).toBe(CHECK_VIOLATION);
+    // 5. reservation released with the export pending and the job queued (the reservation-side trigger)
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [reservationReleased(f.jobId)])).toBe(CHECK_VIOLATION);
+    // 6. reservation consumed with the export pending
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [[`UPDATE usage_reservation SET state = 'consumed', settled_at = now() WHERE job_id = $1`, [f.jobId]]])).toBe(CHECK_VIOLATION);
+    // 7. succeeded export: job succeeded + revision, but the reservation was RELEASED, not consumed
+    f = await exportFixture();
+    const rev = await seedRevision(admin, { lessonId: f.lessonId, ownerId: f.owner, status: "finalized" });
+    const running = `UPDATE generation_job SET state = 'running', lease_owner = 'w', lease_expires_at = now() + interval '1 minute', fencing_token = 1, attempt = 1 WHERE id = $1`;
+    await admin.query(running, [f.jobId]);
+    const succeeded = (revision: string): Array<[string, unknown[]]> => [
+      [`UPDATE export SET state = 'succeeded', revision_id = $2, settled_at = now() WHERE id = $1`, [f.exportId, revision]],
+      [`UPDATE generation_job SET state = 'succeeded', revision_id = $2, finished_at = now(), lease_owner = NULL, lease_expires_at = NULL WHERE id = $1`, [f.jobId, revision]],
+    ];
+    expect(await txErrorCode(admin, [...succeeded(rev), reservationReleased(f.jobId)])).toBe(CHECK_VIOLATION);
+    // 8. succeeded export whose job points at ANOTHER revision
+    const other = await seedRevision(admin, { lessonId: f.lessonId, ownerId: f.owner, status: "finalized", number: 2 });
+    expect(
+      await txErrorCode(admin, [
+        [`UPDATE export SET state = 'succeeded', revision_id = $2, settled_at = now() WHERE id = $1`, [f.exportId, rev]],
+        [`UPDATE generation_job SET state = 'succeeded', revision_id = $2, finished_at = now(), lease_owner = NULL, lease_expires_at = NULL WHERE id = $1`, [f.jobId, other]],
+        [`UPDATE usage_reservation SET state = 'consumed', settled_at = now() WHERE job_id = $1`, [f.jobId]],
+      ]),
+    ).toBe(CHECK_VIOLATION);
+    // 9. the consistent success: export, job and reservation settle together
+    expect(await txErrorCode(admin, [...succeeded(rev), [`UPDATE usage_reservation SET state = 'consumed', settled_at = now() WHERE job_id = $1`, [f.jobId]], [`UPDATE usage_bucket SET reserved = reserved - 1, used = used + 1 WHERE id = $1`, [f.bucket]]])).toBeNull();
+    // 10. the consistent failure
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [exportFailed(f.exportId), jobFailed(f.jobId), reservationReleased(f.jobId), [`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]]])).toBeNull();
+    // 11. a canceled job also counts as a failed export
+    f = await exportFixture();
+    expect(await txErrorCode(admin, [exportFailed(f.exportId), [`UPDATE generation_job SET state = 'canceled', error_code = 'canceled', finished_at = now() WHERE id = $1`, [f.jobId]], reservationReleased(f.jobId), [`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]]])).toBeNull();
+  });
+
+  it("the job and reservation consistency triggers carry a WHEN clause that skips updates which leave the state unchanged (heartbeats)", async () => {
+    const def = async (name: string) =>
+      (await admin.query(`SELECT pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgname = $1 AND NOT tgisinternal`, [name])).rows[0].def as string;
+    const jobDef = await def("export_consistency_job");
+    expect(jobDef).toMatch(/WHEN .*old\.state IS DISTINCT FROM new\.state/i);
+    expect(jobDef).toMatch(/new\.kind = 'export'/i);
+    expect(await def("export_consistency_reservation")).toMatch(/WHEN .*old\.state IS DISTINCT FROM new\.state/i);
+    const f = await exportFixture();
+    // queued -> running keeps the export pending and consistent; lease extensions are plain updates
+    expect(await pgErrorCode(() => admin.query(`UPDATE generation_job SET state = 'running', lease_owner = 'w', lease_expires_at = now() + interval '1 minute', fencing_token = 1, attempt = 1 WHERE id = $1`, [f.jobId]))).toBeNull();
+    expect(await pgErrorCode(() => admin.query(`UPDATE generation_job SET lease_expires_at = now() + interval '2 minutes' WHERE id = $1`, [f.jobId]))).toBeNull();
+  });
+
+  it("export_state_drift is empty for consistent exports and reports an inconsistent committed state", async () => {
+    const f = await exportFixture();
+    const drift = async () => (await worker.query(`SELECT export_id FROM export_state_drift WHERE export_id = $1`, [f.exportId])).rows;
+    expect(await drift()).toEqual([]);
+    // Force an inconsistent committed state by disabling the triggers (superuser-only bypass), as a stand-in for a bug.
+    await admin.query(`ALTER TABLE generation_job DISABLE TRIGGER export_consistency_job`);
+    try {
+      await admin.query(`UPDATE generation_job SET state = 'failed', error_code = 'x', finished_at = now() WHERE id = $1`, [f.jobId]);
+      expect(await drift()).toEqual([{ export_id: f.exportId }]);
+    } finally {
+      await admin.query(`ALTER TABLE generation_job ENABLE TRIGGER export_consistency_job`);
+      // repair so the shared database stays clean for every other file's drift checks
+      await admin.query(`ALTER TABLE export DISABLE TRIGGER export_consistency_export`);
+      await admin.query(`ALTER TABLE usage_reservation DISABLE TRIGGER export_consistency_reservation`);
+      await admin.query(`UPDATE usage_reservation SET state = 'released', settled_at = now() WHERE job_id = $1`, [f.jobId]);
+      await admin.query(`UPDATE export SET state = 'failed', failure_code = 'x', settled_at = now() WHERE id = $1`, [f.exportId]);
+      await admin.query(`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]);
+      await admin.query(`ALTER TABLE export ENABLE TRIGGER export_consistency_export`);
+      await admin.query(`ALTER TABLE usage_reservation ENABLE TRIGGER export_consistency_reservation`);
+    }
+    expect(await drift()).toEqual([]);
+  });
+
+  it("grants: no DELETE for either runtime role, the documented privileges, the drift view for the worker only", async () => {
+    const priv = async (role: string, table: string, p: string) =>
+      (await admin.query(`SELECT has_table_privilege($1, format('public.%I', $2::text), $3) AS ok`, [role, table, p])).rows[0].ok as boolean;
+    for (const table of ["export", "export_snapshot"]) {
+      expect(await priv("app_runtime", table, "DELETE")).toBe(false);
+      expect(await priv("worker_runtime", table, "DELETE")).toBe(false);
+      expect(await priv("app_runtime", table, "TRUNCATE")).toBe(false);
+      expect(await priv("worker_runtime", table, "TRUNCATE")).toBe(false);
+    }
+    expect(await priv("app_runtime", "export_snapshot", "SELECT")).toBe(true);
+    expect(await priv("app_runtime", "export_snapshot", "INSERT")).toBe(true);
+    expect(await priv("app_runtime", "export_snapshot", "UPDATE")).toBe(false);
+    expect(await priv("worker_runtime", "export_snapshot", "SELECT")).toBe(true);
+    expect(await priv("worker_runtime", "export_snapshot", "INSERT")).toBe(false);
+    expect(await priv("worker_runtime", "export_snapshot", "UPDATE")).toBe(false);
+    for (const p of ["SELECT", "INSERT", "UPDATE"]) expect(await priv("app_runtime", "export", p)).toBe(true);
+    expect(await priv("worker_runtime", "export", "SELECT")).toBe(true);
+    expect(await priv("worker_runtime", "export", "UPDATE")).toBe(true);
+    expect(await priv("worker_runtime", "export", "INSERT")).toBe(false);
+    expect(await priv("worker_runtime", "export_state_drift", "SELECT")).toBe(true);
+    expect(await priv("app_runtime", "export_state_drift", "SELECT")).toBe(false);
+  });
+
+  it("row level security is on for both tables with the runtime policy, and the drift view runs as its caller", async () => {
+    const { rows } = await admin.query(
+      `SELECT c.relname, c.relrowsecurity, (SELECT array_agg(polname::text) FROM pg_policy p WHERE p.polrelid = c.oid) AS policies
+         FROM pg_class c WHERE c.relname IN ('export', 'export_snapshot') AND c.relkind = 'r' ORDER BY c.relname`,
+    );
+    expect(rows).toEqual([
+      { relname: "export", relrowsecurity: true, policies: ["runtime_roles_all"] },
+      { relname: "export_snapshot", relrowsecurity: true, policies: ["runtime_roles_all"] },
+    ]);
+    const view = await admin.query(`SELECT reloptions FROM pg_class WHERE relname = 'export_state_drift'`);
+    expect(view.rows[0].reloptions).toContain("security_invoker=true");
   });
 });

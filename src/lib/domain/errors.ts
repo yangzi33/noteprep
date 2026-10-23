@@ -255,6 +255,57 @@ export class VersionRateLimited extends DomainError {
   }
 }
 
+// --- export (S4a) ---------------------------------------------------------------------------------------------
+
+/** The draft changed since the confirmation page was rendered (revision or content hash), or the form is stale: nothing was reserved. */
+export class ExportConflict extends DomainError {
+  constructor() {
+    super("EXPORT_CONFLICT", "This draft changed since the confirmation page was shown");
+  }
+}
+
+/** The package did not validate as verified: it can never be exported. */
+export class ExportNotVerified extends DomainError {
+  constructor() {
+    super("EXPORT_NOT_VERIFIED", "This draft is not fully verified");
+  }
+}
+
+/** The renderer refused the package: nothing was reserved. `reason` is a machine-readable RenderError code, never content. */
+export class ExportRenderFailed extends DomainError {
+  constructor(readonly reason: string) {
+    super("EXPORT_RENDER_FAILED", "The documents could not be laid out");
+  }
+}
+
+/** An equivalent export is being cancelled or has outlived its deadline (or a row lock timed out): try again shortly. */
+export class ExportBusy extends DomainError {
+  constructor() {
+    super("EXPORT_BUSY", "An export of this draft is busy");
+  }
+}
+
+/** The same export failed repeatedly for a reason that retrying will not fix. */
+export class ExportUnavailable extends DomainError {
+  constructor() {
+    super("EXPORT_UNAVAILABLE", "This export is not available");
+  }
+}
+
+/** Export is switched off in this environment (EXPORT_ENABLED). */
+export class ExportDisabled extends DomainError {
+  constructor() {
+    super("EXPORT_DISABLED", "Export is not enabled");
+  }
+}
+
+/** The job's deadline has passed: a late commit is refused so it can never be billed (the caller finishes the job as failed). */
+export class DeadlineExceeded extends DomainError {
+  constructor() {
+    super("DEADLINE_EXCEEDED", "The job passed its deadline");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

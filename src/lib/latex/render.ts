@@ -11,6 +11,14 @@ import { ALLOWED_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, preamb
 export { RenderError } from "./escape";
 export { TEMPLATE_VERSION } from "./templates";
 
+/**
+ * Identity of the renderer's OUTPUT for a given package: the code in this file and in escape.ts / math.ts, the compile
+ * flags and the compiler image pin. An export's key contains it, so a change that alters the rendered source or the PDF
+ * is a new (paid) export. Bump it with ANY such change; the golden test in tests/unit/render-golden.test.ts pins the
+ * source hashes of a fixed package and fails when the output moves without a bump. (TEMPLATE_VERSION covers the preamble.)
+ */
+export const RENDER_VERSION = "render/1";
+
 export interface RenderedDocument {
   id: DocumentKind;
   tex: string;

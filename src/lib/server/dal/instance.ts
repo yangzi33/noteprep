@@ -7,6 +7,6 @@ const globalForDal = globalThis as unknown as { __noteprepWebDal?: ReturnType<ty
 
 /** The web runtime's DAL, built on the process-wide `app_runtime` connection. */
 export function webDal() {
-  globalForDal.__noteprepWebDal ??= createWebDal(getDb(), { curriculum: { allowSample: serverEnv().CURRICULUM_ALLOW_SAMPLE === "1" }, drafts: { limits: serverEnv().limits } });
+  globalForDal.__noteprepWebDal ??= createWebDal(getDb(), { curriculum: { allowSample: serverEnv().CURRICULUM_ALLOW_SAMPLE === "1" }, drafts: { limits: serverEnv().limits }, exports: { enabled: serverEnv().EXPORT_ENABLED === "1", limits: serverEnv().limits } });
   return globalForDal.__noteprepWebDal;
 }

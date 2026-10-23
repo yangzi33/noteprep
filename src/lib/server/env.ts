@@ -9,6 +9,8 @@ const ServerEnv = z.object({
   CURRICULUM_ALLOW_SAMPLE: z.enum(["0", "1"]).default("0"),
   /** "legacy": Prepare reserves an allowance and queues a job. "draft": Prepare creates a free draft preview (D-106). */
   FLOW_MODE: z.enum(["legacy", "draft"]).default("legacy"),
+  /** "1" lets confirmExport reserve allowance and queue export jobs (S4). Off by default; deploy order: migrate, worker, web, flag. */
+  EXPORT_ENABLED: z.enum(["0", "1"]).default("0"),
 });
 export type ServerEnv = z.infer<typeof ServerEnv> & { limits: Limits };
 
@@ -19,6 +21,7 @@ export function parseServerEnv(source: Record<string, string | undefined>): Serv
     DATABASE_URL: source.DATABASE_URL,
     CURRICULUM_ALLOW_SAMPLE: source.CURRICULUM_ALLOW_SAMPLE,
     FLOW_MODE: source.FLOW_MODE,
+    EXPORT_ENABLED: source.EXPORT_ENABLED,
   });
   return { ...parsed, limits: parseLimits(source) };
 }

@@ -6,7 +6,7 @@ import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
 /** What callers may see of a job: no budgets, lease details or request hash. */
 export interface JobDto {
   id: string;
-  kind: "generate" | "compile";
+  kind: "generate" | "compile" | "export";
   state: "queued" | "running" | "succeeded" | "failed" | "canceled";
   stage: "generating" | "validating" | "compiling" | "storing" | null;
   lessonId: string;
@@ -126,4 +126,30 @@ export interface DraftAdjustView {
 export interface DraftMutationResult {
   rev: number;
   contentHash: string;
+}
+
+/** What `confirmExport` returns. `created`: a new export reserved one allowance unit; `joined`: an equivalent export is already pending; `reused`: an equivalent export already succeeded (free); `replayed`: the same idempotency key answered again. */
+export interface ConfirmExportResult {
+  outcome: "created" | "joined" | "reused" | "replayed";
+  exportId: string;
+  jobId: string;
+  lessonId: string;
+}
+
+/** What `getExportStatus` returns. The UI may say "not used" only when `reservation.state` is `released`. */
+export interface ExportStatusDto {
+  exportId: string;
+  state: "pending" | "succeeded" | "failed";
+  job: {
+    state: "queued" | "running" | "succeeded" | "failed" | "canceled";
+    stage: "generating" | "validating" | "compiling" | "storing" | null;
+    attempt: number;
+    maxAttempts: number;
+    cancelRequested: boolean;
+    errorCode: string | null;
+  };
+  reservation: { state: "reserved" | "consumed" | "released" | null };
+  lessonId: string;
+  revisionId: string | null;
+  deadlineAt: Date;
 }

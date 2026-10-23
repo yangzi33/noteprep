@@ -29,6 +29,12 @@ const GENERATION_ERRORS: Record<string, string> = {
   VERSION_RATE_LIMITED: "You have created many versions recently. Please try again later.",
   ITEM_REJECTED: "We could not build a fully checked lesson from those choices. Please try again.",
   PACKAGE_BUILD_FAILED: "We could not build this lesson from the selected topic.",
+  EXPORT_CONFLICT: "This draft changed after you opened the confirmation page. Review it again before you export. Nothing was used.",
+  EXPORT_NOT_VERIFIED: "This draft is not fully checked, so it cannot be exported. Nothing was used.",
+  EXPORT_RENDER_FAILED: "We could not lay out these documents. Nothing was used.",
+  EXPORT_BUSY: "An export of this draft is being stopped or finished. Please try again in a moment.",
+  EXPORT_UNAVAILABLE: "This export failed several times and cannot be retried. Nothing was used. Try changing the draft.",
+  EXPORT_DISABLED: "Export is not available yet.",
 };
 
 export function generationErrorMessage(code: string | null | undefined): string | null {
@@ -55,6 +61,8 @@ const FAILURE_REASONS: Record<string, string> = {
   deadline_exceeded: "The job took too long and was stopped.",
   max_attempts_exceeded: "The job could not be completed after several tries.",
   internal_error: "An unexpected error occurred.",
+  export_not_supported: "Export is not available on this service yet.",
+  render_mismatch: "The documents did not match what was confirmed.",
 };
 
 /** A failed or canceled job never costs a generation; the message says so. */
