@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ExportStatusView, type ExportStatusViewProps } from "@/components/export-status-view";
-import { exportPhase, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
+import { exportPhase, type ExportNet, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
 
 const L = "33333333-3333-4333-8333-333333333333";
 const R = "44444444-4444-4444-8444-444444444444";
@@ -24,7 +24,7 @@ const view = (over: Partial<ExportView> = {}, job: Partial<ExportView["job"]> = 
   ...over,
 });
 
-function html(v: ExportView, extra: Partial<ExportStatusViewProps> & { net?: { unreachable: boolean; gone: boolean } } = {}) {
+function html(v: ExportView, extra: Partial<ExportStatusViewProps> & { net?: ExportNet } = {}) {
   const { net, ...rest } = extra;
   const phase = exportPhase(v, net ?? { unreachable: false, gone: false });
   return renderToStaticMarkup(createElement(ExportStatusView, { view: v, phase, outcome: null, documents: [], cancelAction: () => {}, ...rest }));
@@ -87,16 +87,38 @@ describe("charge wording in the markup", () => {
   });
 });
 
-describe("outcome notes", () => {
-  it("reused", () => {
-    expect(html(done, { outcome: "reused" })).toContain("You already exported this exact draft. Downloading again is free.");
-    expect(html(done, { outcome: "joined" })).not.toContain("Downloading again is free");
-    expect(html(done)).not.toContain("Downloading again is free");
+describe("outcome notes are tied to the export's real state", () => {
+  const REUSED = "You already exported this exact draft. Downloading again is free.";
+  const JOINED = "This draft is already being exported. You are watching that export.";
+  const pending = [view(), view({}, { attempt: 1 }), live, view({}, { state: "running", stage: "storing", attempt: 1 })];
+  it("reused shows only on a succeeded export", () => {
+    expect(html(done, { outcome: "reused" })).toContain(REUSED);
+    for (const v of [...pending, failed, canceled, view({}, { state: "running", cancelRequested: true }), view({}, { state: "failed" }, "held")]) {
+      const m = html(v, { outcome: "reused" });
+      expect(m).not.toContain(REUSED);
+      expect(m).not.toMatch(/free/i);
+    }
+    expect(html(live, { outcome: "reused", net: { unreachable: true, gone: false } })).not.toMatch(/free/i);
+    expect(html(done)).not.toContain(REUSED);
   });
-  it("joined", () => {
-    const m = html(live, { outcome: "joined" });
-    expect(m).toContain("This draft is already being exported. You are watching that export.");
-    expect(m).not.toContain("Downloading again is free");
+  it("joined shows only while the export is queued, retrying or running", () => {
+    for (const v of pending) expect(html(v, { outcome: "joined" })).toContain(JOINED);
+    for (const v of [done, failed, canceled, view({}, { state: "running", cancelRequested: true })]) expect(html(v, { outcome: "joined" })).not.toContain(JOINED);
+    expect(html(live)).not.toContain(JOINED);
+  });
+  it("neither note appears for not found", () => {
+    for (const o of ["reused", "joined"] as const) expect(html(done, { outcome: o, net: { unreachable: false, gone: true } })).not.toMatch(/free|already being exported/);
+  });
+});
+
+describe("session expired", () => {
+  it("shows the sign-in sentence and link, no charge claim, no cancel", () => {
+    const m = html(live, { net: { unreachable: false, gone: false, expired: true } });
+    expect(phaseOf(m)).toBe("session_expired");
+    expect(m).toContain("Your session has expired. Sign in again to see this export.");
+    expect(m).toContain('href="/login"');
+    expect(m).not.toMatch(/No generation was used|This used 1 generation|export-charge/);
+    expect(m).not.toMatch(cancelForm);
   });
 });
 

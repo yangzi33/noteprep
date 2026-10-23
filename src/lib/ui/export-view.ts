@@ -53,6 +53,7 @@ export type ExportPhase =
   | "canceled"
   | "confirming"
   | "unknown"
+  | "session_expired"
   | "not_found";
 
 export interface ExportNet {
@@ -60,6 +61,8 @@ export interface ExportNet {
   unreachable: boolean;
   /** The server answered 404. */
   gone: boolean;
+  /** The status endpoint answered 401: the session is no longer valid (not a network problem). */
+  expired?: boolean;
 }
 
 export const isFinalPhase = (phase: ExportPhase): boolean => phase === "succeeded" || phase === "failed" || phase === "canceled" || phase === "not_found";
@@ -82,6 +85,7 @@ function basePhase(view: ExportView): ExportPhase {
 export function exportPhase(view: ExportView, net: ExportNet): ExportPhase {
   if (net.gone) return "not_found";
   const base = basePhase(view);
+  if (net.expired && !isFinalPhase(base)) return "session_expired";
   if (net.unreachable && !isFinalPhase(base)) return "unknown";
   return base;
 }
@@ -98,12 +102,14 @@ export interface ExportDescription {
 
 const NOT_USED = "No generation was used.";
 const USED = "This used 1 generation.";
-const HELD = "One generation is held while this runs. It is used only if your PDFs are completed, and it comes back if they are not.";
 
-function chargeSentence(view: ExportView): string | null {
-  if (view.charge === "not_used") return NOT_USED;
-  if (view.charge === "used") return USED;
-  if (view.charge === "held") return HELD;
+/**
+ * The charge sentence, for SETTLED phases only and only when the server's reservation state agrees. A live, stopping,
+ * confirming or unknown phase never prints one, whatever the charge says.
+ */
+function chargeSentence(view: ExportView, phase: ExportPhase): string | null {
+  if (phase === "succeeded" && view.charge === "used") return USED;
+  if ((phase === "failed" || phase === "canceled") && view.charge === "not_used") return NOT_USED;
   return null;
 }
 
@@ -132,29 +138,37 @@ function progressWords(phase: ExportPhase): string {
 export function describeExportOutcome(view: ExportView, phase: ExportPhase): ExportDescription {
   switch (phase) {
     case "queued":
-      return { heading: "Your PDFs are in the queue.", detail: "We will start building them shortly. You can leave this page; your progress is saved.", charge: chargeSentence(view), lastKnown: null, intent: "progress" };
+      return { heading: "Your PDFs are in the queue.", detail: "We will start building them shortly. You can leave this page; your progress is saved.", charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
     case "retrying":
-      return { heading: "Trying again.", detail: `The last attempt did not finish, so we are trying again (attempt ${Math.min(view.job.attempt + 1, view.job.maxAttempts)} of ${view.job.maxAttempts}).`, charge: chargeSentence(view), lastKnown: null, intent: "progress" };
+      return { heading: "Trying again.", detail: `The last attempt did not finish, so we are trying again (attempt ${Math.min(view.job.attempt + 1, view.job.maxAttempts)} of ${view.job.maxAttempts}).`, charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
     case "running:compiling":
-      return { heading: "Building your PDFs.", detail: "This usually takes a minute or less.", charge: chargeSentence(view), lastKnown: null, intent: "progress" };
+      return { heading: "Building your PDFs.", detail: "This usually takes a minute or less.", charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
     case "running:storing":
-      return { heading: "Saving your PDFs.", detail: "Almost done.", charge: chargeSentence(view), lastKnown: null, intent: "progress" };
+      return { heading: "Saving your PDFs.", detail: "Almost done.", charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
     case "stopping":
       return { heading: "Stopping this export.", detail: "We will confirm here when it has stopped and whether a generation was used.", charge: null, lastKnown: null, intent: "info" };
     case "confirming":
       return { heading: "Finishing up...", detail: "We are confirming the final result. This page updates by itself.", charge: null, lastKnown: null, intent: "progress" };
     case "succeeded":
-      return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view), lastKnown: null, intent: "success" };
+      return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
     case "canceled":
-      return { heading: "Export canceled.", detail: "You stopped this export.", charge: chargeSentence(view), lastKnown: null, intent: "info" };
+      return { heading: "Export canceled.", detail: "You stopped this export.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "failed": {
       const reason = (view.job.errorCode && FAILURE_REASONS[view.job.errorCode]) || "The export could not be completed.";
-      return { heading: "We could not build your PDFs.", detail: reason, charge: chargeSentence(view), lastKnown: null, intent: "error" };
+      return { heading: "We could not build your PDFs.", detail: reason, charge: chargeSentence(view, phase), lastKnown: null, intent: "error" };
     }
     case "unknown":
       return {
         heading: "Checking the status...",
         detail: "We cannot check the status right now. Still trying...",
+        charge: null,
+        lastKnown: progressWords(basePhase(view)),
+        intent: "info",
+      };
+    case "session_expired":
+      return {
+        heading: "Your session has expired.",
+        detail: "Your session has expired. Sign in again to see this export.",
         charge: null,
         lastKnown: progressWords(basePhase(view)),
         intent: "info",

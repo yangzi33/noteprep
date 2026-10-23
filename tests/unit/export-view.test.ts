@@ -108,3 +108,35 @@ describe("describeExportOutcome: what happened to the generation", () => {
     expect(d.heading).toMatch(/not found/i);
   });
 });
+
+describe("charge sentence: settled phases only, every phase x charge", () => {
+  const phases: ExportPhase[] = ["queued", "retrying", "running:compiling", "running:storing", "stopping", "succeeded", "failed", "canceled", "confirming", "unknown", "session_expired", "not_found"];
+  const charges: ExportView["charge"][] = ["held", "used", "not_used", "unknown"];
+  for (const p of phases) {
+    for (const c of charges) {
+      it(`${p} x ${c}`, () => {
+        const d = describeExportOutcome({ ...view(), charge: c }, p);
+        const expected = p === "succeeded" && c === "used" ? "This used 1 generation." : (p === "failed" || p === "canceled") && c === "not_used" ? "No generation was used." : null;
+        expect(d.charge).toBe(expected);
+        const prose = [d.heading, d.detail, d.lastKnown ?? ""].join(" ");
+        expect(prose).not.toMatch(/No generation was used|used 1 generation|held/i);
+      });
+    }
+  }
+});
+
+describe("session expired", () => {
+  it("401 on a live export is session_expired with the sign-in sentence and no charge", () => {
+    const v = view({}, { state: "running", stage: "compiling", attempt: 1 });
+    expect(exportPhase(v, { unreachable: false, gone: false, expired: true })).toBe("session_expired");
+    const d = describeExportOutcome(v, "session_expired");
+    expect(d.detail).toBe("Your session has expired. Sign in again to see this export.");
+    expect(d.charge).toBeNull();
+    expect(d.lastKnown).toMatch(/Building/);
+  });
+  it("a settled export keeps its final phase; gone wins", () => {
+    const done = view({ state: "succeeded", revisionId: "r" }, { state: "succeeded" }, "consumed");
+    expect(exportPhase(done, { unreachable: false, gone: false, expired: true })).toBe("succeeded");
+    expect(exportPhase(view(), { unreachable: false, gone: true, expired: true })).toBe("not_found");
+  });
+});

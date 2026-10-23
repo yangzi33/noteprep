@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { cancelExportAction } from "@/app/exports/[id]/actions";
 import { ExportStatusView, type ExportOutcomeNote } from "@/components/export-status-view";
 import type { DocumentKind } from "@/lib/package/schema";
+import { startExportPoller } from "@/lib/ui/export-poller";
 import { exportPhase, isSettledExport, type ExportNet, type ExportView } from "@/lib/ui/export-view";
 
 const POLL_MS = 2000;
@@ -24,7 +25,7 @@ export function ExportStatus({
   outcome: ExportOutcomeNote | null;
 }) {
   const [view, setView] = useState<ExportView>(initial);
-  const [net, setNet] = useState<ExportNet>({ unreachable: false, gone: false });
+  const [net, setNet] = useState<ExportNet>({ unreachable: false, gone: false, expired: false });
   const router = useRouter();
 
   // On the transition to a settled state, ask the server again: it knows the documents of a finished export.
@@ -33,26 +34,9 @@ export function ExportStatus({
   }, [view, initial, router]);
 
   useEffect(() => {
-    if (isSettledExport(view) || net.gone) return;
-    const timer = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/exports/${view.exportId}`, { cache: "no-store" });
-        if (res.status === 404) {
-          setNet({ unreachable: false, gone: true });
-          return;
-        }
-        if (!res.ok) {
-          setNet((n) => ({ ...n, unreachable: true }));
-          return;
-        }
-        setView((await res.json()) as ExportView);
-        setNet({ unreachable: false, gone: false });
-      } catch {
-        setNet((n) => ({ ...n, unreachable: true }));
-      }
-    }, POLL_MS);
-    return () => clearInterval(timer);
-  }, [view, net.gone]);
+    if (isSettledExport(initial)) return;
+    return startExportPoller({ exportId: initial.exportId, intervalMs: POLL_MS, onView: setView, onNet: setNet });
+  }, [initial]);
 
   return <ExportStatusView view={view} phase={exportPhase(view, net)} outcome={outcome} documents={documents} cancelAction={cancelExportAction} />;
 }

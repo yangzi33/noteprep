@@ -36,6 +36,7 @@ const OVERLINES: Record<ExportPhase, string> = {
   canceled: "CANCELED",
   confirming: "FINISHING UP",
   unknown: "CHECKING",
+  session_expired: "SIGNED OUT",
   not_found: "NOT FOUND",
 };
 
@@ -64,11 +65,18 @@ const STEP_ICON = { done: CircleCheck, active: LoaderCircle, todo: Circle } as c
 const STEP_TEXT = { done: "Done", active: "In progress", todo: "Not started" } as const;
 
 /** Stateless presentation of an export: no hooks, so it renders on the server and in unit tests. */
+/** The note is shown only when the export's real state agrees with it: a URL parameter alone never says anything about cost. */
+function noteApplies(note: ExportOutcomeNote | null, phase: ExportPhase): note is ExportOutcomeNote {
+  if (note === "reused") return phase === "succeeded";
+  if (note === "joined") return phase === "queued" || phase === "retrying" || phase === "running:compiling" || phase === "running:storing";
+  return false;
+}
+
 export function ExportStatusView({ view, phase, outcome, documents, cancelAction }: ExportStatusViewProps) {
   const description = describeExportOutcome(view, phase);
   const steps = stepStates(phase);
   const terminalJob = view.job.state === "succeeded" || view.job.state === "failed" || view.job.state === "canceled";
-  const canCancel = phase !== "not_found" && !terminalJob && !view.job.cancelRequested && view.state === "pending";
+  const canCancel = phase !== "not_found" && phase !== "session_expired" && !terminalJob && !view.job.cancelRequested && view.state === "pending";
   const showFiles = phase === "succeeded" && view.revisionId !== null;
   const live = [description.heading, description.detail, description.charge].filter(Boolean).join(" ");
 
@@ -87,7 +95,7 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
         </p>
       )}
 
-      {outcome && phase !== "not_found" && (
+      {noteApplies(outcome, phase) && (
         <Notice intent="info" className="mt-4" data-testid="export-outcome-note">
           {OUTCOME_NOTES[outcome]}
         </Notice>
@@ -107,6 +115,14 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
             );
           })}
         </ol>
+      )}
+
+      {phase === "session_expired" && (
+        <p className="mt-4">
+          <a href="/login" className="inline-flex min-h-11 items-center font-semibold underline" data-testid="export-sign-in">
+            Sign in
+          </a>
+        </p>
       )}
 
       {description.charge && (
