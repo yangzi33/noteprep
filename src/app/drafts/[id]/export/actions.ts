@@ -7,7 +7,8 @@ import { domainErrorCode } from "@/lib/domain/errors";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { confirmErrorTarget, confirmSuccessHref, exportConfirmHref } from "@/lib/ui/export-confirm";
+import { serverEnv } from "@/lib/server/env";
+import { confirmErrorTarget, confirmSuccessHref, exportAvailable, exportConfirmHref } from "@/lib/ui/export-confirm";
 
 const Input = z.object({
   draftId: z.uuid(),
@@ -42,6 +43,8 @@ export async function confirmExportAction(formData: FormData) {
     redirect(exportConfirmHref(draftId.data, versionId.success ? versionId.data : undefined, { error: "INVALID_REQUEST" }));
   }
   const { key, ...input } = parsed.data;
+  // Defence in depth: the page hides the form, and the action refuses too, before touching the DAL.
+  if (!exportAvailable(serverEnv())) redirect(exportConfirmHref(input.draftId, input.versionId, { error: "EXPORT_DISABLED" }));
 
   let target: string;
   try {

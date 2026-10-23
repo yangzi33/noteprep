@@ -11,6 +11,7 @@ import { serverEnv } from "@/lib/server/env";
 import { allowanceSentence } from "@/lib/ui/dashboard-view";
 import { changesText } from "@/lib/ui/draft-changes";
 import { versionLabel } from "@/lib/ui/draft-versions";
+import { exportAvailable } from "@/lib/ui/export-confirm";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { confirmExportAction } from "./actions";
 
@@ -64,7 +65,7 @@ export default async function ExportConfirmPage({ params, searchParams }: { para
       rev={view.rev}
       contentHash={view.contentHash}
       formKey={randomUUID()} // one key per rendered page: a double click or retried submit is the same request
-      enabled={serverEnv().EXPORT_ENABLED === "1"}
+      enabled={exportAvailable(serverEnv())}
       stale={parsed.data.rev !== undefined && parsed.data.rev !== view.rev}
       error={parsed.data.error ?? null}
       action={confirmExportAction}

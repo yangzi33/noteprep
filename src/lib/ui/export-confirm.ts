@@ -42,3 +42,6 @@ export function confirmErrorTarget(code: string | null, draftId: string, version
   if (code && REDIRECT_CODES.has(code)) return { kind: "redirect", href: exportConfirmHref(draftId, versionId, { error: code }) };
   return { kind: "rethrow" };
 }
+
+/** Export is offered only in the draft flow and only when EXPORT_ENABLED=1 (the page and the action both check this). */
+export const exportAvailable = (env: { EXPORT_ENABLED: string; FLOW_MODE: string }): boolean => env.EXPORT_ENABLED === "1" && env.FLOW_MODE === "draft";
