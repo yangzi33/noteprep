@@ -29,6 +29,25 @@ export default async function globalSetup() {
     await db.end();
     throw new Error(`${others[0].n} connection(s) from another worker are open on this database. Stop "pnpm worker:dev" before running the e2e tests: they share the local database and that worker would take the tests' jobs.`);
   }
+  // Pending exports left by an earlier run must be settled as a unit (export, job, reservation, bucket counter): a deferred
+  // consistency trigger refuses a job cancel that leaves a pending export behind.
+  await db.query("BEGIN");
+  await db.query(
+    `UPDATE usage_bucket b SET reserved = b.reserved - 1
+       FROM usage_reservation r JOIN export e ON e.job_id = r.job_id
+      WHERE e.state = 'pending' AND r.state = 'reserved' AND r.bucket_id = b.id`,
+  );
+  await db.query(
+    `UPDATE usage_reservation r SET state = 'released', settle_reason = 'e2e_cleanup', settled_at = now()
+       FROM export e WHERE e.job_id = r.job_id AND e.state = 'pending' AND r.state = 'reserved'`,
+  );
+  await db.query(
+    `UPDATE generation_job j SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
+            error_code = 'e2e_cleanup', finished_at = COALESCE(j.finished_at, now())
+       FROM export e WHERE e.job_id = j.id AND e.state = 'pending'`,
+  );
+  await db.query(`UPDATE export SET state = 'failed', failure_code = 'e2e_cleanup', settled_at = now() WHERE state = 'pending'`);
+  await db.query("COMMIT");
   await db.query(
     `UPDATE generation_job SET state = 'canceled', stage = NULL, lease_owner = NULL, lease_expires_at = NULL,
             error_code = 'e2e_cleanup', finished_at = now() WHERE state IN ('queued', 'running')`,
