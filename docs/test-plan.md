@@ -171,6 +171,9 @@ PR 门禁默认用 fake LLM + 虚构数据;真实 LLM 质量/成本评估与 Str
 5. (P3)测试模式订阅 → 新生成 → 到期/取消后历史仍可下载。
 6. 额度用尽、失败、超时、取消、可重试状态的 UI 反馈。
 
+### 8b. Export suites (S4b, English)
+Unit: export-confirm-ui, export-confirm-action, export-cancel-action, export-view, export-status-view, export-poller, export-page, export-status-route, job-page-export-redirect, export-errors, export-spec, export-verify. Integration (real Postgres): export-confirm (10 parallel same-key requests: one export, one reservation), export-worker, export-cancel, export-settlement, export-locking, export-security. Real compiler: tests/latex/export-pipeline. E2E: tests/e2e/export-flow.spec.ts (full flow, free re-export, double submit, failure releases, stale tab, cancel while queued, isolation, flag off). The E2E proves the browser path; the concurrency guarantees are proved by the integration tests.
+
 ## 9. 人工检查与上线前必需证据
 
 - **人工数学抽查**:按预先写下的抽样规则(按题型/难度分层),至少抽查真实 LLM 生成的课包;记录错误数/抽查题数,每个发现固化为 fixture。

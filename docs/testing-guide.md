@@ -21,7 +21,7 @@
 | `pnpm test:integration` | 真实 Postgres:额度并发、幂等、课程、请求 v2、结算、旧路径;**草稿**(`tests/integration/drafts.test.ts`:免费、幂等、限流、过期清理、跨用户)与草稿表的触发器/授权(`schema.test.ts`) | `pnpm db:up` |
 | `pnpm test:supabase` | 登录、Storage(私有桶、签名 URL、仅 PDF)、RLS、Data API 边界(26 个) | `pnpm supabase:start`(Storage 已在 `config.toml` 启用;改配置后需 stop 再 start) |
 | `pnpm test:latex` | **真实容器**(40 个):OS 隔离、恶意 TeX、完整链路、可复现性 | `pnpm latex:image` |
-| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑。`draft-flow.spec.ts` 跑在第二个 project(`chromium-draft`),它连接另一个以 `FLOW_MODE=draft` 启动的服务器(端口 3101);其余 spec 仍连默认的 `legacy` 服务器(3100) | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
+| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑。`draft-flow.spec.ts` 跑在第二个 project(`chromium-draft`),它连接另一个以 `FLOW_MODE=draft` 启动的服务器(端口 3101);其余 spec 仍连默认的 `legacy` 服务器(3100);`export-flow.spec.ts` 跑在 `chromium-export`,连接第三个以 `FLOW_MODE=draft EXPORT_ENABLED=1` 启动的服务器(3102) | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
@@ -80,6 +80,12 @@
 ## 8. 变异检查(可选,用于怀疑测试是否真的有效)
 
 做法:临时改坏一行实现(例如去掉沙箱的 `--network none`、放宽幂等检查),确认对应测试**变红**,再还原。M1–M4 各层都做过(共约 60 次),存活的变异体均已分析为等价或补了测试。不要提交变异。
+
+## 8b. Export suites (S4b, English)
+- Unit (`pnpm test`): `export-confirm-ui`, `export-confirm-action`, `export-cancel-action`, `export-view`, `export-status-view`, `export-poller`, `export-page`, `export-status-route`, `job-page-export-redirect`, `export-errors`, `export-spec`, `export-verify`.
+- Integration (`pnpm test:integration`, real Postgres): `export-confirm` (including the 10-parallel same-key proof), `export-worker` (`runExport`), `export-cancel`, `export-settlement`, `export-locking`, `export-security`.
+- Real compiler (`pnpm test:latex`): `tests/latex/export-pipeline.test.ts`.
+- E2E (`pnpm test:e2e`): `tests/e2e/export-flow.spec.ts` on the third server (3102): full flow with free re-export, double submit, failed export releases, stale tab, cancel while queued, isolation, flag off. `E2E_COMPILER=docker` asserts real `%PDF-` bytes in the full-flow case.
 
 ## 9. 清理
 

@@ -110,3 +110,14 @@ SELECT * FROM "usage_bucket_drift";                       -- must be empty
 - **M-e (accepted):** a confirmation page opened without `rev` cannot tell that the draft changed since the link was made; the form still carries the revision and hash it was rendered from, so the tutor pays only for what that page showed.
 - **M-7:** the golden render test pins one fixture; nothing ties the compiler image or compile flags to `RENDER_VERSION`.
 - **M-8:** the reuse lookup does not check `lesson.deleted_at`; there is no deletion path yet. S5's `retired` state must cover it.
+
+## S4b status (implemented behind `EXPORT_ENABLED`)
+Done: worker `runExport` (S4b-1); confirmation page, action and confirm-attempt limit (S4b-2, M-5); status page, polling endpoint and cancel (S4b-3); export E2E on a third server, and the docs and rollout note in [fresh-droplet-setup.md](../../fresh-droplet-setup.md) section K (S4b-4). The CLAUDE.md edit was applied in PR #39.
+
+Remaining for S5: page format parameter; manifest v3 and reader; deterministic compile flags; PDF text-extraction proof tests; orphan reconciler and artifact recovery; retired state (M-8); pinning `RENDER_VERSION` to the compiler image (M-7).
+
+Known limits of S4b:
+- Parallel first-time requests with the same new key each count one confirm attempt (M-a); it costs attempts only, never allowance.
+- A confirm link without `rev` shows no stale-draft notice (the page cannot tell the link is old); the form it renders still carries the revision and hash it displays, which the server checks on submit.
+- Login has no return-to-page, so a link opened with an expired session goes to `/login` and the tutor must navigate back.
+- There is no per-IP limit on confirmation attempts (no IP hashing exists; not approved).
