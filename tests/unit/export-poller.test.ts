@@ -125,4 +125,26 @@ describe("startExportPoller", () => {
     expect(f).toHaveBeenCalledTimes(4);
     stop();
   });
+
+  it("gives up after too many polls in the finishing-up state, with a stalled net and no more requests", async () => {
+    const confirming = view("pending", { job: { state: "succeeded", stage: null, attempt: 1, maxAttempts: 3, cancelRequested: false, errorCode: null } });
+    const f = vi.fn().mockImplementation(async () => json(confirming));
+    const views: ExportView[] = [];
+    const nets: ExportNet[] = [];
+    startExportPoller({ exportId: "e1", intervalMs: 1000, maxConfirmingPolls: 3, fetchImpl: f as unknown as typeof fetch, onView: (v) => views.push(v), onNet: (n) => nets.push(n) });
+    await tick(10_000);
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(nets.at(-1)).toMatchObject({ stalled: true });
+  });
+
+  it("an ordinary pending state resets the finishing-up count", async () => {
+    const confirming = view("pending", { job: { state: "failed", stage: null, attempt: 1, maxAttempts: 3, cancelRequested: false, errorCode: null } });
+    const queue = [confirming, confirming, view(), confirming];
+    const f = vi.fn().mockImplementation(async () => json(queue.shift() ?? confirming));
+    const nets: ExportNet[] = [];
+    const stop = startExportPoller({ exportId: "e1", intervalMs: 1000, maxConfirmingPolls: 3, fetchImpl: f as unknown as typeof fetch, onView: () => {}, onNet: (n) => nets.push(n) });
+    await tick(5000);
+    expect(nets.some((n) => n.stalled)).toBe(false);
+    stop();
+  });
 });

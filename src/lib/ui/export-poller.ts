@@ -1,4 +1,4 @@
-import type { ExportNet, ExportView } from "./export-view";
+import { isConfirmingView, type ExportNet, type ExportView } from "./export-view";
 
 export interface ExportPollerOptions {
   exportId: string;
@@ -6,6 +6,8 @@ export interface ExportPollerOptions {
   onView: (view: ExportView) => void;
   onNet: (net: ExportNet) => void;
   fetchImpl?: typeof fetch;
+  /** Consecutive polls that may report "finishing up" before polling stops with net.stalled (default 30). */
+  maxConfirmingPolls?: number;
 }
 
 const OK: ExportNet = { unreachable: false, gone: false, expired: false };
@@ -21,6 +23,8 @@ export function startExportPoller(options: ExportPollerOptions): () => void {
   let stopped = false;
   let inFlight = false;
   let latest = 0;
+  let confirming = 0;
+  const maxConfirming = options.maxConfirmingPolls ?? 30;
   let controller: AbortController | null = null;
 
   const stop = () => {
@@ -50,6 +54,12 @@ export function startExportPoller(options: ExportPollerOptions): () => void {
       } else {
         const view = body as ExportView;
         options.onView(view);
+        confirming = view.state === "pending" && isConfirmingView(view) ? confirming + 1 : 0;
+        if (confirming >= maxConfirming) {
+          options.onNet({ ...OK, stalled: true });
+          stop();
+          return;
+        }
         options.onNet(OK);
         if (view.state !== "pending") stop();
       }

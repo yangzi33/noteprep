@@ -154,3 +154,22 @@ describe("links", () => {
     expect(html(failed)).toContain('href="/lessons"');
   });
 });
+
+describe("a free re-export does not read like a new charge", () => {
+  it("reused + succeeded + consumed says the first export used 1 generation and this one none", () => {
+    const m = html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"), { outcome: "reused" });
+    expect(m).toContain("This one used none");
+    expect(m).toContain("Your first export of this draft used 1 generation.");
+    expect(m).not.toContain("This used 1 generation.");
+  });
+  it("without the reused outcome the ordinary sentence stays, and a spoofed reused on a failed export never shows it", () => {
+    expect(html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"))).toContain("This used 1 generation.");
+    expect(html(view({ state: "failed" }, { state: "failed" }, "not_used"), { outcome: "reused" })).not.toContain("This one used none");
+  });
+  it("the stalled phase makes no charge claim", () => {
+    const v = view({}, { state: "succeeded" }, "used");
+    const m = html(v, { net: { unreachable: false, gone: false, stalled: true } });
+    expect(m).toContain("We cannot confirm the final state.");
+    expect(m).not.toMatch(/used|No generation/);
+  });
+});

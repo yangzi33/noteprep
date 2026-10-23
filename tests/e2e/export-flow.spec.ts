@@ -1,9 +1,22 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { allowanceText, createUser, deleteCreatedUsers, signIn, sql, startStorageWorker, type RunningWorker, type TestUser } from "./support/helpers";
+import { allowanceText, createUser as createTestUser, deleteCreatedUsers, signIn, sql, startStorageWorker, type RunningWorker, type TestUser } from "./support/helpers";
 
 // Runs in the "chromium-export" project: a server started with FLOW_MODE=draft and EXPORT_ENABLED=1 (see playwright.config.ts),
 // against a real worker process that shares the database. Only one worker runs at a time in this file.
-test.afterAll(deleteCreatedUsers);
+const userIds: string[] = [];
+const createUser = async () => {
+  const user = await createTestUser();
+  userIds.push(user.id);
+  return user;
+};
+
+test.afterAll(async () => {
+  // Every export these tests started must be settled consistently (the isolation test cancels its own), and no counter drifts.
+  expect(await sql(`SELECT export_id FROM export_state_drift WHERE export_id IN (SELECT id FROM export WHERE owner_id = ANY($1::uuid[]))`, [userIds])).toEqual([]);
+  expect(await sql(`SELECT bucket_id FROM usage_bucket_drift WHERE bucket_id IN (SELECT id FROM usage_bucket WHERE owner_id = ANY($1::uuid[]))`, [userIds])).toEqual([]);
+  expect(await sql(`SELECT id FROM export WHERE state = 'pending' AND owner_id = ANY($1::uuid[])`, [userIds])).toEqual([]);
+  await deleteCreatedUsers();
+});
 
 const SAMPLE = "sample-math@sample-1";
 const COURSE = `${SAMPLE}/level-a/course-1`;
@@ -127,6 +140,8 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     await page.getByTestId("export-confirm").click();
     await expect(page).toHaveURL(new RegExp(`/exports/${exportId}\\?outcome=reused$`));
     await expect(page.getByTestId("export-outcome-note")).toContainText("Downloading again is free");
+    await expect(page.getByTestId("export-charge")).toHaveText("Your first export of this draft used 1 generation. This one used none.");
+    expect(await page.content()).not.toContain("This used 1 generation.");
     expect(await allowanceText(page)).toBe("2 of 3 generations left.");
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
     expect(await exportsOf(draftId)).toHaveLength(1);
@@ -259,6 +274,12 @@ test("another account gets 404 for an export and its status, and an anonymous ca
   await anonymous.close();
 
   expect((await page.request.get(`/api/exports/${exportId}`)).status()).toBe(200);
+
+  // leave nothing pending: no worker runs here, so cancel the queued export through the app
+  await page.goto(`/exports/${exportId}`);
+  await page.getByRole("button", { name: "Cancel export" }).click();
+  await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "canceled");
+  expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
 });
 
 test("with the flag off, the draft page keeps its disabled export button and the confirm page has no form", async ({ page }) => {

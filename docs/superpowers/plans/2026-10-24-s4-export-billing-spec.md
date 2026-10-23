@@ -121,3 +121,8 @@ Known limits of S4b:
 - A confirm link without `rev` shows no stale-draft notice (the page cannot tell the link is old); the form it renders still carries the revision and hash it displays, which the server checks on submit.
 - Login has no return-to-page, so a link opened with an expired session goes to `/login` and the tutor must navigate back.
 - There is no per-IP limit on confirmation attempts (no IP hashing exists; not approved).
+- **No operator cancel tool.** With `EXPORT_ENABLED=0` pending exports are settled only by the tutor or by the deadline sweep. Follow-up: an admin script that calls the DAL's cancel path (never raw SQL; the consistency trigger needs export, job, reservation and bucket counters settled together).
+- **M3:** the confirmation page always promises a charge, even when the confirm will be a free reuse of an identical earlier export; a `TOO_MANY_ACTIVE_JOBS` refusal has no link to the export that is already running.
+- **M7:** a cancel requested just before the worker commits shows "Stopping" until the lease expires and the sweep settles the export.
+- **M2:** the status page header shows no lesson title or version label: `ExportStatusDto` carries neither, and adding them needs a new owner-filtered DAL field. Follow-up.
+- **Polling bound:** the status poller stops after about a minute of "finishing up" (30 polls) and shows "We cannot confirm the final state"; refreshing the page resumes it.

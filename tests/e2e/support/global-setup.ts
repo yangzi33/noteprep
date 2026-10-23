@@ -1,11 +1,13 @@
 import { execFileSync } from "node:child_process";
 import pg from "pg";
 import { e2eEnv } from "./env";
+import { assertLocalDatabase } from "./local-db";
 
 // Applies the real migrations to the local Supabase database, makes sure the runtime logins exist, and
 // parks jobs left over from earlier local runs so this run's worker only sees its own.
 export default async function globalSetup() {
   const env = e2eEnv();
+  assertLocalDatabase(env.dbUrl); // before anything below edits rows
   execFileSync("pnpm", ["exec", "prisma", "migrate", "deploy"], {
     env: { ...process.env, DATABASE_URL: env.dbUrl, MIGRATION_DATABASE_URL: env.dbUrl },
     stdio: "pipe",
@@ -32,10 +34,13 @@ export default async function globalSetup() {
   // Pending exports left by an earlier run must be settled as a unit (export, job, reservation, bucket counter): a deferred
   // consistency trigger refuses a job cancel that leaves a pending export behind.
   await db.query("BEGIN");
+  // Several pending reservations may share one bucket: decrement by the count per bucket, not once per joined row.
   await db.query(
-    `UPDATE usage_bucket b SET reserved = b.reserved - 1
-       FROM usage_reservation r JOIN export e ON e.job_id = r.job_id
-      WHERE e.state = 'pending' AND r.state = 'reserved' AND r.bucket_id = b.id`,
+    `UPDATE usage_bucket b SET reserved = b.reserved - x.n
+       FROM (SELECT r.bucket_id, count(*)::int AS n
+               FROM usage_reservation r JOIN export e ON e.job_id = r.job_id
+              WHERE e.state = 'pending' AND r.state = 'reserved' GROUP BY r.bucket_id) x
+      WHERE x.bucket_id = b.id`,
   );
   await db.query(
     `UPDATE usage_reservation r SET state = 'released', settle_reason = 'e2e_cleanup', settled_at = now()

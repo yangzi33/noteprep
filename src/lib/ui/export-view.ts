@@ -52,6 +52,7 @@ export type ExportPhase =
   | "failed"
   | "canceled"
   | "confirming"
+  | "stalled"
   | "unknown"
   | "session_expired"
   | "not_found";
@@ -63,6 +64,8 @@ export interface ExportNet {
   gone: boolean;
   /** The status endpoint answered 401: the session is no longer valid (not a network problem). */
   expired?: boolean;
+  /** The poller gave up: the export stayed in the "finishing up" state for too many polls. */
+  stalled?: boolean;
 }
 
 export const isFinalPhase = (phase: ExportPhase): boolean => phase === "succeeded" || phase === "failed" || phase === "canceled" || phase === "not_found";
@@ -82,9 +85,13 @@ function basePhase(view: ExportView): ExportPhase {
   return job.stage === "storing" ? "running:storing" : "running:compiling";
 }
 
+/** Pending export whose job is already terminal: a moment between two commits, or a drift. */
+export const isConfirmingView = (view: ExportView): boolean => basePhase(view) === "confirming";
+
 export function exportPhase(view: ExportView, net: ExportNet): ExportPhase {
   if (net.gone) return "not_found";
   const base = basePhase(view);
+  if (net.stalled && base === "confirming") return "stalled";
   if (net.expired && !isFinalPhase(base)) return "session_expired";
   if (net.unreachable && !isFinalPhase(base)) return "unknown";
   return base;
@@ -102,6 +109,7 @@ export interface ExportDescription {
 
 const NOT_USED = "No generation was used.";
 const USED = "This used 1 generation.";
+export const REUSED_CHARGE = "Your first export of this draft used 1 generation. This one used none.";
 
 /**
  * The charge sentence, for SETTLED phases only and only when the server's reservation state agrees. A live, stopping,
@@ -135,7 +143,14 @@ function progressWords(phase: ExportPhase): string {
  * Tutor-facing wording for one phase. "No generation was used." appears only for a server-confirmed release and
  * "This used 1 generation." only for a consumed one; anything not yet settled stays neutral.
  */
-export function describeExportOutcome(view: ExportView, phase: ExportPhase): ExportDescription {
+export function describeExportOutcome(view: ExportView, phase: ExportPhase, outcome: "reused" | "joined" | null = null): ExportDescription {
+  const described = describeBase(view, phase);
+  // After a free re-export the usual "This used 1 generation." would read like a charge for the click just made.
+  if (outcome === "reused" && phase === "succeeded" && view.charge === "used") return { ...described, charge: REUSED_CHARGE };
+  return described;
+}
+
+function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
   switch (phase) {
     case "queued":
       return { heading: "Your PDFs are in the queue.", detail: "We will start building them shortly. You can leave this page; your progress is saved.", charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
@@ -149,6 +164,8 @@ export function describeExportOutcome(view: ExportView, phase: ExportPhase): Exp
       return { heading: "Stopping this export.", detail: "We will confirm here when it has stopped and whether a generation was used.", charge: null, lastKnown: null, intent: "info" };
     case "confirming":
       return { heading: "Finishing up...", detail: "We are confirming the final result. This page updates by itself.", charge: null, lastKnown: null, intent: "progress" };
+    case "stalled":
+      return { heading: "We cannot confirm the final state.", detail: "Refresh this page later to see the result.", charge: null, lastKnown: null, intent: "info" };
     case "succeeded":
       return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
     case "canceled":

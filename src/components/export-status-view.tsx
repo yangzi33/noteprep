@@ -35,6 +35,7 @@ const OVERLINES: Record<ExportPhase, string> = {
   failed: "FAILED",
   canceled: "CANCELED",
   confirming: "FINISHING UP",
+  stalled: "CHECKING LATER",
   unknown: "CHECKING",
   session_expired: "SIGNED OUT",
   not_found: "NOT FOUND",
@@ -73,7 +74,7 @@ function noteApplies(note: ExportOutcomeNote | null, phase: ExportPhase): note i
 }
 
 export function ExportStatusView({ view, phase, outcome, documents, cancelAction }: ExportStatusViewProps) {
-  const description = describeExportOutcome(view, phase);
+  const description = describeExportOutcome(view, phase, noteApplies(outcome, phase) ? outcome : null);
   const steps = stepStates(phase);
   const terminalJob = view.job.state === "succeeded" || view.job.state === "failed" || view.job.state === "canceled";
   const canCancel = phase !== "not_found" && phase !== "session_expired" && !terminalJob && !view.job.cancelRequested && view.state === "pending";
