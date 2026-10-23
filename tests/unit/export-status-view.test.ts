@@ -169,10 +169,10 @@ describe("links", () => {
 });
 
 describe("a free re-export does not read like a new charge", () => {
-  it("reused + succeeded + consumed says the first export used 1 generation and this one none", () => {
+  it("reused + succeeded + consumed says an export with the same content and format already used 1 generation and this one none", () => {
     const m = html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"), { outcome: "reused" });
     expect(m).toContain("This one used none");
-    expect(m).toContain("Your first export of this draft used 1 generation.");
+    expect(m).toContain("An export with the same content and page format already used 1 generation.");
     expect(m).not.toContain("This used 1 generation.");
   });
   it("without the reused outcome the ordinary sentence stays, and a spoofed reused on a failed export never shows it", () => {

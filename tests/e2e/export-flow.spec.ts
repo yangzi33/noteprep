@@ -140,7 +140,7 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     await page.getByTestId("export-confirm").click();
     await expect(page).toHaveURL(new RegExp(`/exports/${exportId}\\?outcome=reused$`));
     await expect(page.getByTestId("export-outcome-note")).toContainText("Downloading again is free");
-    await expect(page.getByTestId("export-charge")).toHaveText("Your first export of this draft used 1 generation. This one used none.");
+    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 generation. This one used none.");
     expect(await page.content()).not.toContain("This used 1 generation.");
     expect(await allowanceText(page)).toBe("2 of 3 generations left.");
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);

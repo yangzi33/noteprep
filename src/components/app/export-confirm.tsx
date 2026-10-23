@@ -89,7 +89,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
                 {PAGE_FORMAT_LABELS[f]}
               </label>
             ))}
-            <p className="text-sm text-muted-foreground">All PDFs of this export use the format you choose. Exporting the same lesson in another format uses another generation.</p>
+            <p className="text-sm text-muted-foreground">All PDFs of this export use the format you choose. Exporting the same lesson in another format uses another generation. Exporting the same content in the same page format again is free (already-exported content is reused).</p>
           </fieldset>
           <p className="text-sm font-semibold" data-testid="export-promise">
             {EXPORT_PROMISE}

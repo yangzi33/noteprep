@@ -111,7 +111,7 @@ export interface ExportDescription {
 
 const NOT_USED = "No generation was used.";
 const USED = "This used 1 generation.";
-export const REUSED_CHARGE = "Your first export of this draft used 1 generation. This one used none.";
+export const REUSED_CHARGE = "An export with the same content and page format already used 1 generation. This one used none.";
 
 /**
  * The charge sentence, for SETTLED phases only and only when the server's reservation state agrees. A live, stopping,

@@ -12,11 +12,11 @@ Status: plan (2026-10-24), planner output, not implemented. Builds on the [S4 sp
 ## Ordered sub-slices
 Each goes on `feat/export-s5` as small commits, checks run before the next starts. Deploy order is unchanged: migrate, worker, web.
 
-### S5-1 Manifest reader for v2 and v3 (ship first, read-only)
+### S5-1 Manifest reader for v2 and v3 (read-only; ships together with the v3 writer, see R1)
 - Files: `src/lib/domain/manifest.ts` (add `ManifestV3` strict schema; `parseManifest(value)` normalizing v2 and v3), `src/lib/server/dal/lessons.ts` (use it).
 - V3 shape: `{manifestVersion:3, templateVersion, renderVersion, pageFormat:'letter'|'a4', compile:{profile, image|null}, exportKey, documents}`; documents identical to v2.
 - Acceptance: a stored v2 fixture parses as before, a v3 fixture parses, unknown versions, extra keys and v1 are rejected; lesson-view tests unchanged.
-- No migration. Must be live before any worker writes v3.
+- No migration. Ships in the same release as the v3 writer; the rollout sequence is in R1.
 
 ### S5-2 Pin RENDER_VERSION to compiler image and flags (M-7); cross-host determinism
 - New `src/lib/latex/compile-profile.ts` (`COMPILE_PROFILE`, moves `SOURCE_DATE_EPOCH` here). `render-golden.test.ts` gets a second golden: hash of `docker/latex/{Dockerfile,compile.sh,texmf.cnf,packages.lock}` plus the profile, pinned per `RENDER_VERSION`.
@@ -42,7 +42,7 @@ Each goes on `feat/export-s5` as small commits, checks run before the next start
 ### S5-6 Retired export state (M-8)
 Status: implemented on `feat/export-s5` (migration `20261024110000_export_retired` with `down.sql`; `dal/lesson-delete.ts`; tests `tests/integration/export-retire.test.ts`). Deviation from the text below, found by the extended deadlock loop: the lock order of `deleteLesson` is job, export, lesson, then profile FOR SHARE (the same as `commitExport`), not profile first. With profile first, a delete holding profile S and waiting on a job that a commit holds deadlocked against that commit waiting for profile S queued behind a `confirmExport` (profile X): deadlock counter 0 to 2 in one run. Also the guard needs the lesson already deleted, so the lesson is updated before its exports are retired in the same transaction.
 - Reversible migration `export_retired`: CHECK gains `'retired'`; `export_guard` allows `succeeded -> retired` only with the lesson deleted and revision and settled_at unchanged; consistency check and drift view updated; deferred constraint trigger on `lesson` refuses a deleted lesson that still has pending or succeeded exports. `export_live_key` already excludes retired.
-- `deleteLesson(ctx, lessonId)` DAL helper, no UI. Lock order profile, jobs, exports, lesson. A queued or running job gives LESSON_BUSY. Never touches reservations or buckets (no refund). Storage cleanup out of scope.
+- `deleteLesson(ctx, lessonId)` DAL helper, no UI. Lock order job, export, lesson, then profile FOR SHARE. A queued or running job gives LESSON_BUSY. Never touches reservations or buckets (no refund). Storage cleanup out of scope.
 - Reuse lookup also requires the lesson not deleted; status page shows "This lesson was deleted".
 - Real-DB acceptance (all in `export-retire.test.ts`, plus the extended loop in `export-locking.test.ts`): delete refused while pending; delete retires succeeded and `used` is unchanged; re-confirming the same identity afterwards charges again; raw-SQL bypass attempts fail; races (delete vs commit, confirm reuse, sweep, cancel); the S4 deadlock loop extended with delete; foreign lesson gives NotFound.
 
@@ -65,11 +65,11 @@ Update the S4 spec status, `docs/fresh-droplet-setup.md` section K (reader-first
 Only S5-6 `export_retired` and possibly a GRANT in S5-7. Both reversible. No enum `ADD VALUE`.
 
 ## Risks
-- R1 Rolling the web app back below S5-1 hides downloads of v3 exports until roll-forward. Ship S5-1 alone first.
+- R1 S5-1 and the v3 writer ship together, so "reader first" is impossible. Rollout: `EXPORT_ENABLED=0`, wait for zero pending exports, migrate, publish all three images, update host, deploy web, `EXPORT_ENABLED=1`. A new worker with the old web writes v3 manifests the old reader cannot parse (lesson view and downloads 404 until web is deployed; files and billing intact). Rolling the web app back below S5-1 has the same effect.
 - R2 Old worker with new web fails a4 specs; keep deploy order and same-commit builds.
 - R3 pdfTeX `/ID` or dates may differ across hosts (not verified). A fix would change the preamble, bump `TEMPLATE_VERSION`, and make identical content a new paid export.
 - R4 Supabase list pagination and folder semantics not verified; the manifest-reference assertion and the re-read before delete are the guard.
-- R5 Lock order in `deleteLesson` must be profile, job, export, lesson; no trigger may write `export`.
+- R5 Lock order in `deleteLesson` must be job, export, lesson, then profile FOR SHARE; no trigger may write `export`.
 - R6 The fragment proof can pass with extra text present; exact counts and the sensitivity test reduce this.
 - R7 The compile-inputs golden makes any Dockerfile edit force a profile bump (intended).
 

@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { ExportConfirmView, type ExportConfirmProps } from "@/components/app/export-confirm";
+import { EXPORT_PROMISE, ExportConfirmView, type ExportConfirmProps } from "@/components/app/export-confirm";
 import { ExportEntry } from "@/components/app/export-entry";
 import { CONFIRM_REDIRECT_CODES, confirmErrorTarget, confirmSuccessHref, exportConfirmHref } from "@/lib/ui/export-confirm";
 import { generationErrorMessage } from "@/lib/ui/messages";
@@ -68,6 +68,12 @@ describe("export confirmation view", () => {
     expect(html).toContain("US Letter");
     expect(html).toContain("A4");
     expect(html.indexOf("<form")).toBeLessThan(html.indexOf('value="a4"'));
+  });
+
+  it("says that exporting the same content in the same page format again is free, next to the truthful promise", () => {
+    const html = render();
+    expect(html).toContain("Exporting the same content in the same page format again is free");
+    expect(html).toContain(EXPORT_PROMISE);
   });
 
   it("flag off: the disabled message and no form", () => {
