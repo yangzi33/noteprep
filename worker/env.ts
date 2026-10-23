@@ -9,6 +9,8 @@ const WorkerEnv = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     /** "docker" compiles in the sandbox image (needs Docker); "skeleton" writes clearly labelled placeholder files for local runs. */
     COMPILER: z.enum(["skeleton", "docker"]).default("skeleton"),
+    /** Development only: makes the skeleton compiler fail every compile (to rehearse the failure path). Refused with the real compiler and in production. */
+    SKELETON_COMPILER_FAIL: z.enum(["compile_failed"]).optional(),
     /** The skeleton compiler is a development stand-in and must be requested explicitly. */
     ALLOW_FAKE_COMPILER: z.enum(["0", "1"]).default("0"),
     /** The compilation image. Production must pin a digest (name@sha256:...). */
@@ -56,6 +58,9 @@ const WorkerEnv = z
     }
     if (env.COMPILER === "skeleton" && env.ALLOW_FAKE_COMPILER !== "1") {
       ctx.addIssue({ code: "custom", message: 'set COMPILER=docker, or ALLOW_FAKE_COMPILER=1 for local placeholder runs' });
+    }
+    if (env.SKELETON_COMPILER_FAIL && (env.COMPILER !== "skeleton" || env.NODE_ENV === "production")) {
+      ctx.addIssue({ code: "custom", message: "SKELETON_COMPILER_FAIL is for COMPILER=skeleton outside production only" });
     }
     if (env.NODE_ENV === "production" && env.COMPILER === "skeleton") {
       ctx.addIssue({ code: "custom", message: "COMPILER must be docker in production" });

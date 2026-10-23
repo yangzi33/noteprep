@@ -44,7 +44,7 @@ async function main() {
   const documentCompiler: DocumentCompiler =
     config.COMPILER === "docker"
       ? new DockerLatexCompiler({ ...DEFAULT_SANDBOX, image: config.LATEX_IMAGE, wallClockMs: config.LATEX_WALL_CLOCK_SECONDS * 1000, clientEnv: config.dockerClientEnv })
-      : new SkeletonDocumentCompiler();
+      : new SkeletonDocumentCompiler(config.SKELETON_COMPILER_FAIL ? [new CompileError(config.SKELETON_COMPILER_FAIL, false)] : ["ok"]);
   const legacyCompiler: Compiler = config.COMPILER === "docker" ? refusingLegacyCompiler : new SkeletonCompiler();
   log("worker_started", { worker: config.workerId, llm: llm.id, prose: config.LESSON_PROSE, model: config.LLM_MODEL ?? null, compiler: documentCompiler.id, store: config.OBJECT_STORE });
   await runWorkerLoop({
@@ -58,6 +58,7 @@ async function main() {
       proseMaxOutputTokens: config.LLM_MAX_OUTPUT_TOKENS,
       compiler: legacyCompiler,
       documentCompiler,
+      compilerImage: config.COMPILER === "docker" ? config.LATEX_IMAGE : undefined,
       legacyEnabled: config.COMPILER !== "docker",
       store,
       leaseMs: config.LEASE_SECONDS * 1000,

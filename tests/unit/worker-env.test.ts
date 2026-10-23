@@ -16,6 +16,12 @@ describe("worker configuration", () => {
     expect(config).toMatchObject({ POLL_INTERVAL_MS: 1000, LEASE_SECONDS: 30, ALLOW_FAKE_COMPILER: "1" });
     expect(config.workerId).toMatch(/^worker-/);
   });
+  it("SKELETON_COMPILER_FAIL is for the local skeleton compiler only", () => {
+    expect(workerEnv({ ...base, SKELETON_COMPILER_FAIL: "compile_failed" }).SKELETON_COMPILER_FAIL).toBe("compile_failed");
+    expect(() => workerEnv({ ...base, SKELETON_COMPILER_FAIL: "compile_failed", COMPILER: "docker" })).toThrow(/SKELETON_COMPILER_FAIL/);
+    expect(() => workerEnv({ ...base, SKELETON_COMPILER_FAIL: "compile_failed", NODE_ENV: "production" })).toThrow(/SKELETON_COMPILER_FAIL/);
+    expect(() => workerEnv({ ...base, SKELETON_COMPILER_FAIL: "other" })).toThrow();
+  });
   it("refuses the fake compiler in production", () => {
     expect(() => workerEnv({ ...base, NODE_ENV: "production" })).toThrow(/must not be set in production/);
   });
