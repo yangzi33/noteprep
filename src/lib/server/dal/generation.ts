@@ -23,10 +23,10 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { AuthedCtx } from "../auth/context";
 import { lockAllowanceBucket } from "./allowance-source";
 import type { Db } from "../db";
+import { cancelOwnedJob } from "./cancel";
 import { toJobDto, type JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
-import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
 export type { ResolveContext };
@@ -174,23 +174,7 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
      */
     async cancelJob(ctx: AuthedCtx, jobId: string): Promise<JobDto> {
       if (!uuid.safeParse(jobId).success) throw new NotFound();
-      return inTransaction(db, async (tx) => {
-        const rows = await tx.$queryRaw<{ id: string; state: string }[]>`
-          SELECT id, state::text AS state FROM generation_job
-           WHERE id = ${jobId}::uuid AND owner_id = ${ctx.userId}::uuid FOR UPDATE`;
-        const row = rows[0];
-        if (!row) throw new NotFound();
-        if (row.state === "queued") {
-          await finishLockedJob(tx, jobId, "canceled", "canceled", { markCancelRequested: true });
-          return toJobDto(await tx.generationJob.findUniqueOrThrow({ where: { id: jobId } }));
-        }
-        if (row.state === "running") {
-          await tx.$executeRaw`
-            UPDATE generation_job SET cancel_requested_at = COALESCE(cancel_requested_at, now()) WHERE id = ${jobId}::uuid`;
-        }
-        const job = await tx.generationJob.findUniqueOrThrow({ where: { id: jobId } });
-        return toJobDto(job);
-      });
+      return cancelOwnedJob(db, ctx.userId, jobId);
     },
   };
 }

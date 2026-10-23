@@ -39,8 +39,9 @@ import type { Db } from "../db";
 import { DEV_DEFAULT_LIMITS, type GenerationLimits } from "@/lib/domain/generation";
 import { DEFAULT_LIMITS, type Limits } from "../limits";
 import { lockAllowanceBucket } from "./allowance-source";
+import { cancelOwnedJob } from "./cancel";
 import { stateOf, summaryOf } from "./drafts";
-import type { ConfirmExportResult, ExportStatusDto } from "./dto";
+import type { ConfirmExportResult, ExportStatusDto, JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { hasSqlState, inTransaction, type Tx } from "./tx";
 
@@ -358,6 +359,26 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         revisionId: row.revisionId,
         deadlineAt: job.deadlineAt,
       };
+    },
+
+    /**
+     * Cancels the export's job like generation.cancelJob (queued: canceled and released now; running: only flagged; terminal:
+     * unchanged). NOT gated by EXPORT_ENABLED: the rollback procedure must be able to stop exports with the flag off.
+     * Owner-filtered; a foreign export is NOT_FOUND. The lock order is job -> export -> reservation -> bucket (cancelOwnedJob).
+     */
+    async cancelExport(ctx: AuthedCtx, exportId: string): Promise<JobDto> {
+      if (!uuid.safeParse(exportId).success) throw new NotFound();
+      // A plain read: job_id never changes, and the job row is locked by cancelOwnedJob, which re-checks the owner.
+      const row = await db.export.findFirst({ where: { id: exportId, ownerId: ctx.userId }, select: { jobId: true } });
+      if (!row) throw new NotFound();
+      return cancelOwnedJob(db, ctx.userId, row.jobId);
+    },
+
+    /** The export of one of the caller's jobs, or null (no such job, someone else's job, or not an export). Owner-filtered. */
+    async findExportIdByJob(ctx: AuthedCtx, jobId: string): Promise<string | null> {
+      if (!uuid.safeParse(jobId).success) return null;
+      const row = await db.export.findFirst({ where: { jobId, ownerId: ctx.userId }, select: { id: true } });
+      return row?.id ?? null;
     },
   };
 }
