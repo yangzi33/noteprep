@@ -212,6 +212,12 @@ Release procedure for the export feature. Background and rollback rules: [S4 spe
 - **Deploy order for S5: worker BEFORE web.** The new web app can offer A4; an old worker does not know the page format and fails an a4 export as `snapshot_invalid` (the reservation is released, nobody is charged). In a mixed deploy, after 3 such failures the same a4 export key is refused for 24 hours (failure memo, still no charge); letter exports are unaffected.
 - **The S5-1 manifest reader must be deployed (web and worker) before any v3 manifest is written.** A web build older than S5-1 cannot read a v3 manifest, so the downloads of that export stay hidden until web is rolled forward again. Ship S5-1 first, then the v3 writer (S5-4).
 
+### S5-6 retired export state (English note; migration and rollback)
+- **Migration `20261024110000_export_retired`** runs with the normal migration step, before the web build that knows `retired` (`pnpm db:migrate:deploy`). It is reversible and additive: it replaces two CHECKs on `export` (state text, no enum change), three functions, the `export_state_drift` view and adds one deferred trigger on `lesson`. No new grants.
+- **Nothing in the app calls `deleteLesson` yet** (no UI until Phase 3), so no export is retired on a deployed system until that ships. The status page already shows "This lesson was deleted." for a retired export.
+- **Rollback caveat.** The documented down script is `prisma/migrations/20261024110000_export_retired/down.sql` (run by hand with the migration role, `psql -v ON_ERROR_STOP=1 -1 -f ...`, then delete its row from `_prisma_migrations`). It refuses while any `retired` export exists; in that case roll forward, do not edit rows. Deploy the previous web build first: an older build cannot display a retired export.
+- Check after migrating: `SELECT count(*) FROM export_state_drift;` must be 0.
+
 ## Known gaps (recorded, not fixed)
 - No gVisor; the sandbox shares the host kernel.
 - The runner account has no outbound firewall; a compromised runner daemon could reach the network through rootless networking.

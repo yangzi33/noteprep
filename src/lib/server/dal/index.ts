@@ -8,6 +8,7 @@ import { createGenerationDal, type GenerationDeps } from "./generation";
 import { createHistoryDal } from "./history";
 import type { BackoffPolicy } from "@/lib/domain/retry";
 import { createJobsDal } from "./jobs";
+import { createLessonDeleteDal } from "./lesson-delete";
 import { createLessonsDal } from "./lessons";
 import { createSettlementDal } from "./settlement";
 
@@ -17,6 +18,7 @@ export type { CreateDraftOptions, CreateDraftResult, DraftsDal, DraftsPurgeDal, 
 export type { ConfirmExportInput, ExportDal } from "./export";
 export type { ConfirmExportResult, ExportStatusDto } from "./dto";
 export type { CommitExportInput, CommitSuccessInput, FinishJobInput, RevisionDraft } from "./settlement";
+export type { LessonDeleteResult } from "./lesson-delete";
 export type { AllowanceView, HistoryItem } from "./history";
 export type { AlignmentView, ArtifactRef, LessonDocumentView, LessonView } from "./lessons";
 export type { CurriculumSummary, SelectionOption, SelectionOptions, SelectionPath, SelectionStep } from "./curriculum";
@@ -30,6 +32,7 @@ export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: Curr
     generation: createGenerationDal(db, { ...deps, resolveContext: curriculum.resolveCurriculumContext }),
     history: createHistoryDal(db, deps),
     lessons: createLessonsDal(db),
+    lessonDelete: createLessonDeleteDal(db),
     drafts: createDraftsDal(db, { ...deps?.drafts, resolveContext: curriculum.resolveCurriculumContext }),
     exports: createExportDal(db, { clock: deps?.clock, ...deps?.exports, generationLimits: deps?.limits }),
     curriculum,

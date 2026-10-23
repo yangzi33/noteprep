@@ -185,11 +185,14 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
 
       const { prepared, pkg, report } = prep;
 
-      // 4. Reuse or join WITHOUT locking any job row (C2). A succeeded equivalent export is free; a pending one is joined,
+      // 4. Reuse or join WITHOUT locking any job row (C2). The lesson must not be deleted: a retired export no longer
+      // matches, and a lesson that is still alive may be reused (deleteLesson locks job -> export -> lesson and commits atomically, so
+      // this plain read sees either all of the deletion or none of it).
       // unless it is doomed (cancel requested, or past its deadline and not yet swept): then the tutor must wait.
       const live = await tx.$queryRaw<{ id: string; state: string; job_id: string; lesson_id: string; cancel: boolean; past: boolean }[]>`
         SELECT e.id, e.state, e.job_id, e.lesson_id, (j.cancel_requested_at IS NOT NULL) AS cancel, (j.deadline_at <= now()) AS past
           FROM export e JOIN generation_job j ON j.id = e.job_id
+           JOIN lesson l ON l.id = e.lesson_id AND l.deleted_at IS NULL
          WHERE e.owner_id = ${ownerId}::uuid AND e.export_key = ${prepared.exportKey} AND e.state IN ('pending', 'succeeded')`;
       const found = live[0];
       if (found) {

@@ -241,9 +241,25 @@ describe("the render chain and the manifest are checked against the snapshot", (
     const { ctx, jobId, lessonId } = await newExport();
     const token = await h.claim(jobId);
     const input = await h.commitInput(jobId, token);
-    await h.admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [lessonId]);
+    // Since S5-6 the database refuses a deleted lesson with a pending export, so this state is forced with triggers off
+    // (replica role, one transaction, superuser): it stands in for a deletion that raced past the DAL.
+    const forceDeleted = async (value: string) => {
+      const client = await h.admin.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query("SET LOCAL session_replication_role = replica");
+        await client.query(`UPDATE lesson SET deleted_at = ${value} WHERE id = $1`, [lessonId]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+    };
+    await forceDeleted("now()");
     expect(await code(h.worker.settlement.commitExport(input))).toBe("STALE_OR_CANCELED");
-    await h.admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lessonId]);
+    await forceDeleted("NULL");
     await h.admin.query(`UPDATE profile SET status = 'deleting' WHERE id = $1`, [ctx.userId]);
     expect(await code(h.worker.settlement.commitExport(input))).toBe("STALE_OR_CANCELED");
     await h.admin.query(`UPDATE profile SET status = 'active' WHERE id = $1`, [ctx.userId]);

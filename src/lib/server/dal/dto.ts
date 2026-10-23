@@ -139,7 +139,7 @@ export interface ConfirmExportResult {
 /** What `getExportStatus` returns. The UI may say "not used" only when `reservation.state` is `released`. */
 export interface ExportStatusDto {
   exportId: string;
-  state: "pending" | "succeeded" | "failed";
+  state: "pending" | "succeeded" | "failed" | "retired";
   job: {
     state: "queued" | "running" | "succeeded" | "failed" | "canceled";
     stage: "generating" | "validating" | "compiling" | "storing" | null;

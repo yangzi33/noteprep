@@ -109,7 +109,7 @@ SELECT * FROM "usage_bucket_drift";                       -- must be empty
 - **M-a (accepted):** parallel first-time requests with the same new key each count one attempt, so a burst of N counts up to N. It costs only attempts, never allowance.
 - **M-e (accepted):** a confirmation page opened without `rev` cannot tell that the draft changed since the link was made; the form still carries the revision and hash it was rendered from, so the tutor pays only for what that page showed.
 - **M-7:** the golden render test pins one fixture; nothing ties the compiler image or compile flags to `RENDER_VERSION`.
-- **M-8:** the reuse lookup does not check `lesson.deleted_at`; there is no deletion path yet. S5's `retired` state must cover it.
+- **M-8:** the reuse lookup did not check `lesson.deleted_at` and there was no deletion path. Resolved in S5-6: `export.state` gains `retired` (text CHECK, reversible migration `export_retired`), `deleteLesson` retires succeeded exports and frees the identity (no refund), the reuse lookup requires a live lesson. Lock order of `deleteLesson`: job, export, lesson, profile S (same as `commitExport`).
 
 ## S4b status (implemented behind `EXPORT_ENABLED`)
 Done: worker `runExport` (S4b-1); confirmation page, action and confirm-attempt limit (S4b-2, M-5); status page, polling endpoint and cancel (S4b-3); export E2E on a third server, and the docs and rollout note in [fresh-droplet-setup.md](../../fresh-droplet-setup.md) section K (S4b-4). The CLAUDE.md edit was applied in PR #39.

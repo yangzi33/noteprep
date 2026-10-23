@@ -18,7 +18,7 @@ afterAll(async () => {
   await h.close();
 });
 
-const ALLOWED = new Set(["EXPORT_CONFLICT", "EXPORT_BUSY", "STALE_OR_CANCELED", "DEADLINE_EXCEEDED", "NOT_FOUND", "TOO_MANY_ACTIVE_JOBS", "QUEUE_BUSY", "ALLOWANCE_EXHAUSTED"]);
+const ALLOWED = new Set(["EXPORT_CONFLICT", "EXPORT_BUSY", "STALE_OR_CANCELED", "DEADLINE_EXCEEDED", "NOT_FOUND", "TOO_MANY_ACTIVE_JOBS", "QUEUE_BUSY", "ALLOWANCE_EXHAUSTED", "LESSON_BUSY"]);
 
 describe("no deadlock between confirm, commit, legacy generation, cancel, finish and sweep", () => {
   it("200 iterations of mixed parallel operations on one account: typed refusals only, invariants hold, deadlock counter unchanged", async () => {
@@ -30,7 +30,7 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
       return seed % n;
     };
-    const tally = { created: 0, joinedOrReused: 0, committed: 0, finished: 0, canceled: 0, retried: 0, legacy: 0, refusals: 0 };
+    const tally = { deleted: 0, created: 0, joinedOrReused: 0, committed: 0, finished: 0, canceled: 0, retried: 0, legacy: 0, refusals: 0 };
     const guard = async (op: Promise<void>) => {
       try {
         await op;
@@ -84,6 +84,17 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
           ops.push(guard(h.claim(p.job_id).then(() => undefined))); // leaves a running job for the next iteration's retry, sweep or commit
         }
       }
+      // deleteLesson (profile S -> jobs -> exports -> lesson): of a finished export's lesson, and of a busy one (LESSON_BUSY)
+      if (rnd(3) === 0) {
+        const lessons = (
+          await h.admin.query(
+            `SELECT e.lesson_id FROM export e JOIN lesson l ON l.id = e.lesson_id
+              WHERE e.owner_id = $1 AND e.state IN ('succeeded', 'pending') AND l.deleted_at IS NULL ORDER BY random() LIMIT 2`,
+            [ctx.userId],
+          )
+        ).rows as { lesson_id: string }[];
+        for (const l of lessons) ops.push(guard(h.web.lessonDelete.deleteLesson(ctx, l.lesson_id).then(() => void tally.deleted++)));
+      }
       ops.push(guard(h.worker.jobs.sweep().then((r) => {
         expect(r.sweepRowErrors).toBe(0);
       })));
@@ -111,6 +122,7 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
     expect(tally.committed).toBeGreaterThan(10);
     expect(tally.canceled + tally.finished + tally.retried).toBeGreaterThan(10);
     expect(tally.legacy).toBeGreaterThan(10);
+    expect(tally.deleted).toBeGreaterThan(5);
 
     // The books balance: counters equal reservation rows, and every export agrees with its job and reservation.
     const bucket = await h.bucket(ctx.userId);
@@ -121,7 +133,8 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
     expect(reserved).toBe(0);
     expect(await h.count(`SELECT count(*) AS n FROM export WHERE owner_id = $1 AND state = 'pending'`, [ctx.userId])).toBe(0);
     const succeededExports = await h.count(`SELECT count(*) AS n FROM export WHERE owner_id = $1 AND state = 'succeeded'`, [ctx.userId]);
-    expect(consumed).toBe(succeededExports); // only successful exports were ever charged (legacy jobs here never complete)
+    const retiredExports = await h.count(`SELECT count(*) AS n FROM export WHERE owner_id = $1 AND state = 'retired'`, [ctx.userId]);
+    expect(consumed).toBe(succeededExports + retiredExports); // only successful exports were ever charged (legacy jobs here never complete); deleting never refunds
     // at most one live export per key
     expect(await h.count(`SELECT count(*) AS n FROM (SELECT export_key FROM export WHERE owner_id = $1 AND state IN ('pending','succeeded') GROUP BY export_key HAVING count(*) > 1) x`, [ctx.userId])).toBe(0);
   }, 600_000);

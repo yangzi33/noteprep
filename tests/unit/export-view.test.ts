@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeExportOutcome, exportPhase, toExportView, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
+import { describeExportOutcome, exportPhase, isFinalPhase, isSettledExport, toExportView, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
 
 const dto = (over: Record<string, unknown> = {}, job: Record<string, unknown> = {}, reservation: string | null = "reserved") =>
   ({
@@ -34,6 +34,19 @@ describe("toExportView", () => {
     const keys = JSON.stringify(Object.keys(toExportView(polluted)).concat(Object.keys(toExportView(polluted).job)));
     expect(keys).not.toMatch(/snapshot|exportKey|jobId|path|tex|reservation/i);
     expect(JSON.stringify(toExportView(polluted))).not.toMatch(/"s"|"k"|"j"|\/x|\.tex/);
+  });
+});
+
+describe("retired export (the lesson was deleted)", () => {
+  const retired = () => view({ state: "retired", revisionId: "r-1" }, { state: "succeeded" }, "consumed");
+  it("is a final phase that says the lesson was deleted, whatever the network says, and keeps the truthful charge", () => {
+    expect(phase(retired())).toBe("retired");
+    expect(phase(retired(), { unreachable: true, gone: false })).toBe("retired");
+    const d = describeExportOutcome(retired(), "retired");
+    expect(d.heading).toBe("This lesson was deleted.");
+    expect(d.charge).toBe("This used 1 generation.");
+    expect(isFinalPhase("retired")).toBe(true);
+    expect(isSettledExport(retired())).toBe(true);
   });
 });
 
@@ -110,13 +123,13 @@ describe("describeExportOutcome: what happened to the generation", () => {
 });
 
 describe("charge sentence: settled phases only, every phase x charge", () => {
-  const phases: ExportPhase[] = ["queued", "retrying", "running:compiling", "running:storing", "stopping", "succeeded", "failed", "canceled", "confirming", "unknown", "session_expired", "not_found"];
+  const phases: ExportPhase[] = ["queued", "retrying", "running:compiling", "running:storing", "stopping", "succeeded", "failed", "canceled", "retired", "confirming", "unknown", "session_expired", "not_found"];
   const charges: ExportView["charge"][] = ["held", "used", "not_used", "unknown"];
   for (const p of phases) {
     for (const c of charges) {
       it(`${p} x ${c}`, () => {
         const d = describeExportOutcome({ ...view(), charge: c }, p);
-        const expected = p === "succeeded" && c === "used" ? "This used 1 generation." : (p === "failed" || p === "canceled") && c === "not_used" ? "No generation was used." : null;
+        const expected = (p === "succeeded" || p === "retired") && c === "used" ? "This used 1 generation." : (p === "failed" || p === "canceled") && c === "not_used" ? "No generation was used." : null;
         expect(d.charge).toBe(expected);
         const prose = [d.heading, d.detail, d.lastKnown ?? ""].join(" ");
         expect(prose).not.toMatch(/No generation was used|used 1 generation|held/i);

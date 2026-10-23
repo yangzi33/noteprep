@@ -37,6 +37,19 @@ const done = view({ state: "succeeded", revisionId: R }, { state: "succeeded" },
 const failed = view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, "not_used");
 const canceled = view({ state: "failed" }, { state: "canceled", errorCode: "canceled" }, "not_used");
 
+describe("ExportStatusView retired", () => {
+  it("says the lesson was deleted and offers no files, lesson link or cancel", () => {
+    const retired = view({ state: "retired", revisionId: R }, { state: "succeeded" }, "used");
+    const m = html(retired, { documents: docs });
+    expect(phaseOf(m)).toBe("retired");
+    expect(m).toContain("This lesson was deleted.");
+    expect(m).not.toContain("export-files");
+    expect(m).not.toContain("export-download");
+    expect(m).not.toContain("/lessons/" + L);
+    expect(m).not.toMatch(cancelForm);
+  });
+});
+
 describe("ExportStatusView states", () => {
   const cases: [string, string, ExportView, ExportPhase][] = [
     ["queued", "in the queue", view(), "queued"],

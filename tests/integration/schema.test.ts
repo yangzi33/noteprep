@@ -837,6 +837,50 @@ describe("export tables (S4a migration)", () => {
     expect(await txErrorCode(admin, [exportFailed(f.exportId), [`UPDATE generation_job SET state = 'canceled', error_code = 'canceled', finished_at = now() WHERE id = $1`, [f.jobId]], reservationReleased(f.jobId), [`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]]])).toBeNull();
   });
 
+  it("S5-6 export_retired: text CHECK (no enum), guard, deferred lesson trigger and drift view", async () => {
+    const check = async (name: string) => (await admin.query(`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conname = $1`, [name])).rows[0].d as string;
+    expect(await check("export_state_valid")).toMatch(/'pending'.*'succeeded'.*'failed'.*'retired'/);
+    expect(await check("export_success_has_revision")).toMatch(/retired/);
+    expect((await admin.query(`SELECT data_type FROM information_schema.columns WHERE table_name = 'export' AND column_name = 'state'`)).rows[0].data_type).toBe("text");
+    const trigger = (await admin.query(`SELECT pg_get_triggerdef(oid) AS def, tgdeferrable, tginitdeferred FROM pg_trigger WHERE tgname = 'lesson_delete_exports' AND NOT tgisinternal`)).rows[0];
+    expect(trigger.def).toMatch(/AFTER UPDATE ON (public\.)?lesson/i);
+    expect(trigger.def).toMatch(/WHEN .*old\.deleted_at IS NULL.*new\.deleted_at IS NOT NULL/i);
+    expect([trigger.tgdeferrable, trigger.tginitdeferred]).toEqual([true, true]);
+    // no trigger on lesson or elsewhere writes export (lock order): the function bodies only read it
+    const body = (await admin.query(`SELECT prosrc FROM pg_proc WHERE proname = 'lesson_delete_requires_settled_exports'`)).rows[0].prosrc as string;
+    expect(body).not.toMatch(/UPDATE\s+export|INSERT\s+INTO\s+export|DELETE\s+FROM\s+export/i);
+    expect((await admin.query(`SELECT pg_get_viewdef('export_state_drift'::regclass) AS d`)).rows[0].d).toMatch(/retired/);
+    // the export_live_key unique index covers pending and succeeded only, so a retired export frees its identity
+    expect((await admin.query(`SELECT indexdef FROM pg_indexes WHERE indexname = 'export_live_key'`)).rows[0].indexdef).toMatch(/state = ANY \(ARRAY\['pending'::text, 'succeeded'::text\]\)/);
+  });
+
+  it("a succeeded export of a deleted lesson retires; retired is final and keeps its revision", async () => {
+    const f = await exportFixture();
+    const rev = await seedRevision(admin, { lessonId: f.lessonId, ownerId: f.owner, status: "finalized" });
+    expect(
+      await txErrorCode(admin, [
+        [`UPDATE generation_job SET state = 'running', lease_owner = 'w', lease_expires_at = now() + interval '1 minute', fencing_token = 1, attempt = 1 WHERE id = $1`, [f.jobId]],
+      ]),
+    ).toBeNull();
+    expect(
+      await txErrorCode(admin, [
+        [`UPDATE export SET state = 'succeeded', revision_id = $2, settled_at = now() WHERE id = $1`, [f.exportId, rev]],
+        [`UPDATE generation_job SET state = 'succeeded', revision_id = $2, finished_at = now(), lease_owner = NULL, lease_expires_at = NULL WHERE id = $1`, [f.jobId, rev]],
+        [`UPDATE usage_reservation SET state = 'consumed', settled_at = now() WHERE job_id = $1`, [f.jobId]],
+        [`UPDATE usage_bucket SET reserved = reserved - 1, used = used + 1 WHERE id = $1`, [f.bucket]],
+      ]),
+    ).toBeNull();
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET state = 'retired' WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION); // lesson not deleted
+    expect(await txErrorCode(admin, [[`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [f.lessonId]]])).toBe(CHECK_VIOLATION); // export still succeeded
+    expect(await txErrorCode(admin, [[`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [f.lessonId]], [`UPDATE export SET state = 'retired' WHERE id = $1`, [f.exportId]]])).toBeNull();
+    expect(await pgErrorCode(() => admin.query(`UPDATE export SET state = 'succeeded' WHERE id = $1`, [f.exportId]))).toBe(STATE_VIOLATION);
+    expect((await worker.query(`SELECT export_id FROM export_state_drift WHERE export_id = $1`, [f.exportId])).rows).toEqual([]);
+    // the identity is free: the same key can be pending again for the owner (new snapshot, lesson and job needed in real life; the index alone is checked here)
+    const key = (await admin.query(`SELECT export_key FROM export WHERE id = $1`, [f.exportId])).rows[0].export_key as string;
+    const second = await seedExportRows(admin, f.owner, f.bucket, key);
+    expect(second.exportId).toBeDefined();
+  });
+
   it("the job and reservation consistency triggers carry a WHEN clause that skips updates which leave the state unchanged (heartbeats)", async () => {
     const def = async (name: string) =>
       (await admin.query(`SELECT pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgname = $1 AND NOT tgisinternal`, [name])).rows[0].def as string;

@@ -44,7 +44,8 @@ const input = {
 
 describe("web data access layer: ownership", () => {
   it("exposes exactly the classified functions (guard against unreviewed additions)", () => {
-    expect(Object.keys(dal).sort()).toEqual(["account", "curriculum", "drafts", "exports", "generation", "history", "lessons"]);
+    expect(Object.keys(dal).sort()).toEqual(["account", "curriculum", "drafts", "exports", "generation", "history", "lessonDelete", "lessons"]);
+    expect(Object.keys(dal.lessonDelete).sort()).toEqual(["deleteLesson"]); // foreign, missing and deleted lessons attacked in export-retire.test.ts
     expect(Object.keys(dal.generation).sort()).toEqual([...Object.keys(RESOURCE_FUNCTIONS), ...CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.account).sort()).toEqual([...ACCOUNT_CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.history).sort()).toEqual([...HISTORY_CALLER_ONLY_FUNCTIONS].sort());
