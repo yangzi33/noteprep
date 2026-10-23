@@ -49,7 +49,8 @@ import { hasSqlState, inTransaction, type Tx } from "./tx";
 // never import it (tests/unit/drafts-isolation.test.ts).
 //
 // LOCK ORDER (docs/superpowers/plans/2026-10-24-s4-export-billing-spec.md): profile -> draft -> draft_version -> generation_job
-// -> export -> lesson -> reservation -> usage_bucket; rate_limit_window rows are leaf locks. confirmExport holds profile X, then
+// -> export -> lesson -> reservation -> usage_bucket; rate_limit_window rows are leaf locks. Before the confirm transaction, a separate
+// short transaction increments the attempt counter (exp:try:u:) holding nothing else. confirmExport holds profile X, then
 // rate_limit_window, then the allowance bucket X, and only INSERTS rows after that. It never takes a lock on a generation_job,
 // export or lesson row (every lookup below is a plain read), so no path holding the profile lock can wait on a job lock.
 
