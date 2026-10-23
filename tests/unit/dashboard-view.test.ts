@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MaterialCard, MaterialRow } from "@/components/app/material-card";
-import { allowanceSentence, formatUtc, recentCards, type HistoryLike } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, formatUtc, recentCards, statusHref, type HistoryLike } from "@/lib/ui/dashboard-view";
 import { stateLabel } from "@/lib/ui/messages";
 
 const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
@@ -91,5 +91,29 @@ describe("MaterialRow", () => {
     expect(html).toMatch(/<a[^>]*href="\/jobs\/job-9"[^>]*>T<\/a>/);
     expect(html).toContain("Reason.");
     expect(html).toContain("Could not finish");
+  });
+});
+
+describe("export items", () => {
+  const exp = (over: Partial<HistoryLike> = {}) => item({ kind: "export", exportId: "exp-1", ...over });
+  it("link non-succeeded exports to their own status page", () => {
+    for (const state of ["queued", "running", "failed", "canceled"] as const) {
+      expect(recentCards([exp({ state, revisionId: null })], 6)[0]).toMatchObject({ href: "/exports/exp-1", action: "View status" });
+      expect(statusHref(exp({ state }))).toBe("/exports/exp-1");
+    }
+  });
+  it("keep a succeeded export linking to its lesson", () => {
+    expect(recentCards([exp()], 6)[0]).toMatchObject({ href: "/lessons/les-1?rev=rev-1", action: "Open" });
+    expect(statusHref(exp({ state: "succeeded" }))).toBe("/jobs/job-1");
+  });
+  it("leave legacy jobs and an export without a row on the job page", () => {
+    expect(statusHref(item({ kind: "generate", exportId: null, state: "failed" }))).toBe("/jobs/job-1");
+    expect(statusHref(exp({ exportId: null, state: "failed" }))).toBe("/jobs/job-1");
+    expect(statusHref(item({ state: "queued" }))).toBe("/jobs/job-1");
+  });
+  it("MaterialRow links to the href it is given, else the job page", () => {
+    const row = (href?: string) => renderToStaticMarkup(createElement(MaterialRow, { jobId: "job-1", ...(href ? { href } : {}), title: "T", state: "failed", label: "Failed", date: "d", outcome: null }));
+    expect(row("/exports/exp-1")).toContain('href="/exports/exp-1"');
+    expect(row()).toContain('href="/jobs/job-1"');
   });
 });

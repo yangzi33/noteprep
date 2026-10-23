@@ -23,9 +23,10 @@ export function MaterialCard({ card }: { card: MaterialCardModel }) {
   );
 }
 
-/** My materials row: the title is the one link, to the job page. */
+/** My materials row: the title is the one link, to the job (or export) status page. */
 export function MaterialRow({
   jobId,
+  href,
   title,
   state,
   label,
@@ -33,6 +34,8 @@ export function MaterialRow({
   outcome,
 }: {
   jobId: string;
+  /** Defaults to the job page; an export that has not succeeded passes its own status page. */
+  href?: string;
   title: string;
   state: string;
   label: string;
@@ -43,7 +46,7 @@ export function MaterialRow({
     <li data-state={state} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <Link
-          href={`/jobs/${jobId}`}
+          href={href ?? `/jobs/${jobId}`}
           className="inline-flex min-h-11 items-center font-heading text-base break-words text-foreground underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {title}

@@ -2,6 +2,9 @@ import { stateLabel } from "./messages";
 
 export interface HistoryLike {
   jobId: string;
+  /** Export jobs that have not succeeded are followed on /exports/{exportId}; absent for older rows and legacy jobs. */
+  kind?: "generate" | "export";
+  exportId?: string | null;
   lessonId: string;
   title: string;
   state: "queued" | "running" | "succeeded" | "failed" | "canceled";
@@ -26,6 +29,11 @@ export function formatUtc(date: Date): string {
   return `${utc.format(date).replace(/\s/g, " ")} UTC`;
 }
 
+/** Where a history item's status lives: an unfinished or failed export has its own page, everything else the job page. */
+export function statusHref(item: Pick<HistoryLike, "jobId" | "kind" | "exportId" | "state">): string {
+  return item.kind === "export" && item.exportId && item.state !== "succeeded" ? `/exports/${item.exportId}` : `/jobs/${item.jobId}`;
+}
+
 export function allowanceSentence(allowance: { remaining: number; limit: number; pending: number } | null): string {
   return allowance
     ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
@@ -41,7 +49,7 @@ export function recentCards(items: readonly HistoryLike[], max: number): Materia
       title: item.title,
       label: stateLabel(item.state),
       date: formatUtc(item.createdAt),
-      href: open ? `/lessons/${item.lessonId}?rev=${item.revisionId}` : `/jobs/${item.jobId}`,
+      href: open ? `/lessons/${item.lessonId}?rev=${item.revisionId}` : statusHref(item),
       action: open ? "Open" : "View status",
     };
   });
