@@ -5,11 +5,11 @@ import { exerciseIds } from "@/lib/package/draft-ops";
 import { buildExportSpec, contentKey, exportKey, renderForExport } from "@/lib/domain/export-spec";
 import { code, createHarness, freshKey, sleep, type Harness } from "./export-helpers";
 
-const flags = vi.hoisted(() => ({ forceUnverified: false, renderThrows: null as string | null }));
+const flags = vi.hoisted(() => ({ forceUnverified: false, renderThrows: null as string | null, validateCalls: 0 }));
 // Lets a test make the (real) validator report "failed" or the (real) renderer refuse, only around a confirmExport call.
 vi.mock("@/lib/package/validate", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/package/validate")>();
-  return { ...real, validatePackage: (pkg: unknown) => (flags.forceUnverified ? { ...real.validatePackage(pkg), overall: "failed" as const } : real.validatePackage(pkg)) };
+  return { ...real, validatePackage: (pkg: unknown) => (++flags.validateCalls, flags.forceUnverified ? { ...real.validatePackage(pkg), overall: "failed" as const } : real.validatePackage(pkg)) };
 });
 vi.mock("@/lib/latex/render", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/latex/render")>();
@@ -448,6 +448,29 @@ describe("limits apply only to the create path; refusals roll back", () => {
       expect((await lim.confirm(ctx, d, okKey)).outcome).toBe("replayed");
       expect(await counter()).toBe(4);
       expect(await lim.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
+    } finally {
+      await lim.close();
+    }
+  });
+
+  it("a recorded key reused with different input fails before prepare (no validate or render), and a true replay stays free", async () => {
+    const lim = await createHarness({ limits: { exportConfirmAttemptsPerUserPerHour: 1 } });
+    try {
+      const ctx = await lim.account();
+      const [a, b] = [await lim.newDraft(ctx), await lim.newDraft(ctx)];
+      const key = freshKey();
+      await lim.confirm(ctx, a, key); // the one allowed attempt
+      const counter = async () => lim.count(`SELECT coalesce(sum(count), 0) AS n FROM rate_limit_window WHERE key = $1`, [`exp:try:u:${ctx.userId}`]);
+      expect(await counter()).toBe(1);
+      const rows = () => lim.count(`SELECT count(*) AS n FROM idempotency_key WHERE owner_id = $1`, [ctx.userId]);
+      const before = { validate: flags.validateCalls, rows: await rows() };
+      for (let i = 0; i < 5; i++) expect(await code(lim.confirm(ctx, b, key))).toBe("IDEMPOTENCY_KEY_REUSED");
+      expect(flags.validateCalls).toBe(before.validate); // prepare never ran
+      expect(await rows()).toBe(before.rows);
+      expect(await lim.bucket(ctx.userId)).toMatchObject({ reserved: 1 });
+      // a true replay is still answered, uncounted, and does not prepare either
+      expect((await lim.confirm(ctx, a, key)).outcome).toBe("replayed");
+      expect(await counter()).toBe(1);
     } finally {
       await lim.close();
     }

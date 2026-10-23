@@ -298,6 +298,9 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         where: { ownerId_operation_key: { ownerId, operation: EXPORT_CONFIRM_OPERATION, key: key.data } },
         select: { requestHash: true },
       });
+      // A recorded key reused with DIFFERENT input is the idempotency conflict, answered here before prepare (it would
+      // otherwise cost a full validate and render per call, uncounted). Only a true replay (same hash) skips the counter.
+      if (recorded && recorded.requestHash !== hash) throw new IdempotencyConflict();
       if (!recorded) {
         const attempts = await inTransaction(db, (tx) => incrementRateLimit(tx, `exp:try:u:${ownerId}`));
         if (attempts > limits.exportConfirmAttemptsPerUserPerHour) throw new RateLimited();
