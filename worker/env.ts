@@ -36,6 +36,8 @@ const WorkerEnv = z
     RECONCILE_ENABLED: z.enum(["0", "1"]).default("0"),
     RECONCILE_BATCH_LESSONS: z.coerce.number().int().min(1).max(500).default(20),
     RECONCILE_INTERVAL_SECONDS: z.coerce.number().int().min(30).max(86_400).default(300),
+    /** Wall-clock budget of one reconcile pass; after it no further storage call or delete starts. */
+    RECONCILE_STEP_BUDGET_SECONDS: z.coerce.number().int().min(5).max(600).default(60),
     RECONCILE_GRACE_SECONDS: z.coerce.number().int().min(60).max(604_800).default(1_800),
     /** "fake" needs no credentials. "anthropic" calls the real API and needs the four settings below. */
     LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
@@ -99,7 +101,7 @@ export function workerEnv(source: Record<string, string | undefined> = process.e
   const parsed = WorkerEnv.parse(source);
   const limits = parseLimits(source);
   const minGrace = parsed.LEASE_SECONDS + limits.exportDeadlineGraceSeconds + RECONCILE_GRACE_MARGIN_SECONDS;
-  if (parsed.RECONCILE_GRACE_SECONDS < minGrace) {
+  if (parsed.RECONCILE_ENABLED === "1" && parsed.RECONCILE_GRACE_SECONDS < minGrace) {
     throw new Error(`RECONCILE_GRACE_SECONDS must be at least LEASE_SECONDS + EXPORT_DEADLINE_GRACE_SECONDS + ${RECONCILE_GRACE_MARGIN_SECONDS} (${minGrace})`);
   }
   return {

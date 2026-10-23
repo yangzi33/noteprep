@@ -95,9 +95,32 @@ describe("reconcileLesson", () => {
   it("a revision row that appeared after the listing keeps its folder", async () => {
     const stray = randomUUID();
     await store.put(`${base}/${stray}/${ORPHAN}/notes.pdf`, new Uint8Array([1]));
-    const withStray = () => ({ ownerId: OWNER, eligible: true, revisions: [{ id: REV, manifest }, { id: stray, manifest: null }] });
-    await reconcileLesson({ jobs: jobsWith(withStray), store: recording(), graceMs: 0 }, { lessonId: LESSON, ownerId: OWNER }, fresh());
+    let reads = 0;
+    // The first read (before any delete is considered) does not know the revision; every later read (the re-read) does.
+    const appearing = () => (++reads === 1 ? eligible() : { ownerId: OWNER, eligible: true, revisions: [{ id: REV, manifest }, { id: stray, manifest: null }] });
+    await reconcileLesson({ jobs: jobsWith(appearing), store: recording(), graceMs: 0 }, { lessonId: LESSON, ownerId: OWNER }, fresh());
+    expect(reads).toBeGreaterThanOrEqual(2);
     expect(deletes).not.toContain(`${base}/${stray}`);
+    expect(await store.stat(`${base}/${stray}/${ORPHAN}/notes.pdf`)).not.toBeNull();
+  });
+
+  it("never touches an uppercase uuid-like folder", async () => {
+    const upper = randomUUID().toUpperCase();
+    await store.put(`${base}/${upper}/${ORPHAN}/notes.pdf`, new Uint8Array([1]));
+    await store.put(`${base}/${REV}/${randomUUID().toUpperCase()}/notes.pdf`, new Uint8Array([1]));
+    await reconcileLesson({ jobs: jobsWith(eligible), store: recording(), graceMs: 0 }, { lessonId: LESSON, ownerId: OWNER }, fresh());
+    expect(deletes.some((d) => d.includes(upper) || /[A-F]{2}/.test(d.split("/").slice(2).join("/")))).toBe(false);
+    expect(await store.stat(`${base}/${upper}/${ORPHAN}/notes.pdf`)).not.toBeNull();
+  });
+
+  it("a listing that never ends is a safe abort for that lesson (page cap), deleting nothing", async () => {
+    let calls = 0;
+    const endless = { ...recording(), list: async () => (calls++, { entries: [{ name: "f.txt", kind: "file" as const }], nextCursor: "more" }) };
+    const report = fresh();
+    await reconcileLesson({ jobs: jobsWith(eligible), store: endless, graceMs: 0 }, { lessonId: LESSON, ownerId: OWNER }, report);
+    expect(calls).toBe(20);
+    expect(report.skipped).toBe(1);
+    expect(deletes).toEqual([]);
   });
 });
 
@@ -110,6 +133,47 @@ describe("the reconciler step", () => {
     const r = createReconciler({ jobs, store: recording(), graceMs: 0, batchSize: 5 });
     expect(await r.step()).toMatchObject({ errors: 1, attemptsDeleted: 0, revisionsDeleted: 0 });
     expect(deletes).toEqual([]);
+    vi.restoreAllMocks();
+  });
+
+  it("a hung storage call ends the step at the budget, stops further deletes, and a later step does not pile on", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let lists = 0;
+    const hung = { ...recording(), list: (_p: string, o: { signal?: AbortSignal }) => (lists++, new Promise<never>(() => void o)) };
+    const r = createReconciler({ jobs: jobsWith(eligible), store: hung, graceMs: 0, batchSize: 5, budgetMs: 30 });
+    const started = Date.now();
+    expect(await r.step()).toMatchObject({ errors: 1, attemptsDeleted: 0, revisionsDeleted: 0 });
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(await r.step()).toMatchObject({ errors: 0, lessons: 0 }); // previous work still stuck: skipped
+    expect(lists).toBe(1);
+    expect(deletes).toEqual([]);
+    vi.restoreAllMocks();
+  });
+
+  it("the budget signal reaches storage and an aborted step issues no further delete", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let seen: AbortSignal | undefined;
+    const slow = {
+      ...recording(),
+      list: async (p: string, o: { limit: number; cursor?: string | null; signal?: AbortSignal }) => {
+        seen = o.signal;
+        await new Promise((res) => setTimeout(res, 60));
+        return store.list(p, o);
+      },
+    };
+    const r = createReconciler({ jobs: jobsWith(eligible), store: slow, graceMs: 0, batchSize: 5, budgetMs: 20 });
+    await r.step();
+    await new Promise((res) => setTimeout(res, 150));
+    expect(seen?.aborted).toBe(true);
+    expect(deletes).toEqual([]);
+    vi.restoreAllMocks();
+  });
+
+  it("stops at the delete cap", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    for (let i = 0; i < 3; i++) await store.put(`${base}/${REV}/${randomUUID()}/notes.pdf`, new Uint8Array([1]));
+    const r = createReconciler({ jobs: jobsWith(eligible), store: recording(), graceMs: 0, batchSize: 5, maxDeletes: 2 });
+    expect(await r.step()).toMatchObject({ attemptsDeleted: 2, errors: 0 });
     vi.restoreAllMocks();
   });
 

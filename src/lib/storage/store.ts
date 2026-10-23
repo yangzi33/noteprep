@@ -26,12 +26,13 @@ export interface ObjectStore {
   put(objectPath: string, data: Uint8Array): Promise<void>;
   /** Re-reads what was actually stored; null when missing. */
   stat(objectPath: string): Promise<StoredObjectInfo | null>;
-  deletePrefix(prefix: string): Promise<void>;
+  /** `signal` stops further storage calls once aborted (a call already in flight may still complete). */
+  deletePrefix(prefix: string, options?: { signal?: AbortSignal }): Promise<void>;
   /**
    * ONE level below `prefix` (not recursive), ordered by name: files and folders. A folder exists only while an object
    * lives under it. `limit` is 1..MAX_LIST_LIMIT. Pages are consistent only while the listing is not being modified.
    */
-  list(prefix: string, options: { limit: number; cursor?: string | null }): Promise<StoreListPage>;
+  list(prefix: string, options: { limit: number; cursor?: string | null; signal?: AbortSignal }): Promise<StoreListPage>;
 }
 
 /** Shared argument check for `list`. */
@@ -98,12 +99,14 @@ export class FsObjectStore implements ObjectStore {
     }
   }
 
-  async deletePrefix(prefix: string): Promise<void> {
+  async deletePrefix(prefix: string, options?: { signal?: AbortSignal }): Promise<void> {
+    options?.signal?.throwIfAborted();
     await rm(this.resolve(prefix), { recursive: true, force: true });
   }
 
   /** Cursor = the last name already returned (names are unique within one folder). */
-  async list(prefix: string, options: { limit: number; cursor?: string | null }): Promise<StoreListPage> {
+  async list(prefix: string, options: { limit: number; cursor?: string | null; signal?: AbortSignal }): Promise<StoreListPage> {
+    options.signal?.throwIfAborted();
     const limit = checkedListLimit(options.limit);
     const dir = this.resolve(prefix); // refuses a path outside the root
     let names: { name: string; kind: "file" | "folder" }[];

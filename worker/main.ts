@@ -71,7 +71,7 @@ async function main() {
     drafts: { purge: dal.drafts, batchSize: config.limits.purgeBatchSize },
     reconcile:
       config.RECONCILE_ENABLED === "1"
-        ? { step: createReconciler({ jobs: dal.jobs, store, batchSize: config.RECONCILE_BATCH_LESSONS, graceMs: config.RECONCILE_GRACE_SECONDS * 1000 }).step, intervalMs: config.RECONCILE_INTERVAL_SECONDS * 1000 }
+        ? { step: createReconciler({ jobs: dal.jobs, store, batchSize: config.RECONCILE_BATCH_LESSONS, budgetMs: config.RECONCILE_STEP_BUDGET_SECONDS * 1000, graceMs: config.RECONCILE_GRACE_SECONDS * 1000 }).step, intervalMs: config.RECONCILE_INTERVAL_SECONDS * 1000 }
         : undefined,
     onAlive: createLiveness(config.WORKER_LIVENESS_FILE),
   });
