@@ -51,7 +51,7 @@ CREATE INDEX export_snapshot_content_key_idx ON export_snapshot(owner_id, conten
 Guards: `export_snapshot_guard` BEFORE UPDATE always raises 55000; `export_guard` BEFORE UPDATE raises unless `OLD.state='pending'` and only state/revision_id/failure_code/settled_at change with `NEW.state IN ('succeeded','failed')`. Replace `generation_job_reservation_shape()` (same trigger, new body): generate and export require a reservation; compile forbids one; an export job requires a matching `export` row (job, owner, lesson). `check_export_consistency(export_id)` called by three DEFERRABLE INITIALLY DEFERRED constraint triggers (on `export` AFTER INSERT OR UPDATE; on `generation_job` AFTER UPDATE WHEN `NEW.kind='export' AND OLD.state IS DISTINCT FROM NEW.state`; on `usage_reservation` AFTER UPDATE WHEN `OLD.state IS DISTINCT FROM NEW.state`, looking the export up by job id and returning if none) enforcing: kind export; `e.lesson_id=j.lesson_id`; pending => job queued|running and reservation reserved; succeeded => job succeeded, reservation consumed, `j.revision_id=e.revision_id`; failed => job failed|canceled and reservation released. Add an `export_state_drift` view (security_invoker). Grants: `export_snapshot` app SELECT/INSERT, worker SELECT; `export` app SELECT/INSERT/UPDATE, worker SELECT/UPDATE; **no DELETE for either role**; RLS enabled with the `runtime_roles_all` policy; `worker_runtime` SELECT on the drift view; add both tables to `tests/integration/schema.test.ts` TABLES.
 
 ## Global lock order
-`profile -> draft -> draft_version -> generation_job -> export -> lesson -> reservation -> usage_bucket`; `rate_limit_window` rows are leaf locks. The confirm-attempt counter (`exp:try:u:`) takes one alone, in its own transaction BEFORE the confirm transaction, holding no other lock. Rule: no path holding profile X may wait on a job, export or lesson lock.
+`profile -> draft -> draft_version -> generation_job -> export -> lesson -> reservation -> usage_bucket`; `rate_limit_window` rows are leaf locks. The confirm-attempt counter (`exp:try:u:`) takes one alone, in its own transaction BEFORE the confirm transaction, holding no other lock. Rule: on the confirm paths (profile first), no path holding profile X may wait on a job, export or lesson lock. `deleteLesson` and `commitExport` take `job -> export -> lesson -> profile FOR SHARE` instead and never wait on a job, export or lesson lock while holding profile X. A future account-deletion path must respect this order (never wait on a job, export or lesson lock while holding profile X).
 | Path | Locks in order |
 |---|---|
 | createGeneration (unchanged) | profile X, rate_limit_window, bucket X, inserts |
@@ -59,6 +59,7 @@ Guards: `export_snapshot_guard` BEFORE UPDATE always raises 55000; `export_guard
 | commitSuccess (unchanged) | job X, lesson S, profile S, reservation, bucket |
 | commitExport | job X, export X, lesson S, profile S, revision insert, lesson U, reservation X, bucket X |
 | finishLockedJob (finishJob, retryOrFail failing, sweep, cancelJob) | job X, export X (settle), reservation X, bucket X |
+| deleteLesson (S5-6) | job X (the lesson's jobs), export X, lesson X, profile S; retires succeeded exports, sets `lesson.deleted_at` (final: trigger `lesson_deleted_final`) |
 | claimNext | job X, SKIP LOCKED |
 
 ## DAL behaviour

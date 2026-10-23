@@ -145,12 +145,21 @@ describe("database rules (raw SQL cannot bypass the DAL)", () => {
     expect(await txErrorCode(h.admin, [markDeleted(lessonId), [`UPDATE export SET state = 'retired' WHERE id = $1`, [exportId]]])).toBeNull();
     // the reservation is one-way and the retired export needs it consumed
     expect(await txErrorCode(h.admin, [[`UPDATE usage_reservation SET state = 'released', settled_at = now() WHERE job_id = $1`, [jobId]]])).not.toBeNull();
-    // un-deleting the lesson is not blocked by a trigger, but the drift view reports the retired export
-    await h.admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lessonId]);
-    const drift = await h.workerPg.query(`SELECT export_id FROM export_state_drift WHERE export_id = $1`, [exportId]);
-    expect(drift.rows).toEqual([{ export_id: exportId }]);
-    await h.admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [lessonId]);
+    // deletion is one-way: un-deleting (or re-timestamping) a lesson with a retired export fails with 55000
+    expect(await pgErrorCode(() => h.admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lessonId]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => h.admin.query(`UPDATE lesson SET deleted_at = now() + interval '1 day' WHERE id = $1`, [lessonId]))).toBe(STATE_VIOLATION);
+    expect((await lessonRow(lessonId)).deleted_at).not.toBeNull();
     await h.expectNoDrift();
+  });
+
+  it("un-deleting a deleted lesson fails (55000) for a lesson whose only export failed", async () => {
+    const ctx = await h.account(3);
+    const d = await h.newDraft(ctx);
+    const { lessonId } = await h.confirm(ctx, d);
+    await h.abandonPending();
+    await h.admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [lessonId]);
+    expect(await pgErrorCode(() => h.admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lessonId]))).toBe(STATE_VIOLATION);
+    expect((await lessonRow(lessonId)).deleted_at).not.toBeNull();
   });
 
   it("the state CHECK knows retired, and nothing new was granted", async () => {
@@ -178,7 +187,7 @@ describe("races", () => {
     }
   });
 
-  it("delete vs confirm of the same identity: serialized; a reused export is never pointed at an already deleted lesson", async () => {
+  it("delete vs confirm of the same identity: whichever runs first, the outcome is consistent; a reused export is never pointed at an already deleted lesson", async () => {
     for (let i = 0; i < 12; i++) {
       const { ctx, d, exportId, lessonId } = await succeededExport();
       const [del, conf] = await Promise.allSettled([deleteLesson(ctx, lessonId), h.confirm(ctx, d)]);
@@ -222,7 +231,8 @@ describe("races", () => {
       await h.worker.jobs.sweep();
       expect(await h.exportRow(exportId)).toMatchObject({ state: "failed" });
       expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
-      expect(await lessonRow(lessonId)).toBeDefined();
+      // deleted_at is set exactly when the delete was accepted
+      expect((await lessonRow(lessonId)).deleted_at === null).toBe(del.status === "rejected");
     }
   });
 });

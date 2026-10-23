@@ -44,6 +44,7 @@ describe("retired export (the lesson was deleted)", () => {
     expect(phase(retired(), { unreachable: true, gone: false })).toBe("retired");
     const d = describeExportOutcome(retired(), "retired");
     expect(d.heading).toBe("This lesson was deleted.");
+    expect(d.detail).toContain("starts a new export and uses another generation");
     expect(d.charge).toBe("This used 1 generation.");
     expect(isFinalPhase("retired")).toBe(true);
     expect(isSettledExport(retired())).toBe(true);

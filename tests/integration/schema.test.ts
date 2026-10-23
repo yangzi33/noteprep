@@ -854,6 +854,18 @@ describe("export tables (S4a migration)", () => {
     expect((await admin.query(`SELECT indexdef FROM pg_indexes WHERE indexname = 'export_live_key'`)).rows[0].indexdef).toMatch(/state = ANY \(ARRAY\['pending'::text, 'succeeded'::text\]\)/);
   });
 
+  it("lesson deletion is one-way: a BEFORE UPDATE trigger refuses any change of deleted_at once set", async () => {
+    const trigger = (await admin.query(`SELECT pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgname = 'lesson_deleted_final' AND NOT tgisinternal`)).rows[0];
+    expect(trigger.def).toMatch(/BEFORE UPDATE ON (public\.)?lesson/i);
+    expect(trigger.def).toMatch(/old\.deleted_at IS NOT NULL/i);
+    const owner = await seedOwner(admin);
+    const lesson = await seedLesson(admin, owner);
+    await admin.query(`UPDATE lesson SET deleted_at = now() WHERE id = $1`, [lesson]);
+    expect(await pgErrorCode(() => admin.query(`UPDATE lesson SET deleted_at = NULL WHERE id = $1`, [lesson]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => admin.query(`UPDATE lesson SET deleted_at = now() + interval '1 day' WHERE id = $1`, [lesson]))).toBe(STATE_VIOLATION);
+    expect(await pgErrorCode(() => admin.query(`UPDATE lesson SET title = 'renamed' WHERE id = $1`, [lesson]))).toBeNull(); // other columns stay editable
+  });
+
   it("a succeeded export of a deleted lesson retires; retired is final and keeps its revision", async () => {
     const f = await exportFixture();
     const rev = await seedRevision(admin, { lessonId: f.lessonId, ownerId: f.owner, status: "finalized" });

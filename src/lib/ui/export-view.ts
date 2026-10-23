@@ -171,7 +171,7 @@ function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
     case "succeeded":
       return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
     case "retired":
-      return { heading: "This lesson was deleted.", detail: "The PDFs of this export are no longer available. Exporting the same draft again starts a new export.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
+      return { heading: "This lesson was deleted.", detail: "The PDFs of this export are no longer available. Exporting the same draft again starts a new export and uses another generation.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "canceled":
       return { heading: "Export canceled.", detail: "You stopped this export.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "failed": {

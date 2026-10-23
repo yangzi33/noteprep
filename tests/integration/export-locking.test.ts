@@ -84,7 +84,7 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
           ops.push(guard(h.claim(p.job_id).then(() => undefined))); // leaves a running job for the next iteration's retry, sweep or commit
         }
       }
-      // deleteLesson (profile S -> jobs -> exports -> lesson): of a finished export's lesson, and of a busy one (LESSON_BUSY)
+      // deleteLesson (job -> export -> lesson -> profile FOR SHARE): of a finished export's lesson, and of a busy one (LESSON_BUSY)
       if (rnd(3) === 0) {
         const lessons = (
           await h.admin.query(
