@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { ManifestV2 } from "@/lib/domain/manifest";
 import { parseManifestV2 } from "@/lib/domain/manifest";
 import { createWorkerDal } from "@/lib/server/dal";
@@ -404,14 +404,20 @@ describe("sweep hardening (C3)", () => {
     // Poison: the reservation row vanishes (a bug or a manual repair gone wrong), so no settlement of this job can be consistent.
     const reservation = await h.reservationRow(poison.jobId);
     await h.admin.query(`DELETE FROM usage_reservation WHERE job_id = $1`, [poison.jobId]);
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
       const report = await h.worker.jobs.sweep();
+      // the poisoned row is logged with its id and the SQLSTATE (23514 from the deferred consistency trigger), never a message body
+      const events = logged.mock.calls.map((c) => JSON.parse(String(c[0])) as Record<string, unknown>).filter((e) => e.event === "sweep_row_error");
+      expect(events).toContainEqual(expect.objectContaining({ jobId: poison.jobId, code: "23514" }));
+      expect(JSON.stringify(events)).not.toContain("usage reservation");
       expect(report.sweepRowErrors).toBeGreaterThanOrEqual(1);
       expect(report.requeued).toBeGreaterThanOrEqual(1);
       expect(await h.jobRow(healthy.jobId)).toMatchObject({ state: "queued" }); // recovered
       expect(await h.jobRow(poison.jobId)).toMatchObject({ state: "running" }); // untouched: its transaction rolled back
       expect(report.exportDrift).toContain(poison.exportId); // and it is reported
     } finally {
+      logged.mockRestore();
       await h.admin.query(`INSERT INTO usage_reservation (id, owner_id, bucket_id, job_id) VALUES ($1,$2,$3,$4)`, [reservation.id, reservation.owner_id, reservation.bucket_id, reservation.job_id]);
     }
     const again = await h.worker.jobs.sweep();

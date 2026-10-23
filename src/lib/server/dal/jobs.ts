@@ -26,6 +26,23 @@ export interface UsageCharge {
   costMicros: number;
 }
 
+/** The SQLSTATE or Prisma code somewhere in an error's chain, else "unknown". Never returns message text. */
+function errorCodeOf(error: unknown): string {
+  const seen = new Set<unknown>();
+  let value: unknown = error;
+  for (let depth = 0; value && typeof value === "object" && depth < 6 && !seen.has(value); depth++) {
+    seen.add(value);
+    const v = value as { meta?: { code?: unknown }; originalCode?: unknown; code?: unknown; cause?: unknown };
+    for (const c of [v.meta?.code, v.originalCode, v.code]) if (typeof c === "string" && /^[0-9A-Z]{5}$/.test(c)) return c;
+    value = v.cause;
+  }
+  return "unknown";
+}
+
+function errorClassOf(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
 export interface SweepReport {
   requeued: number;
   failed: number;
@@ -263,8 +280,10 @@ export function createJobsDal(db: Db, backoff: BackoffPolicy = DEFAULT_BACKOFF, 
             }
           });
           if (outcome) report[outcome]++; // counted only once the transaction (and its deferred checks) committed
-        } catch {
+        } catch (error) {
           report.sweepRowErrors++;
+          // Id and error class/SQLSTATE only: never the message (it can carry row content) and nothing from the job's payload.
+          console.error(JSON.stringify({ ts: new Date().toISOString(), event: "sweep_row_error", jobId: id, code: errorCodeOf(error), errorClass: errorClassOf(error) }));
         }
       }
       const drift = await db.$queryRaw<{ bucket_id: string }[]>`SELECT bucket_id FROM usage_bucket_drift`;

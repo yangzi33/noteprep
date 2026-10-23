@@ -837,7 +837,13 @@ describe("export tables (S4a migration)", () => {
     expect(await txErrorCode(admin, [exportFailed(f.exportId), [`UPDATE generation_job SET state = 'canceled', error_code = 'canceled', finished_at = now() WHERE id = $1`, [f.jobId]], reservationReleased(f.jobId), [`UPDATE usage_bucket SET reserved = reserved - 1 WHERE id = $1`, [f.bucket]]])).toBeNull();
   });
 
-  it("a heartbeat or a claim of an export job does not run the consistency check (state unchanged)", async () => {
+  it("the job and reservation consistency triggers carry a WHEN clause that skips updates which leave the state unchanged (heartbeats)", async () => {
+    const def = async (name: string) =>
+      (await admin.query(`SELECT pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgname = $1 AND NOT tgisinternal`, [name])).rows[0].def as string;
+    const jobDef = await def("export_consistency_job");
+    expect(jobDef).toMatch(/WHEN .*old\.state IS DISTINCT FROM new\.state/i);
+    expect(jobDef).toMatch(/new\.kind = 'export'/i);
+    expect(await def("export_consistency_reservation")).toMatch(/WHEN .*old\.state IS DISTINCT FROM new\.state/i);
     const f = await exportFixture();
     // queued -> running keeps the export pending and consistent; lease extensions are plain updates
     expect(await pgErrorCode(() => admin.query(`UPDATE generation_job SET state = 'running', lease_owner = 'w', lease_expires_at = now() + interval '1 minute', fencing_token = 1, attempt = 1 WHERE id = $1`, [f.jobId]))).toBeNull();
