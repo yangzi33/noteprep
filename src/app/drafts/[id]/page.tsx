@@ -4,10 +4,9 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ChangesIndicator, QuestionControls, ReplacedBadge, UndoControl, type AdjustContext } from "@/components/app/draft-adjust";
 import { VersionSwitcher } from "@/components/app/draft-versions";
+import { ExportEntry } from "@/components/app/export-entry";
 import { LessonDraft } from "@/components/app/lesson-draft";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { htmlDocument } from "@/lib/package/html-view";
@@ -74,7 +73,8 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         ? { afterSolution: (q: { questionId: string }) => <ReplacedBadge ctx={adjustCtx} questionId={q.questionId} /> }
         : undefined;
   const errorMessage = generationErrorMessage(parsed.data.error);
-  const exportPending = serverEnv().FLOW_MODE === "draft";
+  const flowMode = serverEnv().FLOW_MODE;
+  const exportEnabled = serverEnv().EXPORT_ENABLED === "1";
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
@@ -142,17 +142,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
           </section>
         </div>
 
-        {exportPending && (
-          <aside className="space-y-4">
-            <Card className="p-5">
-              <h2 className="font-heading text-lg">Export</h2>
-              <Button type="button" disabled aria-disabled="true" className="mt-3 w-full" data-testid="draft-export-disabled">
-                Export is coming next
-              </Button>
-              <p className="mt-2 text-[13px] text-muted-foreground">PDF export for drafts is not available yet.</p>
-            </Card>
-          </aside>
-        )}
+        <ExportEntry flowMode={flowMode} exportEnabled={exportEnabled} draftId={view.draftId} versionId={view.versionId} rev={view.rev} />
       </div>
     </main>
   );
