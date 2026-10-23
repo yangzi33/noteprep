@@ -105,6 +105,7 @@ describe("crash after upload, before commit", () => {
       },
       stat: (p) => store.stat(p),
       list: (p, o) => store.list(p, o),
+      deleteObject: (p) => store.deleteObject(p),
       deletePrefix: (p) => store.deletePrefix(p),
     };
     expect(await runOnce(deps({ store: crashing }), "w-crash")).toBe("requeued");

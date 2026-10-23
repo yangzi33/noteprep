@@ -20,6 +20,7 @@ const recording = () => ({
   put: (p: string, d: Uint8Array) => store.put(p, d),
   stat: (p: string) => store.stat(p),
   list: (p: string, o: { limit: number; cursor?: string | null }) => store.list(p, o),
+  deleteObject: (p: string) => store.deleteObject(p),
   deletePrefix: async (p: string) => (deletes.push(p), store.deletePrefix(p)),
 });
 const fresh = (): ReconcileReport => ({ lessons: 0, revisionsDeleted: 0, attemptsDeleted: 0, skipped: 0, errors: 0 });

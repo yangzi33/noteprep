@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export interface StoredObjectInfo {
@@ -26,6 +26,8 @@ export interface ObjectStore {
   put(objectPath: string, data: Uint8Array): Promise<void>;
   /** Re-reads what was actually stored; null when missing. */
   stat(objectPath: string): Promise<StoredObjectInfo | null>;
+  /** Deletes exactly ONE object (never a folder's contents). A missing object is not an error. Same path rules as put/stat. */
+  deleteObject(objectPath: string, options?: { signal?: AbortSignal }): Promise<void>;
   /** `signal` stops further storage calls once aborted (a call already in flight may still complete). */
   deletePrefix(prefix: string, options?: { signal?: AbortSignal }): Promise<void>;
   /**
@@ -96,6 +98,20 @@ export class FsObjectStore implements ObjectStore {
       return { bytes: info.size, sha256: sha256Of(await readFile(full)) };
     } catch {
       return null;
+    }
+  }
+
+  async deleteObject(objectPath: string, options?: { signal?: AbortSignal }): Promise<void> {
+    options?.signal?.throwIfAborted();
+    const full = this.resolve(objectPath);
+    if (full === this.root) throw new StorageError(false);
+    try {
+      const info = await stat(full);
+      if (!info.isFile()) return; // a folder is not an object: leave it alone
+      await unlink(full);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") return;
+      throw error;
     }
   }
 

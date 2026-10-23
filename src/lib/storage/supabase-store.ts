@@ -79,6 +79,18 @@ export class SupabaseObjectStore implements ObjectStore {
     return { bytes: bytes.byteLength, sha256: sha256Of(bytes) };
   }
 
+  /**
+   * Exactly one object: remove([path]). Verified against the pinned @supabase/storage-js 2.118.0 typings and source only
+   * (not a live project): remove() POSTs `{ prefixes: paths }` to DELETE /object/<bucket>, names objects (not folders), and
+   * documents `data: []` when nothing matched, so a missing object is not an error; a 404 is also treated as missing.
+   * remove() takes no fetch options, so the signal is checked only before the call.
+   */
+  async deleteObject(objectPath: string, options?: { signal?: AbortSignal }): Promise<void> {
+    options?.signal?.throwIfAborted();
+    const { error } = await this.client.storage.from(this.bucket).remove([this.checked(objectPath)]);
+    if (error && !isNotFound(error)) throw storageErrorFrom("remove", error);
+  }
+
   async deletePrefix(prefix: string, options?: { signal?: AbortSignal }): Promise<void> {
     const signal = options?.signal;
     const files = await this.listFiles(this.checked(prefix.replace(/\/+$/, "")), 0, signal);

@@ -116,6 +116,9 @@ class WrappedStore implements ObjectStore {
     const lie = this.hooks.stat?.(p, n);
     return lie === undefined ? this.inner.stat(p) : lie;
   }
+  deleteObject(p: string) {
+    return this.inner.deleteObject(p);
+  }
   deletePrefix(p: string) {
     return this.inner.deletePrefix(p);
   }

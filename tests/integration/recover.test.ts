@@ -122,7 +122,8 @@ function hookedRecovery(before: (n: number, row: RecoveryRevision | null) => Pro
 /** Records every call; `onPut` runs after the real put; `mangle` changes the bytes actually stored. */
 class SpyStore implements ObjectStore {
   puts: string[] = [];
-  deletes: string[] = [];
+  deletes: string[] = []; // deleteObject calls
+  prefixDeletes: string[] = [];
   /** Paths whose next stat after a put reports the bytes that were INTENDED (a store that lies once). */
   lieOnce = new Map<string, StoredObjectInfo>();
   constructor(
@@ -144,8 +145,12 @@ class SpyStore implements ObjectStore {
     }
     return this.inner.stat(p);
   }
+  async deleteObject(p: string, o?: { signal?: AbortSignal }) {
+    this.deletes.push(p);
+    await this.inner.deleteObject(p, o);
+  }
   async deletePrefix(prefix: string, o?: { signal?: AbortSignal }) {
-    this.deletes.push(prefix);
+    this.prefixDeletes.push(prefix);
     await this.inner.deletePrefix(prefix, o);
   }
   list(prefix: string, o: Parameters<ObjectStore["list"]>[1]) {
@@ -346,6 +351,7 @@ describe("recoverRevision, the central checks", () => {
     expect(await refusal(recoverRevision(recoverDeps({ store: spy }), x.revisionId))).toBe("lesson_deleted_during_recovery");
     expect(spy.puts.length).toBe(2);
     expect([...spy.deletes].sort()).toEqual([...spy.puts].sort());
+    expect(spy.prefixDeletes).toEqual([]); // single objects, never a prefix
     expect(spy.puts.every((p) => p in before)).toBe(true); // only manifest paths
     expect(await files()).toEqual(survivors); // nothing it wrote is left, nothing else was touched
   });

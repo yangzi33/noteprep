@@ -615,6 +615,7 @@ describe("the three-document pack", () => {
         throw new StorageError(false);
       },
       stat: async () => null,
+      deleteObject: async () => {},
       deletePrefix: async () => {},
       list: async () => ({ entries: [], nextCursor: null }),
     };
@@ -671,8 +672,8 @@ describe("the three-document pack", () => {
 
     it("a failing cleanup never hides the original failure", async () => {
       const failing = new FsObjectStore(storeDir);
-      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), list: (p, o) => failing.list(p, o), deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
-      const storeFails: ObjectStore = { put: async () => { throw new StorageError(false); }, stat: async () => null, deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); }, list: async () => ({ entries: [], nextCursor: null }) };
+      const store: ObjectStore = { put: (p, d) => failing.put(p, d), stat: (p) => failing.stat(p), list: (p, o) => failing.list(p, o), deleteObject: async () => {}, deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); } };
+      const storeFails: ObjectStore = { put: async () => { throw new StorageError(false); }, stat: async () => null, deleteObject: async () => {}, deletePrefix: async () => { throw new Error("CLEANUP-SENTINEL"); }, list: async () => ({ entries: [], nextCursor: null }) };
       const refuse = async () => {
         throw new ManifestIncomplete("forced");
       };

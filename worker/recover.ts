@@ -225,7 +225,7 @@ export async function recoverRevision(deps: RecoverDeps, revisionId: string, opt
   }
   if (!still) {
     try {
-      for (const p of written) await store.deletePrefix(p);
+      for (const p of written) await store.deleteObject(p);
     } catch (error) {
       if (!(error instanceof StorageError)) throw error;
       throw new RecoveryRefused("cleanup_failed_after_lesson_deleted");
