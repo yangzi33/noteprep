@@ -21,12 +21,12 @@ import { requestHash } from "@/lib/domain/hash";
 import { parseLessonRequest } from "@/lib/domain/lesson-request";
 import type { Prisma } from "@/generated/prisma/client";
 import type { AuthedCtx } from "../auth/context";
-import { resolveAllowanceSource } from "./allowance-source";
+import { lockAllowanceBucket } from "./allowance-source";
 import type { Db } from "../db";
 import { toJobDto, type JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
-import { releaseReservation } from "./reservation";
+import { finishLockedJob } from "./reservation";
 import { inTransaction, type Tx } from "./tx";
 
 export type { ResolveContext };
@@ -49,13 +49,6 @@ export interface CreateGenerationResult {
   replayed: boolean;
 }
 
-interface BucketRow {
-  id: string;
-  used: number;
-  reserved: number;
-  limit_count: number;
-}
-
 const uuid = z.uuid();
 
 export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
@@ -64,28 +57,6 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
 
   async function bumpRateLimit(tx: Tx, key: string, max: number) {
     if ((await incrementRateLimit(tx, key)) > max) throw new RateLimited();
-  }
-
-  /** Locks the bucket this job will draw from. The source is fixed here and never re-chosen. */
-  async function lockAllowanceBucket(tx: Tx, ownerId: string, now: Date): Promise<{ bucket: BucketRow; source: "trial" | "paid" }> {
-    const source = await resolveAllowanceSource(tx, ownerId, now);
-    if (source.kind === "paid") {
-      const rows = await tx.$queryRaw<BucketRow[]>`
-        SELECT id, used, reserved, limit_count FROM usage_bucket
-         WHERE subscription_id = ${source.subscriptionId}::uuid
-           AND period_key = ${source.periodKey}::bigint
-           AND starts_at <= ${now}::timestamptz AND ends_at > ${now}::timestamptz
-           FOR UPDATE`;
-      const bucket = rows[0];
-      if (!bucket) throw new AllowanceExhausted(0, "paid"); // fail closed: sync has not created the period bucket
-      return { bucket, source: "paid" };
-    }
-    const rows = await tx.$queryRaw<BucketRow[]>`
-      SELECT id, used, reserved, limit_count FROM usage_bucket
-       WHERE owner_id = ${ownerId}::uuid AND kind = 'trial'::bucket_kind FOR UPDATE`;
-    const bucket = rows[0];
-    if (!bucket) throw new InvariantViolation("account has no trial bucket; ensureAccount was not run");
-    return { bucket, source: "trial" };
   }
 
   return {
@@ -210,12 +181,8 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
         const row = rows[0];
         if (!row) throw new NotFound();
         if (row.state === "queued") {
-          await releaseReservation(tx, jobId, "canceled");
-          const job = await tx.generationJob.update({
-            where: { id: jobId },
-            data: { state: "canceled", errorCode: "canceled", finishedAt: new Date(), cancelRequestedAt: new Date() },
-          });
-          return toJobDto(job);
+          await finishLockedJob(tx, jobId, "canceled", "canceled", { markCancelRequested: true });
+          return toJobDto(await tx.generationJob.findUniqueOrThrow({ where: { id: jobId } }));
         }
         if (row.state === "running") {
           await tx.$executeRaw`

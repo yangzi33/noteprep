@@ -1,7 +1,7 @@
 import "server-only";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
-import { resolveAllowanceSource } from "./allowance-source";
+import { readAllowanceBucket } from "./allowance-source";
 
 export interface AllowanceView {
   source: "trial" | "paid";
@@ -15,6 +15,9 @@ export interface AllowanceView {
 
 export interface HistoryItem {
   jobId: string;
+  /** "export": a job of the draft export flow; its `exportId` is the link target for a job that has not succeeded (/exports/{id}). */
+  kind: "generate" | "export";
+  exportId: string | null;
   lessonId: string;
   title: string;
   state: "queued" | "running" | "succeeded" | "failed" | "canceled";
@@ -35,33 +38,30 @@ export function createHistoryDal(db: Db, deps: HistoryDeps = {}) {
   return {
     async getAllowance(ctx: AuthedCtx): Promise<AllowanceView | null> {
       return db.$transaction(async (tx) => {
-        const source = await resolveAllowanceSource(tx, ctx.userId, clock());
-        const bucket =
-          source.kind === "paid"
-            ? await tx.usageBucket.findFirst({
-                where: { ownerId: ctx.userId, subscriptionId: source.subscriptionId, periodKey: source.periodKey },
-              })
-            : await tx.usageBucket.findFirst({ where: { ownerId: ctx.userId, kind: "trial" } });
-        if (!bucket) return null;
+        const found = await readAllowanceBucket(tx, ctx.userId, clock());
+        if (!found) return null;
+        const { bucket, source } = found;
         return {
-          source: source.kind,
-          limit: bucket.limitCount,
+          source,
+          limit: bucket.limit_count,
           used: bucket.used,
           pending: bucket.reserved,
-          remaining: bucket.limitCount - bucket.used - bucket.reserved,
+          remaining: bucket.limit_count - bucket.used - bucket.reserved,
         };
       });
     },
 
     async listJobs(ctx: AuthedCtx, limit = 50): Promise<HistoryItem[]> {
       const jobs = await db.generationJob.findMany({
-        where: { ownerId: ctx.userId, kind: "generate", lesson: { deletedAt: null } },
+        where: { ownerId: ctx.userId, kind: { in: ["generate", "export"] }, lesson: { deletedAt: null } },
         orderBy: { createdAt: "desc" },
         take: Math.min(Math.max(limit, 1), 200),
-        include: { lesson: { select: { title: true } } },
+        include: { lesson: { select: { title: true } }, exports: { select: { id: true }, take: 1 } },
       });
       return jobs.map((job) => ({
         jobId: job.id,
+        kind: job.kind === "export" ? "export" : "generate",
+        exportId: job.exports[0]?.id ?? null,
         lessonId: job.lessonId,
         title: job.lesson.title,
         state: job.state,

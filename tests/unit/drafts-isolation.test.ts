@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 // Drafts are free: the draft DAL must not be able to reserve, consume or release allowance, or queue jobs.
 // This pins it at the source level: what the module imports, and which tables its SQL names.
 const source = readFileSync(new URL("../../src/lib/server/dal/drafts.ts", import.meta.url), "utf8");
-const FORBIDDEN_IMPORTS = ["reservation", "settlement", "allowance-source", "jobs", "generation", "history"];
-const FORBIDDEN_TABLES = ["usage_bucket", "usage_reservation", "generation_job", "usageBucket", "usageReservation", "generationJob", "subscription"];
+const FORBIDDEN_IMPORTS = ["reservation", "settlement", "allowance-source", "jobs", "generation", "history", "export"];
+const FORBIDDEN_TABLES = ["usage_bucket", "usage_reservation", "generation_job", "usageBucket", "usageReservation", "generationJob", "subscription", "export_snapshot", "exportSnapshot", "prisma.export", "tx.export"];
 
 describe("the draft module is isolated from allowance code", () => {
   const imports = [...source.matchAll(/^import[^;]*?from\s+"([^"]+)";/gms)].map((m) => m[1]!);
@@ -17,7 +17,7 @@ describe("the draft module is isolated from allowance code", () => {
       expect(FORBIDDEN_IMPORTS, spec).not.toContain(spec.split("/").pop()!);
     }
     // by path, wherever it points: no reservation, settlement, allowance, job, generation or history code
-    expect(imports.filter((s) => /reservation|settlement|allowance|jobs|generation|history/.test(s))).toEqual([]);
+    expect(imports.filter((s) => /reservation|settlement|allowance|jobs|generation|history|\/export/.test(s))).toEqual([]);
     // and not through the DAL barrel or the process-wide instance, which pull in everything
     expect(imports.filter((s) => /^\.\.?\/(index|instance)$|^\.\/?$|\/dal$|\/dal\/(index|instance)$/.test(s))).toEqual([]);
   });

@@ -48,6 +48,8 @@ describe("limits", () => {
       { MIN_EXERCISES: "9", MAX_EXERCISES_PER_DRAFT: "5" },
       { DRAFT_PURGE_BATCH_SIZE: "0" },
       { DRAFT_TTL_DAYS: "Infinity" },
+      { DRAFT_TTL_DAYS: "30", DRAFT_MAX_LIFETIME_DAYS: "29" }, // the cap cannot be below the sliding window
+      { DRAFT_LOCK_TIMEOUT_MS: "0" },
     ];
     for (const source of bad) expect(() => parseLimits(source), JSON.stringify(source)).toThrow();
   });
@@ -59,6 +61,13 @@ describe("FLOW_MODE and the limits in the environment modules", () => {
     expect(parseServerEnv({ DATABASE_URL: db }).FLOW_MODE).toBe("legacy");
     expect(parseServerEnv({ DATABASE_URL: db, FLOW_MODE: "draft" }).FLOW_MODE).toBe("draft");
     for (const bad of ["Draft", "on", "", "both"]) expect(() => parseServerEnv({ DATABASE_URL: db, FLOW_MODE: bad })).toThrow();
+  });
+
+  it("EXPORT_ENABLED is strict like FLOW_MODE and off by default", () => {
+    const db = "postgresql://u:p@localhost:5432/x";
+    expect(parseServerEnv({ DATABASE_URL: db }).EXPORT_ENABLED).toBe("0");
+    expect(parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: "1" }).EXPORT_ENABLED).toBe("1");
+    for (const bad of ["true", "on", "", "yes", "2"]) expect(() => parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: bad })).toThrow();
   });
   it("the web and worker configurations carry the parsed limits", () => {
     expect(parseServerEnv({ DATABASE_URL: db, DRAFT_TTL_DAYS: "21" }).limits.draftTtlDays).toBe(21);
@@ -84,5 +93,10 @@ describe("isCheckViolation", () => {
     expect(isCheckViolation({ code: "23505" })).toBe(false);
     expect(isCheckViolation(null)).toBe(false);
     expect(isCheckViolation("23514")).toBe(false);
+  });
+
+  it("has a lifetime cap above the TTL and a bounded lock timeout by default", () => {
+    expect(DEFAULT_LIMITS.draftMaxLifetimeDays).toBeGreaterThanOrEqual(DEFAULT_LIMITS.draftTtlDays);
+    expect(parseLimits({ DRAFT_MAX_LIFETIME_DAYS: "90", DRAFT_LOCK_TIMEOUT_MS: "250" })).toMatchObject({ draftMaxLifetimeDays: 90, draftLockTimeoutMs: 250 });
   });
 });

@@ -131,3 +131,95 @@ export async function seedDraftVersion(db: Db, draftId: string, ownerId: string,
   );
   return id;
 }
+
+export interface ExportRows {
+  snapshotId: string;
+  lessonId: string;
+  jobId: string;
+  exportId: string;
+}
+
+/**
+ * Raw-SQL export rows in ONE transaction: snapshot, lesson, export job, export (pending), reservation, and the bucket's
+ * reserved counter, exactly what confirmExport would have written. For migration and trigger tests that must bypass the DAL.
+ */
+export async function seedExportRows(db: Db, ownerId: string, bucketId: string, exportKey = `key-${randomUUID()}`): Promise<ExportRows> {
+  const snapshotId = randomUUID();
+  const lessonId = randomUUID();
+  const jobId = randomUUID();
+  const exportId = randomUUID();
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `INSERT INTO export_snapshot (id, owner_id, draft_id, draft_version_id, draft_version_rev, content, package_hash, question_meta,
+                                    change_summary, spec, tex_sha256, export_key, content_key, validation_report, validator_version)
+       VALUES ($1,$2,$3,$4,1,'{}','sha256:t','{}','{}','{}','{}',$5,'ck','{"overall":"verified"}','test/0')`,
+      [snapshotId, ownerId, randomUUID(), randomUUID(), exportKey],
+    );
+    await client.query(`INSERT INTO lesson (id, owner_id, title, input_spec) VALUES ($1,$2,'Fictional export','{}')`, [lessonId, ownerId]);
+    await client.query(
+      `INSERT INTO generation_job (id, owner_id, kind, lesson_id, request_hash, max_attempts, deadline_at, max_calls, max_tokens, max_cost_micros)
+       VALUES ($1,$2,'export',$3,$4,3, now() + interval '1 hour', 0, 0, 0)`,
+      [jobId, ownerId, lessonId, exportKey],
+    );
+    await client.query(`INSERT INTO export (id, owner_id, snapshot_id, export_key, lesson_id, job_id) VALUES ($1,$2,$3,$4,$5,$6)`, [exportId, ownerId, snapshotId, exportKey, lessonId, jobId]);
+    await client.query(`INSERT INTO usage_reservation (owner_id, bucket_id, job_id) VALUES ($1,$2,$3)`, [ownerId, bucketId, jobId]);
+    await client.query(`UPDATE usage_bucket SET reserved = reserved + 1 WHERE id = $1`, [bucketId]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+  return { snapshotId, lessonId, jobId, exportId };
+}
+
+/** Runs the statements in one transaction and COMMITs; resolves with the SQLSTATE of whatever failed (a deferred trigger fails at COMMIT), or null. */
+export async function txErrorCode(db: Db, statements: Array<[string, unknown[]?]>): Promise<string | null> {
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    for (const [sql, params] of statements) await client.query(sql, params);
+    await client.query("COMMIT");
+    return null;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    const code = (error as { code?: string }).code;
+    if (!code) throw error;
+    return code;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Settles every pending export in the database consistently (export failed, job failed, reservation released, counter returned).
+ * The database is shared by every test file, and several files park leftover queued jobs with a plain UPDATE; that is
+ * only legal for an export job when its export row and reservation settle in the same transaction.
+ */
+export async function settleAllPendingExports(db: Db) {
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`UPDATE export SET state = 'failed', failure_code = 'test_cleanup', settled_at = now() WHERE state = 'pending'`);
+    await client.query(
+      `WITH released AS (
+         UPDATE usage_reservation r SET state = 'released', settle_reason = 'test_cleanup', settled_at = now()
+           FROM export e WHERE e.job_id = r.job_id AND e.failure_code = 'test_cleanup' AND r.state = 'reserved'
+         RETURNING r.bucket_id)
+       UPDATE usage_bucket b SET reserved = b.reserved - x.n FROM (SELECT bucket_id, count(*)::int AS n FROM released GROUP BY bucket_id) x WHERE x.bucket_id = b.id`,
+    );
+    await client.query(
+      `UPDATE generation_job j SET state = 'failed', stage = NULL, error_code = 'test_cleanup', lease_owner = NULL, lease_expires_at = NULL, finished_at = now()
+         FROM export e WHERE e.job_id = j.id AND e.failure_code = 'test_cleanup' AND j.state IN ('queued', 'running')`,
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

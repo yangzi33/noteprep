@@ -23,7 +23,8 @@ const SHAPE = {
   draftCreatesPerIpPerHour: int("DRAFT_CREATES_PER_IP_PER_HOUR", 60, 1, 100_000),
   draftCreatesGlobalPerHour: int("DRAFT_CREATES_GLOBAL_PER_HOUR", 5_000, 1, 10_000_000),
   maxActiveDraftsPerUser: int("MAX_ACTIVE_DRAFTS_PER_USER", 20, 1, 1_000),
-  // Adjustment (S2, S3): not enforced yet
+  // Versions and adjustment (S2, S3): versions per user per hour (key ver:u:), versions per draft, candidates (cand:u:, per slot), undo, exercise counts
+  versionCreatesPerUserPerHour: int("VERSION_CREATES_PER_USER_PER_HOUR", 60, 1, 10_000),
   maxVersionsPerDraft: int("MAX_VERSIONS_PER_DRAFT", 5, 1, 50),
   candidatesPerUserPerHour: int("CANDIDATES_PER_USER_PER_HOUR", 120, 1, 100_000),
   candidatesPerSlot: int("CANDIDATES_PER_SLOT", 5, 1, 100),
@@ -31,12 +32,21 @@ const SHAPE = {
   minExercises: int("MIN_EXERCISES", 3, 1, MAX_EXERCISES),
   maxExercises: int("MAX_EXERCISES_PER_DRAFT", MAX_EXERCISES, 1, MAX_EXERCISES),
   maxDraftBytes: int("MAX_DRAFT_BYTES", 1_000_000, 10_000, MAX_DRAFT_BYTES_CEILING),
-  // Export (S4, S5): unused for now
+  // Export (S4): exports per user per hour (key exp:u:, counted only when a NEW export is created), active export jobs per
+  // user, the deadline of one export job, attempts per job, how long past its deadline a running export job may stay before
+  // the sweeper fails it, and the global cap on queued export jobs (placeholders)
   exportsPerUserPerHour: int("EXPORTS_PER_USER_PER_HOUR", 10, 1, 10_000),
   exportConcurrencyPerUser: int("EXPORT_CONCURRENCY_PER_USER", 1, 1, 20),
   exportDeadlineMinutes: int("EXPORT_DEADLINE_MINUTES", 10, 1, 120),
+  exportMaxAttempts: int("EXPORT_MAX_ATTEMPTS", 3, 1, 10),
+  exportDeadlineGraceSeconds: int("EXPORT_DEADLINE_GRACE_SECONDS", 60, 0, 3_600),
+  exportMaxQueuedGlobal: int("EXPORT_MAX_QUEUED_GLOBAL", 200, 1, 100_000),
   // Expiry and purge
   draftTtlDays: int("DRAFT_TTL_DAYS", 14, 1, 365),
+  // Hard cap on sliding expiry: expires_at never goes beyond created_at + this many days (placeholder)
+  draftMaxLifetimeDays: int("DRAFT_MAX_LIFETIME_DAYS", 60, 1, 730),
+  // How long a draft operation waits for a row lock before DRAFT_BUSY (SET LOCAL lock_timeout; placeholder)
+  draftLockTimeoutMs: int("DRAFT_LOCK_TIMEOUT_MS", 5_000, 50, 60_000),
   purgeGraceDays: int("DRAFT_PURGE_GRACE_DAYS", 7, 0, 365),
   purgeBatchSize: int("DRAFT_PURGE_BATCH_SIZE", 100, 1, 10_000),
   // Reserved for a future language-model item source (0 = no budget; nothing reads these yet)
@@ -47,6 +57,7 @@ const SHAPE = {
 
 const LimitsSchema = z
   .object(Object.fromEntries(Object.entries(SHAPE).map(([key, { schema }]) => [key, schema])) as { [K in keyof typeof SHAPE]: (typeof SHAPE)[K]["schema"] })
+  .refine((l) => l.draftMaxLifetimeDays >= l.draftTtlDays, { message: "DRAFT_MAX_LIFETIME_DAYS must not be below DRAFT_TTL_DAYS", path: ["draftMaxLifetimeDays"] })
   .refine((l) => l.minExercises <= l.maxExercises, { message: "MIN_EXERCISES must not exceed MAX_EXERCISES_PER_DRAFT", path: ["minExercises"] });
 
 export type Limits = z.infer<typeof LimitsSchema>;

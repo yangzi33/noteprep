@@ -1,11 +1,12 @@
 import "server-only";
 import type { GenerationJob } from "@/generated/prisma/client";
+import type { ChangeSummary, PendingCandidate, Slot } from "@/lib/package/draft-ops";
 import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
 
 /** What callers may see of a job: no budgets, lease details or request hash. */
 export interface JobDto {
   id: string;
-  kind: "generate" | "compile";
+  kind: "generate" | "compile" | "export";
   state: "queued" | "running" | "succeeded" | "failed" | "canceled";
   stage: "generating" | "validating" | "compiling" | "storing" | null;
   lessonId: string;
@@ -70,12 +71,85 @@ export interface DraftViewDto {
   draftId: string;
   versionId: string;
   ordinal: number;
+  /** Revision of the shown version (question operations name it). */
   rev: number;
+  /** Revision of the draft row (the active-version pointer); version operations name it. */
+  draftRev: number;
+  /** The version the draft currently points at (the one shown when the URL names none). */
+  activeVersionId: string;
+  /** Every version, lightweight, in ordinal order. */
+  versions: DraftVersionSummary[];
+  versionLimit: number;
   contentHash: string;
   expiresAt: Date;
+  /** When the draft was last changed (any version operation). */
+  updatedAt: Date;
   documents: DocumentKind[];
   title: string;
   /** The choices this draft was made from, as the Prepare page's URL parameters: enough to start the same selection again. */
   selection: DraftSelection;
   package: LessonPackage;
+  /** Question-level adjustment state (S2). Server-side only, like `package`. */
+  adjust: DraftAdjustView;
+}
+
+/** One version without its content. */
+export interface DraftVersionSummary {
+  versionId: string;
+  ordinal: number;
+  createdAt: Date;
+  changesSummary: ChangeSummary;
+  isActive: boolean;
+}
+
+/** What createVersion and switchVersion return: the new draft revision and the version now active. */
+export interface DraftVersionResult {
+  draftRev: number;
+  versionId: string;
+  ordinal: number;
+  expiresAt: Date;
+}
+
+export interface DraftAdjustView {
+  /** The exercises in worksheet order with the level and origin of each. */
+  slots: Slot[];
+  changes: ChangeSummary;
+  /** What the Undo button would undo, or null when there is nothing to undo. */
+  undoLabel: string | null;
+  /** The single pending candidate, if any (it survives a refresh). */
+  candidate: PendingCandidate | null;
+  /** Remaining question count above which Remove is allowed (the effective minimum). */
+  minExercises: number;
+}
+
+/** What an adjustment returns: the version's new revision and content hash. */
+export interface DraftMutationResult {
+  rev: number;
+  contentHash: string;
+}
+
+/** What `confirmExport` returns. `created`: a new export reserved one allowance unit; `joined`: an equivalent export is already pending; `reused`: an equivalent export already succeeded (free); `replayed`: the same idempotency key answered again. */
+export interface ConfirmExportResult {
+  outcome: "created" | "joined" | "reused" | "replayed";
+  exportId: string;
+  jobId: string;
+  lessonId: string;
+}
+
+/** What `getExportStatus` returns. The UI may say "not used" only when `reservation.state` is `released`. */
+export interface ExportStatusDto {
+  exportId: string;
+  state: "pending" | "succeeded" | "failed";
+  job: {
+    state: "queued" | "running" | "succeeded" | "failed" | "canceled";
+    stage: "generating" | "validating" | "compiling" | "storing" | null;
+    attempt: number;
+    maxAttempts: number;
+    cancelRequested: boolean;
+    errorCode: string | null;
+  };
+  reservation: { state: "reserved" | "consumed" | "released" | null };
+  lessonId: string;
+  revisionId: string | null;
+  deadlineAt: Date;
 }

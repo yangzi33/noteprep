@@ -172,6 +172,140 @@ export class ItemRejected extends DomainError {
   }
 }
 
+/** An operation was called with arguments that cannot be valid (for example a revision that is not a positive integer). */
+export class InvalidRequest extends DomainError {
+  constructor(detail = "Invalid request") {
+    super("INVALID_REQUEST", detail);
+  }
+}
+
+/** The version changed since the page was rendered (another tab or window): the caller names the current revision. */
+export class DraftConflict extends DomainError {
+  constructor(readonly currentRev: number) {
+    super("DRAFT_CONFLICT", "This draft changed in another tab or window");
+  }
+}
+
+/** The pending candidate is gone, is not the one named, or was made for content the draft no longer has. */
+export class CandidateStale extends DomainError {
+  constructor() {
+    super("CANDIDATE_STALE", "This candidate is no longer current");
+  }
+}
+
+/** Removing the question would leave fewer exercises than the configured (and builder) minimum. */
+export class MinQuestionCount extends DomainError {
+  constructor(readonly minimum: number) {
+    super("ADJUSTMENT_MIN_COUNT", "A worksheet needs a minimum number of questions");
+  }
+}
+
+/** No other question at this level is available (the draw found nothing outside the exclusion set). */
+export class DrawExhausted extends DomainError {
+  constructor() {
+    super("DRAW_EXHAUSTED", "No other question at this level is available");
+  }
+}
+
+/** The question id is not an exercise of this version (worked examples cannot be adjusted). */
+export class QuestionNotFound extends DomainError {
+  constructor() {
+    super("QUESTION_NOT_FOUND", "Question not found");
+  }
+}
+
+export class NothingToUndo extends DomainError {
+  constructor() {
+    super("NOTHING_TO_UNDO", "There is nothing to undo");
+  }
+}
+
+/** Too many alternatives were requested for one question in this session. */
+export class CandidateLimit extends DomainError {
+  constructor() {
+    super("CANDIDATE_LIMIT", "Too many alternatives requested for this question");
+  }
+}
+
+/** Too many alternatives were requested recently across the account. */
+export class CandidateRateLimited extends DomainError {
+  constructor() {
+    super("CANDIDATE_RATE_LIMITED", "Too many alternative questions requested recently");
+  }
+}
+
+/** The draft row (or one of its versions) stayed locked by another request for longer than the lock timeout: safe to retry. */
+export class DraftBusy extends DomainError {
+  constructor() {
+    super("DRAFT_BUSY", "This draft is busy");
+  }
+}
+
+/** The draft already holds the maximum number of versions (nothing is evicted automatically). */
+export class VersionLimit extends DomainError {
+  constructor(readonly max: number) {
+    super("VERSION_LIMIT", "This draft has reached its limit of versions");
+  }
+}
+
+/** Too many versions were created recently across the account. */
+export class VersionRateLimited extends DomainError {
+  constructor() {
+    super("VERSION_RATE_LIMITED", "Too many versions created recently");
+  }
+}
+
+// --- export (S4a) ---------------------------------------------------------------------------------------------
+
+/** The draft changed since the confirmation page was rendered (revision or content hash), or the form is stale: nothing was reserved. */
+export class ExportConflict extends DomainError {
+  constructor() {
+    super("EXPORT_CONFLICT", "This draft changed since the confirmation page was shown");
+  }
+}
+
+/** The package did not validate as verified: it can never be exported. */
+export class ExportNotVerified extends DomainError {
+  constructor() {
+    super("EXPORT_NOT_VERIFIED", "This draft is not fully verified");
+  }
+}
+
+/** The renderer refused the package: nothing was reserved. `reason` is a machine-readable RenderError code, never content. */
+export class ExportRenderFailed extends DomainError {
+  constructor(readonly reason: string) {
+    super("EXPORT_RENDER_FAILED", "The documents could not be laid out");
+  }
+}
+
+/** An equivalent export is being cancelled or has outlived its deadline (or a row lock timed out): try again shortly. */
+export class ExportBusy extends DomainError {
+  constructor() {
+    super("EXPORT_BUSY", "An export of this draft is busy");
+  }
+}
+
+/** The same export failed repeatedly for a reason that retrying will not fix. */
+export class ExportUnavailable extends DomainError {
+  constructor() {
+    super("EXPORT_UNAVAILABLE", "This export is not available");
+  }
+}
+
+/** Export is switched off in this environment (EXPORT_ENABLED). */
+export class ExportDisabled extends DomainError {
+  constructor() {
+    super("EXPORT_DISABLED", "Export is not enabled");
+  }
+}
+
+/** The job's deadline has passed: a late commit is refused so it can never be billed (the caller finishes the job as failed). */
+export class DeadlineExceeded extends DomainError {
+  constructor() {
+    super("DEADLINE_EXCEEDED", "The job passed its deadline");
+  }
+}
+
 export class InvariantViolation extends DomainError {
   constructor(detail: string) {
     super("INVARIANT_VIOLATION", detail);

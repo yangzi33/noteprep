@@ -38,8 +38,8 @@ async function sweepForever(jobs: JobsDal, sweepMs: number, signal: AbortSignal,
     try {
       const report = await jobs.sweep();
       onAlive?.();
-      if (report.requeued || report.failed || report.canceled || report.drift.length) {
-        log("sweep", { requeued: report.requeued, failed: report.failed, canceled: report.canceled, drift: report.drift.length });
+      if (report.requeued || report.failed || report.canceled || report.drift.length || report.exportDrift.length || report.sweepRowErrors) {
+        log("sweep", { requeued: report.requeued, failed: report.failed, canceled: report.canceled, drift: report.drift.length, exportDrift: report.exportDrift.length, sweepRowErrors: report.sweepRowErrors });
       }
     } catch (error) {
       log("sweep_error", { code: error instanceof Error ? error.name : "unknown" });

@@ -30,6 +30,14 @@ export async function processJob(job: ClaimedJob, deps: PipelineDeps): Promise<J
   }, Math.max(1, Math.floor(leaseMs / 3)));
 
   try {
+    // SAFETY NET until the export handler exists (S4b replaces this): an export job this worker cannot run is finished as
+    // failed, which releases its reservation, instead of being run through the legacy generate pipeline.
+    if (job.kind === "export") {
+      clearInterval(timer);
+      await settlement.finishJob({ jobId: job.id, fencingToken: job.fencingToken, outcome: "failed", errorCode: "export_not_supported" });
+      log("job_failed", { ...fields, code: "export_not_supported" });
+      return "failed";
+    }
     await runPipeline(job, deps, controller.signal);
     log("job_succeeded", fields);
     return "succeeded";

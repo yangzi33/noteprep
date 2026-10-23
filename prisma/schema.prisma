@@ -21,6 +21,7 @@ enum ProfileStatus {
 enum JobKind {
   generate
   compile
+  export
 
   @@map("job_kind")
 }
@@ -92,13 +93,14 @@ model Profile {
   deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  lessons       Lesson[]
-  jobs          GenerationJob[]
-  buckets       UsageBucket[]
-  reservations  UsageReservation[]
-  subscriptions Subscription[]
-  idempotency   IdempotencyKey[]
-  drafts        Draft[]
+  lessons         Lesson[]
+  jobs            GenerationJob[]
+  buckets         UsageBucket[]
+  reservations    UsageReservation[]
+  subscriptions   Subscription[]
+  idempotency     IdempotencyKey[]
+  drafts          Draft[]
+  exportSnapshots ExportSnapshot[]
 
   @@map("profile")
 }
@@ -126,6 +128,7 @@ model Lesson {
   topic             CurriculumTopic?   @relation(fields: [topicId, curriculumVersionId], references: [id, versionId], onDelete: Restrict)
   revisions         LessonRevision[]   @relation("LessonRevisions")
   jobs              GenerationJob[]
+  exports           Export[]
 
   @@unique([id, ownerId])
   @@map("lesson")
@@ -157,6 +160,7 @@ model LessonRevision {
   derived    LessonRevision[] @relation("RevisionSource")
   jobs       GenerationJob[]
   currentFor Lesson[]         @relation("CurrentRevision")
+  exports    Export[]
 
   @@unique([lessonId, number])
   @@unique([id, ownerId])
@@ -199,8 +203,10 @@ model GenerationJob {
   lesson      Lesson            @relation(fields: [lessonId, ownerId], references: [id, ownerId])
   revision    LessonRevision?   @relation(fields: [revisionId, ownerId], references: [id, ownerId], onDelete: Restrict)
   reservation UsageReservation?
+  exports     Export[]
 
   // Partial indexes (queued by run_after, running by lease) are added in SQL.
+  @@unique([id, ownerId])
   @@index([ownerId, state])
   @@index([ownerId, createdAt(sort: Desc)])
   @@map("generation_job")
@@ -611,4 +617,63 @@ model TopicConcept {
 
   @@id([topicId, conceptId])
   @@map("topic_concept")
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Exports (D-104): the immutable snapshot of what was seen and paid for, and the entitlement row.
+// Guards, CHECKs, the live-key partial unique index, consistency triggers and grants are in *_export_tables.
+// ---------------------------------------------------------------------------------------------------
+
+/// Immutable (trigger). No foreign keys to the draft tables: drafts are purged, snapshots are not.
+model ExportSnapshot {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId          String   @map("owner_id") @db.Uuid
+  draftId          String   @map("draft_id") @db.Uuid
+  draftVersionId   String   @map("draft_version_id") @db.Uuid
+  draftVersionRev  Int      @map("draft_version_rev")
+  /// The FULL LessonPackage (request and context included).
+  content          Json
+  packageHash      String   @map("package_hash")
+  questionMeta     Json     @map("question_meta")
+  changeSummary    Json     @map("change_summary")
+  /// { v: 1, documents, locale, pageFormat, templateVersion, renderVersion }
+  spec             Json
+  /// { document: sha256 hex of the rendered source }
+  texSha256        Json     @map("tex_sha256")
+  exportKey        String   @map("export_key")
+  contentKey       String   @map("content_key")
+  validationReport Json     @map("validation_report")
+  validatorVersion String   @map("validator_version")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner   Profile  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  exports Export[]
+
+  @@unique([id, ownerId])
+  @@index([ownerId, contentKey], map: "export_snapshot_content_key_idx")
+  @@map("export_snapshot")
+}
+
+/// One export. The partial unique index export_live_key (owner_id, export_key) WHERE state IN ('pending','succeeded') is SQL.
+model Export {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId     String    @map("owner_id") @db.Uuid
+  snapshotId  String    @map("snapshot_id") @db.Uuid
+  exportKey   String    @map("export_key")
+  lessonId    String    @map("lesson_id") @db.Uuid
+  jobId       String    @unique @map("job_id") @db.Uuid
+  revisionId  String?   @map("revision_id") @db.Uuid
+  /// pending | succeeded | failed (CHECK)
+  state       String    @default("pending")
+  failureCode String?   @map("failure_code")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  settledAt   DateTime? @map("settled_at") @db.Timestamptz(6)
+
+  snapshot ExportSnapshot  @relation(fields: [snapshotId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  lesson   Lesson          @relation(fields: [lessonId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  job      GenerationJob   @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  revision LessonRevision? @relation(fields: [revisionId, lessonId], references: [id, lessonId], onDelete: Restrict)
+
+  @@index([ownerId, createdAt(sort: Desc)], map: "export_owner_created_idx")
+  @@map("export")
 }
