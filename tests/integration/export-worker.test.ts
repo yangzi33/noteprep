@@ -2,6 +2,7 @@ import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { ManifestIncomplete } from "@/lib/domain/errors";
 import { renderForExport, type ExportSpec } from "@/lib/domain/export-spec";
 import { sha256Hex } from "@/lib/domain/hash";
 import { parseManifestV2 } from "@/lib/domain/manifest";
@@ -81,11 +82,13 @@ class BlockingCompiler implements DocumentCompiler {
   private entered!: () => void;
   readonly started = new Promise<void>((r) => (this.entered = r));
   private readonly gate = new Promise<void>((r) => (this.release = r));
+  compiles = 0;
   constructor(private readonly onEntered?: () => Promise<void>) {}
   open() {
     this.release();
   }
   async compile(req: Parameters<DocumentCompiler["compile"]>[0]) {
+    this.compiles++;
     this.entered();
     await this.onEntered?.();
     await new Promise<void>((resolve, reject) => {
@@ -260,7 +263,7 @@ describe("the worker runs export jobs", () => {
     expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
   });
 
-  it("a deadline that passes before storing fails the export as deadline_exceeded and releases", async () => {
+  it("a deadline moved in the database during compile is refused by the commit (database clock), failing as deadline_exceeded and releasing", async () => {
     const { ctx, exportId, jobId } = await newExport();
     const slow = new BlockingCompiler(async () => {
       await h.admin.query(`UPDATE generation_job SET deadline_at = now() - interval '1 second' WHERE id = $1`, [jobId]);
@@ -270,6 +273,41 @@ describe("the worker runs export jobs", () => {
     expect(await h.jobRow(jobId)).toMatchObject({ state: "failed", error_code: "deadline_exceeded" });
     expect(await h.exportRow(exportId)).toMatchObject({ state: "failed", failure_code: "deadline_exceeded" });
     expect(await h.reservationRow(jobId)).toMatchObject({ state: "released", settle_reason: "failed:deadline_exceeded" });
+    expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
+    expect(await filesOf(ctx.userId)).toEqual([]);
+  });
+
+  it("the worker's own deadline check stops an attempt past its deadline before compiling or storing anything", async () => {
+    const { ctx, exportId, jobId } = await newExport();
+    const documentCompiler = new SkeletonDocumentCompiler();
+    const jobs = {
+      ...h.worker.jobs,
+      claimNext: async (workerId: string, leaseMs: number) => {
+        const job = await h.worker.jobs.claimNext(workerId, leaseMs);
+        return job && { ...job, deadlineAt: new Date(Date.now() - 1000) }; // the claim says the deadline has passed
+      },
+    };
+    expect(await runOnce(deps({ jobs, documentCompiler }), "w-wd")).toBe("failed");
+    expect(documentCompiler.compiles).toBe(0);
+    expect(await filesOf(ctx.userId)).toEqual([]);
+    expect(await h.jobRow(jobId)).toMatchObject({ state: "failed", error_code: "deadline_exceeded", attempt: 1 });
+    expect(await h.exportRow(exportId)).toMatchObject({ state: "failed", failure_code: "deadline_exceeded" });
+    expect(await h.reservationRow(jobId)).toMatchObject({ state: "released", settle_reason: "failed:deadline_exceeded" });
+    expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
+  });
+
+  it("a commit refused as an incomplete manifest is manifest_incomplete: failed, released, objects deleted, never requeued", async () => {
+    const { ctx, exportId, jobId } = await newExport();
+    const settlement = {
+      ...h.worker.settlement,
+      commitExport: async () => {
+        throw new ManifestIncomplete("test");
+      },
+    };
+    expect(await runOnce(deps({ settlement }), "w-mi")).toBe("failed");
+    expect(await h.jobRow(jobId)).toMatchObject({ state: "failed", error_code: "manifest_incomplete", attempt: 1 });
+    expect(await h.exportRow(exportId)).toMatchObject({ state: "failed", failure_code: "manifest_incomplete" });
+    expect(await h.reservationRow(jobId)).toMatchObject({ state: "released", settle_reason: "failed:manifest_incomplete" });
     expect(await h.bucket(ctx.userId)).toMatchObject({ used: 0, reserved: 0 });
     expect(await filesOf(ctx.userId)).toEqual([]);
   });
@@ -306,6 +344,8 @@ describe("the worker runs export jobs", () => {
     expect(await h.bucket(ctx.userId)).toMatchObject({ used: 1, reserved: 0 });
     expect((await h.admin.query(`SELECT count(*)::int AS n FROM lesson_revision WHERE created_by_job_id = $1`, [jobId])).rows[0].n).toBe(1);
     expect(await h.jobRow(jobId)).toMatchObject({ state: "succeeded", attempt: 2 });
+    expect((await filesOf(ctx.userId)).length).toBe(6); // only the winning attempt's files: the stale one never stored anything
+    expect(blocker.compiles).toBe(1);
   });
 
   it("a lost commit acknowledgement leaves the committed result alone: abandoned, consumed once", async () => {
