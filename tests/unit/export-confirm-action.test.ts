@@ -60,7 +60,7 @@ beforeEach(() => {
 describe("confirmExportAction", () => {
   it("redirects an invalid draft id to /prepare and other invalid input to the confirm page", async () => {
     expect(href(await run(form({ draftId: "nope" })))).toBe("/prepare");
-    for (const bad of [{ expectedRev: "0" }, { expectedRev: "x" }, { expectedContentHash: "" }, { key: "short" }, { versionId: "nope" }]) {
+    for (const bad of [{ expectedRev: "0" }, { expectedRev: "x" }, { expectedContentHash: "" }, { key: "short" }, { versionId: "nope" }] as Record<string, string>[]) {
       const to = href(await run(form(bad)));
       expect(to, JSON.stringify(bad)).toContain(`/drafts/${D}/export?`);
       expect(to).toContain("error=INVALID_REQUEST");
