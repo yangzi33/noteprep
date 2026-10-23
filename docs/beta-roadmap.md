@@ -1,5 +1,7 @@
 # Beta roadmap (B0 to B6)
 
+> **Direction change (2026-10-22):** B1 (topic-faithful question engine) is superseded by the preview-first, LLM-first flow in [generation-flow](generation-flow.md) (D-94 to D-101); the other milestones stand unless that document says otherwise.
+
 Source: the strategy review approved on 2026-10-21; decisions are recorded as D-70 to D-84 in [decisions.md](decisions.md). Status is updated by hand. **Nothing here is a commitment to a date.** Estimates are unmeasured.
 
 Order is the build order. "Concierge" means the founder generates packs for about 5 tutors and interviews them weekly; "self-serve" is the invite-only free Beta for 10 to 30 tutors.
