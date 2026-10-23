@@ -23,7 +23,7 @@ export const TOPIC = `${versionId}/level-a/course-1/equations/both-sides`;
 
 export const OPEN_GEN: GenerationLimits = { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000, rateLimitPerHourPerIp: 1000 };
 /** Generous export limits so a test that exercises one rule is not tripped by another. */
-export const OPEN_LIMITS: Limits = { ...DEFAULT_LIMITS, exportsPerUserPerHour: 10_000, exportConcurrencyPerUser: 20, exportMaxQueuedGlobal: 100_000, draftCreatesPerUserPerHour: 10_000, maxActiveDraftsPerUser: 1_000 };
+export const OPEN_LIMITS: Limits = { ...DEFAULT_LIMITS, exportsPerUserPerHour: 10_000, exportConfirmAttemptsPerUserPerHour: 100_000, exportConcurrencyPerUser: 20, exportMaxQueuedGlobal: 100_000, draftCreatesPerUserPerHour: 10_000, maxActiveDraftsPerUser: 1_000 };
 
 export const request = (overrides: Record<string, unknown> = {}) => ({
   requestVersion: 2,

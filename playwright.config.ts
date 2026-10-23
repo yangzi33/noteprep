@@ -6,6 +6,9 @@ const env = e2eEnv();
 // keep running against the default "legacy" server. Both serve the same production build, on different ports.
 const draftWebUrl = "http://127.0.0.1:3101";
 const DRAFT_SPEC = /draft-flow\.spec\.ts$/;
+// The export flow (EXPORT_ENABLED=1, S4b) also has its own server, so the draft spec keeps its disabled "Export is coming next" button.
+const exportWebUrl = "http://127.0.0.1:3102";
+const EXPORT_SPEC = /export-flow\.spec\.ts$/;
 const serverEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.apiUrl,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.publishableKey,
@@ -27,8 +30,9 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: { baseURL: env.webUrl, trace: "retain-on-failure" },
   projects: [
-    { name: "chromium", testIgnore: DRAFT_SPEC, use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: [DRAFT_SPEC, EXPORT_SPEC], use: { ...devices["Desktop Chrome"] } },
     { name: "chromium-draft", testMatch: DRAFT_SPEC, use: { ...devices["Desktop Chrome"], baseURL: draftWebUrl } },
+    { name: "chromium-export", testMatch: EXPORT_SPEC, use: { ...devices["Desktop Chrome"], baseURL: exportWebUrl } },
   ],
   webServer: [
     {
@@ -45,6 +49,13 @@ export default defineConfig({
       timeout: 60_000,
       reuseExistingServer: false,
       env: { ...serverEnv, FLOW_MODE: "draft" },
+    },
+    {
+      command: "pnpm exec next start -p 3102",
+      url: `${exportWebUrl}/healthz`,
+      timeout: 60_000,
+      reuseExistingServer: false,
+      env: { ...serverEnv, FLOW_MODE: "draft", EXPORT_ENABLED: "1" },
     },
   ],
 });

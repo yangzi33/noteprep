@@ -24,7 +24,8 @@ const cache = hostCacheDir(tmpdir(), process.getuid?.() ?? 0, process.pid);
 
 // Sandbox tests that run ON THE WORKER HOST inside the hosttest image (runbook section 7), with the worker's identity and
 // docker socket mount but no secrets. There is no globalSetup because there is no database on the host. The full-chain test
-// (tests/latex/pipeline.test.ts) needs Postgres, so it is excluded here and covered by CI and the staging smoke test.
+// (tests/latex/pipeline.test.ts) and the export chain (tests/latex/export-pipeline.test.ts) need Postgres, so they are excluded here
+// and covered by `pnpm test:latex` and CI's database jobs, and by the staging smoke test.
 // Mounting the host's /var/run/docker.sock and running with --user 0 (as ci.yml does) is a LOCAL/CI-only convenience on a
 // throwaway runner. It is NEVER the production arrangement: on the worker host use the dedicated runner socket and uid 10001.
 export default defineConfig({
@@ -40,7 +41,7 @@ export default defineConfig({
     // The image root is read-only and only /tmp is writable (vitest 5 would otherwise write under node_modules).
     fsModuleCachePath: cache,
     include: ["tests/latex/**/*.test.ts"],
-    exclude: ["tests/latex/pipeline.test.ts"],
+    exclude: ["tests/latex/pipeline.test.ts", "tests/latex/export-pipeline.test.ts"],
     fileParallelism: false,
     testTimeout: 120_000,
     hookTimeout: 120_000,

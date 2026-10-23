@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, formatUtc } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
 
 export default async function HistoryPage() {
@@ -34,11 +34,13 @@ export default async function HistoryPage() {
               <MaterialRow
                 key={item.jobId}
                 jobId={item.jobId}
+                href={statusHref(item)}
                 title={item.title}
                 state={item.state}
                 label={stateLabel(item.state)}
                 date={formatUtc(item.createdAt)}
-                outcome={describeOutcome(item.state, item.errorCode)}
+                // An export's page states exactly what happened to the generation; this list never guesses it.
+                outcome={item.kind === "export" ? null : describeOutcome(item.state, item.errorCode)}
               />
             ))}
           </ul>

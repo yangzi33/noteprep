@@ -1,6 +1,7 @@
 import { StaleOrCanceled } from "@/lib/domain/errors";
 import type { ClaimedJob } from "@/lib/server/dal/jobs";
 import { storageLogFields } from "@/lib/storage/store";
+import { runExport } from "./export";
 import { log } from "./log";
 import { CancelRequested, LostLease, PipelineError, runPipeline, type PipelineDeps } from "./pipeline";
 
@@ -15,7 +16,7 @@ export type JobOutcome = "succeeded" | "requeued" | "failed" | "canceled" | "aba
 export async function processJob(job: ClaimedJob, deps: PipelineDeps): Promise<JobOutcome> {
   const controller = new AbortController();
   const { jobs, settlement, leaseMs } = deps;
-  const fields = { jobId: job.id, attempt: job.attempt };
+  const fields = { jobId: job.id, kind: job.kind, attempt: job.attempt };
 
   const timer = setInterval(() => {
     jobs
@@ -30,15 +31,7 @@ export async function processJob(job: ClaimedJob, deps: PipelineDeps): Promise<J
   }, Math.max(1, Math.floor(leaseMs / 3)));
 
   try {
-    // SAFETY NET until the export handler exists (S4b replaces this): an export job this worker cannot run is finished as
-    // failed, which releases its reservation, instead of being run through the legacy generate pipeline.
-    if (job.kind === "export") {
-      clearInterval(timer);
-      await settlement.finishJob({ jobId: job.id, fencingToken: job.fencingToken, outcome: "failed", errorCode: "export_not_supported" });
-      log("job_failed", { ...fields, code: "export_not_supported" });
-      return "failed";
-    }
-    await runPipeline(job, deps, controller.signal);
+    await (job.kind === "export" ? runExport(job, deps, controller.signal) : runPipeline(job, deps, controller.signal));
     log("job_succeeded", fields);
     return "succeeded";
   } catch (raw) {

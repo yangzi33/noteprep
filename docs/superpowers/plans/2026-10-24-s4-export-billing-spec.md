@@ -51,11 +51,11 @@ CREATE INDEX export_snapshot_content_key_idx ON export_snapshot(owner_id, conten
 Guards: `export_snapshot_guard` BEFORE UPDATE always raises 55000; `export_guard` BEFORE UPDATE raises unless `OLD.state='pending'` and only state/revision_id/failure_code/settled_at change with `NEW.state IN ('succeeded','failed')`. Replace `generation_job_reservation_shape()` (same trigger, new body): generate and export require a reservation; compile forbids one; an export job requires a matching `export` row (job, owner, lesson). `check_export_consistency(export_id)` called by three DEFERRABLE INITIALLY DEFERRED constraint triggers (on `export` AFTER INSERT OR UPDATE; on `generation_job` AFTER UPDATE WHEN `NEW.kind='export' AND OLD.state IS DISTINCT FROM NEW.state`; on `usage_reservation` AFTER UPDATE WHEN `OLD.state IS DISTINCT FROM NEW.state`, looking the export up by job id and returning if none) enforcing: kind export; `e.lesson_id=j.lesson_id`; pending => job queued|running and reservation reserved; succeeded => job succeeded, reservation consumed, `j.revision_id=e.revision_id`; failed => job failed|canceled and reservation released. Add an `export_state_drift` view (security_invoker). Grants: `export_snapshot` app SELECT/INSERT, worker SELECT; `export` app SELECT/INSERT/UPDATE, worker SELECT/UPDATE; **no DELETE for either role**; RLS enabled with the `runtime_roles_all` policy; `worker_runtime` SELECT on the drift view; add both tables to `tests/integration/schema.test.ts` TABLES.
 
 ## Global lock order
-`profile -> draft -> draft_version -> generation_job -> export -> lesson -> reservation -> usage_bucket`; `rate_limit_window` rows are leaf locks. Rule: no path holding profile X may wait on a job, export or lesson lock.
+`profile -> draft -> draft_version -> generation_job -> export -> lesson -> reservation -> usage_bucket`; `rate_limit_window` rows are leaf locks. The confirm-attempt counter (`exp:try:u:`) takes one alone, in its own transaction BEFORE the confirm transaction, holding no other lock. Rule: no path holding profile X may wait on a job, export or lesson lock.
 | Path | Locks in order |
 |---|---|
 | createGeneration (unchanged) | profile X, rate_limit_window, bucket X, inserts |
-| confirmExport | lock_timeout, profile X, (reads without locks), rate_limit_window, bucket X, inserts (snapshot, lesson, job, export, reservation) |
+| confirmExport | (separate earlier transaction: rate_limit_window `exp:try:u:` only), then lock_timeout, profile X, (reads without locks), rate_limit_window, bucket X, inserts (snapshot, lesson, job, export, reservation) |
 | commitSuccess (unchanged) | job X, lesson S, profile S, reservation, bucket |
 | commitExport | job X, export X, lesson S, profile S, revision insert, lesson U, reservation X, bucket X |
 | finishLockedJob (finishJob, retryOrFail failing, sweep, cancelJob) | job X, export X (settle), reservation X, bucket X |
@@ -105,6 +105,24 @@ SELECT * FROM "usage_bucket_drift";                       -- must be empty
 - **Sweep starvation:** the sweep selects `ORDER BY created_at LIMIT 50` and a poisoned row stays eligible, so with 50 or more poisoned rows nothing behind them is recovered. Poisoned rows are now logged with the job id and SQLSTATE (`sweep_row_error`); an alert on that event is advised.
 - **M-1:** the in-transaction `rev`/content-hash re-check in `confirmExport` has no test (a hook between preparation and the transaction is needed). It is not load-bearing for billing because the snapshot is the version the tutor saw.
 - **M-4:** `confirmExport` can join a queued export that the sweep will fail (`attempt >= max_attempts`). Nobody is charged; the tutor sees a failure and must confirm again.
-- **M-5:** `prepare()` (validation plus rendering three documents) runs before any limit and confirms that join, reuse, conflict or are refused are not counted: the S4b route must add a per-request or per-IP limit.
+- **M-5 (implemented in S4b-2):** `prepare()` (validation plus rendering three documents) used to run before any limit. `confirmExport` now counts every NEW idempotency key against `exportConfirmAttemptsPerUserPerHour` (`EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR`, key `exp:try:u:{owner}`) in its own short transaction BEFORE `prepare()`, whether the confirm later succeeds or is refused; the count stays committed. A true replay (same key and same request hash) is not counted; a recorded key reused with different input fails with `IDEMPOTENCY_KEY_REUSED` before `prepare()`. There is no per-IP limit (no IP hashing exists; the owner has not approved one). The matching CLAUDE.md edit was applied in PR #39.
+- **M-a (accepted):** parallel first-time requests with the same new key each count one attempt, so a burst of N counts up to N. It costs only attempts, never allowance.
+- **M-e (accepted):** a confirmation page opened without `rev` cannot tell that the draft changed since the link was made; the form still carries the revision and hash it was rendered from, so the tutor pays only for what that page showed.
 - **M-7:** the golden render test pins one fixture; nothing ties the compiler image or compile flags to `RENDER_VERSION`.
 - **M-8:** the reuse lookup does not check `lesson.deleted_at`; there is no deletion path yet. S5's `retired` state must cover it.
+
+## S4b status (implemented behind `EXPORT_ENABLED`)
+Done: worker `runExport` (S4b-1); confirmation page, action and confirm-attempt limit (S4b-2, M-5); status page, polling endpoint and cancel (S4b-3); export E2E on a third server, and the docs and rollout note in [fresh-droplet-setup.md](../../fresh-droplet-setup.md) section K (S4b-4). The CLAUDE.md edit was applied in PR #39.
+
+Remaining for S5: page format parameter; manifest v3 and reader; deterministic compile flags; PDF text-extraction proof tests; orphan reconciler and artifact recovery; retired state (M-8); pinning `RENDER_VERSION` to the compiler image (M-7).
+
+Known limits of S4b:
+- Parallel first-time requests with the same new key each count one confirm attempt (M-a); it costs attempts only, never allowance.
+- A confirm link without `rev` shows no stale-draft notice (the page cannot tell the link is old); the form it renders still carries the revision and hash it displays, which the server checks on submit.
+- Login has no return-to-page, so a link opened with an expired session goes to `/login` and the tutor must navigate back.
+- There is no per-IP limit on confirmation attempts (no IP hashing exists; not approved).
+- **No operator cancel tool.** With `EXPORT_ENABLED=0` pending exports are settled only by the tutor or by the deadline sweep. Follow-up: an admin script that calls the DAL's cancel path (never raw SQL; the consistency trigger needs export, job, reservation and bucket counters settled together).
+- **M3:** the confirmation page always promises a charge, even when the confirm will be a free reuse of an identical earlier export; a `TOO_MANY_ACTIVE_JOBS` refusal has no link to the export that is already running.
+- **M7:** a cancel requested just before the worker commits shows "Stopping" until the lease expires and the sweep settles the export.
+- **M2:** the status page header shows no lesson title or version label: `ExportStatusDto` carries neither, and adding them needs a new owner-filtered DAL field. Follow-up.
+- **Polling bound:** the status poller stops after about a minute of "finishing up" (30 polls) and shows "We cannot confirm the final state"; refreshing the page resumes it.

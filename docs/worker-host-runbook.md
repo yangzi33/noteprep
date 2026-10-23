@@ -431,3 +431,7 @@ hosttest 摘要:`ghcr.io/yangzi33/noteprep-hosttest@sha256:6414bdc1b00c50ec7c7f9
 - 以及 CLAUDE.md §11 的其余上线条件(真实支付、人工数学审核、备份恢复演练、成本上限等)。
 
 本 runbook 的全部内容都是 **UNVERIFIED**,直到有人在真实主机上逐项执行并留下记录。
+
+## 14. S4b export (English)
+
+Exports (`kind = 'export'` jobs) are handled by the same worker unit and the same compiler. Nothing in this runbook changes, and `worker.env` gains no required variable. Before enabling `EXPORT_ENABLED` anywhere, update this host to the S4b image and keep web and worker on the same commit. See the "S4b export worker" note in [fresh-droplet-setup.md](fresh-droplet-setup.md) (section K) for the rollout order, the failure modes of an old worker, and the zero-pending-exports rollback check.

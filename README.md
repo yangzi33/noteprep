@@ -57,6 +57,13 @@ pnpm supabase:stop
 
 尚未建立(见实施计划):`test:latex`(Phase 2)。`test:supabase` 与 `db:up`/`db:down` 等是额外加入的命令。
 
+### Draft flow and export (English)
+- `FLOW_MODE` (`legacy` default, or `draft`): `draft` makes Prepare create a free draft preview instead of reserving an allowance.
+- `EXPORT_ENABLED` (`0` default, or `1`): only together with `FLOW_MODE=draft`, the draft page offers "Export PDFs" and `confirmExport` may reserve one generation and queue an export job (consumed only when all PDFs are stored). Leave it `0` until the rollout steps in [docs/fresh-droplet-setup.md](docs/fresh-droplet-setup.md) section K are done. The default 0 is also what the legacy E2E servers use.
+- Export limits (placeholders, all in `src/lib/server/limits.ts`): `EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR` (default 60; counts every new confirmation before the heavy render), `EXPORTS_PER_USER_PER_HOUR`, `EXPORT_CONCURRENCY_PER_USER`, `EXPORT_DEADLINE_MINUTES`, `EXPORT_MAX_ATTEMPTS`, `EXPORT_DEADLINE_GRACE_SECONDS`, `EXPORT_MAX_QUEUED_GLOBAL`.
+- `SKELETON_COMPILER_FAIL=compile_failed` (worker, tests only): the placeholder compiler fails every compile. Refused with `COMPILER=docker` and in production.
+- Export E2E: `pnpm test:e2e` starts a third server on port 3102 (`FLOW_MODE=draft`, `EXPORT_ENABLED=1`) for `tests/e2e/export-flow.spec.ts` (project `chromium-export`); the draft spec keeps its flag-off server on 3101. Run only it with `pnpm exec playwright test --project=chromium-export`. Add `E2E_COMPILER=docker` (after `pnpm latex:image`) to check real PDFs. Stop your own `pnpm worker:dev` first; the tests start their own workers on the same database.
+
 ## CI
 
 `.github/workflows/ci.yml`(pull request 与 push 到 `main`;PR 不使用仓库秘密):静态检查与构建、真实 Postgres 集成测试、本地 Supabase 栈的认证/Data API 边界测试。`.github/workflows/images.yml` 手动发布 worker/LaTeX/hosttest 镜像(见"Worker 打包与 staging 主机")。`.github/workflows/db-migrate.yml` 仅手动触发、仅 `main`、需要 `staging`/`production` 环境审批,用于对托管数据库执行 `prisma migrate deploy`。第三方 action 固定到提交 SHA;pnpm 通过 corepack 按 `packageManager` 精确版本安装。**`ci.yml` 已在 GitHub 上实际运行:PR #1 的三个作业全部通过(2026-10-19);`db-migrate.yml` 尚未运行过(需要你创建的环境与秘密)。** 端到端(Playwright)作业随 P1-T7 加入。Staging 准备清单见 [docs/staging-setup.md](docs/staging-setup.md)。

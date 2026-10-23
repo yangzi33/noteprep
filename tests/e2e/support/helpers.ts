@@ -114,7 +114,7 @@ export async function startWorker(overrides: Record<string, string> = {}): Promi
  * A worker that stores its files in the local Supabase Storage bucket, as the preview and download pages need.
  * Placeholder compiler by default; E2E_COMPILER=docker uses the real sandbox image (pnpm latex:image first).
  */
-export async function startStorageWorker(): Promise<RunningWorker> {
+export async function startStorageWorker(overrides: Record<string, string> = {}): Promise<RunningWorker> {
   const env = e2eEnv();
   const real = process.env.E2E_COMPILER === "docker";
   return startWorker({
@@ -122,5 +122,6 @@ export async function startStorageWorker(): Promise<RunningWorker> {
     SUPABASE_URL: env.apiUrl,
     SUPABASE_SECRET_KEY: env.secretKey,
     ...(real ? { COMPILER: "docker", ALLOW_FAKE_COMPILER: "0" } : {}),
+    ...overrides,
   });
 }

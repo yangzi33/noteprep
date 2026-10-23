@@ -18,7 +18,7 @@ afterAll(async () => {
   await h.close();
 });
 
-const ALLOWED = new Set(["EXPORT_CONFLICT", "EXPORT_BUSY", "STALE_OR_CANCELED", "DEADLINE_EXCEEDED", "NOT_FOUND", "TOO_MANY_ACTIVE_JOBS", "RATE_LIMITED", "QUEUE_BUSY", "ALLOWANCE_EXHAUSTED"]);
+const ALLOWED = new Set(["EXPORT_CONFLICT", "EXPORT_BUSY", "STALE_OR_CANCELED", "DEADLINE_EXCEEDED", "NOT_FOUND", "TOO_MANY_ACTIVE_JOBS", "QUEUE_BUSY", "ALLOWANCE_EXHAUSTED"]);
 
 describe("no deadlock between confirm, commit, legacy generation, cancel, finish and sweep", () => {
   it("200 iterations of mixed parallel operations on one account: typed refusals only, invariants hold, deadlock counter unchanged", async () => {
@@ -106,6 +106,7 @@ describe("no deadlock between confirm, commit, legacy generation, cancel, finish
     expect(after).toBe(before);
 
     // Real activity happened on every path.
+    expect(tally.created).toBeGreaterThanOrEqual(190); // RATE_LIMITED is not an allowed refusal here: the stress must really exercise confirm
     expect(tally.created).toBeGreaterThan(10);
     expect(tally.committed).toBeGreaterThan(10);
     expect(tally.canceled + tally.finished + tally.retried).toBeGreaterThan(10);

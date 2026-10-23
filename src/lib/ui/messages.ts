@@ -42,7 +42,7 @@ export function generationErrorMessage(code: string | null | undefined): string 
   return GENERATION_ERRORS[code] ?? "Something went wrong. Please try again.";
 }
 
-const FAILURE_REASONS: Record<string, string> = {
+export const FAILURE_REASONS: Record<string, string> = {
   llm_timeout: "The writing service took too long to respond.",
   llm_rate_limited: "The writing service was busy.",
   llm_overloaded: "The writing service was busy.",
@@ -63,6 +63,10 @@ const FAILURE_REASONS: Record<string, string> = {
   internal_error: "An unexpected error occurred.",
   export_not_supported: "Export is not available on this service yet.",
   render_mismatch: "The documents did not match what was confirmed.",
+  render_version_mismatch: "The document layout was updated while this was waiting. Please confirm the export again.",
+  snapshot_invalid: "The confirmed lesson could not be read back correctly, so the documents were not built.",
+  manifest_incomplete: "The finished files were incomplete, so they were not saved.",
+  canceled: "The export was canceled.",
 };
 
 /** A failed or canceled job never costs a generation; the message says so. */

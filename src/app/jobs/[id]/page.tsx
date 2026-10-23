@@ -8,13 +8,19 @@ import { toJobView } from "@/lib/ui/job-view";
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { ctx } = await requireAccount();
   const { id } = await params;
-  let view;
+  let dto;
   try {
-    view = toJobView(await webDal().generation.getJob(ctx, id));
+    dto = await webDal().generation.getJob(ctx, id);
   } catch (error) {
     if (domainErrorCode(error) === "NOT_FOUND") notFound();
     throw error;
   }
+  // An export that has not succeeded is followed on its own page (it knows what happened to the generation).
+  if (dto.kind === "export" && dto.state !== "succeeded") {
+    const exportId = await webDal().exports.findExportIdByJob(ctx, dto.id);
+    if (exportId) redirect(`/exports/${exportId}`);
+  }
+  const view = toJobView(dto);
   let hasPreview = false;
   // A finished curriculum lesson goes straight to its preview. Legacy placeholder packs have none, and stay here.
   if (view.state === "succeeded" && view.revisionId) {

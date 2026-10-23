@@ -461,19 +461,15 @@ describe("claiming, input and the runner safety net", () => {
     await expect(h.worker.jobs.getExportInput(jobId, token)).rejects.toMatchObject({ code: "STALE_OR_CANCELED" });
   });
 
-  it("a worker without an export handler fails the job as export_not_supported and releases the reservation", async () => {
+  it("the worker runs export jobs", async () => {
     await h.parkForeignJobs();
     const { ctx, exportId, jobId } = await newExport();
-    const outcome = await runOnce(deps, "w-safety");
-    expect(outcome).toBe("failed");
-    expect(await h.jobRow(jobId)).toMatchObject({ state: "failed", error_code: "export_not_supported" });
-    expect(await h.exportRow(exportId)).toMatchObject({ state: "failed", failure_code: "export_not_supported" });
-    expect(await h.reservationRow(jobId)).toMatchObject({ state: "released", settle_reason: "failed:export_not_supported" });
-    await expectUnchanged(ctx, { used: 0, reserved: 0 });
-    // export_not_supported is ours, not the content's: it never feeds the failure memo
-    const d = (await h.admin.query(`SELECT draft_id, draft_version_id FROM export_snapshot WHERE id = $1`, [(await h.exportRow(exportId)).snapshot_id])).rows[0];
-    const ref = await h.viewRef(ctx, d.draft_id, d.draft_version_id);
-    expect((await h.confirm(ctx, ref)).outcome).toBe("created");
+    const outcome = await runOnce(deps, "w-runs-export");
+    expect(outcome).toBe("succeeded");
+    expect(await h.jobRow(jobId)).toMatchObject({ state: "succeeded", error_code: null });
+    expect(await h.exportRow(exportId)).toMatchObject({ state: "succeeded", failure_code: null });
+    expect(await h.reservationRow(jobId)).toMatchObject({ state: "consumed" });
+    await expectUnchanged(ctx, { used: 1, reserved: 0 });
   });
 
   it("the legacy generate pipeline still runs for generate jobs next to export jobs", async () => {

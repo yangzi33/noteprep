@@ -39,8 +39,9 @@ import type { Db } from "../db";
 import { DEV_DEFAULT_LIMITS, type GenerationLimits } from "@/lib/domain/generation";
 import { DEFAULT_LIMITS, type Limits } from "../limits";
 import { lockAllowanceBucket } from "./allowance-source";
+import { cancelOwnedJob } from "./cancel";
 import { stateOf, summaryOf } from "./drafts";
-import type { ConfirmExportResult, ExportStatusDto } from "./dto";
+import type { ConfirmExportResult, ExportStatusDto, JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { hasSqlState, inTransaction, type Tx } from "./tx";
 
@@ -49,7 +50,8 @@ import { hasSqlState, inTransaction, type Tx } from "./tx";
 // never import it (tests/unit/drafts-isolation.test.ts).
 //
 // LOCK ORDER (docs/superpowers/plans/2026-10-24-s4-export-billing-spec.md): profile -> draft -> draft_version -> generation_job
-// -> export -> lesson -> reservation -> usage_bucket; rate_limit_window rows are leaf locks. confirmExport holds profile X, then
+// -> export -> lesson -> reservation -> usage_bucket; rate_limit_window rows are leaf locks. Before the confirm transaction, a separate
+// short transaction increments the attempt counter (exp:try:u:) holding nothing else. confirmExport holds profile X, then
 // rate_limit_window, then the allowance bucket X, and only INSERTS rows after that. It never takes a lock on a generation_job,
 // export or lesson row (every lookup below is a plain read), so no path holding the profile lock can wait on a job lock.
 
@@ -291,6 +293,21 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         expectedContentHash: input.expectedContentHash,
       });
 
+      // Attempt limit (M-5), BEFORE the CPU-heavy prepare. Only a NEW key counts: a replay (double click, retry) is never
+      // refused. The increment runs in its own short transaction that holds no profile lock (rate_limit_window is a leaf
+      // lock taken alone), so it stays committed whether the confirm later succeeds or is refused.
+      const recorded = await db.idempotencyKey.findUnique({
+        where: { ownerId_operation_key: { ownerId, operation: EXPORT_CONFIRM_OPERATION, key: key.data } },
+        select: { requestHash: true },
+      });
+      // A recorded key reused with DIFFERENT input is the idempotency conflict, answered here before prepare (it would
+      // otherwise cost a full validate and render per call, uncounted). Only a true replay (same hash) skips the counter.
+      if (recorded && recorded.requestHash !== hash) throw new IdempotencyConflict();
+      if (!recorded) {
+        const attempts = await inTransaction(db, (tx) => incrementRateLimit(tx, `exp:try:u:${ownerId}`));
+        if (attempts > limits.exportConfirmAttemptsPerUserPerHour) throw new RateLimited();
+      }
+
       let prep: Prepared | { deferred: DomainError };
       try {
         prep = await prepare(ownerId, input);
@@ -342,6 +359,26 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         revisionId: row.revisionId,
         deadlineAt: job.deadlineAt,
       };
+    },
+
+    /**
+     * Cancels the export's job like generation.cancelJob (queued: canceled and released now; running: only flagged; terminal:
+     * unchanged). NOT gated by EXPORT_ENABLED: the rollback procedure must be able to stop exports with the flag off.
+     * Owner-filtered; a foreign export is NOT_FOUND. The lock order is job -> export -> reservation -> bucket (cancelOwnedJob).
+     */
+    async cancelExport(ctx: AuthedCtx, exportId: string): Promise<JobDto> {
+      if (!uuid.safeParse(exportId).success) throw new NotFound();
+      // A plain read: job_id never changes, and the job row is locked by cancelOwnedJob, which re-checks the owner.
+      const row = await db.export.findFirst({ where: { id: exportId, ownerId: ctx.userId }, select: { jobId: true } });
+      if (!row) throw new NotFound();
+      return cancelOwnedJob(db, ctx.userId, row.jobId);
+    },
+
+    /** The export of one of the caller's jobs, or null (no such job, someone else's job, or not an export). Owner-filtered. */
+    async findExportIdByJob(ctx: AuthedCtx, jobId: string): Promise<string | null> {
+      if (!uuid.safeParse(jobId).success) return null;
+      const row = await db.export.findFirst({ where: { jobId, ownerId: ctx.userId }, select: { id: true } });
+      return row?.id ?? null;
     },
   };
 }
