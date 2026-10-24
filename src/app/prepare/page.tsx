@@ -152,7 +152,8 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   const key = randomUUID(); // one key per rendered form: a double click or retried submit returns the same job
 
   return frame(
-    <div className={context ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" : "grid gap-6"}>
+    // minmax(0,1fr): a long option label must not widen the column past a phone viewport
+    <div className={context ? "grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" : "grid grid-cols-[minmax(0,1fr)] gap-6"}>
       <Card className="flex flex-col gap-6 p-6">
         <PreparePendingProvider>
         <h2 className="font-heading text-xl">Start with your teaching context</h2>
