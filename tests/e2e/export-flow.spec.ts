@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { allowanceText, createUser as createTestUser, deleteCreatedUsers, signIn, sql, startStorageWorker, type RunningWorker, type TestUser } from "./support/helpers";
 
-// Runs in the "chromium-export" project: a server started with FLOW_MODE=draft and EXPORT_ENABLED=1 (see playwright.config.ts),
+// Runs in the default "chromium" project: the server on port 3100 (FLOW_MODE=draft, EXPORT_ENABLED=1, see playwright.config.ts),
 // against a real worker process that shares the database. Only one worker runs at a time in this file.
 const userIds: string[] = [];
 const createUser = async () => {
@@ -20,7 +20,6 @@ test.afterAll(async () => {
 
 const SAMPLE = "sample-math@sample-1";
 const COURSE = `${SAMPLE}/level-a/course-1`;
-const FLAG_OFF_URL = "http://127.0.0.1:3101"; // the draft server with EXPORT_ENABLED unset
 const FULL_ALLOWANCE = "3 of 3 generations left.";
 const PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
 const DOCS = ["notes", "worksheet", "solutions"] as const;
@@ -323,20 +322,4 @@ test("another account gets 404 for an export and its status, and an anonymous ca
   await page.getByRole("button", { name: "Cancel export" }).click();
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "canceled");
   expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
-});
-
-test("with the flag off, the draft page keeps its disabled export button and the confirm page has no form", async ({ page }) => {
-  const user = await createUser();
-  const draftId = await newDraft(page, user);
-
-  await page.goto(`${FLAG_OFF_URL}/drafts/${draftId}`); // the same session cookie works on the other port
-  await expect(page.getByTestId("draft-export-disabled")).toBeDisabled();
-  await expect(page.getByTestId("draft-export-disabled")).toHaveText("Export is coming next");
-  await expect(page.getByTestId("draft-export")).toHaveCount(0);
-
-  await page.goto(`${FLAG_OFF_URL}/drafts/${draftId}/export`);
-  await expect(page.getByTestId("export-disabled")).toBeVisible();
-  await expect(page.getByTestId("export-confirm")).toHaveCount(0);
-  await expect(page.locator("input[name=expectedRev]")).toHaveCount(0);
-  expect(await exportsOf(draftId)).toHaveLength(0);
 });
