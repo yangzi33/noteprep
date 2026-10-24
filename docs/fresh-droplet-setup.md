@@ -13,7 +13,7 @@ Steps tagged **[you]** need your accounts or your hands. Commands run as root un
 2. **Supabase Storage** has the private `lesson-artifacts` bucket (created by the migrations). Keep the project URL and the **secret key** in your password manager. **[you]**
 3. **Publish images.** Run the **Publish images** workflow on `main`. From its Step Summary copy the three digest references: `<worker_ref>`, `<latex_ref>`, `<hosttest_ref>` (form `ghcr.io/<owner>/noteprep-worker@sha256:<64 hex>`). These are *manifest* digests, not image IDs. A worker image built before the last worker-related merge runs old code, so publish fresh. **[you]**
 4. **Registry token.** Create a GitHub token with `read:packages` only. It is used once on the host and then discarded. **[you]**
-5. **LaTeX image delivery** (pick one): (A, default) root pulls it and loads it into the runner's daemon with `docker save | docker load` (referencing it by digest afterwards is UNVERIFIED); or (B) make the LaTeX image package public (it contains no secrets), so the runner can `docker pull` it with no credentials. Your decision.
+5. **LaTeX image delivery:** make the LaTeX image package (`noteprep-latex`) public (it contains no secrets), so the runner can `docker pull` it by digest with no credentials (option B, now the default). Option A (`docker save | docker load`) FAILED on a real host on 2026-10-24: the image loads by ID only and the digest name does not resolve, so the first compile would fail.
 6. **LLM:** start with `LLM_PROVIDER=fake` and `LESSON_PROSE=template` (no model cost). The OpenAI adapter does not exist yet.
 
 ## B. Create the droplet **[you]**
@@ -126,12 +126,12 @@ Steps tagged **[you]** need your accounts or your hands. Commands run as root un
     ```
 21. Give the LaTeX image to the runner's daemon (the runner holds no registry credentials):
     ```sh
-    # option A
+    # option A (FAILED on a real host 2026-10-24: do not use; see option B)
     docker save <latex_ref> | sudo -u noteprep-runner env DOCKER_HOST=unix:///run/noteprep-runner/docker.sock docker load
     sudo -u noteprep-runner env DOCKER_HOST=unix:///run/noteprep-runner/docker.sock docker image inspect --format '{{.Id}}' <latex_ref>
     # option B (LaTeX image package made public): sudo -u noteprep-runner env DOCKER_HOST=... docker pull <latex_ref>
     ```
-    The sandbox runs with `--pull never`, so if the image cannot be resolved by digest here, the first compile fails. That is the UNVERIFIED part of option A.
+    The sandbox runs with `--pull never`, so if the image cannot be resolved by digest here, the first compile fails. That is why option A failed on 2026-10-24 ("No such image" for the digest name after `docker load`); use option B.
 22. Confirm the runner's home holds no credentials:
     ```sh
     find /home/noteprep-runner -path /home/noteprep-runner/.local/share/docker -prune -o -name config.json -print    # no output
@@ -192,7 +192,7 @@ Steps tagged **[you]** need your accounts or your hands. Commands run as root un
 30. Drills (record dates and results in runbook section 12): restart during a running job (`systemctl restart noteprep-worker`: the job still succeeds and the account's allowance is used once); restart the runner daemon (`systemctl --user -M noteprep-runner@ restart docker`, then smoke again); **full reboot with no manual steps** (the runner daemon, `/run/noteprep-runner` and the worker unit all come back, the socket stat is unchanged, smoke passes); one rollback (below).
 
 ## K. Afterwards
-31. **Updating the worker** (S5 rehearsal steps: [s5-staging-checklist.md](s5-staging-checklist.md)) (no automatic updates exist): publish new images, pull them by digest (steps 20 to 22), re-run the host sandbox tests with the new `<hosttest_ref>` and `<latex_ref>` (step 23), edit `LATEX_IMAGE` in `worker.env` and `WORKER_IMAGE` in `worker.image`, `systemctl restart noteprep-worker`, confirm `worker_started`, append to `releases.log`. Run database migrations first and keep them backward compatible.
+31. **Updating the worker** (S5 rehearsal steps: [s5-staging-checklist.md](s5-staging-checklist.md)) (no automatic updates exist). The paste-once blocks in [worker-update.md](worker-update.md) do the following in one go, with automatic restore of the previous digests when the new release does not start cleanly (written, never run on a real host). By hand: publish new images, pull them by digest (steps 20 to 22), re-run the host sandbox tests with the new `<hosttest_ref>` and `<latex_ref>` (step 23), edit `LATEX_IMAGE` in `worker.env` and `WORKER_IMAGE` in `worker.image`, `systemctl restart noteprep-worker`, confirm `worker_started`, append to `releases.log`. Run database migrations first and keep them backward compatible.
 32. **Rollback:** put the previous digests from the last line of `releases.log` back into both files, restart, confirm `worker_started`. Do not delete old images until the new version is proven.
 33. **Rotating a secret:** change it at the provider, edit `worker.env`, **restart the service**, then revoke the old value.
 34. **Watch for a stalled worker** (no alerting exists): a job stuck at "Curriculum and settings checked" means nothing is claiming jobs. Check `systemctl status noteprep-worker` and `journalctl -u noteprep-worker`. A read-only query for the oldest queued job helps: `SELECT min(created_at) FROM generation_job WHERE state = 'queued';`.
