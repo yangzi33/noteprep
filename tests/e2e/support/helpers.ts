@@ -58,7 +58,7 @@ export async function submitLesson(page: Page): Promise<string> {
   return page.url().split("/").pop()!;
 }
 
-export async function allowanceText(page: Page, path: "/lessons" | "/lessons/new" = "/lessons") {
+export async function allowanceText(page: Page, path: "/lessons" | "/lessons/new" | "/prepare" = "/lessons") {
   await page.goto(path);
   return (await page.getByTestId("allowance").textContent())?.trim() ?? "";
 }
@@ -125,3 +125,52 @@ export async function startStorageWorker(overrides: Record<string, string> = {})
     ...overrides,
   });
 }
+
+export const SAMPLE_VERSION = "sample-math@sample-1";
+export const SAMPLE_COURSE = `${SAMPLE_VERSION}/level-a/course-1`;
+
+/** Picks the sample topic "Unknown on both sides" through the real dropdowns on /prepare. */
+export async function chooseTopic(page: Page) {
+  await page.goto("/prepare");
+  await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
+  await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
+  await expect(page.getByTestId("select-level")).toBeEnabled();
+  await page.getByTestId("select-level").selectOption({ label: "Sample Level A" });
+  await expect(page.getByTestId("select-course")).toBeEnabled();
+  await page.getByTestId("select-course").selectOption(SAMPLE_COURSE);
+  await expect(page.getByTestId("select-unit")).toBeEnabled();
+  await page.getByTestId("select-unit").selectOption({ label: "Sample unit: Equations" });
+  await expect(page.getByTestId("select-topic")).toBeEnabled();
+  await page.getByTestId("select-topic").selectOption({ label: "Sample topic: Unknown on both sides" });
+  await expect(page).toHaveURL(/topic=/);
+}
+
+/** Creates a free draft from the (already signed-in) page; returns its id. `skip` unchecks documents of the pack first. */
+export async function createDraft(page: Page, skip: string[] = []): Promise<string> {
+  await chooseTopic(page);
+  for (const label of skip) await page.getByLabel(label).uncheck();
+  await page.getByRole("button", { name: "Create draft preview" }).click();
+  await expect(page).toHaveURL(/\/drafts\/[0-9a-f-]{36}$/);
+  return page.url().split("/").pop()!;
+}
+
+export interface ExportedLesson {
+  exportId: string;
+  lessonId: string;
+  revisionId: string;
+}
+
+/** From a draft page: confirm the export and wait until it has succeeded. A storage worker must be running. */
+export async function exportDraft(page: Page, opts: { pageFormat?: "letter" | "a4" } = {}): Promise<ExportedLesson> {
+  await page.getByTestId("draft-export").click();
+  await expect(page.getByTestId("export-confirm")).toBeVisible();
+  if (opts.pageFormat) await page.getByTestId(`export-format-${opts.pageFormat}`).check();
+  await page.getByTestId("export-confirm").click();
+  await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}/);
+  const exportId = new URL(page.url()).pathname.split("/").pop()!;
+  await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
+  const [row] = await sql<{ lesson_id: string; revision_id: string }>(`SELECT lesson_id, revision_id FROM export WHERE id = $1`, [exportId]);
+  return { exportId, lessonId: row!.lesson_id, revisionId: row!.revision_id };
+}
+
+export const bucketOf = (userId: string) => sql(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [userId]);
