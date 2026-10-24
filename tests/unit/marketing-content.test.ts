@@ -82,4 +82,18 @@ describe("landing content", () => {
       "Solutions / Answer Key",
     ]);
   });
+
+  it("describes the draft flow: select, preview, adjust, export (S6)", () => {
+    expect(landingContent.steps.map((x) => x.title)).toEqual(["Select", "Preview", "Adjust", "Export"]);
+    expect(landingContent.how.title).toBe("Select → Preview → Adjust → Export.");
+    expect(landingContent.builder.generate).toBe("Create draft preview");
+    expect(landingContent.steps[3]!.body).toMatch(/1 generation only when all .*PDFs are ready/);
+  });
+
+  it("never says a PDF can be opened or read before export, or that a generate job starts", () => {
+    const html = renderToStaticMarkup(createElement(LandingPage));
+    const text = [...all, ...visibleText(html)].join("\n");
+    expect(text).not.toMatch(/open the PDF|generated PDF before|PDF before you|before you decide to export|Start the job|Generate lesson pack|PDF previews/i);
+  });
 });
+

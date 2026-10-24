@@ -44,7 +44,7 @@ export const landingContent = {
   },
   builder: {
     overline: "Real output · compiled by NotePrep",
-    overlineNote: "A tutor-facing document builder with a selection form, PDF previews and PDF export.",
+    overlineNote: "A tutor-facing document builder with a selection form, a free draft preview and PDF export.",
     title: "Tutor workspace / Document builder",
     badge: "Sample preview",
     panelTitle: "Create a lesson pack",
@@ -58,7 +58,7 @@ export const landingContent = {
       { label: "Difficulty", value: "Mixed (easy to hard)" },
     ],
     checkbox: "Include Solutions / Answer Key",
-    generate: "Generate lesson pack",
+    generate: "Create draft preview",
     openPdf: "Open the sample PDF",
     caption:
       "These previews are the first pages of real PDFs compiled by NotePrep from sample data. The sample is not a real curriculum and makes no alignment claim.",
@@ -83,13 +83,13 @@ export const landingContent = {
   },
   how: {
     eyebrow: "The tutor workflow",
-    title: "Select → Generate → Preview → Export.",
+    title: "Select → Preview → Adjust → Export.",
   },
   steps: [
     { title: "Select", body: "Pick the curriculum, level, course and topic, then the lesson length and difficulty.", tag: "Your teaching context" },
-    { title: "Generate", body: "Start the job. You can leave the page and come back; progress is kept.", tag: "Notes, worksheet and answer key" },
-    { title: "Preview", body: "Read the draft preview and open the PDF before you decide to export.", tag: "Preview before export" },
-    { title: "Export PDF", body: "Download the notes, worksheet and answer key as separate PDFs.", tag: "PDF · Print or share your way" },
+    { title: "Preview", body: "Get a free draft you can read and adjust. Drafts use no generation.", tag: "Notes, worksheet and answer key" },
+    { title: "Adjust", body: "Replace or remove a question and make another version of the draft.", tag: "Free until you export" },
+    { title: "Export", body: "Export uses 1 generation only when all of your PDFs are ready. Then download them as separate PDFs.", tag: "PDF · Print or share your way" },
   ] satisfies Step[],
   documents: [
     {
@@ -132,7 +132,7 @@ export const landingContent = {
     reviewChip: "02 / You stay in charge",
     reviewTitle: "Typeset to read well. Reviewed by you.",
     reviewBody:
-      "Please review AI-assisted material before teaching. Read the draft preview and the generated PDF before you export. The math is produced and checked by code rather than written by the AI.",
+      "Please review AI-assisted material before teaching. Read the draft preview before you export, and read the PDFs before you teach. The math is produced and checked by code rather than written by the AI.",
     reviewPoints: ["Preview before you export", "Three separate documents, with answers kept apart", "A review reminder on every lesson"],
     callout: "Print-ready PDFs with LaTeX quality",
     calloutBody: "Consistent layouts, typeset equations and a separate tutor copy of the solutions.",
