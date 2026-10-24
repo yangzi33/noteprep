@@ -71,11 +71,17 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
     return frame(
       <Card className="p-6">
         <p className="text-sm" data-testid="no-curricula">
-          No curriculum is available yet. You can still use the{" "}
-          <Link href="/lessons/new" className="underline">
-            quick form
-          </Link>
-          .
+          No curriculum is available yet.
+          {!draftFlow && (
+            <>
+              {" "}
+              You can still use the{" "}
+              <Link href="/lessons/new" className="underline">
+                quick form
+              </Link>
+              .
+            </>
+          )}
         </p>
       </Card>,
     );

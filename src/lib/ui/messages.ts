@@ -34,7 +34,7 @@ const GENERATION_ERRORS: Record<string, string> = {
   EXPORT_RENDER_FAILED: "We could not lay out these documents. Nothing was used.",
   EXPORT_BUSY: "An export of this draft is being stopped or finished. Please try again in a moment.",
   EXPORT_UNAVAILABLE: "This export failed several times and cannot be retried. Nothing was used. Try changing the draft.",
-  EXPORT_DISABLED: "Export is not available yet.",
+  EXPORT_DISABLED: "PDF export is paused right now. Your draft is saved.",
 };
 
 export function generationErrorMessage(code: string | null | undefined): string | null {

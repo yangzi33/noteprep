@@ -65,15 +65,15 @@ describe("limits", () => {
 
 describe("FLOW_MODE and the limits in the environment modules", () => {
   const db = "postgresql://web_login:x@127.0.0.1:5432/db";
-  it("defaults to legacy and accepts only legacy or draft", () => {
-    expect(parseServerEnv({ DATABASE_URL: db }).FLOW_MODE).toBe("legacy");
+  it("defaults to draft and accepts only legacy or draft", () => {
+    expect(parseServerEnv({ DATABASE_URL: db }).FLOW_MODE).toBe("draft");
     expect(parseServerEnv({ DATABASE_URL: db, FLOW_MODE: "draft" }).FLOW_MODE).toBe("draft");
     for (const bad of ["Draft", "on", "", "both"]) expect(() => parseServerEnv({ DATABASE_URL: db, FLOW_MODE: bad })).toThrow();
   });
 
-  it("EXPORT_ENABLED is strict like FLOW_MODE and off by default", () => {
+  it("EXPORT_ENABLED is strict like FLOW_MODE and on by default", () => {
     const db = "postgresql://u:p@localhost:5432/x";
-    expect(parseServerEnv({ DATABASE_URL: db }).EXPORT_ENABLED).toBe("0");
+    expect(parseServerEnv({ DATABASE_URL: db }).EXPORT_ENABLED).toBe("1");
     expect(parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: "1" }).EXPORT_ENABLED).toBe("1");
     for (const bad of ["true", "on", "", "yes", "2"]) expect(() => parseServerEnv({ DATABASE_URL: db, EXPORT_ENABLED: bad })).toThrow();
   });

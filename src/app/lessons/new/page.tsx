@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { serverEnv } from "@/lib/server/env";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { createLesson } from "./actions";
 
@@ -11,6 +13,7 @@ const inputClass = "w-full rounded border px-3 py-2";
 
 export default async function NewLessonPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { ctx } = await requireAccount();
+  if (serverEnv().FLOW_MODE === "draft") redirect("/prepare");
   const { error } = await searchParams;
   const allowance = await webDal().history.getAllowance(ctx);
   const exhausted = allowance !== null && allowance.remaining <= 0;

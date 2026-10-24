@@ -7,10 +7,10 @@ const ServerEnv = z.object({
   DATABASE_URL: z.url(),
   /** "1" shows the clearly labelled SAMPLE curriculum dataset (development/staging only). Off by default. */
   CURRICULUM_ALLOW_SAMPLE: z.enum(["0", "1"]).default("0"),
-  /** "legacy": Prepare reserves an allowance and queues a job. "draft": Prepare creates a free draft preview (D-106). */
-  FLOW_MODE: z.enum(["legacy", "draft"]).default("legacy"),
-  /** "1" lets confirmExport reserve allowance and queue export jobs (S4). Off by default; deploy order: migrate, worker, web, flag. */
-  EXPORT_ENABLED: z.enum(["0", "1"]).default("0"),
+  /** "draft" (default): Prepare creates a free draft preview (D-106). "legacy": Prepare reserves an allowance and queues a job; kept as a kill switch. */
+  FLOW_MODE: z.enum(["legacy", "draft"]).default("draft"),
+  /** "1" (default) lets confirmExport reserve allowance and queue export jobs. "0" pauses export (kill switch; pending exports still settle). The two defaults change together (S6): draft without export would give tutors no PDFs. */
+  EXPORT_ENABLED: z.enum(["0", "1"]).default("1"),
 });
 export type ServerEnv = z.infer<typeof ServerEnv> & { limits: Limits };
 

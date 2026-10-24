@@ -5,6 +5,7 @@ import { domainErrorCode } from "@/lib/domain/errors";
 import { GenerateInput, IdempotencyKeySchema } from "@/lib/domain/generation";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { serverEnv } from "@/lib/server/env";
 
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -13,6 +14,8 @@ function field(formData: FormData, name: string): string {
 
 export async function createLesson(formData: FormData) {
   const { ctx } = await requireAccount();
+  // The legacy flow charges at job start; in draft mode charging happens only at export (D-106), so refuse before anything else.
+  if (serverEnv().FLOW_MODE === "draft") redirect("/prepare");
 
   const key = IdempotencyKeySchema.safeParse(field(formData, "key"));
   const parsed = GenerateInput.safeParse({
