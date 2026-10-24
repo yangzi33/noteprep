@@ -81,3 +81,8 @@ export function draftCards(items: readonly DraftSummaryLike[], max: number): Dra
     expires: `expires ${formatUtc(d.expiresAt)}`,
   }));
 }
+
+/** Heading of the empty exports/activity area; accurate when the page also lists drafts above it. */
+export function emptyExportsText(draftCount: number): string {
+  return draftCount > 0 ? "No exported lessons yet" : "Nothing here yet";
+}

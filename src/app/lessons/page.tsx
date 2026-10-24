@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, draftCards, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, draftCards, emptyExportsText, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
 
 export default async function HistoryPage() {
@@ -41,7 +41,7 @@ export default async function HistoryPage() {
 
       {items.length === 0 ? (
         <Card className="mt-6 p-6">
-          <p className="text-sm">Nothing here yet.</p>
+          <p className="text-sm">{emptyExportsText(draftList.length)}.</p>
           <TextAction href="/prepare">Create your first lesson</TextAction>
         </Card>
       ) : (

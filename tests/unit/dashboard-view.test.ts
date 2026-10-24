@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DraftCard, MaterialCard, MaterialRow } from "@/components/app/material-card";
-import { allowanceSentence, draftCards, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, draftCards, emptyExportsText, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
 import { stateLabel } from "@/lib/ui/messages";
 
 const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
@@ -150,5 +150,14 @@ describe("draftCards", () => {
     expect(html).toContain("expires Mar 19, 2026, 11:30 PM UTC");
     expect(html).not.toContain("<b>x</b>");
     expect(html.match(/<a /g)).toHaveLength(1);
+  });
+});
+
+describe("emptyExportsText", () => {
+  it("says nothing is here only when there are no drafts either", () => {
+    expect(emptyExportsText(0)).toBe("Nothing here yet");
+  });
+  it("does not claim emptiness below a Drafts section", () => {
+    expect(emptyExportsText(2)).toBe("No exported lessons yet");
   });
 });

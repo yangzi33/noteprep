@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui/notice";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, draftCards, recentCards } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, draftCards, emptyExportsText, recentCards } from "@/lib/ui/dashboard-view";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
         </div>
         {cards.length === 0 ? (
           <Notice intent="info" className="mt-4">
-            <p className="font-medium">Nothing here yet</p>
+            <p className="font-medium">{emptyExportsText(draftList.length)}</p>
             <p className="mt-1">
               <TextAction href="/prepare">Create your first lesson</TextAction>
             </p>
