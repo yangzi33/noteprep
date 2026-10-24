@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { allowanceText, createUser, deleteCreatedUsers, signIn, startWorker } from "./support/helpers";
+import { createUser, deleteCreatedUsers, signIn, sql } from "./support/helpers";
 
+// Runs in the default "chromium" project (server 3100: FLOW_MODE=draft, EXPORT_ENABLED=1). No worker is needed: a draft makes no job.
 test.afterAll(deleteCreatedUsers);
 
 const SAMPLE = "sample-math@sample-1";
@@ -9,10 +10,9 @@ const COURSE = `${LEVEL}/course-1`;
 // Real choices only: the "" placeholder option is excluded.
 const choices = (page: import("@playwright/test").Page, testId: string) => page.getByTestId(testId).locator('option:not([value=""])');
 
-test("choose a curriculum topic with the dropdowns, generate, and see the lesson finish", async ({ page }) => {
+test("choose a curriculum topic with the dropdowns and create a free draft preview that uses nothing", async ({ page }) => {
   const user = await createUser();
-  const worker = await startWorker();
-  try {
+  {
     await signIn(page, user);
     await page.goto("/prepare");
     await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
@@ -48,14 +48,18 @@ test("choose a curriculum topic with the dropdowns, generate, and see the lesson
     await expect(page.getByTestId("topic-summary")).toContainText("Sample objective: solve one-unknown equations");
     await expect(page.getByTestId("topic-summary")).toContainText("Solving equations with one unknown"); // prerequisite
 
-    await page.getByRole("button", { name: "Generate lesson" }).click();
-    await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
-    // the placeholder worker here does not store files in Storage, but the lesson is complete and opens on its preview page
-    await expect(page).toHaveURL(/\/lessons\/[0-9a-f-]{36}\?rev=[0-9a-f-]{36}$/, { timeout: 45_000 });
-    await expect(page.getByTestId("lesson-title")).toBeVisible();
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
-  } finally {
-    await worker.stop();
+    await expect(page.getByRole("button", { name: "Generate lesson" })).toHaveCount(0); // the old charge-at-start button is gone
+
+    await page.getByRole("button", { name: "Create draft preview" }).click();
+    await expect(page).toHaveURL(/\/drafts\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("draft-title")).toHaveText("Sample topic: Unknown on both sides");
+
+    // nothing was used, reserved or queued
+    await page.goto("/prepare");
+    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
+    expect(await sql(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [user.id])).toEqual([{ used: 0, reserved: 0 }]);
+    expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
+    expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
   }
 });
 
@@ -77,7 +81,7 @@ test("topics we cannot verify are shown as unavailable and cannot be chosen, eve
 
   await page.goto(`/prepare?v=sample-math@sample-1&level=sample-math@sample-1/level-a&course=${base}&unit=${base}/shapes&topic=${base}/shapes/areas`);
   await expect(page.getByTestId("unsupported-topic")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Generate lesson" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create draft preview" })).toHaveCount(0);
 });
 
 test("a selection that does not fit together is refused politely, not with an error page", async ({ page }) => {

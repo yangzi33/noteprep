@@ -1,5 +1,15 @@
 import { execFileSync } from "node:child_process";
 
+/**
+ * The three pinned test servers (playwright.config.ts). Each pins FLOW_MODE and EXPORT_ENABLED explicitly, so a developer's own .env
+ * cannot change them: default = draft flow with export on; legacy = the old generate flow; paused = draft flow with export off.
+ */
+export const E2E_URLS = {
+  default: "http://127.0.0.1:3100",
+  legacy: "http://127.0.0.1:3101",
+  paused: "http://127.0.0.1:3102",
+} as const;
+
 export interface E2eEnv {
   apiUrl: string;
   publishableKey: string;
@@ -40,7 +50,7 @@ export function e2eEnv(): E2eEnv {
     publishableKey: need("PUBLISHABLE_KEY"),
     secretKey: need("SECRET_KEY"),
     dbUrl,
-    webUrl: "http://127.0.0.1:3100",
+    webUrl: E2E_URLS.default,
     webDatabaseUrl: login("web_login"),
     workerDatabaseUrl: login("worker_login"),
   };

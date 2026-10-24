@@ -81,7 +81,7 @@ Stop `pnpm dev` and `pnpm worker:dev` first.
 ```bash
 pnpm test && pnpm test:integration
 pnpm test:latex                                              # real compiler, needs pnpm latex:image and pnpm db:up
-E2E_COMPILER=docker pnpm exec playwright test --project=chromium-export   # needs `pnpm exec playwright install chromium` once
+E2E_COMPILER=docker pnpm exec playwright test --project=chromium export-flow   # needs `pnpm exec playwright install chromium` once
 ```
 
 ## 7. Reset

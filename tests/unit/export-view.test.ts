@@ -154,3 +154,79 @@ describe("session expired", () => {
     expect(exportPhase(view(), { unreachable: false, gone: true, expired: true })).toBe("not_found");
   });
 });
+
+// --- S6-8: exhaustive tables. `satisfies Record<ExportPhase, ...>` makes adding a phase a compile error until it has wording. ---
+
+describe("every export phase has its own wording (exhaustive table)", () => {
+  // heading and intent per phase; the typecheck fails when a phase is added to ExportPhase and not here
+  const EXPECTED = {
+    queued: { heading: "Your PDFs are in the queue.", intent: "progress" },
+    retrying: { heading: "Trying again.", intent: "progress" },
+    "running:compiling": { heading: "Building your PDFs.", intent: "progress" },
+    "running:storing": { heading: "Saving your PDFs.", intent: "progress" },
+    stopping: { heading: "Stopping this export.", intent: "info" },
+    confirming: { heading: "Finishing up...", intent: "progress" },
+    stalled: { heading: "We cannot confirm the final state.", intent: "info" },
+    succeeded: { heading: "Your PDFs are ready.", intent: "success" },
+    retired: { heading: "This lesson was deleted.", intent: "info" },
+    canceled: { heading: "Export canceled.", intent: "info" },
+    failed: { heading: "We could not build your PDFs.", intent: "error" },
+    unknown: { heading: "Checking the status...", intent: "info" },
+    session_expired: { heading: "Your session has expired.", intent: "info" },
+    not_found: { heading: "Export not found.", intent: "error" },
+  } satisfies Record<ExportPhase, { heading: string; intent: "progress" | "success" | "error" | "info" }>;
+
+  for (const [p, want] of Object.entries(EXPECTED) as [ExportPhase, (typeof EXPECTED)[ExportPhase]][]) {
+    it(`${p}: heading, intent, non-empty detail, and no internal wording`, () => {
+      const d = describeExportOutcome(view(), p);
+      expect(d.heading).toBe(want.heading);
+      expect(d.intent).toBe(want.intent);
+      expect(d.detail.length).toBeGreaterThan(10);
+      expect([d.heading, d.detail, d.lastKnown ?? ""].join(" ")).not.toMatch(/reservation|job id|snapshot|stack|undefined|null|\.tex/i);
+    });
+  }
+});
+
+describe("the 'generation used / not used' wording comes from the reservation state, never from the phase alone", () => {
+  // reservation state of a settled export -> the sentence (null when the server has not said so)
+  const CASES = [
+    { name: "succeeded, consumed", state: "succeeded", job: "succeeded", reservation: "consumed", phase: "succeeded", sentence: "This used 1 generation." },
+    { name: "succeeded, reservation row missing", state: "succeeded", job: "succeeded", reservation: null, phase: "succeeded", sentence: null },
+    { name: "failed, released", state: "failed", job: "failed", reservation: "released", phase: "failed", sentence: "No generation was used." },
+    { name: "failed, still reserved", state: "failed", job: "failed", reservation: "reserved", phase: "failed", sentence: null },
+    { name: "canceled, released", state: "failed", job: "canceled", reservation: "released", phase: "canceled", sentence: "No generation was used." },
+    { name: "canceled, row missing", state: "failed", job: "canceled", reservation: null, phase: "canceled", sentence: null },
+    { name: "retired, consumed", state: "retired", job: "succeeded", reservation: "consumed", phase: "retired", sentence: "This used 1 generation." },
+    { name: "pending, held", state: "pending", job: "running", reservation: "reserved", phase: "running:compiling", sentence: null },
+  ] as const;
+  for (const c of CASES) {
+    it(c.name, () => {
+      const v = view({ state: c.state, revisionId: c.state === "pending" ? null : "r-1" }, { state: c.job, stage: c.job === "running" ? "compiling" : null, attempt: c.job === "running" ? 1 : 0, errorCode: c.state === "failed" && c.job === "failed" ? "compile_failed" : null }, c.reservation);
+      expect(phase(v)).toBe(c.phase);
+      expect(describeExportOutcome(v, phase(v)).charge).toBe(c.sentence);
+    });
+  }
+});
+
+describe("confirm outcomes (created, joined, reused, replayed) on the result page", () => {
+  const done = () => view({ state: "succeeded", revisionId: "r-1" }, { state: "succeeded" }, "consumed");
+  const live = () => view({}, { state: "running", stage: "compiling", attempt: 1 });
+  // what describeExportOutcome adds for each outcome; created and replayed are the plain page (they never carry ?outcome=)
+  const OUTCOMES = {
+    created: { settled: "This used 1 generation.", live: null },
+    replayed: { settled: "This used 1 generation.", live: null },
+    joined: { settled: "This used 1 generation.", live: null },
+    reused: { settled: "An export with the same content and page format already used 1 generation. This one used none.", live: null },
+  } satisfies Record<"created" | "joined" | "reused" | "replayed", { settled: string; live: string | null }>;
+  for (const [outcome, want] of Object.entries(OUTCOMES)) {
+    it(`${outcome}: settled sentence is exactly what the table says; a live export never prints a charge`, () => {
+      const pass = outcome === "reused" || outcome === "joined" ? outcome : null; // only these two ever reach the page as ?outcome=
+      expect(describeExportOutcome(done(), "succeeded", pass).charge).toBe(want.settled);
+      expect(describeExportOutcome(live(), "running:compiling", pass).charge).toBe(want.live);
+    });
+  }
+  it("reused never rewrites a failed or canceled export's wording", () => {
+    const failed = view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, "released");
+    expect(describeExportOutcome(failed, "failed", "reused").charge).toBe("No generation was used.");
+  });
+});

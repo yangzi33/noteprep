@@ -1,22 +1,18 @@
 import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { createUser, deleteCreatedUsers, signIn, sql, startStorageWorker, type TestUser } from "./support/helpers";
+import { createDraft, createUser, deleteCreatedUsers, exportDraft, signIn, sql, startStorageWorker, type TestUser } from "./support/helpers";
 
 test.afterAll(deleteCreatedUsers);
 
-const BASE = "sample-math@sample-1/level-a/course-1";
-const TOPIC_URL = `/prepare?v=sample-math@sample-1&level=sample-math@sample-1/level-a&course=${BASE}&unit=${BASE}/equations&topic=${BASE}/equations/both-sides`;
 const sha256 = (bytes: ArrayBuffer) => createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
 
+/** Free draft, then a confirmed export (one generation); returns the exported lesson's ids. */
 async function generate(page: Page, user: TestUser) {
   await signIn(page, user);
-  await page.goto(TOPIC_URL);
-  await page.getByRole("button", { name: "Generate lesson" }).click();
-  await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]{36}$/);
-  // a finished lesson goes straight to its preview
-  await expect(page).toHaveURL(/\/lessons\/[0-9a-f-]{36}\?rev=[0-9a-f-]{36}$/, { timeout: 45_000 });
-  const [, lessonId, revisionId] = /\/lessons\/([0-9a-f-]{36})\?rev=([0-9a-f-]{36})/.exec(page.url())!;
-  return { lessonId: lessonId!, revisionId: revisionId! };
+  await createDraft(page);
+  const { lessonId, revisionId } = await exportDraft(page);
+  await page.goto(`/lessons/${lessonId}?rev=${revisionId}`);
+  return { lessonId, revisionId };
 }
 
 test("a finished lesson opens on its preview, with all three documents from one revision, and the files are the stored ones", async ({ page, browser }) => {
@@ -73,7 +69,7 @@ test("a finished lesson opens on its preview, with all three documents from one 
       expect(new URL(download.headers()["location"]!).searchParams.get("download")).toMatch(/^[A-Za-z0-9-]+\.pdf$/);
     }
 
-    // the job page and the history both lead to the same lesson
+    // the history leads to the same lesson
     await page.goto(`/lessons`);
     await page.getByTestId("history-list").getByRole("link").first().click();
     await expect(page).toHaveURL(new RegExp(`/lessons/${lessonId}\\?rev=${revisionId}`));
@@ -112,12 +108,9 @@ test("a pack of fewer documents shows only those tabs, and a document that was n
   const worker = await startStorageWorker();
   try {
     await signIn(page, user);
-    await page.goto(TOPIC_URL);
-    await page.getByLabel("Tutor Lesson Notes").uncheck();
-    await page.getByLabel("Solutions / Answer Key").uncheck();
-    await page.getByRole("button", { name: "Generate lesson" }).click();
-    await expect(page).toHaveURL(/\/lessons\/[0-9a-f-]{36}\?rev=[0-9a-f-]{36}$/, { timeout: 45_000 });
-    const [, lessonId, revisionId] = /\/lessons\/([0-9a-f-]{36})\?rev=([0-9a-f-]{36})/.exec(page.url())!;
+    await createDraft(page, ["Tutor Lesson Notes", "Solutions / Answer Key"]);
+    const { lessonId, revisionId } = await exportDraft(page);
+    await page.goto(`/lessons/${lessonId}?rev=${revisionId}`);
     await expect(page.getByTestId("document-tabs").getByRole("link")).toHaveText(["Student Practice Worksheet"]);
     await expect(page.getByTestId("document-panel")).toHaveAttribute("data-document", "worksheet");
     expect((await page.request.get(`/lessons/${lessonId}/documents/notes?rev=${revisionId}`, { maxRedirects: 0 })).status()).toBe(404);

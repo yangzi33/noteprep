@@ -117,8 +117,8 @@ describe("export entry on the draft page", () => {
   it("keeps the disabled button exactly otherwise", () => {
     for (const html of [entry("draft", false)]) {
       expect(html).toContain('data-testid="draft-export-disabled"');
-      expect(html).toContain("Export is coming next");
-      expect(html).toContain("PDF export for drafts is not available yet.");
+      expect(html).toContain("PDF export is paused right now. Your draft is saved.");
+      expect(html).not.toContain("coming next");
       expect(html).not.toContain("/export?");
     }
     expect(entry("legacy", true)).toBe("");

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createUser, deleteCreatedUsers, signIn, sql } from "./support/helpers";
 
-// Runs in the "chromium-draft" project: a server started with FLOW_MODE=draft (see playwright.config.ts).
+// Runs in the default "chromium" project: the server on port 3100 (FLOW_MODE=draft, EXPORT_ENABLED=1, see playwright.config.ts).
 // No worker is needed or started: a draft is created and previewed without any job.
 test.afterAll(deleteCreatedUsers);
 
@@ -36,14 +36,15 @@ test("choose a topic, create a free draft preview, and it survives a refresh wit
   await expect(page.getByRole("button", { name: "Generate lesson" })).toHaveCount(0);
   await page.getByRole("button", { name: "Create draft preview" }).click();
 
-  // the draft page: HTML preview, notice, expiry, no content hash, a disabled export
+  // the draft page: HTML preview, notice, expiry, no content hash, a live export link
   await expect(page).toHaveURL(/\/drafts\/[0-9a-f-]{36}$/);
   const draftUrl = page.url();
   await expect(page.getByTestId("draft-title")).toHaveText("Sample topic: Unknown on both sides");
   await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. Nothing has been used from your allowance.");
   await expect(page.getByTestId("draft-expiry")).toContainText(/^Draft expires .* UTC$/);
-  await expect(page.getByTestId("draft-export-disabled")).toBeDisabled();
-  await expect(page.getByTestId("draft-export-disabled")).toHaveText("Export is coming next");
+  // export is on here (the paused state is covered in draft-paused.spec.ts); this spec starts no export
+  await expect(page.getByTestId("draft-export")).toHaveText("Export PDFs");
+  await expect(page.getByTestId("draft-export-disabled")).toHaveCount(0);
   await expect(page.getByTestId("document-tabs").getByRole("link")).toHaveText(["Tutor Lesson Notes", "Student Practice Worksheet", "Solutions / Answer Key"]);
   const preview = page.getByTestId("draft-preview");
   await expect(preview).toHaveAttribute("data-document", "notes");

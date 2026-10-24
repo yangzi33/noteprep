@@ -1,18 +1,19 @@
-import { MaterialCard } from "@/components/app/material-card";
+import { DraftCard, MaterialCard } from "@/components/app/material-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, recentCards } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, draftCards, emptyExportsText, recentCards } from "@/lib/ui/dashboard-view";
 import Link from "next/link";
 
 export default async function DashboardPage() {
   const { ctx } = await requireAccount();
   const dal = webDal();
-  const [allowance, items] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx)]);
+  const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx, 6)]);
   const cards = recentCards(items, 6);
+  const draftList = draftCards(drafts, 6);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -38,6 +39,22 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {draftList.length > 0 && (
+        <section aria-labelledby="drafts-heading" className="mt-10" data-testid="drafts-section">
+          <h2 id="drafts-heading" className="font-heading text-2xl">
+            Drafts
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Free to read and adjust. A draft uses no generation until you export it.</p>
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {draftList.map((card) => (
+              <li key={card.draftId}>
+                <DraftCard card={card} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="recent-heading" className="mt-10">
         <div className="flex items-center justify-between gap-4">
           <h2 id="recent-heading" className="font-heading text-2xl">
@@ -47,7 +64,7 @@ export default async function DashboardPage() {
         </div>
         {cards.length === 0 ? (
           <Notice intent="info" className="mt-4">
-            <p className="font-medium">Nothing here yet</p>
+            <p className="font-medium">{emptyExportsText(draftList.length)}</p>
             <p className="mt-1">
               <TextAction href="/prepare">Create your first lesson</TextAction>
             </p>
