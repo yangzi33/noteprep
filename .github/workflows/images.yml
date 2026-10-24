@@ -122,6 +122,7 @@ jobs:
       - id: digests
         name: Push and record digests read back from the registry
         run: |
+          declare -A refs
           while read -r ref _ || [ -n "$ref" ]; do
             docker push "$ref" >/dev/null
             digest="$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq -r .digest)"
@@ -130,6 +131,17 @@ jobs:
             pinned="${ref%%:*}@${digest}"
             echo "${name}_ref=${pinned}" >> "$GITHUB_OUTPUT"
             echo "- ${name}: \`${pinned}\`" >> "$GITHUB_STEP_SUMMARY"
+            refs["$name"]="$pinned"
           done < out/images.txt
+          # Ready-to-paste block for the worker host (docs/worker-update.md). Each value was just checked to be a digest ref.
+          {
+            echo
+            echo "Paste on the worker host, then run the update block from docs/worker-update.md:"
+            printf '%s\n' '```bash'
+            printf "export WORKER_REF='%s'\n" "${refs[worker]}"
+            printf "export LATEX_REF='%s'\n" "${refs[latex]}"
+            printf "export HOSTTEST_REF='%s'\n" "${refs[hosttest]}"
+            printf '%s\n' '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - if: always()
         run: docker logout ghcr.io
