@@ -2,6 +2,8 @@
 
 Run on the ONE staging environment (`https://noteprep.app`) with a throwaway tutor account, after the S5 branch is merged. Use fictional data only. Background: [fresh-droplet-setup.md](fresh-droplet-setup.md) (sections "S5 page format and manifest v3", "S5-6", "S5-7", "S5-8") and the [S5 plan](superpowers/plans/2026-10-24-s5-pdf-consistency-plan.md). Record the result of each step (pass/fail, date, operator) in `releases.log` or your runbook log. A step that fails stops the rehearsal: fix forward or roll back per the setup guide.
 
+Note: S5 is tested here BEFORE S6 merges. S6 flips the code defaults (unset means `FLOW_MODE=draft`, `EXPORT_ENABLED=1`); set the flags explicitly in every Vercel scope first. See the "S6 default switch" note in [fresh-droplet-setup.md](fresh-droplet-setup.md) section K.
+
 ## 1. Migrate and deploy (rollout sequence)
 
 Order matters. A new worker with the old web app writes v3 manifests the old reader cannot parse, so lesson view and downloads 404 until the web app is deployed (files and billing stay intact).

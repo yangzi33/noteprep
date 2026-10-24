@@ -25,6 +25,8 @@
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
+> English note (S6): `pnpm test:e2e` starts three servers from one build: 3100 `FLOW_MODE=draft`, `EXPORT_ENABLED=1` (project `chromium`, default), 3101 `legacy`/`0` (project `chromium-legacy`, `legacy-*.spec.ts`), 3102 `draft`/`0` (project `chromium-paused`, `*-paused.spec.ts`). The E2E row text above is outdated for the project names (`chromium-draft`, `chromium-export`) and the server flags; the document is not translated.
+
 注意:
 - 本地 E2E 与你正在运行的 worker 共用同一个数据库,会互相抢任务。要么停 worker,要么靠 PR 让 CI 在干净机器上跑(CI 的 5 个 job:static、integration、supabase、e2e、latex-sandbox)。
 - 集成测试共用一个库,个别测试会故意损坏数据;全局漂移检查已限定到各自的 owner。
@@ -85,7 +87,7 @@
 - Unit (`pnpm test`): `export-confirm-ui`, `export-confirm-action`, `export-cancel-action`, `export-view`, `export-status-view`, `export-poller`, `export-page`, `export-status-route`, `job-page-export-redirect`, `export-errors`, `export-spec`, `export-verify`.
 - Integration (`pnpm test:integration`, real Postgres): `export-confirm` (including the 10-parallel same-key proof), `export-worker` (`runExport`), `export-cancel`, `export-settlement`, `export-locking`, `export-security`.
 - Real compiler (`pnpm test:latex`): `tests/latex/export-pipeline.test.ts`.
-- E2E (`pnpm test:e2e`): `tests/e2e/export-flow.spec.ts` on the third server (3102): full flow with free re-export, double submit, failed export releases, stale tab, cancel while queued, isolation, flag off. `E2E_COMPILER=docker` asserts real `%PDF-` bytes in the full-flow case.
+- E2E (`pnpm test:e2e`): `tests/e2e/export-flow.spec.ts` on the default server (3100, `chromium` project; since S6 the draft and export server): full flow with free re-export, double submit, failed export releases, stale tab, cancel while queued, isolation, flag off (that case now lives in `draft-paused.spec.ts` on 3102). `E2E_COMPILER=docker` asserts real `%PDF-` bytes in the full-flow case.
 
 ## 9. 清理
 

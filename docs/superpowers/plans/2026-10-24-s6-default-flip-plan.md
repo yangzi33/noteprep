@@ -2,6 +2,8 @@
 
 Status: plan (2026-10-24), planner output, work in progress on branch `feat/draft-s6` (from main at 5d31ed1, S1 to S5 merged). The owner merges. Binding: CLAUDE.md sections 1, 5, 10, 11. Constraints: lean scope, no LLM work, never run `pnpm test:supabase`, legacy generate code stays (only entry points reachable in draft mode get a guard), no invariant for allowance, ownership or sandbox gets weaker. S6 changes no migration and no worker code.
 
+Status line (2026-10-24): S6-1 to S6-9 done, S6-10 (final security review) pending.
+
 ## 1. Critical risk: switching FLOW_MODE alone leaves tutors with no way to get PDFs
 Today `FLOW_MODE` defaults to `legacy` and `EXPORT_ENABLED` to `0` (`src/lib/server/env.ts`); `vercel.json` sets neither; `docs/fresh-droplet-setup.md` section K says leave Production and Preview unset. If only the `FLOW_MODE` default changed, any deployment with no variables would offer free drafts, hide the legacy "Generate lesson" path, and show a disabled "Export is coming next" button: tutors could never get PDFs.
 
@@ -72,3 +74,6 @@ Default server (3100) unless noted. "Unit" means an exhaustive table in `tests/u
 | Ownership and signed-out redirects | `skeleton-path.spec.ts`, `export-flow.spec.ts`, `draft-flow.spec.ts` |
 
 Not covered by any E2E: Stripe and subscriptions (out of scope for S6), Safari/WebKit, real devices.
+
+## 8. Proposed decision record D-111 (needs owner approval, not written to decisions.md)
+Proposed text: "D-111 (S6 default switch): the code defaults change together to `FLOW_MODE=draft` and `EXPORT_ENABLED=1`, because draft mode without export leaves tutors with no PDFs. Both flags stay as kill switches (`FLOW_MODE=legacy` restores the old generate flow; `EXPORT_ENABLED=0` pauses export while pending exports still settle). The state 'draft flow, export off' stays legal as the documented pause and rollback state. The owner sets both variables explicitly in every Vercel scope BEFORE merging S6, so no environment depends on the defaults. A note on D-106 may be added at the same time."
