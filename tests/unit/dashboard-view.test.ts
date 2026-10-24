@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { MaterialCard, MaterialRow } from "@/components/app/material-card";
-import { allowanceSentence, formatUtc, recentCards, statusHref, type HistoryLike } from "@/lib/ui/dashboard-view";
+import { DraftCard, MaterialCard, MaterialRow } from "@/components/app/material-card";
+import { allowanceSentence, draftCards, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
 import { stateLabel } from "@/lib/ui/messages";
 
 const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
@@ -115,5 +115,40 @@ describe("export items", () => {
     const row = (href?: string) => renderToStaticMarkup(createElement(MaterialRow, { jobId: "job-1", ...(href ? { href } : {}), title: "T", state: "failed", label: "Failed", date: "d", outcome: null }));
     expect(row("/exports/exp-1")).toContain('href="/exports/exp-1"');
     expect(row()).toContain('href="/jobs/job-1"');
+  });
+});
+
+describe("draftCards", () => {
+  const draft = (over: Partial<DraftSummaryLike> = {}): DraftSummaryLike => ({
+    draftId: "11111111-1111-4111-8111-111111111111",
+    title: "Linear equations",
+    updatedAt: new Date("2026-03-05T14:30:00Z"),
+    expiresAt: new Date("2026-03-19T23:30:00Z"),
+    ...over,
+  });
+
+  it("links to /drafts/[id] and states the UTC expiry", () => {
+    const [card] = draftCards([draft()], 6);
+    expect(card).toEqual({
+      draftId: "11111111-1111-4111-8111-111111111111",
+      title: "Linear equations",
+      href: "/drafts/11111111-1111-4111-8111-111111111111",
+      updated: "Mar 5, 2026, 2:30 PM UTC",
+      expires: "expires Mar 19, 2026, 11:30 PM UTC",
+    });
+  });
+
+  it("keeps the given order and caps the count", () => {
+    const list = [1, 2, 3, 4].map((n) => draft({ draftId: `d${n}`, title: `T${n}` }));
+    expect(draftCards(list, 2).map((c) => c.title)).toEqual(["T1", "T2"]);
+    expect(draftCards([], 3)).toEqual([]);
+  });
+
+  it("renders one link and the expiry, and escapes the title", () => {
+    const html = renderToStaticMarkup(createElement(DraftCard, { card: draftCards([draft({ title: "<b>x</b>" })], 1)[0]! }));
+    expect(html).toContain('href="/drafts/11111111-1111-4111-8111-111111111111"');
+    expect(html).toContain("expires Mar 19, 2026, 11:30 PM UTC");
+    expect(html).not.toContain("<b>x</b>");
+    expect(html.match(/<a /g)).toHaveLength(1);
   });
 });

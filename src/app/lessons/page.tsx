@@ -1,15 +1,16 @@
-import { MaterialRow } from "@/components/app/material-card";
+import { DraftCard, MaterialRow } from "@/components/app/material-card";
 import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, draftCards, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
 
 export default async function HistoryPage() {
   const { ctx } = await requireAccount();
   const dal = webDal();
-  const [allowance, items] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx)]);
+  const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx)]);
+  const draftList = draftCards(drafts, 50);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -21,6 +22,22 @@ export default async function HistoryPage() {
         </p>
         <p className="text-sm text-muted-foreground">Times are shown in UTC. Deleting a lesson never gives a generation back.</p>
       </header>
+
+      {draftList.length > 0 && (
+        <section aria-labelledby="drafts-heading" className="mt-6" data-testid="drafts-section">
+          <h2 id="drafts-heading" className="font-heading text-2xl">
+            Drafts
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">Free to read and adjust. A draft uses no generation until you export it.</p>
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {draftList.map((card) => (
+              <li key={card.draftId}>
+                <DraftCard card={card} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {items.length === 0 ? (
         <Card className="mt-6 p-6">

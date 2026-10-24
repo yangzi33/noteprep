@@ -54,3 +54,30 @@ export function recentCards(items: readonly HistoryLike[], max: number): Materia
     };
   });
 }
+
+/** The part of a draft summary the cards need (a structural subset of the DAL's DraftSummaryDto). */
+export interface DraftSummaryLike {
+  draftId: string;
+  title: string;
+  updatedAt: Date;
+  expiresAt: Date;
+}
+
+export interface DraftCardModel {
+  draftId: string;
+  title: string;
+  href: string;
+  updated: string;
+  expires: string;
+}
+
+/** Cards for the caller's own active drafts (the DAL already filters by owner and expiry). Keeps the given order. */
+export function draftCards(items: readonly DraftSummaryLike[], max: number): DraftCardModel[] {
+  return items.slice(0, max).map((d) => ({
+    draftId: d.draftId,
+    title: d.title,
+    href: `/drafts/${d.draftId}`,
+    updated: formatUtc(d.updatedAt),
+    expires: `expires ${formatUtc(d.expiresAt)}`,
+  }));
+}

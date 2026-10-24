@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import type { MaterialCardModel } from "@/lib/ui/dashboard-view";
+import type { DraftCardModel, MaterialCardModel } from "@/lib/ui/dashboard-view";
 
 /** Dashboard tile: state, title, date and exactly one link. */
 export function MaterialCard({ card }: { card: MaterialCardModel }) {
@@ -58,5 +58,27 @@ export function MaterialRow({
         {label}
       </Badge>
     </li>
+  );
+}
+
+/** Draft tile: title, last update, expiry and exactly one link back to the draft preview. */
+export function DraftCard({ card }: { card: DraftCardModel }) {
+  return (
+    <Card className="flex h-full flex-col gap-3 p-5">
+      <Badge tone="neutral" className="self-start">
+        Draft
+      </Badge>
+      <h3 className="font-heading text-lg leading-snug break-words">{card.title}</h3>
+      <p className="text-sm text-muted-foreground">
+        {card.updated} · <span data-testid="draft-expires">{card.expires}</span>
+      </p>
+      <Link
+        href={card.href}
+        aria-label={`Open draft: ${card.title}`}
+        className="mt-auto inline-flex min-h-11 items-center text-[13px] font-semibold text-text-accent hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
+        Open draft
+      </Link>
+    </Card>
   );
 }
