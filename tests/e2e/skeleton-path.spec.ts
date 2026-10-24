@@ -73,6 +73,9 @@ test("sign in, select, draft, export, and find the lesson in the history", async
   });
 });
 
+// NOTE: requestSubmit() twice may be collapsed by the client (React/Next ignores a submit while one is pending), so the server may only
+// see one request here. This test proves the user-visible result; the same-key proof with real repeated requests is the next test
+// and the integration tests.
 test("a double submit and a refresh never create or charge a second export", async ({ page }) => {
   const user = await createUser();
   await withWorker(async () => {
@@ -93,6 +96,58 @@ test("a double submit and a refresh never create or charge a second export", asy
     expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 1 }]);
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
   });
+});
+
+/** The multipart server-action POST a page just made, so it can be replayed byte for byte (same action id, same hidden key). */
+function captureActionPost(page: Page, urlPart: string) {
+  const captured: { url: string; headers: Record<string, string>; body: Buffer }[] = [];
+  page.on("request", (req) => {
+    const body = req.postDataBuffer();
+    if (req.method() !== "POST" || !req.url().includes(urlPart) || !body) return;
+    const headers: Record<string, string> = {};
+    for (const [k, v] of Object.entries(req.headers())) if (!["cookie", "host", "content-length", "origin", "referer"].includes(k)) headers[k] = v;
+    captured.push({ url: req.url(), headers, body });
+  });
+  return captured;
+}
+
+test("two raw server requests with the same export key create one export and one charge", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user); // no worker: the export stays queued and reserved
+  await createDraft(page);
+  await page.getByTestId("draft-export").click();
+  await expect(page.getByTestId("export-confirm")).toBeVisible();
+  const posts = captureActionPost(page, "/export");
+  await page.getByTestId("export-confirm").click();
+  await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}/);
+  expect(posts.length).toBeGreaterThan(0);
+  const post = posts[0]!;
+  // Replay the very same request (cookies from the context, same Next-Action id, same hidden key) twice more, concurrently.
+  const replays = await Promise.all([1, 2].map(() => page.context().request.post(post.url, { headers: post.headers, data: post.body, maxRedirects: 0 })));
+  for (const r of replays) expect(r.status()).toBeLessThan(400); // the action ran (a redirect or a rendered page), not an unknown-action error
+  expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 1 }]);
+  expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 1 }]);
+  await page.getByRole("button", { name: "Cancel export" }).click(); // leave nothing pending
+  await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "canceled");
+  expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
+});
+
+test("the old createLesson server action, replayed against the draft-mode server, reserves nothing and creates no job", async ({ page }) => {
+  const user = await createUser();
+  await signIn(page, user);
+  // The legacy server (3101, same build, so the same action ids) renders the old form. Capture its POST without letting it run there.
+  const posts = captureActionPost(page, "/lessons/new");
+  await page.route("http://127.0.0.1:3101/lessons/new", (route) => (route.request().method() === "POST" ? route.abort() : route.continue()));
+  await page.goto("http://127.0.0.1:3101/lessons/new");
+  await page.getByRole("button", { name: "Generate lesson" }).click();
+  await expect.poll(() => posts.length).toBeGreaterThan(0);
+  const post = posts[0]!;
+  expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
+  const res = await page.context().request.post("http://127.0.0.1:3100/lessons/new", { headers: post.headers, data: post.body, maxRedirects: 0 });
+  // The action really ran (it answered with the draft-mode redirect), not a 404 for an unknown action id.
+  expect(`${res.headers()["x-action-redirect"] ?? ""}${res.headers()["location"] ?? ""}`).toContain("/prepare");
+  expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
+  expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
 });
 
 test("canceling a queued export keeps the allowance: nothing was used", async ({ page }) => {
@@ -191,7 +246,8 @@ test("one user cannot reach another user's draft, export or status", async ({ br
 test("signed-out visitors are sent to sign in, including drafts and exports", async ({ page }) => {
   for (const path of ["/dashboard", "/lessons", "/lessons/new", "/prepare", "/account", "/drafts/x", "/drafts/x/export", "/exports/x"]) {
     await page.goto(path);
-    await expect(page, path).toHaveURL(/\/login/);
+    // Exactly what the app produces: /login on this origin, optionally with a next parameter and nothing else.
+    expect(page.url(), path).toMatch(/^http:\/\/127\.0\.0\.1:3100\/login(\?next=[^&]*)?$/);
   }
 });
 

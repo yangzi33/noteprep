@@ -71,11 +71,13 @@ export interface DraftCardModel {
   expires: string;
 }
 
+export const UNTITLED_DRAFT = "Untitled draft";
+
 /** Cards for the caller's own active drafts (the DAL already filters by owner and expiry). Keeps the given order. */
 export function draftCards(items: readonly DraftSummaryLike[], max: number): DraftCardModel[] {
   return items.slice(0, max).map((d) => ({
     draftId: d.draftId,
-    title: d.title,
+    title: d.title?.trim() ? d.title : UNTITLED_DRAFT, // the DAL reads it from JSON and it can be NULL
     href: `/drafts/${d.draftId}`,
     updated: formatUtc(d.updatedAt),
     expires: `expires ${formatUtc(d.expiresAt)}`,

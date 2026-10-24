@@ -161,3 +161,11 @@ describe("emptyExportsText", () => {
     expect(emptyExportsText(2)).toBe("No exported lessons yet");
   });
 });
+
+describe("draftCards title fallback", () => {
+  const draft = (title: unknown) => ({ draftId: "d-1", title: title as string, updatedAt: new Date("2026-03-05T14:30:00Z"), expiresAt: new Date("2026-03-12T14:30:00Z") });
+  it("labels a draft without a topic title instead of showing null", () => {
+    for (const bad of [null, undefined, "", "   "]) expect(draftCards([draft(bad)], 6)[0]!.title).toBe("Untitled draft");
+    expect(draftCards([draft("Linear equations")], 6)[0]!.title).toBe("Linear equations");
+  });
+});

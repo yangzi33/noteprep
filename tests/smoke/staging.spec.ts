@@ -10,18 +10,29 @@ import { smokeTarget } from "./target";
  * - Refuses any target except https://noteprep.app (see ./target.ts), and is never run by CI (separate config, no CI job).
  * Nothing is recorded (no trace, screenshot or video). Signed URLs, tokens and cookies are never printed: downloads are
  * checked by HTTP status and the first bytes (%PDF-) only, and every assertion on a URL is a boolean so a failure cannot echo it.
+ * Do NOT set DEBUG (for example DEBUG=pw:api) when running this: Playwright's API log then prints request headers (the auth cookie),
+ * response headers (the Location signed URL) and the filled password. Failures of the login and download calls are rethrown with a
+ * FIXED message so the usual error call log (which also carries those values) never reaches the output. The spec refuses to run
+ * when DEBUG is set.
  */
+if (process.env.DEBUG) throw new Error("unset DEBUG before running the staging smoke test: Playwright would log cookies, passwords and signed URLs");
+
 const { email, password } = smokeTarget(process.env);
 const BASE = "sample-math@sample-1/level-a/course-1";
 const TOPIC_URL = `/prepare?v=sample-math@sample-1&level=sample-math@sample-1/level-a&course=${BASE}&unit=${BASE}/equations&topic=${BASE}/equations/both-sides`;
 const DOCS = ["notes", "worksheet", "solutions"] as const;
 
 test("staging: sign in, draft, export, and every PDF downloads", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // The error call log of fill() would print the password, so any failure here is replaced by a fixed message.
+  try {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/dashboard$/);
+  } catch {
+    throw new Error("login failed: check SMOKE_EMAIL and SMOKE_PASSWORD (the user must exist and be confirmed on staging)");
+  }
   await page.goto("/prepare");
   const allowance = ((await page.getByTestId("allowance").textContent()) ?? "").trim();
   expect(Number(/^(\d+) of \d+ generations left/.exec(allowance)?.[1] ?? 0), "no free generations left: use a new throwaway staging user").toBeGreaterThan(0);
@@ -52,14 +63,30 @@ test("staging: sign in, draft, export, and every PDF downloads", async ({ page }
   for (const doc of DOCS) {
     const href = await page.getByTestId("export-files").getByTestId(`export-download-${doc}`).getAttribute("href");
     expect(href !== null, `${doc}: no download link`).toBe(true);
-    const res = await page.request.get(href!, { maxRedirects: 0 });
-    expect(res.status(), `${doc}: expected a redirect to the file`).toBe(302);
-    const location = res.headers()["location"] ?? "";
+    // A thrown request error carries a call log with the cookie and the Location header, so never let it through.
+    let status: number;
+    let location: string;
+    try {
+      const res = await page.request.get(href!, { maxRedirects: 0 });
+      status = res.status();
+      location = res.headers()["location"] ?? "";
+    } catch {
+      throw new Error(`${doc}: download request failed`);
+    }
+    expect(status, `${doc}: expected a redirect to the file`).toBe(302);
     // Never print the signed URL: assert on its shape only.
     expect(/^https:\/\/[^/?#@]+\/storage\/v1\/object\/sign\/lesson-artifacts\//.test(location), `${doc}: redirect is not a signed lesson-artifacts URL`).toBe(true);
-    const file = await fetch(location, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
-    expect(file.status, `${doc}: download status`).toBe(200);
-    expect(Buffer.from(await file.arrayBuffer()).subarray(0, 5).toString("latin1"), `${doc}: not a PDF`).toBe("%PDF-");
+    let fileStatus: number;
+    let head: string;
+    try {
+      const file = await fetch(location, { redirect: "manual", signal: AbortSignal.timeout(30_000) });
+      fileStatus = file.status;
+      head = Buffer.from(await file.arrayBuffer()).subarray(0, 5).toString("latin1");
+    } catch {
+      throw new Error(`${doc}: file download failed`);
+    }
+    expect(fileStatus, `${doc}: download status`).toBe(200);
+    expect(head, `${doc}: not a PDF`).toBe("%PDF-");
     console.log(`${doc}: ok`);
   }
 });
