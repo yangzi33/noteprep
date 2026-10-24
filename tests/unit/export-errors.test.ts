@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DeadlineExceeded, domainErrorCode, ExportBusy, ExportConflict, ExportDisabled, ExportNotVerified, ExportRenderFailed, ExportUnavailable } from "@/lib/domain/errors";
 import { EXPORT_FAILURE_MEMO_THRESHOLD, NON_RETRYABLE_EXPORT_FAILURES } from "@/lib/domain/export-spec";
+import { CONFIRM_REDIRECT_CODES, confirmErrorTarget, confirmSuccessHref } from "@/lib/ui/export-confirm";
 import { describeOutcome, FAILURE_REASONS, generationErrorMessage } from "@/lib/ui/messages";
 
 describe("export errors and messages", () => {
@@ -35,4 +36,64 @@ describe("export errors and messages", () => {
   it("a failed export still says it did not use an allowance", () => {
     expect(describeOutcome("failed", "export_not_supported")).toMatch(/did not use one of your generations/);
   });
+});
+
+// --- S6-8: every confirm error code and success outcome, as exhaustive tables ---
+
+type ConfirmCode = (typeof CONFIRM_REDIRECT_CODES)[number];
+
+describe("every confirm error code (exhaustive table)", () => {
+  // Adding a code to CONFIRM_REDIRECT_CODES is a compile error until it has an expectation here.
+  const EXPECTED = {
+    EXPORT_CONFLICT: { message: /changed after you opened the confirmation page/, notUsed: true, to: "draft" },
+    DRAFT_EXPIRED: { message: /draft has expired/, notUsed: false, to: "draft" },
+    ALLOWANCE_EXHAUSTED: { message: /no generations left/, notUsed: false, to: "confirm" },
+    RATE_LIMITED: { message: /too many requests/, notUsed: false, to: "confirm" },
+    TOO_MANY_ACTIVE_JOBS: { message: /jobs in progress/, notUsed: false, to: "confirm" },
+    QUEUE_BUSY: { message: /busy/, notUsed: false, to: "confirm" },
+    EXPORT_BUSY: { message: /being stopped or finished/, notUsed: false, to: "confirm" },
+    EXPORT_UNAVAILABLE: { message: /failed several times/, notUsed: true, to: "confirm" },
+    EXPORT_DISABLED: { message: /export is paused/, notUsed: false, to: "confirm" },
+    EXPORT_NOT_VERIFIED: { message: /not fully checked/, notUsed: true, to: "confirm" },
+    EXPORT_RENDER_FAILED: { message: /could not lay out/, notUsed: true, to: "confirm" },
+    IDEMPOTENCY_KEY_REUSED: { message: /already submitted with different details/, notUsed: false, to: "confirm" },
+    ACCOUNT_NOT_ACTIVE: { message: /cannot create new lessons/, notUsed: false, to: "confirm" },
+    INVALID_REQUEST: { message: /not valid/, notUsed: false, to: "confirm" },
+  } satisfies Record<ConfirmCode, { message: RegExp; notUsed: boolean; to: "draft" | "confirm" }>;
+
+  for (const [code, want] of Object.entries(EXPECTED) as [ConfirmCode, (typeof EXPECTED)[ConfirmCode]][]) {
+    it(`${code}: message, "nothing was used" where it is true, and where the tutor lands`, () => {
+      const message = generationErrorMessage(code)!;
+      expect(message).toMatch(want.message);
+      expect(message).not.toBe("Something went wrong. Please try again.");
+      if (want.notUsed) expect(message).toMatch(/Nothing was used\./);
+      const target = confirmErrorTarget(code, "d-1", "v-1");
+      expect(target.kind).toBe("redirect");
+      if (target.kind === "redirect") {
+        expect(target.href).toBe(want.to === "draft" ? `/drafts/d-1?v=v-1&error=${code}` : `/drafts/d-1/export?v=v-1&error=${code}`);
+      }
+    });
+  }
+  it("an unknown code is rethrown (never silently swallowed) and NOT_FOUND is the not-found page", () => {
+    expect(confirmErrorTarget("SOMETHING_ELSE", "d", "v")).toEqual({ kind: "rethrow" });
+    expect(confirmErrorTarget(null, "d", "v")).toEqual({ kind: "rethrow" });
+    expect(confirmErrorTarget("NOT_FOUND", "d", "v")).toEqual({ kind: "notFound" });
+  });
+  it("the table lists exactly the codes the action redirects with", () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual([...CONFIRM_REDIRECT_CODES].sort());
+  });
+});
+
+describe("every confirm success outcome (exhaustive table)", () => {
+  const HREFS = {
+    created: "/exports/e-1",
+    replayed: "/exports/e-1",
+    joined: "/exports/e-1?outcome=joined",
+    reused: "/exports/e-1?outcome=reused",
+  } satisfies Record<"created" | "joined" | "reused" | "replayed", string>;
+  for (const [outcome, href] of Object.entries(HREFS) as [keyof typeof HREFS, string][]) {
+    it(`${outcome} goes to ${href}`, () => {
+      expect(confirmSuccessHref({ outcome, exportId: "e-1" })).toBe(href);
+    });
+  }
 });

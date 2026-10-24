@@ -47,3 +47,28 @@ R1 an environment relying on the old legacy default starts charging at export af
 
 ## 6. Not verified without staging or Vercel access
 Which Vercel scope serves noteprep.app and its flag values; which database and worker Preview uses; real compiles and Supabase signed-URL downloads after the switch; real mobile devices and Safari/WebKit (only Chromium at 390 px is planned); contrast if O5 is declined.
+
+## 7. E2E coverage map (S6-8)
+Default server (3100) unless noted. "Unit" means an exhaustive table in `tests/unit/export-view.test.ts`, `export-errors.test.ts` or `draft-states.test.ts`; those tables, not E2E, are what guarantee every phase and every confirm error code has wording and that the "used / not used" sentence follows the reservation state.
+
+| State | Covered by |
+|---|---|
+| Journey: select, free draft, preview, adjust, versions, export, re-download, history, back/refresh with SQL counts | `draft-adjust-export.spec.ts` test 1 |
+| Allowance exhausted (fourth export refused, no reservation; identical re-export and new drafts still free) | `draft-adjust-export.spec.ts` test 2 and `skeleton-path.spec.ts` |
+| queued, canceled (allowance returned, "No generation was used.") | `export-flow.spec.ts`, `skeleton-path.spec.ts` |
+| running, succeeded ("This used 1 generation."), three real downloads | `export-flow.spec.ts`, `draft-adjust-export.spec.ts` (PDF header check with `E2E_COMPILER=docker`) |
+| failed and timed out ("No generation was used.") | `export-flow.spec.ts`, `skeleton-path.spec.ts` |
+| reused (same version again, free) | `draft-adjust-export.spec.ts`, `export-flow.spec.ts` |
+| joined (equivalent export already pending) | no E2E; unit (`export-view`, `export-status-view`, `export-errors`) and integration (`export-confirm`, `export-locking`) |
+| created, replayed | E2E created path everywhere; replayed (same key) by unit and integration only |
+| retrying, stopping, confirming, stalled, unknown, session expired | unit only (phase and wording tables, `export-poller`, `export-status-view`); not reproducible in a browser without fault injection |
+| retired (lesson deleted) | integration `export-retire`, unit render; no UI deletes a lesson |
+| Expired draft, start again | `draft-flow.spec.ts` |
+| Conflict (stale tab: draft and stale confirmation page) | `draft-flow.spec.ts`, `export-flow.spec.ts` |
+| Version limit, candidate pending, minimum questions | `draft-flow.spec.ts` (limit, candidate); minimum questions by unit and integration only |
+| Export paused (`EXPORT_ENABLED=0`) | `draft-paused.spec.ts` on 3102 |
+| Legacy flow and legacy data after the switch | `legacy-*.spec.ts` on 3101, `switch-survival.spec.ts` |
+| Mobile 390x844, keyboard, labels and roles, axe wcag2a/wcag2aa | `mobile-a11y.spec.ts` |
+| Ownership and signed-out redirects | `skeleton-path.spec.ts`, `export-flow.spec.ts`, `draft-flow.spec.ts` |
+
+Not covered by any E2E: Stripe and subscriptions (out of scope for S6), Safari/WebKit, real devices.
