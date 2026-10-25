@@ -32,7 +32,7 @@ Apply them with the `Database migrations` workflow (status first, then deploy), 
 
 Set `DAILY_REFRESH_ENABLED=0` in the web scopes and redeploy. No migration needs to be reverted; the enum value stays.
 
-Tell beta tutors before switching off: they lose the daily count immediately after the redeploy.
+Notify affected users before switching the setting off: the daily count stops applying after the redeploy.
 
 ## Checks
 

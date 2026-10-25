@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createDraft, createUser, deleteCreatedUsers, exportDraft, signIn, startStorageWorker, type RunningWorker } from "./support/helpers";
+import { createDraft, createUser, deleteCreatedUsers, signIn, startStorageWorker, type RunningWorker } from "./support/helpers";
 
 // Runs in the "chromium-daily" project: the server on port 3103 (DAILY_REFRESH_ENABLED=1, DAILY_REFRESH_LIMIT=5, see playwright.config.ts),
 // against a real worker process that shares the database. The perk-off journey is covered by the default-server specs.
@@ -29,7 +29,10 @@ test("daily refresh: the reminder shows the count once, an export uses one, the 
     await expect(page.getByTestId("refresh-reminder")).toContainText(REMINDER);
     await expect(page.getByTestId("export-after")).toHaveText("After this export you will have 4 left today.");
 
-    await exportDraft(page);
+    // Same steps and waits as exportDraft in support/helpers.ts, minus its draft-export click (we are already on the confirm page).
+    await page.getByTestId("export-confirm").click();
+    await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}/);
+    await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
   } finally {
     await worker.stop();
   }
