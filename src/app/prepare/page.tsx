@@ -40,13 +40,8 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
         <StepIndicator steps={STEPS} current={0} />
         <p className="text-sm" data-testid="allowance">
-          {allowanceText}
+          {reminder ? <span data-testid="refresh-reminder">{reminder}</span> : allowanceText}
         </p>
-        {reminder && (
-          <p className="text-sm text-muted-foreground" data-testid="refresh-reminder">
-            {reminder}
-          </p>
-        )}
         {error && <Notice intent="error">{generationErrorMessage(error, source)}</Notice>}
       </header>
       <div className="mt-6">{children}</div>

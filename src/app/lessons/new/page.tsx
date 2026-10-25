@@ -25,13 +25,8 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
     <main className="mx-auto max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">New lesson</h1>
       <p className="mt-2 text-sm" data-testid="allowance">
-        {allowanceSentence(allowance)}
+        {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
       </p>
-      {dailyRefreshReminder(allowance) && (
-        <p className="mt-1 text-sm text-muted-foreground" data-testid="refresh-reminder">
-          {dailyRefreshReminder(allowance)}
-        </p>
-      )}
 
       {error && (
         <Notice intent="error" className="mt-4">

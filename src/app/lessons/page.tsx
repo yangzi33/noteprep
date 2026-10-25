@@ -18,13 +18,8 @@ export default async function HistoryPage() {
         <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">YOUR WORKSPACE</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">My materials</h1>
         <p className="text-sm" data-testid="allowance">
-          {allowanceSentence(allowance)}
+          {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
         </p>
-        {dailyRefreshReminder(allowance) && (
-          <p className="text-sm text-muted-foreground" data-testid="refresh-reminder">
-            {dailyRefreshReminder(allowance)}
-          </p>
-        )}
         <p className="text-sm text-muted-foreground">Times are shown in UTC. Deleting a lesson never gives a generation back.</p>
       </header>
 

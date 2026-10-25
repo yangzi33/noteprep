@@ -61,13 +61,8 @@ export function ExportConfirmView(p: ExportConfirmProps) {
           {p.questionCount} question{p.questionCount === 1 ? "" : "s"} · {p.changes}
         </p>
         <p className="mt-3 text-sm" data-testid="export-balance">
-          {p.allowanceText}
+          {p.reminder ? <span data-testid="refresh-reminder">{p.reminder}</span> : p.allowanceText}
         </p>
-        {p.reminder && (
-          <p className="mt-1 text-sm text-muted-foreground" data-testid="refresh-reminder">
-            {p.reminder}
-          </p>
-        )}
         {p.afterText && (
           <p className="mt-1 text-sm" data-testid="export-after">
             {p.afterText}
@@ -112,7 +107,9 @@ export function ExportConfirmView(p: ExportConfirmProps) {
           </p>
           {p.remaining !== null && p.remaining <= 0 && (
             <Notice intent="info" data-testid="export-free-note">
-              You have no generations left. An unchanged re-export of a version you already exported is free.{" "}
+              {p.source === "daily"
+                ? "You have used all of today's free exports. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
+                : "You have no generations left. An unchanged re-export of a version you already exported is free."}{" "}
               <Link href="/account" className="underline">
                 See your account
               </Link>

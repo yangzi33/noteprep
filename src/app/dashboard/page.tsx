@@ -34,13 +34,8 @@ export default async function DashboardPage() {
         <Card className="flex flex-col gap-2 p-6">
           <h2 className="font-heading text-lg">Your allowance</h2>
           <p className="text-sm" data-testid="allowance">
-            {allowanceSentence(allowance)}
+            {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
           </p>
-          {dailyRefreshReminder(allowance) && (
-            <p className="text-sm text-muted-foreground" data-testid="refresh-reminder">
-              {dailyRefreshReminder(allowance)}
-            </p>
-          )}
         </Card>
       </div>
 

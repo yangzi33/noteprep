@@ -85,6 +85,8 @@ Notes:
 | `DATABASE_URL` | required | Runtime database login (`web_login` locally) |
 | `FLOW_MODE` | `draft` | `draft`: free draft preview, allowance is reserved only at export. `legacy`: old generate flow, kept as a kill switch |
 | `EXPORT_ENABLED` | `1` | `0` pauses export (pending exports still settle) |
+| `DAILY_REFRESH_ENABLED` | `0` | `1` gives each account a daily export allowance that resets at 00:00 UTC, used before the lifetime allowance. Web scopes only. See docs/daily-refresh-rollout.md |
+| `DAILY_REFRESH_LIMIT` | `5` | Exports per UTC day when `DAILY_REFRESH_ENABLED=1` (integer, 1 to 1000) |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
 | `DRAFT_*`, `EXPORT_*` limits | see file | Rate, concurrency, deadline, size and lifetime limits; every name is listed in `src/lib/server/limits.ts` |
 
@@ -123,7 +125,7 @@ Detail: [docs/architecture.md](docs/architecture.md) (written in Chinese) and [d
 
 - **Unit**: `pnpm test`.
 - **Integration**: `pnpm test:integration` against a real temporary Postgres (concurrency, constraints, rollbacks, migrations).
-- **E2E**: `pnpm test:e2e` needs `pnpm supabase:start` first. Playwright builds the app once and starts three servers with both flags pinned, so a local `.env` cannot change them: port 3100 (`FLOW_MODE=draft`, `EXPORT_ENABLED=1`, project `chromium`), 3101 (`legacy`, export off, project `chromium-legacy`), 3102 (`draft`, export off, project `chromium-paused`). Set `E2E_COMPILER=docker` (after `pnpm latex:image`) to make downloads real PDFs. Stop your own dev server and worker before running it. The suite includes axe (WCAG A/AA) and 390x844 mobile layout checks.
+- **E2E**: `pnpm test:e2e` needs `pnpm supabase:start` first. Playwright builds the app once and starts four servers with their flags pinned, so a local `.env` cannot change them: port 3100 (`FLOW_MODE=draft`, `EXPORT_ENABLED=1`, project `chromium`), 3101 (`legacy`, export off, project `chromium-legacy`), 3102 (`draft`, export off, project `chromium-paused`), 3103 (`draft`, export on, `DAILY_REFRESH_ENABLED=1`, `DAILY_REFRESH_LIMIT=5`, project `chromium-daily`). Set `E2E_COMPILER=docker` (after `pnpm latex:image`) to make downloads real PDFs. Stop your own dev server and worker before running it. The suite includes axe (WCAG A/AA) and 390x844 mobile layout checks.
 - **LaTeX sandbox**: `pnpm latex:image`, then `pnpm test:latex` (valid output plus negative tests: file reads, traversal, shell escape, network, resource bombs, cleanup). `pnpm test:latex:host` and `pnpm test:image` cover the host and worker images. DB-backed tests under `tests/latex` are excluded in `vitest.host.config.mts`.
 - **Supabase boundary**: `pnpm test:supabase` checks Auth, the Data API and RLS against the local stack; it applies migrations to that shared stack.
 - **Staging smoke**: `pnpm smoke:staging` runs one real draft-and-export against the fixed staging origin allowlisted in `tests/smoke/target.ts`. It needs `SMOKE_TARGET=staging`, `SMOKE_EMAIL` and `SMOKE_PASSWORD` (a throwaway user), consumes one free generation per run, is never run by CI, and must never be run with `DEBUG` set.
