@@ -16,7 +16,7 @@ export class AllowanceExhausted extends DomainError {
   constructor(
     /** Reservations currently held by in-flight jobs; they return if those jobs fail. */
     readonly pending: number,
-    readonly source: "trial" | "paid",
+    readonly source: "trial" | "paid" | "daily",
   ) {
     super("ALLOWANCE_EXHAUSTED", "No generation allowance remaining");
   }

@@ -40,7 +40,7 @@ async function account() {
 describe("remaining allowance view", () => {
   it("shows the full trial for a new account and null before the account exists", async () => {
     const ctx = await account();
-    expect(await web.history.getAllowance(ctx)).toEqual({ source: "trial", limit: 3, used: 0, pending: 0, remaining: 3 });
+    expect(await web.history.getAllowance(ctx)).toEqual({ source: "trial", limit: 3, used: 0, pending: 0, remaining: 3, resetsAt: null });
     expect(await web.history.getAllowance(makeAuthedCtx(randomUUID()))).toBeNull();
   });
 
@@ -55,7 +55,7 @@ describe("remaining allowance view", () => {
   it("subtracts both consumed and pending units", async () => {
     const ctx = await account();
     await admin.query(`UPDATE usage_bucket SET used = 2, reserved = 1 WHERE owner_id = $1`, [ctx.userId]);
-    expect(await web.history.getAllowance(ctx)).toEqual({ source: "trial", limit: 3, used: 2, pending: 1, remaining: 0 });
+    expect(await web.history.getAllowance(ctx)).toEqual({ source: "trial", limit: 3, used: 2, pending: 1, remaining: 0, resetsAt: null });
   });
 
   it("reports the paid period bucket, not the trial, for an entitled account", async () => {
@@ -72,7 +72,7 @@ describe("remaining allowance view", () => {
        VALUES ($1, 'paid', 5, 1, $2, $3, $4, $5)`,
       [ctx.userId, sub.rows[0].id, Math.floor(start.getTime() / 1000), start, end],
     );
-    expect(await web.history.getAllowance(ctx)).toEqual({ source: "paid", limit: 5, used: 1, pending: 0, remaining: 4 });
+    expect(await web.history.getAllowance(ctx)).toEqual({ source: "paid", limit: 5, used: 1, pending: 0, remaining: 4, resetsAt: null });
   });
 });
 
