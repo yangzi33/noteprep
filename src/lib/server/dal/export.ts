@@ -42,7 +42,7 @@ import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
 import { DEV_DEFAULT_LIMITS, type GenerationLimits } from "@/lib/domain/generation";
 import { DEFAULT_LIMITS, type Limits } from "../limits";
-import { lockAllowanceBucket } from "./allowance-source";
+import { lockAllowanceBucket, type AllowancePolicy } from "./allowance-source";
 import { cancelOwnedJob } from "./cancel";
 import { stateOf, summaryOf } from "./drafts";
 import type { ConfirmExportResult, ExportStatusDto, JobDto } from "./dto";
@@ -68,6 +68,8 @@ export interface ExportDeps {
   limits?: Limits;
   /** Queue backlog and job defaults shared with generation. */
   generationLimits?: GenerationLimits;
+  /** Allowance settings (daily refresh, D-112); the allowance rule reads them. */
+  allowancePolicy?: AllowancePolicy;
   clock?: () => Date;
 }
 

@@ -4,6 +4,13 @@ import { isEntitled, periodKeyFor } from "@/lib/domain/entitlement";
 import { Prisma } from "@/generated/prisma/client";
 import type { Tx } from "./tx";
 
+/** Allowance settings the web DAL carries to the allowance rule. The daily refresh is a temporary beta perk (D-112), off by default. */
+export interface AllowancePolicy {
+  dailyRefresh: { enabled: boolean; limit: number };
+}
+
+export const DEFAULT_ALLOWANCE_POLICY: AllowancePolicy = { dailyRefresh: { enabled: false, limit: 5 } };
+
 export type AllowanceSource =
   | { kind: "trial" }
   | { kind: "paid"; subscriptionId: string; periodKey: bigint };

@@ -1,7 +1,7 @@
 import "server-only";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
-import { readAllowanceBucket } from "./allowance-source";
+import { readAllowanceBucket, type AllowancePolicy } from "./allowance-source";
 
 export interface AllowanceView {
   source: "trial" | "paid";
@@ -29,6 +29,8 @@ export interface HistoryItem {
 }
 
 export interface HistoryDeps {
+  /** Allowance settings (daily refresh, D-112); the allowance rule reads them. */
+  allowancePolicy?: AllowancePolicy;
   clock?: () => Date;
 }
 

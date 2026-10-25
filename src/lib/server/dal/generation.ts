@@ -27,6 +27,7 @@ import { cancelOwnedJob } from "./cancel";
 import { toJobDto, type JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
+import type { AllowancePolicy } from "./allowance-source";
 import { inTransaction, type Tx } from "./tx";
 
 export type { ResolveContext };
@@ -35,6 +36,8 @@ export interface GenerationDeps {
   /** Resolves a v2 request's curriculum context (provided by createWebDal). Without it v2 requests are refused. */
   resolveContext?: ResolveContext;
   limits?: GenerationLimits;
+  /** Allowance settings (daily refresh, D-112); the allowance rule reads them. */
+  allowancePolicy?: AllowancePolicy;
   clock?: () => Date;
 }
 
