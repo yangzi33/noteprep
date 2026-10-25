@@ -13,6 +13,29 @@ Technical notes for switching the daily export allowance on and off. Design: see
 - Vercel applies variable changes to new deployments only. Redeploy after every change.
 - Set both explicitly in each hosted environment; `.env.example` lists them as placeholders.
 
+## Operator top-up
+
+`POST /api/admin/refresh-allowance` gives every free account the full daily limit again for the current UTC day (D-113). For each daily bucket of today it sets `limit_count = used + reserved + DAILY_REFRESH_LIMIT`; it never edits `used` or `reserved`, so the lifetime sum and the drift views stay consistent. Accounts with no bucket today already have the full limit, and trial and paid buckets are never touched.
+
+- Off by default. Set `ADMIN_REFRESH_ENABLED=1` and `ADMIN_REFRESH_TOKEN` (a random string of at least 32 characters) in the Vercel server environment only, never in a `NEXT_PUBLIC_*` variable and never in the repository. With the flag on and no valid token, the app fails at startup.
+- Keep `ADMIN_REFRESH_ENABLED=0` unless the call is about to be made. Vercel applies variable changes to new deployments only, so enabling and disabling each need a redeploy. While off, the route answers 404 like an unknown route, for every method and token.
+- It works only while `DAILY_REFRESH_ENABLED=1`.
+
+```sh
+curl -X POST -H "Authorization: Bearer $TOKEN" https://<host>/api/admin/refresh-allowance
+```
+
+| Response | Meaning |
+|---|---|
+| `200 {"accounts": N}` | N daily buckets were topped up (0 when nothing needed it) |
+| `401` | missing or wrong token |
+| `404` | the route is disabled |
+| `405` | any method except POST |
+| `409` | the daily refresh is off |
+| `429` | another authenticated call already ran in the same UTC minute (the guard is a fixed one-minute window, so two calls on either side of a minute boundary are both allowed) |
+
+The request carries no parameters; the day, the limit and the accounts come from the server. The log holds one line with a request id and the account count. Rotate the token by changing it and redeploying; remove it when finished and set the flag back to `0`.
+
 ## Migrations
 
 Two migrations add the daily bucket kind:
