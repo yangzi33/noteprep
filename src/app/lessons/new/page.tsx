@@ -6,7 +6,8 @@ import { Notice } from "@/components/ui/notice";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
-import { generationErrorMessage } from "@/lib/ui/messages";
+import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { exhaustedNotice, generationErrorMessage } from "@/lib/ui/messages";
 import { createLesson } from "./actions";
 
 const inputClass = "w-full rounded border px-3 py-2";
@@ -24,20 +25,22 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
     <main className="mx-auto max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">New lesson</h1>
       <p className="mt-2 text-sm" data-testid="allowance">
-        {allowance
-          ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
-          : "Your account is being set up."}
+        {allowanceSentence(allowance)}
       </p>
+      {dailyRefreshReminder(allowance) && (
+        <p className="mt-1 text-sm text-muted-foreground" data-testid="refresh-reminder">
+          {dailyRefreshReminder(allowance)}
+        </p>
+      )}
 
       {error && (
         <Notice intent="error" className="mt-4">
-          {generationErrorMessage(error)}
+          {generationErrorMessage(error, allowance ? allowance.source : null)}
         </Notice>
       )}
       {exhausted && (
         <Notice intent="info" role="status" className="mt-4">
-          You have used all of your free generations. Subscriptions are not available yet (they arrive in a later phase).
-          You can still view your history.
+          {exhaustedNotice(allowance.source)} You can still view your history.
         </Notice>
       )}
 

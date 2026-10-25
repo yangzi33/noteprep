@@ -104,7 +104,7 @@ export async function lockAllowanceBucket(tx: Tx, ownerId: string, now: Date, po
 }
 
 /**
- * The same bucket without a lock, for display. Never inserts: a daily source with no row yet returns a SYNTHETIC bucket
+ * The same bucket without a lock, for display. Never inserts: a daily source with no row yet (but with a trial bucket, i.e. a set-up account) returns a SYNTHETIC bucket
  * (id "", used 0, reserved 0, policy limit) that exists only for display and must never be reserved against.
  * For the trial source the counters are the lifetime figures (trial plus all daily buckets). Null when no bucket applies.
  */
@@ -112,6 +112,9 @@ export async function readAllowanceBucket(tx: Tx, ownerId: string, now: Date, po
   const source = await resolveAllowanceSource(tx, ownerId, now, policy);
   const bucket = await selectBucket(tx, ownerId, source, now, false);
   if (source.kind === "daily") {
+    // No profile yet (ensureAccount creates the trial bucket with it): show "account is being set up", not a synthetic view.
+    const trial = await tx.$queryRaw<{ one: number }[]>`SELECT 1 AS one FROM usage_bucket WHERE owner_id = ${ownerId}::uuid AND kind = 'trial'::bucket_kind`;
+    if (trial.length === 0) return null;
     return { bucket: bucket ?? { id: "", used: 0, reserved: 0, limit_count: policy.dailyRefresh.limit }, source: "daily", resetsAt: utcDayWindow(source.day).endsAt };
   }
   if (!bucket) return null;

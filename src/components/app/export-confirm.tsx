@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui/notice";
 import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import type { DocumentKind } from "@/lib/package/schema";
 import { DOCUMENT_LABELS } from "@/lib/ui/lesson-view";
-import { generationErrorMessage } from "@/lib/ui/messages";
+import { generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 
 export const EXPORT_PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
 
@@ -22,6 +22,12 @@ export interface ExportConfirmProps {
   allowanceText: string;
   /** Generations left, or null when unknown. */
   remaining: number | null;
+  /** Where the allowance comes from; picks the wording of an exhausted error. */
+  source?: AllowanceSourceKind | null;
+  /** The beta daily-refresh reminder, when the daily allowance applies. */
+  reminder?: string | null;
+  /** "After this export you will have N left today.", when it applies. */
+  afterText?: string | null;
   rev: number;
   contentHash: string;
   formKey: string;
@@ -36,7 +42,7 @@ export interface ExportConfirmProps {
 /** The confirmation page body. Receives only facts about the draft, never the package; the form carries ids, the revision and hash the tutor saw, and a key. */
 export function ExportConfirmView(p: ExportConfirmProps) {
   const back = `/drafts/${p.draftId}?v=${p.versionId}`;
-  const errorMessage = generationErrorMessage(p.error);
+  const errorMessage = generationErrorMessage(p.error, p.source ?? null);
   const gate = !p.enabled ? generationErrorMessage("EXPORT_DISABLED") : p.stale ? generationErrorMessage("EXPORT_CONFLICT") : null;
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
@@ -57,6 +63,16 @@ export function ExportConfirmView(p: ExportConfirmProps) {
         <p className="mt-3 text-sm" data-testid="export-balance">
           {p.allowanceText}
         </p>
+        {p.reminder && (
+          <p className="mt-1 text-sm text-muted-foreground" data-testid="refresh-reminder">
+            {p.reminder}
+          </p>
+        )}
+        {p.afterText && (
+          <p className="mt-1 text-sm" data-testid="export-after">
+            {p.afterText}
+          </p>
+        )}
       </Card>
 
       {errorMessage && (

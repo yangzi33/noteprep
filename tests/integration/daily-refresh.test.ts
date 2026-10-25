@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { utcDayNumber } from "@/lib/domain/daily-refresh";
 import { AllowanceExhausted } from "@/lib/domain/errors";
-import type { AuthedCtx } from "@/lib/server/auth/context";
+import { makeAuthedCtx, type AuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal } from "@/lib/server/dal";
 import type { AllowancePolicy } from "@/lib/server/dal/allowance-source";
 import { code, createHarness, freshKey, OPEN_GEN, OPEN_LIMITS, type Harness } from "./export-helpers";
@@ -305,6 +305,13 @@ describe("allowance display", () => {
     clk.now = new Date(midnightAfter(clk.now).getTime() + 1);
     expect(await on.history.getAllowance(ctx)).toMatchObject({ used: 0, pending: 0, remaining: 5 });
     expect(await dailyRows(ctx.userId)).toHaveLength(1);
+  });
+
+  it("an account with no profile yet gets no allowance view in either setting (never a synthetic daily one)", async () => {
+    const ctx = makeAuthedCtx(randomUUID()); // ensureAccount was not run: no profile, no trial bucket
+    expect(await on.history.getAllowance(ctx)).toBeNull();
+    expect(await off.history.getAllowance(ctx)).toBeNull();
+    expect(await dailyRows(ctx.userId)).toEqual([]);
   });
 
   it("trial display has no resetsAt and folds beta use into the lifetime numbers", async () => {

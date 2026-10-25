@@ -8,7 +8,7 @@ import { domainErrorCode } from "@/lib/domain/errors";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
-import { allowanceSentence } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, dailyRefreshReminder, exportAfterSentence } from "@/lib/ui/dashboard-view";
 import { changesText } from "@/lib/ui/draft-changes";
 import { versionLabel } from "@/lib/ui/draft-versions";
 import { exportAvailable } from "@/lib/ui/export-confirm";
@@ -62,6 +62,9 @@ export default async function ExportConfirmPage({ params, searchParams }: { para
       changes={changesText(view.adjust.changes.replacedIds.length, view.adjust.changes.removedIds.length)}
       allowanceText={allowanceSentence(allowance)}
       remaining={allowance ? allowance.remaining : null}
+      source={allowance ? allowance.source : null}
+      reminder={dailyRefreshReminder(allowance)}
+      afterText={exportAfterSentence(allowance)}
       rev={view.rev}
       contentHash={view.contentHash}
       formKey={randomUUID()} // one key per rendered page: a double click or retried submit is the same request

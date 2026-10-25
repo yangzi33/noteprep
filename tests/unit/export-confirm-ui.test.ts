@@ -99,6 +99,18 @@ describe("export confirmation view", () => {
     expect(html).toContain('href="/account"');
   });
 
+  it("daily view shows the reminder and the after-export sentence; exhausted daily has no subscribe wording", () => {
+    const html = render({ allowanceText: "3 of 5 generations left.", remaining: 3, reminder: "Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.", afterText: "After this export you will have 2 left today." });
+    expect(html).toContain('data-testid="refresh-reminder"');
+    expect(html).toContain("Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.");
+    expect(html).toContain("After this export you will have 2 left today.");
+    const out = render({ remaining: 0, source: "daily", error: "ALLOWANCE_EXHAUSTED" });
+    expect(out).toContain("00:00 UTC");
+    expect(out).toContain("contact us");
+    expect(out.toLowerCase()).not.toMatch(/subscri|checkout/);
+    expect(render()).not.toContain("refresh-reminder");
+  });
+
   it("does not show the free note while generations remain; an error code shows its message", () => {
     expect(render()).not.toContain('href="/account"');
     expect(render({ error: "RATE_LIMITED" })).toContain(generationErrorMessage("RATE_LIMITED")!);

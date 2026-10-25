@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, draftCards, emptyExportsText, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
 
 export default async function HistoryPage() {
@@ -20,6 +20,11 @@ export default async function HistoryPage() {
         <p className="text-sm" data-testid="allowance">
           {allowanceSentence(allowance)}
         </p>
+        {dailyRefreshReminder(allowance) && (
+          <p className="text-sm text-muted-foreground" data-testid="refresh-reminder">
+            {dailyRefreshReminder(allowance)}
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">Times are shown in UTC. Deleting a lesson never gives a generation back.</p>
       </header>
 

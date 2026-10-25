@@ -16,7 +16,8 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
-import { generationErrorMessage } from "@/lib/ui/messages";
+import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { exhaustedNotice, generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
 import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepare-view";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
@@ -30,7 +31,7 @@ const DIFFICULTIES = [
   { value: "challenge", label: "Challenge" },
 ];
 
-function PageFrame({ allowanceText, error, children }: { allowanceText: string; error?: string; children: React.ReactNode }) {
+function PageFrame({ allowanceText, reminder, source, error, children }: { allowanceText: string; reminder: string | null; source: AllowanceSourceKind | null; error?: string; children: React.ReactNode }) {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
@@ -41,7 +42,12 @@ function PageFrame({ allowanceText, error, children }: { allowanceText: string; 
         <p className="text-sm" data-testid="allowance">
           {allowanceText}
         </p>
-        {error && <Notice intent="error">{generationErrorMessage(error)}</Notice>}
+        {reminder && (
+          <p className="text-sm text-muted-foreground" data-testid="refresh-reminder">
+            {reminder}
+          </p>
+        )}
+        {error && <Notice intent="error">{generationErrorMessage(error, source)}</Notice>}
       </header>
       <div className="mt-6">{children}</div>
     </main>
@@ -57,11 +63,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   // In draft mode a preview is free, so an empty allowance does not block it (D-106).
   const draftFlow = serverEnv().FLOW_MODE === "draft";
   const exhausted = !draftFlow && allowance !== null && allowance.remaining <= 0;
-  const allowanceText = allowance
-    ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
-    : "Your account is being set up.";
+  const allowanceText = allowanceSentence(allowance);
   const frame = (children: React.ReactNode) => (
-    <PageFrame allowanceText={allowanceText} error={params.error}>
+    <PageFrame allowanceText={allowanceText} reminder={dailyRefreshReminder(allowance)} source={allowance ? allowance.source : null} error={params.error}>
       {children}
     </PageFrame>
   );
@@ -185,7 +189,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         {!topic && <p className="text-sm text-muted-foreground">Choose a topic to continue.</p>}
         {exhausted && context && (
           <Notice intent="info" role="status">
-            You have used all of your free generations. Subscriptions are not available yet (they arrive in a later phase).
+            {exhaustedNotice(allowance.source)}
           </Notice>
         )}
         {context && (
