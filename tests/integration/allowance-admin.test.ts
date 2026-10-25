@@ -46,7 +46,13 @@ async function exportOnce(ctx: Parameters<typeof h.newDraft>[0], dal = on) {
 const call = (over: { authorization?: string | null; policy?: AllowancePolicy; at?: Date } = {}) =>
   runAdminRefresh({ authorization: over.authorization === undefined ? `Bearer ${TOKEN}` : over.authorization, expectedToken: TOKEN, requestId: "req-1" }, { db: h.appDb, policy: over.policy ?? ON, clock: () => over.at ?? clk.now });
 // The one-per-minute guard rows are cleared before each test; tests that need a second call choose the minute explicitly.
-const minuteStart = () => new Date(Math.floor(Date.now() / 60_000) * 60_000);
+// A minute boundary of the current UTC day such that this minute and the next one are both on that day (a pinned midday clock
+// would put drafts and reservations hours away from the database clock, so the real day is used and only the minute is chosen).
+const minuteStart = () => {
+  const base = Math.floor(Date.now() / 60_000) * 60_000;
+  const crosses = Math.floor((base + 60_000) / 86_400_000) !== Math.floor(base / 86_400_000);
+  return new Date(crosses ? base - 60_000 : base);
+};
 const nextMinute = () => clk.now;
 const rateRows = async () => Number((await h.admin.query(`SELECT count(*)::int AS n FROM rate_limit_window WHERE key LIKE 'admin:refresh:%'`)).rows[0].n);
 

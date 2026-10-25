@@ -66,11 +66,16 @@ async function selectBucket(tx: Tx, ownerId: string, source: AllowanceSource, no
   return rows[0] ?? null;
 }
 
-/** Sum of used and reserved over all of the owner's daily buckets: what the beta perk has already spent against the lifetime total. */
+/**
+ * Sum of used and reserved over all of the owner's daily buckets: what the beta perk has already spent against the lifetime total.
+ * Reachable with the perk OFF (trial reservation and display), so the kind is compared as text, not cast to the enum: on a
+ * database that does not have the `daily` enum label yet (migration 20261025100000 not applied) `'daily'::bucket_kind` would
+ * make Postgres reject the query, while the text compare simply finds no rows. The scan is by owner_id first.
+ */
 async function dailySums(tx: Tx, ownerId: string): Promise<{ used: number; reserved: number }> {
   const rows = await tx.$queryRaw<{ used: number; reserved: number }[]>`
     SELECT COALESCE(SUM(used), 0)::int AS used, COALESCE(SUM(reserved), 0)::int AS reserved
-      FROM usage_bucket WHERE owner_id = ${ownerId}::uuid AND kind = 'daily'::bucket_kind`;
+      FROM usage_bucket WHERE owner_id = ${ownerId}::uuid AND kind::text = 'daily'`;
   return rows[0] ?? { used: 0, reserved: 0 };
 }
 

@@ -17,7 +17,7 @@ Technical notes for switching the daily export allowance on and off. Design: see
 
 `POST /api/admin/refresh-allowance` gives every free account the full daily limit again for the current UTC day (D-113). For each daily bucket of today it raises `limit_count` to `used + reserved + DAILY_REFRESH_LIMIT` and never lowers it; it never edits `used` or `reserved`, so the lifetime sum and the drift views stay consistent. Accounts with no bucket today already have the full limit, and trial and paid buckets are never touched.
 
-- Off by default. Set `ADMIN_REFRESH_ENABLED=1` and `ADMIN_REFRESH_TOKEN` (a random string of at least 32 characters) in the Vercel server environment only, never in a `NEXT_PUBLIC_*` variable and never in the repository. With the flag on and no valid token, the app fails at startup.
+- Off by default. Set `ADMIN_REFRESH_ENABLED=1` and `ADMIN_REFRESH_TOKEN` (a random string of at least 32 characters) in the Vercel server environment only, never in a `NEXT_PUBLIC_*` variable and never in the repository. With the flag on and no valid token, the server environment fails to parse, which happens lazily, so every request fails (it fails closed) and the error never echoes the token value.
 - Keep `ADMIN_REFRESH_ENABLED=0` unless the call is about to be made. Vercel applies variable changes to new deployments only, so enabling and disabling each need a redeploy. While off, the route answers 404 with an empty body for every method, and never reads the token.
 - It works only while `DAILY_REFRESH_ENABLED=1`.
 
@@ -43,11 +43,11 @@ Two migrations add the daily bucket kind:
 1. `prisma/migrations/20261025100000_bucket_kind_daily` adds an enum value. It is IRREVERSIBLE (Postgres cannot drop an enum value).
 2. `prisma/migrations/20261025100100_daily_bucket_shape` changes the bucket shape for daily rows.
 
-Apply them with the `Database migrations` workflow (status first, then deploy), staging first, then production. The repository owner runs and approves this step. Apply the migrations before deploying a web build with `DAILY_REFRESH_ENABLED=1`.
+Apply them with the `Database migrations` workflow (status first, then deploy), staging first, then production. The repository owner runs and approves this step. The two migrations must be applied before the perk is switched on (`DAILY_REFRESH_ENABLED=1`) and before the operator top-up route is used. With the perk off, the build is safe on a database that does not have them yet (the only perk-off query that mentions daily rows compares the kind as text), but apply them before merging and deploying anyway.
 
 ## Behaviour
 
-- Enabled: an account uses its daily bucket first (the count returns at 00:00 UTC); the lifetime allowance is used only when the daily bucket is not available.
+- Enabled: an account uses only its daily bucket (the count returns at 00:00 UTC); its lifetime trial bucket is not touched while the perk is on, although daily use counts toward the lifetime total once the perk is switched off.
 - Disabled (`DAILY_REFRESH_ENABLED=0`): only the lifetime allowance of 3 applies. It counts every export made while the perk was on, so an account that exported while the perk was on may already have used some or all of it.
 - Exports already reserved against a daily bucket settle normally after the setting is turned off.
 
