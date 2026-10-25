@@ -11,7 +11,7 @@ const ServerEnv = z.object({
   FLOW_MODE: z.enum(["legacy", "draft"]).default("draft"),
   /** "1" (default) lets confirmExport reserve allowance and queue export jobs. "0" pauses export (kill switch; pending exports still settle). The two defaults change together (S6): draft without export would give tutors no PDFs. */
   EXPORT_ENABLED: z.enum(["0", "1"]).default("1"),
-  /** "1" enables POST /api/admin/refresh-allowance (D-113). Off by default; the route then answers like a missing route. */
+  /** "1" enables POST /api/admin/refresh-allowance (D-113). Off by default; the route then answers 404 and never reads the token. */
   ADMIN_REFRESH_ENABLED: z.enum(["0", "1"]).default("0"),
   /** Bearer token of that route: server-only, at least 32 characters, required only when the route is enabled. Never logged or echoed. */
   ADMIN_REFRESH_TOKEN: z.string().optional(),

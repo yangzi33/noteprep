@@ -87,7 +87,7 @@ Notes:
 | `EXPORT_ENABLED` | `1` | `0` pauses export (pending exports still settle) |
 | `DAILY_REFRESH_ENABLED` | `0` | `1` gives each account a daily export allowance that resets at 00:00 UTC, used before the lifetime allowance. Web scopes only. See docs/daily-refresh-rollout.md |
 | `DAILY_REFRESH_LIMIT` | `5` | Exports per UTC day when `DAILY_REFRESH_ENABLED=1` (integer, 1 to 1000) |
-| `ADMIN_REFRESH_ENABLED` | `0` | `1` enables `POST /api/admin/refresh-allowance` (bearer token, one call per minute, only while `DAILY_REFRESH_ENABLED=1`). Off, the route answers like an unknown route. Web scopes only. See docs/daily-refresh-rollout.md |
+| `ADMIN_REFRESH_ENABLED` | `0` | `1` enables `POST /api/admin/refresh-allowance` (bearer token, one call per minute, only while `DAILY_REFRESH_ENABLED=1`). Off, the route answers 404 with an empty body and never reads the token. Web scopes only. See docs/daily-refresh-rollout.md |
 | `ADMIN_REFRESH_TOKEN` | none | Bearer token for that route; at least 32 characters, required only when `ADMIN_REFRESH_ENABLED=1`. Server environment only |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
 | `DRAFT_*`, `EXPORT_*` limits | see file | Rate, concurrency, deadline, size and lifetime limits; every name is listed in `src/lib/server/limits.ts` |

@@ -6,7 +6,7 @@ import type { Tx } from "./tx";
 /**
  * Operator top-up (D-113): every daily bucket of the current UTC day gets limit_count = used + reserved + limit, so each
  * free account can export `limit` more times right now. One statement; it touches ONLY kind = 'daily' rows of today, never
- * edits used or reserved (the drift views stay clean), and skips rows whose limit would not change. `now` is the DAL clock.
+ * edits used or reserved (the drift views stay clean), and only raises: a row already at or above the target is skipped (never lowers). `now` is the DAL clock.
  */
 export async function refreshTodayForAll(tx: Tx, now: Date, policy: AllowancePolicy): Promise<{ accounts: number }> {
   const day = utcDayNumber(now);
@@ -16,6 +16,6 @@ export async function refreshTodayForAll(tx: Tx, now: Date, policy: AllowancePol
        SET limit_count = used + reserved + ${limit}::int
      WHERE kind = 'daily'::bucket_kind
        AND period_key = ${day}::bigint
-       AND limit_count <> used + reserved + ${limit}::int`;
+       AND limit_count < used + reserved + ${limit}::int`;
   return { accounts };
 }

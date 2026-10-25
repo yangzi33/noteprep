@@ -60,7 +60,7 @@ describe("ADMIN_REFRESH_* environment", () => {
   });
 });
 
-// The route: disabled answers like a missing route, whatever the method or token.
+// The route: disabled answers 404 whatever the method or token.
 const m = vi.hoisted(() => ({ env: { ADMIN_REFRESH_ENABLED: "0", ADMIN_REFRESH_TOKEN: undefined as string | undefined, limits: { dailyRefreshEnabled: 1, dailyRefreshLimit: 5 } }, run: vi.fn() }));
 vi.mock("@/lib/server/env", async (orig) => ({ ...(await orig<typeof import("@/lib/server/env")>()), serverEnv: () => m.env }));
 vi.mock("@/lib/server/db", () => ({ getDb: () => ({}) }));
@@ -87,6 +87,28 @@ describe("route /api/admin/refresh-allowance", () => {
     expect(res.headers.get("allow")).toBe("POST");
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(m.run).not.toHaveBeenCalled();
+  });
+
+  it("enabled: HEAD and OPTIONS get 405 and run nothing", async () => {
+    const route = await import("@/app/api/admin/refresh-allowance/route");
+    m.env = { ADMIN_REFRESH_ENABLED: "1", ADMIN_REFRESH_TOKEN: TOKEN, limits: m.env.limits };
+    for (const [handler, method] of [[route.HEAD, "HEAD"], [route.OPTIONS, "OPTIONS"]] as const) expect((await handler(req(method, `Bearer ${TOKEN}`))).status).toBe(405);
+    expect(m.run).not.toHaveBeenCalled();
+  });
+
+  it("enabled: two Authorization headers are folded into one value that fails the token check (401)", async () => {
+    const route = await import("@/app/api/admin/refresh-allowance/route");
+    m.env = { ADMIN_REFRESH_ENABLED: "1", ADMIN_REFRESH_TOKEN: TOKEN, limits: m.env.limits };
+    const headers = new Headers();
+    headers.append("authorization", `Bearer ${TOKEN}`);
+    headers.append("authorization", `Bearer ${TOKEN}`);
+    m.run.mockResolvedValueOnce({ status: 401, body: { error: "unauthorized" } });
+    const res = await route.POST(new Request("http://x/api/admin/refresh-allowance", { method: "POST", headers }));
+    expect(res.status).toBe(401);
+    // The route hands the folded header to the decision module, whose real token check rejects it.
+    const forwarded = m.run.mock.calls[0]![0].authorization as string;
+    expect(forwarded).toBe(`Bearer ${TOKEN}, Bearer ${TOKEN}`);
+    expect(tokenMatches(bearerToken(forwarded), TOKEN)).toBe(false);
   });
 
   it("enabled: maps outcomes to status, no-store, and a body without the token", async () => {

@@ -58,12 +58,27 @@ describe("refreshTodayForAll", () => {
     const trialBefore = await h.bucket(ctx.userId);
 
     const r = await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
-    expect(r.accounts).toBeGreaterThanOrEqual(1);
+    expect(r.accounts).toBeGreaterThanOrEqual(1); // the UPDATE touches every daily bucket of today in the shared DB
     expect(await dailyRow(ctx.userId)).toEqual({ used: 5, reserved: 0, limit_count: 10 });
     expect(await h.bucket(ctx.userId)).toEqual(trialBefore);
 
     await h.complete((await exportOnce(ctx)).jobId);
     expect(await dailyRow(ctx.userId)).toEqual({ used: 6, reserved: 0, limit_count: 10 });
+  });
+
+  it("never lowers a limit: after reservations are released and DAILY_REFRESH_LIMIT is 5, the row stays at 8 and is not counted", async () => {
+    const ctx = await h.account();
+    const jobs = [];
+    for (let i = 0; i < 3; i++) jobs.push(await exportOnce(ctx));
+    await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
+    expect(await dailyRow(ctx.userId)).toEqual({ used: 0, reserved: 3, limit_count: 8 });
+    for (const j of jobs) await h.fail(j.jobId);
+    expect(await dailyRow(ctx.userId)).toEqual({ used: 0, reserved: 0, limit_count: 8 });
+    // Run the top-up again with the same limit: the released row (limit 8 > 0 + 0 + 5) must not be lowered or counted.
+    await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
+    expect(await dailyRow(ctx.userId)).toEqual({ used: 0, reserved: 0, limit_count: 8 });
+    const third = await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
+    expect(third.accounts).toBe(0);
   });
 
   it("a reserved (in-flight) bucket counts toward the new limit", async () => {
@@ -89,9 +104,8 @@ describe("refreshTodayForAll", () => {
     expect(await bucketTable(trialOnly.userId)).toEqual(before);
     expect(await bucketTable(stale.userId)).toEqual(staleBefore);
     // Idempotent: a second run changes no row for an account already at used + reserved + limit.
-    const again = await inTransaction(h.appDb, async (tx) => refreshTodayForAll(tx, clk.now, ON));
+    await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
     expect(await dailyRow(fresh.userId)).toEqual({ used: 0, reserved: 1, limit_count: 6 });
-    expect(again.accounts).toBeGreaterThanOrEqual(0);
     const third = await inTransaction(h.appDb, (tx) => refreshTodayForAll(tx, clk.now, ON));
     expect(third.accounts).toBe(0);
   });
@@ -125,7 +139,7 @@ describe("runAdminRefresh", () => {
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     const all = [vi.spyOn(console, "log"), vi.spyOn(console, "warn"), vi.spyOn(console, "error")].map((s) => s.mockImplementation(() => {}));
     const res = await call({ at: nextMinute() });
-    // the day differs from the account's, so the count is a number (possibly 0) and the body has no other key
+    // the count covers every daily bucket of today in the shared DB; the body has no other key
     expect(res.status).toBe(200);
     expect(Object.keys(res.body)).toEqual(["accounts"]);
     const lines = JSON.stringify([log.mock.calls, ...all.map((s) => s.mock.calls)]);
@@ -142,7 +156,7 @@ describe("runAdminRefresh", () => {
     expect(await code(exportOnce(ctx))).toBe("ALLOWANCE_EXHAUSTED");
     const res = await call({ at });
     expect(res.status).toBe(200);
-    expect((res.body as { accounts: number }).accounts).toBeGreaterThanOrEqual(1);
+    expect((res.body as { accounts: number }).accounts).toBeGreaterThanOrEqual(1); // every daily bucket of today in the shared DB
     expect(await dailyRow(ctx.userId)).toEqual({ used: 5, reserved: 0, limit_count: 10 });
     await exportOnce(ctx);
   });

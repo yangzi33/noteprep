@@ -15,10 +15,10 @@ Technical notes for switching the daily export allowance on and off. Design: see
 
 ## Operator top-up
 
-`POST /api/admin/refresh-allowance` gives every free account the full daily limit again for the current UTC day (D-113). For each daily bucket of today it sets `limit_count = used + reserved + DAILY_REFRESH_LIMIT`; it never edits `used` or `reserved`, so the lifetime sum and the drift views stay consistent. Accounts with no bucket today already have the full limit, and trial and paid buckets are never touched.
+`POST /api/admin/refresh-allowance` gives every free account the full daily limit again for the current UTC day (D-113). For each daily bucket of today it raises `limit_count` to `used + reserved + DAILY_REFRESH_LIMIT` and never lowers it; it never edits `used` or `reserved`, so the lifetime sum and the drift views stay consistent. Accounts with no bucket today already have the full limit, and trial and paid buckets are never touched.
 
 - Off by default. Set `ADMIN_REFRESH_ENABLED=1` and `ADMIN_REFRESH_TOKEN` (a random string of at least 32 characters) in the Vercel server environment only, never in a `NEXT_PUBLIC_*` variable and never in the repository. With the flag on and no valid token, the app fails at startup.
-- Keep `ADMIN_REFRESH_ENABLED=0` unless the call is about to be made. Vercel applies variable changes to new deployments only, so enabling and disabling each need a redeploy. While off, the route answers 404 like an unknown route, for every method and token.
+- Keep `ADMIN_REFRESH_ENABLED=0` unless the call is about to be made. Vercel applies variable changes to new deployments only, so enabling and disabling each need a redeploy. While off, the route answers 404 with an empty body for every method, and never reads the token.
 - It works only while `DAILY_REFRESH_ENABLED=1`.
 
 ```sh

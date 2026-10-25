@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
-// Operator top-up of today's daily allowance (D-113). Off unless ADMIN_REFRESH_ENABLED=1; off it answers exactly like a
-// missing route (the framework not-found), for every method and whatever the Authorization header holds, which is never read.
+// Operator top-up of today's daily allowance (D-113). Off unless ADMIN_REFRESH_ENABLED=1; off it answers 404 with an empty
+// body (the framework not-found, not the HTML page of an unknown path), for every method; the Authorization header is never read.
 // Nothing in the request except the bearer token is used: the day, limit and accounts come from the server.
 async function handle(request: Request): Promise<Response> {
   const env = serverEnv();
