@@ -9,7 +9,7 @@ describe("parseSupportEmail", () => {
     expect(parseSupportEmail("  help@example.com ")).toBe("help@example.com");
   });
   it("returns null for unset, empty or malformed values", () => {
-    for (const v of [undefined, null, "", "  ", "help", "a@b", "a b@example.com", "mailto:a@example.com", "a@example.com, b@example.com", '"x"@example.com']) {
+    for (const v of [undefined, null, "", "  ", "help", "a@b", "a b@example.com", "mailto:a@example.com", "a@example.com, b@example.com", "a%0d%0a@x.com", '"x"@example.com']) {
       expect(parseSupportEmail(v)).toBeNull();
     }
   });

@@ -1,4 +1,4 @@
-const PLAIN_EMAIL = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+const PLAIN_EMAIL = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 
 /** A plain email address, trimmed, or null when the value is unset or not a plain address. */
 export function parseSupportEmail(raw: string | undefined | null): string | null {

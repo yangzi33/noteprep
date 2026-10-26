@@ -47,7 +47,7 @@ export default async function AccountPage() {
             </>
           )}
         </p>
-        <p className="text-sm text-muted-foreground">Your exported lesson packs stay available to download from My lesson packs.</p>
+        <p className="text-sm text-muted-foreground">Your exported lesson packs stay available to download from My lesson packs until you delete them.</p>
       </Card>
     </main>
   );

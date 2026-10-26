@@ -20,18 +20,18 @@ export function WorkspaceNav() {
     NAV_ITEMS.map((i) => i.href),
   );
   return (
-    <nav aria-label="Main" className="overflow-x-auto md:overflow-visible">
-      <ul className="flex gap-1 p-2 md:flex-col md:p-4">
+    <nav aria-label="Main">
+      <ul className="grid grid-cols-4 gap-1 p-2 md:flex md:flex-col md:p-4">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.icon];
           const isActive = item.href === active;
           return (
-            <li key={item.href} className="shrink-0">
+            <li key={item.href} className="min-w-0 md:shrink-0">
               <Link
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-3 focus-visible:ring-ring",
+                  "flex min-h-11 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-xs leading-tight font-medium outline-none md:flex-row md:justify-start md:gap-2 md:px-3 md:text-left md:text-sm md:whitespace-nowrap focus-visible:ring-3 focus-visible:ring-ring",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-secondary",

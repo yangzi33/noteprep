@@ -89,6 +89,7 @@ Notes:
 | `DAILY_REFRESH_LIMIT` | `5` | Exports per UTC day when `DAILY_REFRESH_ENABLED=1` (integer, 1 to 1000) |
 | `ADMIN_REFRESH_ENABLED` | `0` | `1` enables `POST /api/admin/refresh-allowance` (bearer token, one call per minute, only while `DAILY_REFRESH_ENABLED=1`). Off, the route answers 404 with an empty body and never reads the token. Web scopes only. See docs/daily-refresh-rollout.md |
 | `ADMIN_REFRESH_TOKEN` | none | Bearer token for that route; at least 32 characters, required only when `ADMIN_REFRESH_ENABLED=1`. Server environment only |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | none | Optional public contact address shown to users. Inlined at build time, so set it in the build environment. Leave unset to show wording only |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
 | `DRAFT_*`, `EXPORT_*` limits | see file | Rate, concurrency, deadline, size and lifetime limits; every name is listed in `src/lib/server/limits.ts` |
 

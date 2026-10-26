@@ -22,9 +22,9 @@ export function AppHeader({ email }: { email: string }) {
         </span>
         <Link
           href="/account"
-          className="max-sm:sr-only inline-flex min-h-11 max-w-[240px] items-center truncate rounded-control text-sm hover:underline focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none sm:inline-flex"
+          className="inline-flex min-h-11 min-w-0 max-w-[240px] items-center rounded-control text-sm hover:underline focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
         >
-          {email}
+          <span className="truncate">{email}</span>
         </Link>
         <form>
           <Button type="submit" variant="outline" size="sm" formAction={signOut}>
