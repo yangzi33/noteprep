@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { signOut } from "../login/actions";
+
+export const metadata: Metadata = { title: "Account" };
 
 export default async function AccountPage() {
   const { email } = await requireAccount();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { DraftCard, MaterialRow } from "@/components/app/material-card";
 import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
@@ -5,6 +6,8 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
+
+export const metadata: Metadata = { title: "History" };
 
 export default async function HistoryPage() {
   const { ctx } = await requireAccount();

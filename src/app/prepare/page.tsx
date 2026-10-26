@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { learningObjectiveItems } from "@/lib/curriculum/context";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
@@ -48,6 +49,8 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
     </main>
   );
 }
+
+export const metadata: Metadata = { title: "Create materials" };
 
 export default async function PreparePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();

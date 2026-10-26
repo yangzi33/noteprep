@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { LoginForm } from "@/components/app/login-form";
 import { SignedOutHeader } from "@/components/app/signed-out-header";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { loginMessage } from "@/lib/ui/login-messages";
 import { signIn, signUp } from "./actions";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { error, notice } = await searchParams;

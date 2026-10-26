@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { SignedOutHeader } from "@/components/app/signed-out-header";
+
+export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (

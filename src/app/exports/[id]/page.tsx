@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ExportStatus } from "@/components/export-status";
@@ -10,6 +11,8 @@ import { toExportView } from "@/lib/ui/export-view";
 const Search = z.object({ outcome: z.enum(["reused", "joined"]).optional().catch(undefined) });
 
 // Historical exports stay viewable whatever EXPORT_ENABLED says.
+export const metadata: Metadata = { title: "Your export" };
+
 export default async function ExportPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
   const { id } = await params;

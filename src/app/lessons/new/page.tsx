@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -11,6 +12,8 @@ import { exhaustedNotice, generationErrorMessage } from "@/lib/ui/messages";
 import { createLesson } from "./actions";
 
 const inputClass = "w-full rounded border px-3 py-2";
+
+export const metadata: Metadata = { title: "New materials" };
 
 export default async function NewLessonPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { ctx } = await requireAccount();

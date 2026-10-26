@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -20,6 +21,8 @@ const Search = z.object({
   rev: z.coerce.number().int().min(1).max(1_000_000_000).optional(),
   error: z.string().regex(/^[A-Z_]{1,40}$/).optional(),
 });
+
+export const metadata: Metadata = { title: "Confirm export" };
 
 export default async function ExportConfirmPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();

@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { JobStatus } from "@/components/job-status";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { toJobView } from "@/lib/ui/job-view";
+
+export const metadata: Metadata = { title: "Export status" };
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { ctx } = await requireAccount();

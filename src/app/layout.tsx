@@ -14,7 +14,8 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "noteprep",
+  applicationName: "NotePrep",
+  title: { default: "NotePrep", template: "%s · NotePrep" },
   description: "Lesson preparation for independent math tutors",
 };
 

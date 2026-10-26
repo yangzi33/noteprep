@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { DraftCard, MaterialCard } from "@/components/app/material-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +8,8 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, recentCards } from "@/lib/ui/dashboard-view";
 import Link from "next/link";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const { ctx } = await requireAccount();

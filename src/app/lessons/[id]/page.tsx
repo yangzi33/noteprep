@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,6 +19,8 @@ const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
+
+export const metadata: Metadata = { title: "Your materials" };
 
 export default async function LessonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
