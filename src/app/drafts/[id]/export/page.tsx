@@ -39,7 +39,7 @@ export default async function ExportConfirmPage({ params, searchParams }: { para
     if (code === "NOT_FOUND") notFound();
     if (code === "DRAFT_EXPIRED") {
       return (
-        <main className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+        <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
           <h1 className="font-heading text-[28px] leading-[1.2]">This draft has expired</h1>
           <Notice intent="error" className="mt-4" data-testid="draft-expired">
             {generationErrorMessage("DRAFT_EXPIRED")}

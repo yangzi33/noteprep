@@ -5,7 +5,7 @@ export function SignedOutHome() {
   return (
     <>
       <PublicHeader variant="landing" />
-      <main>
+      <main id="main" tabIndex={-1}>
         <LandingPage />
       </main>
       <LandingFooter />

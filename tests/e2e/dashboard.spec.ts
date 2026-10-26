@@ -31,7 +31,7 @@ test("a populated dashboard shows an export card that opens its lesson revision 
 
     const recent = page.getByRole("region", { name: "Recent activity" });
     await expect(recent.getByRole("listitem")).toHaveCount(1);
-    await expect(recent.getByRole("link", { name: "See all materials" })).toHaveAttribute("href", "/lessons");
+    await expect(recent.getByRole("link", { name: "See all lesson packs" })).toHaveAttribute("href", "/lessons");
     await expect(recent.getByRole("listitem").getByRole("link")).toHaveAttribute("aria-label", /^(Open|View status): .+/);
     await expect(page.getByText("Your exported lesson packs will appear here.")).toHaveCount(0);
 

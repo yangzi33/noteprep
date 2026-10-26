@@ -34,9 +34,9 @@ const DIFFICULTIES = [
 
 function PageFrame({ allowanceText, reminder, source, error, children }: { allowanceText: string; reminder: string | null; source: AllowanceSourceKind | null; error?: string; children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">CREATE LESSON PACK</p>
+        <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Create lesson pack</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
         <StepIndicator steps={STEPS} current={0} />
@@ -50,7 +50,7 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
   );
 }
 
-export const metadata: Metadata = { title: "Create materials" };
+export const metadata: Metadata = { title: "Create lesson pack" };
 
 export default async function PreparePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
@@ -218,7 +218,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
       {context && (
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3 p-5" data-testid="topic-summary">
-            <Badge className="self-start">YOUR LESSON PACK</Badge>
+            <Badge className="self-start uppercase">Your lesson pack</Badge>
             <h2 className="font-heading text-lg">{context.topic.title}</h2>
             <h3 className="text-sm font-medium">Learning objectives</h3>
             <ul className="list-disc pl-5 text-sm">

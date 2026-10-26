@@ -109,5 +109,5 @@ export function draftCards(items: readonly DraftSummaryLike[], max: number): Dra
 
 /** Heading of the empty exports/activity area; accurate when the page also lists drafts above it. */
 export function emptyExportsText(draftCount: number): string {
-  return draftCount > 0 ? "No exported lessons yet" : "Nothing here yet";
+  return draftCount > 0 ? "No lesson packs yet. Exported lesson packs will appear here." : "Nothing here yet";
 }

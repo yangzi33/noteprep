@@ -167,7 +167,7 @@ function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
     case "confirming":
       return { heading: "Finishing up…", detail: "We are confirming the final result. This page updates by itself.", charge: null, lastKnown: null, intent: "progress" };
     case "stalled":
-      return { heading: "We could not confirm the result yet.", detail: "Your PDFs may still be on their way. Refresh this page in a minute, or look in My materials.", charge: null, lastKnown: null, intent: "info" };
+      return { heading: "We could not confirm the result yet.", detail: "Your PDFs may still be on their way. Refresh this page in a minute, or look in My lesson packs.", charge: null, lastKnown: null, intent: "info" };
     case "succeeded":
       return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
     case "retired":

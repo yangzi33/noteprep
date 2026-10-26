@@ -158,7 +158,7 @@ describe("emptyExportsText", () => {
     expect(emptyExportsText(0)).toBe("Nothing here yet");
   });
   it("does not claim emptiness below a Drafts section", () => {
-    expect(emptyExportsText(2)).toBe("No exported lessons yet");
+    expect(emptyExportsText(2)).toBe("No lesson packs yet. Exported lesson packs will appear here.");
   });
 });
 

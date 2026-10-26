@@ -3,7 +3,7 @@ export type NavIcon = "dashboard" | "create" | "materials";
 export const NAV_ITEMS: readonly { href: string; label: string; icon: NavIcon }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/prepare", label: "Create lesson pack", icon: "create" },
-  { href: "/lessons", label: "My materials", icon: "materials" },
+  { href: "/lessons", label: "My lesson packs", icon: "materials" },
 ];
 
 /** Returns the longest href matching pathname on a path segment boundary, or null. */

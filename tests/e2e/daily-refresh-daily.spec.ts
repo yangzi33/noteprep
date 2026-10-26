@@ -15,11 +15,11 @@ test("daily refresh: the reminder shows the count once, an export uses one, the 
 
   await page.goto("/dashboard");
   await expect(page.getByTestId("refresh-reminder")).toContainText(REMINDER);
-  await expect(page.getByTestId("allowance")).not.toContainText("generations left");
+  await expect(page.getByTestId("allowance")).not.toContainText("lesson packs left");
 
   await page.goto("/prepare");
   await expect(page.getByTestId("refresh-reminder")).toContainText(REMINDER);
-  await expect(page.getByTestId("allowance")).not.toContainText("generations left");
+  await expect(page.getByTestId("allowance")).not.toContainText("lesson packs left");
 
   const worker: RunningWorker = await startStorageWorker();
   try {

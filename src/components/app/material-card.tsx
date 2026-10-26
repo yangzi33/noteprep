@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { badgeTone } from "@/lib/ui/badge-tone";
 import type { DraftCardModel, MaterialCardModel } from "@/lib/ui/dashboard-view";
 
 /** Dashboard tile: state, title, date and exactly one link. */
 export function MaterialCard({ card }: { card: MaterialCardModel }) {
   return (
     <Card className="flex h-full flex-col gap-3 p-5" data-state={card.state}>
-      <Badge tone={card.state === "succeeded" ? "accent" : "neutral"} className="self-start">
+      <Badge tone={badgeTone(card.state)} className="self-start">
         {card.label}
       </Badge>
       <h3 className="font-heading text-lg leading-snug break-words">{card.title}</h3>
@@ -23,7 +24,7 @@ export function MaterialCard({ card }: { card: MaterialCardModel }) {
   );
 }
 
-/** My materials row: the title is the one link, to the job (or export) status page. */
+/** My lesson packs row: the title is the one link, to the job (or export) status page. */
 export function MaterialRow({
   jobId,
   href,
@@ -54,7 +55,7 @@ export function MaterialRow({
         <p className="text-sm text-muted-foreground">{date}</p>
         {outcome && <p className="mt-1 text-sm text-muted-foreground">{outcome}</p>}
       </div>
-      <Badge tone={state === "succeeded" ? "accent" : "neutral"} className="self-start whitespace-nowrap">
+      <Badge tone={badgeTone(state)} className="self-start whitespace-nowrap">
         {label}
       </Badge>
     </li>

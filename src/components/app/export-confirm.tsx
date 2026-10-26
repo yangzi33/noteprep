@@ -45,7 +45,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
   const errorMessage = generationErrorMessage(p.error, p.source ?? null);
   const gate = !p.enabled ? generationErrorMessage("EXPORT_DISABLED") : p.stale ? generationErrorMessage("EXPORT_CONFLICT") : null;
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
       <h1 className="font-heading text-[28px] leading-[1.2]" data-testid="export-title">
         Export PDFs
       </h1>
@@ -96,11 +96,11 @@ export function ExportConfirmView(p: ExportConfirmProps) {
             <legend className="text-sm font-semibold">Page format</legend>
             {PAGE_FORMATS.map((f) => (
               <label key={f} className="flex min-h-11 items-center gap-2 text-sm">
-                <input type="radio" name="pageFormat" value={f} defaultChecked={f === "letter"} data-testid={`export-format-${f}`} />
+                <input type="radio" name="pageFormat" className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring" value={f} defaultChecked={f === "letter"} data-testid={`export-format-${f}`} />
                 {PAGE_FORMAT_LABELS[f]}
               </label>
             ))}
-            <p className="text-sm text-muted-foreground">All PDFs use this page size. Exporting the same content in the same size again is free.</p>
+            <p className="text-sm text-muted-foreground">All PDFs use this page size. Exporting the same content in the same size again is free while the lesson still exists.</p>
           </fieldset>
           <p className="text-sm font-semibold" data-testid="export-promise">
             {EXPORT_PROMISE}

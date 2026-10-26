@@ -26,7 +26,7 @@ const Search = z.object({ v: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).op
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
 
-export const metadata: Metadata = { title: "Preview materials" };
+export const metadata: Metadata = { title: "Preview lesson pack" };
 
 export default async function DraftPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
@@ -45,7 +45,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
       // Recovery: the same selection on the Prepare page (a plain link to Prepare once the draft has been purged).
       const selection = await dal.drafts.getDraftSelection(ctx, id);
       return (
-        <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8">
+        <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-8 sm:px-8">
           <h1 className="font-heading text-[28px] leading-[1.2]">This draft has expired</h1>
           <Notice intent="error" className="mt-4" data-testid="draft-expired">
             {generationErrorMessage("DRAFT_EXPIRED")}
@@ -80,7 +80,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   const exportEnabled = serverEnv().EXPORT_ENABLED === "1";
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
       <p className="text-sm text-muted-foreground">
         <Link href="/prepare" className="underline">
           Prepare

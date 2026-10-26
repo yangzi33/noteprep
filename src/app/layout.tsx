@@ -24,6 +24,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${lora.variable} font-sans`}>
       <body className="min-h-screen bg-background">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:inline-flex focus:min-h-11 focus:items-center focus:rounded-control focus:border focus:bg-card focus:px-4 focus:text-sm focus:font-medium focus:text-foreground"
+        >
+          Skip to content
+        </a>
         {user ? (
           <>
             <AppHeader email={user.email} />

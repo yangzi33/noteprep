@@ -18,9 +18,9 @@ export default async function DashboardPage() {
   const draftList = draftCards(drafts, 6);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">YOUR WORKSPACE</p>
+        <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Your workspace</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">A little less prep. More teaching.</h1>
         <p className="text-muted-foreground">Pick a topic, and get lesson notes, a worksheet and solutions to review before you teach.</p>
       </header>
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
           <h2 id="recent-heading" className="font-heading text-2xl">
             Recent activity
           </h2>
-          {cards.length > 0 && <TextAction href="/lessons">See all materials</TextAction>}
+          {cards.length > 0 && <TextAction href="/lessons">See all lesson packs</TextAction>}
         </div>
         {cards.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">Your exported lesson packs will appear here.</p>

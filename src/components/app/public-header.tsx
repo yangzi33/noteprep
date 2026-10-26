@@ -29,7 +29,7 @@ export function PublicHeader({ variant = "simple" }: { variant?: "simple" | "lan
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-1 md:ml-0 md:gap-3">
-            <Link href="/login" className={`inline-flex min-h-11 items-center rounded-control px-3 text-sm text-foreground hover:text-text-accent ${focus}`}>
+            <Link href="/login" className={`hidden min-h-11 items-center rounded-control px-3 text-sm text-foreground hover:text-text-accent md:inline-flex ${focus}`}>
               Sign in
             </Link>
             <Button asChild>

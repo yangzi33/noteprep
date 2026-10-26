@@ -20,7 +20,7 @@ const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
 
-export const metadata: Metadata = { title: "Your materials" };
+export const metadata: Metadata = { title: "Your lesson pack" };
 
 export default async function LessonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
@@ -59,10 +59,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   const notice = lesson.alignment ? alignmentNotice(lesson.alignment) : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
       <p className="text-sm text-muted-foreground">
         <Link href="/lessons" className="underline">
-          My materials
+          My lesson packs
         </Link>
         {" / "}
         <span>{lesson.title}</span>

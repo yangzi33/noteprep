@@ -38,7 +38,7 @@ export default async function ExportPage({ params, searchParams }: { params: Pro
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-4 sm:p-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl p-4 sm:p-8">
       {/* key: re-mount when the server-side state changes (for example after canceling) */}
       <ExportStatus key={`${view.state}-${view.job.state}-${view.job.attempt}-${view.job.cancelRequested}-${view.charge}`} initial={view} documents={documents} outcome={outcome} />
     </main>

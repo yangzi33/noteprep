@@ -78,7 +78,7 @@ describe("JobStatusView", () => {
     expect(m).not.toMatch(/<ol/);
     expect(live(m)).toContain("did not use one of your lesson packs");
     expect(m).not.toMatch(/<button/);
-    expect(m).toMatch(/<a(?=[^>]*href="\/lessons")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>My materials<\/a>/);
+    expect(m).toMatch(/<a(?=[^>]*href="\/lessons")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>My lesson packs<\/a>/);
     expect(m).toMatch(/<a(?=[^>]*href="\/prepare")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>Create another<\/a>/);
     expect(m).not.toContain("Your progress is saved.");
   });

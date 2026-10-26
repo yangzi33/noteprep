@@ -13,7 +13,7 @@ import { createLesson } from "./actions";
 
 const inputClass = "w-full rounded border px-3 py-2";
 
-export const metadata: Metadata = { title: "New materials" };
+export const metadata: Metadata = { title: "New lesson pack" };
 
 export default async function NewLessonPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { ctx } = await requireAccount();
@@ -25,7 +25,7 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
   const key = randomUUID();
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">New lesson</h1>
       <p className="mt-2 text-sm" data-testid="allowance">
         {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}

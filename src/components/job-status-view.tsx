@@ -114,13 +114,13 @@ export function JobStatusView({
       )}
       {terminal && (
         <p className="mt-6 flex gap-6 text-sm font-semibold">
-          <TextAction href="/lessons">My materials</TextAction>
+          <TextAction href="/lessons">My lesson packs</TextAction>
           <TextAction href="/prepare">Create another</TextAction>
         </p>
       )}
       {!terminal && (
         <p className="mt-4 text-sm text-muted-foreground">
-          Your progress is saved. You can leave this page and find your lesson in My materials.
+          Your progress is saved. You can leave this page and find your lesson in My lesson packs.
         </p>
       )}
     </section>
