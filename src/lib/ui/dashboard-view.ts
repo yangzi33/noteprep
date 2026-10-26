@@ -44,7 +44,7 @@ export interface AllowanceLike {
 
 export function allowanceSentence(allowance: AllowanceLike | null): string {
   return allowance
-    ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
+    ? `${allowance.remaining} of ${allowance.limit} free lesson packs left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
     : "Your account is being set up.";
 }
 
@@ -53,7 +53,7 @@ export function dailyRefreshReminder(allowance: AllowanceLike | null): string | 
   if (allowance?.source !== "daily") return null;
   const pending = allowance.pending > 0 ? ` (${allowance.pending} in progress)` : "";
   const tail = allowance.remaining > 0 ? "Refreshes at 00:00 UTC." : "The count comes back at 00:00 UTC.";
-  return `Beta perk: ${allowance.limit} free exports every day. ${allowance.remaining} of ${allowance.limit} left today${pending}. ${tail}`;
+  return `Beta perk: ${allowance.limit} free lesson packs every day. ${allowance.remaining} of ${allowance.limit} left today${pending}. ${tail}`;
 }
 
 /** What is left after the export being confirmed; null unless the view is daily and at least one is left. */

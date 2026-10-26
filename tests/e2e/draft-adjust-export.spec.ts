@@ -65,7 +65,7 @@ test("journey: select, free draft, preview, adjust, versions, export once, free 
   try {
     // 1. sign in
     await signIn(page, user);
-    expect(await allowanceText(page, "/prepare")).toBe("3 of 3 generations left.");
+    expect(await allowanceText(page, "/prepare")).toBe("3 of 3 free lesson packs left.");
 
     // 2. select: each dependent dropdown offers only options of the chosen curriculum version
     await chooseTopic(page);
@@ -83,7 +83,7 @@ test("journey: select, free draft, preview, adjust, versions, export once, free 
     const empty = { reservations: 0, exports: 0, jobs: 0, used: 0, reserved: 0 };
     expect(await ledger(user.id)).toEqual(empty);
     expect(await sql(`SELECT count(*)::int AS n FROM usage_reservation WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
-    expect(await allowanceText(page, "/prepare")).toBe("3 of 3 generations left.");
+    expect(await allowanceText(page, "/prepare")).toBe("3 of 3 free lesson packs left.");
     await page.goto(draftUrl);
 
     // 4. preview Notes, Worksheet (no answers to the exercises), Solutions
@@ -134,7 +134,7 @@ test("journey: select, free draft, preview, adjust, versions, export once, free 
     // 7. confirm: the promise is shown; back and refresh on the confirmation page reserve nothing
     await page.getByTestId("draft-export").click();
     await expect(page.getByTestId("export-confirm")).toBeVisible();
-    await expect(page.getByTestId("export-promise")).toHaveText("This will use 1 generation when your PDFs are ready. If export fails, no generation is used.");
+    await expect(page.getByTestId("export-promise")).toHaveText("This will use 1 lesson pack when your PDFs are ready. If export fails, no lesson pack is used.");
     await page.reload();
     await expect(page.getByTestId("export-confirm")).toBeVisible();
     await page.goBack();
@@ -151,7 +151,7 @@ test("journey: select, free draft, preview, adjust, versions, export once, free 
 
     // 8. success: exactly one generation used
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 60_000 });
-    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 generation.");
+    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 lesson pack.");
     const charged = { reservations: 1, exports: 1, jobs: 1, used: 1, reserved: 0 };
     expect(await ledger(user.id)).toEqual(charged);
     expect(await sql(`SELECT state FROM usage_reservation WHERE owner_id = $1`, [user.id])).toEqual([{ state: "consumed" }]);
@@ -188,13 +188,13 @@ test("journey: select, free draft, preview, adjust, versions, export once, free 
     await page.getByTestId("draft-export").click();
     await page.getByTestId("export-confirm").click();
     await expect(page).toHaveURL(new RegExp(`/exports/${exportId}\\?outcome=reused$`));
-    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 generation. This one used none.");
+    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 lesson pack. This one used none.");
     expect(await ledger(user.id)).toEqual(charged);
     await page.reload();
     expect(await ledger(user.id)).toEqual(charged);
 
     // 11. history lists the lesson and the allowance reads 2 of 3
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     await expect(historyItems(page)).toHaveCount(1);
     await expect(historyItems(page).first()).toHaveAttribute("data-state", "succeeded");
     await page.goBack();
@@ -233,16 +233,16 @@ test("exhausting the trial: three different versions are charged, the fourth is 
     }
     const spent = { reservations: 3, exports: 3, jobs: 3, used: 3, reserved: 0 };
     expect(await ledger(user.id)).toEqual(spent);
-    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 generations left.");
+    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 free lesson packs left.");
 
     // a fourth version can still be drafted for free, but exporting it is refused and reserves nothing
     await page.goto(draftUrl);
     await page.getByTestId("create-version-btn").click();
     await expect(editing(page)).toHaveText("You are editing Version 4");
     await page.getByTestId("draft-export").click();
-    await expect(page.getByTestId("export-free-note")).toContainText("You have no generations left");
+    await expect(page.getByTestId("export-free-note")).toContainText("You have used all your free lesson packs");
     await page.getByTestId("export-confirm").click();
-    await expect(page.getByTestId("export-error")).toContainText("no generations left");
+    await expect(page.getByTestId("export-error")).toContainText("used all your free lesson packs");
     await expect(page).not.toHaveURL(/\/exports\//);
     expect(await ledger(user.id)).toEqual(spent);
 
@@ -259,7 +259,7 @@ test("exhausting the trial: three different versions are charged, the fourth is 
     await createDraft(page);
     await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. Nothing has been used from your allowance.");
     expect(await ledger(user.id)).toEqual(spent);
-    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 generations left.");
+    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 free lesson packs left.");
   } finally {
     await worker.stop();
   }

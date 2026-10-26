@@ -36,7 +36,7 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">CREATE MATERIAL</p>
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">CREATE LESSON PACK</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
         <StepIndicator steps={STEPS} current={0} />
@@ -172,7 +172,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         <SelectionFields fields={fields} params={params} />
         {topicOptions.some((o) => !o.supported) && (
           <p className="text-[13px] text-muted-foreground" data-testid="topic-hint">
-            Some topics are not available yet: we cannot verify practice for them.
+            Some topics cannot be chosen yet. We only offer topics whose practice questions we can check.
           </p>
         )}
         {topic && !topic.supported && (
@@ -207,8 +207,8 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
                 <SelectField label="Difficulty" name="difficulty" options={DIFFICULTIES} defaultValue="mixed" />
               </div>
             </div>
-            <p className="text-[13px] text-muted-foreground" data-testid="cost-note">
-              {draftFlow ? "Creating a preview is free" : "Choosing fewer documents still uses one generation."}
+            <p className="text-sm text-muted-foreground" data-testid="cost-note">
+              {draftFlow ? "Creating a draft is free. A lesson pack is used only when you export PDFs." : "Choosing fewer documents still uses one lesson pack."}
             </p>
             <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} />
           </form>

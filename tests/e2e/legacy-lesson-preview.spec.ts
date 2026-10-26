@@ -134,10 +134,10 @@ test("the draft preview shows the same revision as an HTML view, without a PDF f
   const worker = await startStorageWorker();
   try {
     const { lessonId, revisionId } = await generate(page, user);
-    await page.getByTestId("view-tabs").getByRole("link", { name: "Draft preview" }).click();
+    await page.getByTestId("view-tabs").getByRole("link", { name: "Quick web view" }).click();
     await expect(page).toHaveURL(/view=draft/);
 
-    await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. The exported PDF is the final version.");
+    await expect(page.getByTestId("draft-notice")).toHaveText("Quick web view. The PDF is the final version.");
     const draft = page.getByTestId("lesson-draft");
     await expect(draft).toBeVisible();
     await expect(draft).toHaveAttribute("data-document", "notes");

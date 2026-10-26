@@ -102,16 +102,16 @@ export function exportPhase(view: ExportView, net: ExportNet): ExportPhase {
 export interface ExportDescription {
   heading: string;
   detail: string;
-  /** What happened to the generation, only when the server has said so. */
+  /** What happened to the lesson pack, only when the server has said so. */
   charge: string | null;
   /** For the unknown phase: what we last knew. */
   lastKnown: string | null;
   intent: "progress" | "success" | "error" | "info";
 }
 
-const NOT_USED = "No generation was used.";
-const USED = "This used 1 generation.";
-export const REUSED_CHARGE = "An export with the same content and page format already used 1 generation. This one used none.";
+const NOT_USED = "No lesson pack was used.";
+const USED = "This used 1 lesson pack.";
+export const REUSED_CHARGE = "An export with the same content and page format already used 1 lesson pack. This one used none.";
 
 /**
  * The charge sentence, for SETTLED phases only and only when the server's reservation state agrees. A live, stopping,
@@ -142,12 +142,12 @@ function progressWords(phase: ExportPhase): string {
 }
 
 /**
- * Tutor-facing wording for one phase. "No generation was used." appears only for a server-confirmed release and
- * "This used 1 generation." only for a consumed one; anything not yet settled stays neutral.
+ * Tutor-facing wording for one phase. "No lesson pack was used." appears only for a server-confirmed release and
+ * "This used 1 lesson pack." only for a consumed one; anything not yet settled stays neutral.
  */
 export function describeExportOutcome(view: ExportView, phase: ExportPhase, outcome: "reused" | "joined" | null = null): ExportDescription {
   const described = describeBase(view, phase);
-  // After a free re-export the usual "This used 1 generation." would read like a charge for the click just made.
+  // After a free re-export the usual "This used 1 lesson pack." would read like a charge for the click just made.
   if (outcome === "reused" && phase === "succeeded" && view.charge === "used") return { ...described, charge: REUSED_CHARGE };
   return described;
 }
@@ -163,15 +163,15 @@ function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
     case "running:storing":
       return { heading: "Saving your PDFs.", detail: "Almost done.", charge: chargeSentence(view, phase), lastKnown: null, intent: "progress" };
     case "stopping":
-      return { heading: "Stopping this export.", detail: "We will confirm here when it has stopped and whether a generation was used.", charge: null, lastKnown: null, intent: "info" };
+      return { heading: "Stopping this export.", detail: "We will confirm here when it has stopped and whether a lesson pack was used.", charge: null, lastKnown: null, intent: "info" };
     case "confirming":
-      return { heading: "Finishing up...", detail: "We are confirming the final result. This page updates by itself.", charge: null, lastKnown: null, intent: "progress" };
+      return { heading: "Finishing up…", detail: "We are confirming the final result. This page updates by itself.", charge: null, lastKnown: null, intent: "progress" };
     case "stalled":
-      return { heading: "We cannot confirm the final state.", detail: "Refresh this page later to see the result.", charge: null, lastKnown: null, intent: "info" };
+      return { heading: "We could not confirm the result yet.", detail: "Your PDFs may still be on their way. Refresh this page in a minute, or look in My materials.", charge: null, lastKnown: null, intent: "info" };
     case "succeeded":
       return { heading: "Your PDFs are ready.", detail: "Open the lesson, or download each document.", charge: chargeSentence(view, phase), lastKnown: null, intent: "success" };
     case "retired":
-      return { heading: "This lesson was deleted.", detail: "The PDFs of this export are no longer available. Exporting the same draft again starts a new export and uses another generation.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
+      return { heading: "This lesson was deleted.", detail: "The PDFs of this export are no longer available. Exporting the same draft again starts a new export and uses another lesson pack.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "canceled":
       return { heading: "Export canceled.", detail: "You stopped this export.", charge: chargeSentence(view, phase), lastKnown: null, intent: "info" };
     case "failed": {
@@ -180,8 +180,8 @@ function describeBase(view: ExportView, phase: ExportPhase): ExportDescription {
     }
     case "unknown":
       return {
-        heading: "Checking the status...",
-        detail: "We cannot check the status right now. Still trying...",
+        heading: "Checking the status…",
+        detail: "We cannot check the status right now. Still trying…",
         charge: null,
         lastKnown: progressWords(basePhase(view)),
         intent: "info",

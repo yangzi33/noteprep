@@ -12,7 +12,7 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, alignmentNotice } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice } from "@/lib/ui/lesson-view";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional() });
@@ -75,7 +75,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
       </div>
       <p className="mt-1 text-sm text-muted-foreground">Created {utc.format(lesson.createdAt)} UTC</p>
       <Notice intent="info" className="mt-3" data-testid="review-reminder">
-        AI-assisted material can contain mistakes. Read everything before you use it with a student.
+        {REVIEW_REMINDER}
       </Notice>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -89,10 +89,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           </nav>
           <nav aria-label="Preview type" className="mt-2 flex flex-wrap gap-2" data-testid="view-tabs">
             <Link href={tabUrl(active, "pdf")} aria-current={!draftView ? "true" : undefined} className={`${linkBase} ${!draftView ? linkActive : ""}`}>
-              PDF preview
+              PDF view
             </Link>
             <Link href={tabUrl(active, "draft")} aria-current={draftView ? "true" : undefined} className={`${linkBase} ${draftView ? linkActive : ""}`}>
-              Draft preview
+              Quick web view
             </Link>
           </nav>
 
@@ -114,7 +114,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
             {draft ? (
               <div className="mt-3 space-y-4">
                 <Notice intent="info" data-testid="draft-notice">
-                  Draft preview. The exported PDF is the final version.
+                  Quick web view. The PDF is the final version.
                 </Notice>
                 <LessonDraft doc={draft} />
               </div>
@@ -129,7 +129,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
 
         <aside className="space-y-4">
           <Card className="p-5" data-testid="export-card">
-            <h2 className="font-heading text-lg">Export</h2>
+            <h2 className="font-heading text-lg">Download</h2>
             <ul className="mt-3 space-y-2">
               {lesson.documents.map((d) => (
                 <li key={d.document}>

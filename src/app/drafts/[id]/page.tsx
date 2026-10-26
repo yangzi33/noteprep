@@ -16,7 +16,7 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import { generationErrorMessage } from "@/lib/ui/messages";
-import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER } from "@/lib/ui/lesson-view";
 import { versionLabel } from "@/lib/ui/draft-versions";
 import { prepareHref } from "@/lib/ui/prepare-url";
 
@@ -98,7 +98,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         You are editing {versionLabel(view.ordinal)}
       </p>
       <p className="mt-1 text-sm text-muted-foreground" role="status" aria-live="polite" data-testid="saved-status">
-        Saved. Last change {utc.format(view.updatedAt)} UTC
+        Last saved {utc.format(view.updatedAt)} UTC
       </p>
       <p className="mt-1 text-sm text-muted-foreground" data-testid="draft-expiry">
         Draft expires {utc.format(view.expiresAt)} UTC
@@ -107,7 +107,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         Draft preview. Nothing has been used from your allowance.
       </Notice>
       <Notice intent="info" className="mt-3" data-testid="review-reminder">
-        Read everything before you use it with a student.
+        {REVIEW_REMINDER}
       </Notice>
 
       {parsed.data.error === "DRAFT_CONFLICT" ? (

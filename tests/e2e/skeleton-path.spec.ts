@@ -31,7 +31,7 @@ test.afterAll(async () => {
   await deleteCreatedUsers();
 });
 
-const FULL = "3 of 3 generations left.";
+const FULL = "3 of 3 free lesson packs left.";
 const historyItems = (page: Page) => page.getByTestId("history-list").locator("li");
 
 async function withWorker<T>(run: () => Promise<T>, overrides: Record<string, string> = {}): Promise<T> {
@@ -61,7 +61,7 @@ test("sign in, select, draft, export, and find the lesson in the history", async
 
     const { exportId, lessonId, revisionId } = await exportDraft(page);
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     await expect(historyItems(page)).toHaveCount(1);
     await expect(historyItems(page).first()).toHaveAttribute("data-state", "succeeded");
     await historyItems(page).first().getByRole("link").click();
@@ -92,7 +92,7 @@ test("a double submit and a refresh never create or charge a second export", asy
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
     await page.reload();
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded");
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 1 }]);
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
   });
@@ -156,12 +156,12 @@ test("canceling a queued export keeps the allowance: nothing was used", async ({
   await createDraft(page);
   await confirmExport(page);
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "queued");
-  expect(await allowanceText(page)).toBe("2 of 3 generations left (1 in progress).");
+  expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left (1 in progress).");
   await page.goto(`/exports/${(await sql<{ id: string }>(`SELECT id FROM export WHERE owner_id = $1`, [user.id]))[0]!.id}`); // state survives leaving and returning
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "queued");
   await page.getByRole("button", { name: "Cancel export" }).click();
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "canceled");
-  await expect(page.getByTestId("export-charge")).toHaveText("No generation was used.");
+  await expect(page.getByTestId("export-charge")).toHaveText("No lesson pack was used.");
   expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
   expect(await allowanceText(page)).toBe(FULL);
 });
@@ -178,7 +178,7 @@ test("an export that cannot finish in time fails clearly and says no generation 
   await withWorker(async () => {
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "failed", { timeout: 45_000 }); // polling picks it up
     await expect(page.getByTestId("export-status")).toContainText("took too long");
-    await expect(page.getByTestId("export-charge")).toHaveText("No generation was used.");
+    await expect(page.getByTestId("export-charge")).toHaveText("No lesson pack was used.");
     expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
     expect(await allowanceText(page)).toBe(FULL);
   });
@@ -198,12 +198,12 @@ test("after three charged exports the fourth is refused with a notice and reserv
     await expect(page.getByTestId("changes-indicator")).toHaveText("1 question removed");
     await exportDraft(page, { pageFormat: "letter" }); // 3: changed content
     expect(await bucketOf(user.id)).toEqual([{ used: 3, reserved: 0 }]);
-    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 generations left.");
+    expect(await allowanceText(page, "/prepare")).toBe("0 of 3 free lesson packs left.");
 
     // the confirmation page still opens (an unchanged re-export would be free) but a new charge is refused by the server
     await page.goto(`/drafts/${draftId}`);
     await confirmExport(page, "a4"); // changed content in a4 is a new identity
-    await expect(page.getByTestId("export-error")).toContainText("no generations left");
+    await expect(page.getByTestId("export-error")).toContainText("used all your free lesson packs");
     await expect(page).not.toHaveURL(/\/exports\//);
     expect(await bucketOf(user.id)).toEqual([{ used: 3, reserved: 0 }]);
     expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 3 }]);

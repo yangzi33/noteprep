@@ -20,13 +20,13 @@ test("sign in, generate a lesson, watch it finish, find it in the history", asyn
   const worker = await startWorker();
   try {
     await signIn(page, user);
-    expect(await allowanceText(page, "/lessons/new")).toBe("3 of 3 generations left.");
+    expect(await allowanceText(page, "/lessons/new")).toBe("3 of 3 free lesson packs left.");
 
     await submitLesson(page);
     await expect(jobStatus(page)).toHaveAttribute("data-state", "succeeded"); // reached by polling, no reload
     await expect(page.getByTestId("job-state")).toHaveText("Complete");
 
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     await expect(historyItems(page)).toHaveCount(1);
     await expect(historyItems(page).first()).toHaveAttribute("data-state", "succeeded");
   } finally {
@@ -51,7 +51,7 @@ test("a double submit and a page refresh never create or consume a second genera
     await page.reload(); // state comes from the server, not from the browser
     await expect(jobStatus(page)).toHaveAttribute("data-state", "succeeded");
 
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     await expect(historyItems(page)).toHaveCount(1);
   } finally {
     await worker.stop();
@@ -64,13 +64,13 @@ test("canceling a waiting job returns its allowance", async ({ page }) => {
   await submitLesson(page);
   await expect(jobStatus(page)).toHaveAttribute("data-state", "queued");
   await expect(page.getByTestId("job-state")).toHaveText("Waiting to start");
-  expect(await allowanceText(page)).toBe("2 of 3 generations left (1 in progress).");
+  expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left (1 in progress).");
 
   await page.goBack(); // /lessons -> job page
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(jobStatus(page)).toHaveAttribute("data-state", "canceled");
-  await expect(jobStatus(page)).toContainText("did not use one of your generations");
-  expect(await allowanceText(page)).toBe("3 of 3 generations left.");
+  await expect(jobStatus(page)).toContainText("did not use one of your lesson packs");
+  expect(await allowanceText(page)).toBe("3 of 3 free lesson packs left.");
 });
 
 test("a job that cannot finish in time fails clearly and gives the allowance back", async ({ page }) => {
@@ -83,8 +83,8 @@ test("a job that cannot finish in time fails clearly and gives the allowance bac
   try {
     await expect(jobStatus(page)).toHaveAttribute("data-state", "failed"); // polling picks it up
     await expect(jobStatus(page)).toContainText("took too long");
-    await expect(jobStatus(page)).toContainText("did not use one of your generations");
-    expect(await allowanceText(page)).toBe("3 of 3 generations left.");
+    await expect(jobStatus(page)).toContainText("did not use one of your lesson packs");
+    expect(await allowanceText(page)).toBe("3 of 3 free lesson packs left.");
   } finally {
     await worker.stop();
   }
@@ -99,13 +99,13 @@ test("after three complete generations the fourth is refused, in the page and on
       await submitLesson(page);
       await expect(jobStatus(page)).toHaveAttribute("data-state", "succeeded");
     }
-    expect(await allowanceText(page, "/lessons/new")).toBe("0 of 3 generations left.");
+    expect(await allowanceText(page, "/lessons/new")).toBe("0 of 3 free lesson packs left.");
     await expect(page.getByRole("button", { name: "Generate lesson" })).toBeDisabled();
-    await expect(page.getByRole("status")).toContainText("used all of your free generations");
+    await expect(page.getByRole("status")).toContainText("used all of your free lesson packs");
 
     // The disabled button is only a convenience: submitting anyway is refused by the server.
     await page.evaluate(() => (document.querySelector("main form") as HTMLFormElement).requestSubmit());
-    await expect(page.locator("main [role=alert]")).toContainText("no generations left"); // not Next's route announcer
+    await expect(page.locator("main [role=alert]")).toContainText("used all your free lesson packs"); // not Next's route announcer
     await page.goto("/lessons");
     await expect(historyItems(page)).toHaveCount(3);
   } finally {

@@ -13,7 +13,7 @@ describe("loginMessage", () => {
     expect(loginMessage("invalid")).toMatch(/at least 10 characters/);
     expect(loginMessage("unverified")).toMatch(/confirm your email/);
     expect(loginMessage("callback")).toMatch(/invalid or expired/);
-    expect(loginMessage("check-email")).toMatch(/confirmation email/);
+    expect(loginMessage("check-email")).toMatch(/we have sent a confirmation link/);
   });
   it("ignores undefined, unknown and inherited keys", () => {
     for (const key of [undefined, "", "unknown", "__proto__", "constructor", "toString", "hasOwnProperty"]) {

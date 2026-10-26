@@ -34,7 +34,7 @@ describe("export errors and messages", () => {
   });
 
   it("a failed export still says it did not use an allowance", () => {
-    expect(describeOutcome("failed", "export_not_supported")).toMatch(/did not use one of your generations/);
+    expect(describeOutcome("failed", "export_not_supported")).toMatch(/did not use one of your lesson packs/);
   });
 });
 
@@ -47,7 +47,7 @@ describe("every confirm error code (exhaustive table)", () => {
   const EXPECTED = {
     EXPORT_CONFLICT: { message: /changed after you opened the confirmation page/, notUsed: true, to: "draft" },
     DRAFT_EXPIRED: { message: /draft has expired/, notUsed: false, to: "draft" },
-    ALLOWANCE_EXHAUSTED: { message: /no generations left/, notUsed: false, to: "confirm" },
+    ALLOWANCE_EXHAUSTED: { message: /used all your free lesson packs/, notUsed: false, to: "confirm" },
     RATE_LIMITED: { message: /too many requests/, notUsed: false, to: "confirm" },
     TOO_MANY_ACTIVE_JOBS: { message: /jobs in progress/, notUsed: false, to: "confirm" },
     QUEUE_BUSY: { message: /busy/, notUsed: false, to: "confirm" },

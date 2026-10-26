@@ -36,7 +36,7 @@ const OVERLINES: Record<ExportPhase, string> = {
   canceled: "CANCELED",
   retired: "LESSON DELETED",
   confirming: "FINISHING UP",
-  stalled: "CHECKING LATER",
+  stalled: "STILL WORKING",
   unknown: "CHECKING",
   session_expired: "SIGNED OUT",
   not_found: "NOT FOUND",

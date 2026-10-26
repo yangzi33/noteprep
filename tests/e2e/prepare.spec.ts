@@ -16,7 +16,7 @@ test("choose a curriculum topic with the dropdowns and create a free draft previ
     await signIn(page, user);
     await page.goto("/prepare");
     await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
-    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
+    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 free lesson packs left.");
 
     await expect(page.getByTestId("select-v")).toHaveValue(""); // nothing is chosen yet
     await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
@@ -56,7 +56,7 @@ test("choose a curriculum topic with the dropdowns and create a free draft previ
 
     // nothing was used, reserved or queued
     await page.goto("/prepare");
-    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
+    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 free lesson packs left.");
     expect(await sql(`SELECT used, reserved FROM usage_bucket WHERE owner_id = $1`, [user.id])).toEqual([{ used: 0, reserved: 0 }]);
     expect(await sql(`SELECT count(*)::int AS n FROM generation_job WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);
     expect(await sql(`SELECT count(*)::int AS n FROM export WHERE owner_id = $1`, [user.id])).toEqual([{ n: 0 }]);

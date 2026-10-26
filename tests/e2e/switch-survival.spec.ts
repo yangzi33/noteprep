@@ -26,7 +26,7 @@ test("a lesson made with the legacy generate flow still opens, lists and downloa
 
     // history row (a legacy job, not an export) and the allowance it used
     await page.goto("/lessons");
-    await expect(page.getByTestId("allowance")).toHaveText("2 of 3 generations left.");
+    await expect(page.getByTestId("allowance")).toHaveText("2 of 3 free lesson packs left.");
     await expect(page.getByTestId("history-list").locator("li")).toHaveCount(1);
     await page.getByTestId("history-list").getByRole("link").first().click();
     await expect(page).toHaveURL(new RegExp(`/lessons/${lessonId}\\?rev=${revisionId}`));

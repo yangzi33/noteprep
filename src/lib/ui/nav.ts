@@ -2,7 +2,7 @@ export type NavIcon = "dashboard" | "create" | "materials";
 
 export const NAV_ITEMS: readonly { href: string; label: string; icon: NavIcon }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-  { href: "/prepare", label: "Create material", icon: "create" },
+  { href: "/prepare", label: "Create lesson pack", icon: "create" },
   { href: "/lessons", label: "My materials", icon: "materials" },
 ];
 

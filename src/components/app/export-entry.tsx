@@ -19,7 +19,7 @@ export function ExportEntry({ flowMode, exportEnabled, draftId, versionId, rev }
             >
               Export PDFs
             </Link>
-            <p className="mt-2 text-[13px] text-muted-foreground">Uses 1 generation when your PDFs are ready.</p>
+            <p className="mt-2 text-[13px] text-muted-foreground">Uses 1 lesson pack when your PDFs are ready.</p>
           </>
         ) : (
           <>

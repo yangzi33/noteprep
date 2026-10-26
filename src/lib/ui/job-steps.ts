@@ -66,7 +66,7 @@ export function jobHeading(job: Pick<JobView, "state" | "attempt">): string {
     case "failed":
       return "We could not finish this lesson pack.";
     case "canceled":
-      return "Generation canceled.";
+      return "Lesson pack canceled.";
   }
 }
 
@@ -76,7 +76,7 @@ export function jobOverline(job: Pick<JobView, "state" | "attempt">): string {
       case "queued":
         return job.attempt > 0 ? "WAITING TO RETRY" : "QUEUED";
       case "running":
-        return "GENERATING";
+        return "BUILDING";
       case "succeeded":
         return "COMPLETE";
       case "failed":
@@ -85,7 +85,7 @@ export function jobOverline(job: Pick<JobView, "state" | "attempt">): string {
         return "CANCELED";
     }
   })();
-  return `MATERIAL CREATION · ${word}`;
+  return `LESSON PACK · ${word}`;
 }
 
 export function stepStateText(state: StepState): string {

@@ -71,7 +71,7 @@ export function JobStatusView({
       {job.cancelRequested && !terminal && <p className="mt-1 text-sm">Cancel requested…</p>}
 
       {showSteps && (
-      <ol aria-label="Generation steps" className="mt-6 space-y-3">
+      <ol aria-label="Lesson pack steps" className="mt-6 space-y-3">
         {steps.map((step) => {
           const Icon = STEP_ICONS[step.state];
           return (
@@ -108,7 +108,7 @@ export function JobStatusView({
         <form action={cancelAction} className="mt-6">
           <input type="hidden" name="jobId" value={job.id} />
           <Button type="submit" variant="link" className="h-auto min-h-11 px-0">
-            Cancel generation
+            Cancel lesson pack
           </Button>
         </form>
       )}

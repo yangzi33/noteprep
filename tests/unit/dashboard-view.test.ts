@@ -17,8 +17,8 @@ const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
 
 describe("allowanceSentence", () => {
   it("keeps the exact existing format", () => {
-    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 generations left.");
-    expect(allowanceSentence({ source: "trial", remaining: 1, limit: 3, pending: 1 })).toBe("1 of 3 generations left (1 in progress).");
+    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 free lesson packs left.");
+    expect(allowanceSentence({ source: "trial", remaining: 1, limit: 3, pending: 1 })).toBe("1 of 3 free lesson packs left (1 in progress).");
     expect(allowanceSentence(null)).toBe("Your account is being set up.");
   });
 });
@@ -180,10 +180,10 @@ const daily = (over: Partial<{ remaining: number; limit: number; pending: number
 
 describe("dailyRefreshReminder", () => {
   it("states the perk, the count and the reset with the owner-approved wording", () => {
-    expect(dailyRefreshReminder(daily())).toBe("Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.");
+    expect(dailyRefreshReminder(daily())).toBe("Beta perk: 5 free lesson packs every day. 3 of 5 left today. Refreshes at 00:00 UTC.");
   });
   it("mentions jobs in progress", () => {
-    expect(dailyRefreshReminder(daily({ remaining: 2, pending: 1 }))).toBe("Beta perk: 5 free exports every day. 2 of 5 left today (1 in progress). Refreshes at 00:00 UTC.");
+    expect(dailyRefreshReminder(daily({ remaining: 2, pending: 1 }))).toBe("Beta perk: 5 free lesson packs every day. 2 of 5 left today (1 in progress). Refreshes at 00:00 UTC.");
   });
   it("when none are left it says the count comes back at 00:00 UTC and never mentions subscribing", () => {
     const text = dailyRefreshReminder(daily({ remaining: 0 }))!;
@@ -195,7 +195,7 @@ describe("dailyRefreshReminder", () => {
     expect(dailyRefreshReminder({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBeNull();
     expect(dailyRefreshReminder({ source: "paid", remaining: 2, limit: 30, pending: 0 })).toBeNull();
     expect(dailyRefreshReminder(null)).toBeNull();
-    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 generations left.");
+    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 free lesson packs left.");
     expect(allowanceSentence(null)).toBe("Your account is being set up.");
   });
 });
@@ -222,7 +222,7 @@ describe("exhaustedMessage", () => {
   it("trial says contact us with no subscribe wording; paid and unknown keep the generic text", () => {
     expect(exhaustedMessage("trial")).toContain("contact us");
     expect(exhaustedMessage("trial").toLowerCase()).not.toContain("subscri");
-    expect(exhaustedMessage(null)).toBe("You have no generations left. If a job is still in progress, its allowance comes back if that job fails.");
+    expect(exhaustedMessage(null)).toBe("You have used all your free lesson packs. If a job is still in progress, its lesson pack comes back if that job fails.");
     expect(exhaustedMessage("paid")).toBe(exhaustedMessage(null));
   });
   it("generationErrorMessage picks the wording from the source, and only for ALLOWANCE_EXHAUSTED", () => {

@@ -74,18 +74,18 @@ describe("jobHeading", () => {
     expect(jobHeading({ state: "running", attempt: 0 })).toBe("Preparing your lesson pack.");
     expect(jobHeading({ state: "succeeded", attempt: 0 })).toBe("Your lesson pack is ready.");
     expect(jobHeading({ state: "failed", attempt: 0 })).toBe("We could not finish this lesson pack.");
-    expect(jobHeading({ state: "canceled", attempt: 0 })).toBe("Generation canceled.");
+    expect(jobHeading({ state: "canceled", attempt: 0 })).toBe("Lesson pack canceled.");
   });
 });
 
 describe("jobOverline", () => {
   it("returns the overline for each state", () => {
-    expect(jobOverline({ state: "queued", attempt: 0 })).toBe("MATERIAL CREATION · QUEUED");
-    expect(jobOverline({ state: "queued", attempt: 1 })).toBe("MATERIAL CREATION · WAITING TO RETRY");
-    expect(jobOverline({ state: "running", attempt: 0 })).toBe("MATERIAL CREATION · GENERATING");
-    expect(jobOverline({ state: "succeeded", attempt: 0 })).toBe("MATERIAL CREATION · COMPLETE");
-    expect(jobOverline({ state: "failed", attempt: 0 })).toBe("MATERIAL CREATION · FAILED");
-    expect(jobOverline({ state: "canceled", attempt: 0 })).toBe("MATERIAL CREATION · CANCELED");
+    expect(jobOverline({ state: "queued", attempt: 0 })).toBe("LESSON PACK · QUEUED");
+    expect(jobOverline({ state: "queued", attempt: 1 })).toBe("LESSON PACK · WAITING TO RETRY");
+    expect(jobOverline({ state: "running", attempt: 0 })).toBe("LESSON PACK · BUILDING");
+    expect(jobOverline({ state: "succeeded", attempt: 0 })).toBe("LESSON PACK · COMPLETE");
+    expect(jobOverline({ state: "failed", attempt: 0 })).toBe("LESSON PACK · FAILED");
+    expect(jobOverline({ state: "canceled", attempt: 0 })).toBe("LESSON PACK · CANCELED");
   });
 });
 

@@ -366,7 +366,7 @@ export function LandingFooter() {
               </a>
             ))}
             <Link href="/login" className={link}>
-              Login
+              Sign in
             </Link>
           </nav>
         </div>

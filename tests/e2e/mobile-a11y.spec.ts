@@ -105,7 +105,7 @@ test("no horizontal scroll, reachable nav and tall primary controls on every pag
   const { context, page } = await mobile(browser);
   try {
     const pages: { path: string; label: string; primary: (p: Page) => Locator[] }[] = [
-      { path: "/dashboard", label: "dashboard", primary: (p) => [p.getByRole("link", { name: "Create material" }).last()] },
+      { path: "/dashboard", label: "dashboard", primary: (p) => [p.getByRole("link", { name: "Create lesson pack" }).last()] },
       { path: "/lessons", label: "lessons", primary: (p) => [p.getByTestId("history-list").getByRole("link").first()] },
       { path: fixture.lessonPath, label: "lesson", primary: (p) => [p.getByTestId("export-notes")] },
       { path: fixture.exportPath, label: "export result", primary: (p) => [p.getByTestId("export-download-notes")] },
@@ -116,7 +116,7 @@ test("no horizontal scroll, reachable nav and tall primary controls on every pag
       await page.goto(entry.path);
       await noHorizontalScroll(page, entry.label);
       for (const control of entry.primary(page)) await expectTouchTarget(control, `${entry.label} primary control`);
-      for (const name of ["Dashboard", "Create material", "My materials"]) {
+      for (const name of ["Dashboard", "Create lesson pack", "My materials"]) {
         await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name }), `${entry.label} nav ${name}`).toBeVisible();
       }
     }

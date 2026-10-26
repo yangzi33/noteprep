@@ -8,7 +8,7 @@ test.afterAll(deleteCreatedUsers);
 const SAMPLE = "sample-math@sample-1";
 const COURSE = `${SAMPLE}/level-a/course-1`;
 const TOPIC = `${COURSE}/equations/both-sides`;
-const ALLOWANCE = "3 of 3 generations left.";
+const ALLOWANCE = "3 of 3 free lesson packs left.";
 
 async function chooseTopic(page: Page) {
   await page.goto("/prepare");
@@ -32,7 +32,7 @@ test("choose a topic, create a free draft preview, and it survives a refresh wit
 
   // Prepare says what this flow costs
   await expect(page.getByTestId("allowance")).toHaveText(ALLOWANCE);
-  await expect(page.getByTestId("cost-note")).toHaveText("Creating a preview is free");
+  await expect(page.getByTestId("cost-note")).toHaveText("Creating a draft is free. A lesson pack is used only when you export PDFs.");
   await expect(page.getByRole("button", { name: "Generate lesson" })).toHaveCount(0);
   await page.getByRole("button", { name: "Create draft preview" }).click();
 
@@ -350,7 +350,7 @@ test("create another version keeps the first, switch back shows the earlier repl
     await d.dismiss();
   });
   await expect(editing(page)).toHaveText("You are editing Version 1");
-  await expect(page.getByTestId("saved-status")).toContainText("Saved");
+  await expect(page.getByTestId("saved-status")).toContainText("Last saved");
   await expect(page.getByTestId("version-link")).toHaveCount(1);
   await expect(page.getByTestId("version-link")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("create-version-btn")).toBeEnabled();

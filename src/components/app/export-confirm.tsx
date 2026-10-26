@@ -4,10 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import type { DocumentKind } from "@/lib/package/schema";
-import { DOCUMENT_LABELS } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, REVIEW_REMINDER } from "@/lib/ui/lesson-view";
 import { generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 
-export const EXPORT_PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
+export const EXPORT_PROMISE = "This will use 1 lesson pack when your PDFs are ready. If export fails, no lesson pack is used.";
 
 export const PAGE_FORMAT_LABELS: Record<PageFormat, string> = { letter: "US Letter (8.5 x 11 in)", a4: "A4 (210 x 297 mm)" };
 
@@ -20,7 +20,7 @@ export interface ExportConfirmProps {
   questionCount: number;
   changes: string;
   allowanceText: string;
-  /** Generations left, or null when unknown. */
+  /** Lesson packs left, or null when unknown. */
   remaining: number | null;
   /** Where the allowance comes from; picks the wording of an exhausted error. */
   source?: AllowanceSourceKind | null;
@@ -100,16 +100,19 @@ export function ExportConfirmView(p: ExportConfirmProps) {
                 {PAGE_FORMAT_LABELS[f]}
               </label>
             ))}
-            <p className="text-sm text-muted-foreground">All PDFs of this export use the format you choose. Exporting the same lesson in another format uses another generation. Exporting the same content in the same page format again is free (already-exported content is reused).</p>
+            <p className="text-sm text-muted-foreground">All PDFs use this page size. Exporting the same content in the same size again is free.</p>
           </fieldset>
           <p className="text-sm font-semibold" data-testid="export-promise">
             {EXPORT_PROMISE}
           </p>
+          <p className="text-sm text-muted-foreground" data-testid="export-review-reminder">
+            {REVIEW_REMINDER}
+          </p>
           {p.remaining !== null && p.remaining <= 0 && (
             <Notice intent="info" data-testid="export-free-note">
               {p.source === "daily"
-                ? "You have used all of today's free exports. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
-                : "You have no generations left. An unchanged re-export of a version you already exported is free."}{" "}
+                ? "You have used all of today's free lesson packs. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
+                : "You have used all your free lesson packs. An unchanged re-export of a version you already exported is free."}{" "}
               <Link href="/account" className="underline">
                 See your account
               </Link>
