@@ -52,6 +52,9 @@ export function SelectionFields({ fields, params }: { fields: SelectFieldView[];
     <div data-testid="selection-fields" data-hydrated={hydrated ? "true" : undefined} className="flex flex-col gap-4">
       <div className={cols}>{row.map(renderField)}</div>
       {rest.map(renderField)}
+      <p className="sr-only" role="status" aria-live="polite" data-testid="selection-pending">
+        {pending ? "Updating options…" : ""}
+      </p>
     </div>
   );
 }

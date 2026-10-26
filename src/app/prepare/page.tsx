@@ -6,7 +6,7 @@ import { GenerateButton } from "@/components/app/generate-button";
 import { PackageOption } from "@/components/app/package-option";
 import { PreparePendingProvider } from "@/components/app/prepare-pending";
 import { SelectionFields } from "@/components/app/selection-fields";
-import { StepIndicator } from "@/components/app/step-indicator";
+import { FLOW_STEPS, StepIndicator } from "@/components/app/step-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -25,7 +25,6 @@ import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepa
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 import { prepareLesson } from "./actions";
 
-const STEPS = ["Select", "Generate", "Preview", "Export"] as const;
 const DURATIONS = [30, 45, 60, 90, 120].map((m) => ({ value: String(m), label: `${m} minutes` }));
 const DIFFICULTIES = [
   { value: "basic", label: "Basic" },
@@ -40,7 +39,7 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
         <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Create lesson pack</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
-        <StepIndicator steps={STEPS} current={0} />
+        <StepIndicator steps={FLOW_STEPS} current={0} />
         <p className="text-sm" data-testid="allowance">
           {reminder ? <span data-testid="refresh-reminder">{reminder}</span> : allowanceText}
         </p>
@@ -242,7 +241,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
               </>
             )}
             <p className="text-sm">
-              <span className="font-medium">Format</span> Letter · Print-ready PDF
+              <span className="font-medium">Format:</span> print-ready PDF (page size chosen at export)
             </p>
           </Card>
           <p className="text-[13px] text-muted-foreground">Next, review the preview, then export your PDFs.</p>

@@ -1,4 +1,5 @@
 import { stateLabel } from "./messages";
+import { expiryPhrase } from "@/lib/ui/relative-time";
 
 export interface HistoryLike {
   jobId: string;
@@ -97,13 +98,13 @@ export interface DraftCardModel {
 export const UNTITLED_DRAFT = "Untitled draft";
 
 /** Cards for the caller's own active drafts (the DAL already filters by owner and expiry). Keeps the given order. */
-export function draftCards(items: readonly DraftSummaryLike[], max: number): DraftCardModel[] {
+export function draftCards(items: readonly DraftSummaryLike[], max: number, now?: Date): DraftCardModel[] {
   return items.slice(0, max).map((d) => ({
     draftId: d.draftId,
     title: d.title?.trim() ? d.title : UNTITLED_DRAFT, // the DAL reads it from JSON and it can be NULL
     href: `/drafts/${d.draftId}`,
     updated: formatUtc(d.updatedAt),
-    expires: `expires ${formatUtc(d.expiresAt)}`,
+    expires: now ? `expires ${expiryPhrase(d.expiresAt, now)}` : `expires ${formatUtc(d.expiresAt)}`,
   }));
 }
 

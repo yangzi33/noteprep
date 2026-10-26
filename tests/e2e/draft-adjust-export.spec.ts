@@ -257,7 +257,7 @@ test("exhausting the trial: three different versions are charged, the fourth is 
 
     // and at zero remaining a brand new draft is still free
     await createDraft(page);
-    await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. Nothing has been used from your allowance.");
+    await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. Nothing has been used from your allowance. AI-assisted material can contain mistakes. Read everything before you use it with a student.");
     expect(await ledger(user.id)).toEqual(spent);
     expect(await allowanceText(page, "/prepare")).toBe("0 of 3 free lesson packs left.");
   } finally {

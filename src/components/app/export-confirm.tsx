@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ContactLink, ContactText } from "@/components/app/contact-link";
+import { ContactText } from "@/components/app/contact-link";
 import { ExportConfirmButton } from "@/components/app/export-confirm-button";
+import { FLOW_STEPS, StepIndicator } from "@/components/app/step-indicator";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
@@ -50,6 +51,9 @@ export function ExportConfirmView(p: ExportConfirmProps) {
       <h1 className="font-heading text-[28px] leading-[1.2]" data-testid="export-title">
         Export PDFs
       </h1>
+      <div className="mt-3">
+        <StepIndicator steps={FLOW_STEPS} current={3} />
+      </div>
       <Card className="mt-4 p-5">
         <h2 className="font-heading text-lg">{p.title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{p.versionLabel}</p>
@@ -114,7 +118,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
               {p.source === "daily"
                 ? "You have used all of today's free lesson packs. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
                 : "You have used all your free lesson packs. An unchanged re-export of a version you already exported is free."}{" "}
-              To get more, <ContactLink />.{" "}
+              <ContactText text="To get more, contact us." />{" "}
               <Link href="/account" className="underline">
                 See your account
               </Link>

@@ -133,7 +133,12 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
         </Notice>
       )}
       {phase === "failed" && (
-        <p className="mt-3 text-sm text-muted-foreground">You can start again from Create another.</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Nothing was used. You can try again from your draft.{" "}
+          <Link href="/lessons" className="inline-flex min-h-11 items-center font-semibold underline" data-testid="export-failed-back">
+            Back to My lesson packs
+          </Link>
+        </p>
       )}
 
       {showFiles && (

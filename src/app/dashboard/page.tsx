@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   const dal = webDal();
   const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx, 6)]);
   const cards = recentCards(items, 6);
-  const draftList = draftCards(drafts, 6);
+  const draftList = draftCards(drafts, 6, new Date());
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">

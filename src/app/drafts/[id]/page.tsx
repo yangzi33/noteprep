@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ChangesIndicator, QuestionControls, ReplacedBadge, UndoControl, type AdjustContext } from "@/components/app/draft-adjust";
 import { VersionSwitcher } from "@/components/app/draft-versions";
-import { ExportEntry } from "@/components/app/export-entry";
+import { FLOW_STEPS, StepIndicator } from "@/components/app/step-indicator";
+import { ExportEntry, ExportEntryMobile } from "@/components/app/export-entry";
 import { LessonDraft } from "@/components/app/lesson-draft";
 import { Badge } from "@/components/ui/badge";
 import { Notice } from "@/components/ui/notice";
@@ -19,6 +20,7 @@ import { generationErrorMessage } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER } from "@/lib/ui/lesson-view";
 import { versionLabel } from "@/lib/ui/draft-versions";
 import { prepareHref } from "@/lib/ui/prepare-url";
+import { expiryPhrase } from "@/lib/ui/relative-time";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const Search = z.object({ v: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), error: z.string().regex(/^[A-Z_]{1,40}$/).optional() });
@@ -75,6 +77,8 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
       : active === "solutions"
         ? { afterSolution: (q: { questionId: string }) => <ReplacedBadge ctx={adjustCtx} questionId={q.questionId} /> }
         : undefined;
+  // Preview until the tutor has changed something or made another version; then Adjust.
+  const adjusting = view.versions.length > 1 || view.adjust.changes.replacedIds.length > 0 || view.adjust.changes.removedIds.length > 0;
   const errorMessage = generationErrorMessage(parsed.data.error);
   const flowMode = serverEnv().FLOW_MODE;
   const exportEnabled = serverEnv().EXPORT_ENABLED === "1";
@@ -101,13 +105,13 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         Last saved {utc.format(view.updatedAt)} UTC
       </p>
       <p className="mt-1 text-sm text-muted-foreground" data-testid="draft-expiry">
-        Draft expires {utc.format(view.expiresAt)} UTC
+        Draft expires {expiryPhrase(view.expiresAt, new Date())}
       </p>
+      <div className="mt-3">
+        <StepIndicator steps={FLOW_STEPS} current={adjusting ? 2 : 1} />
+      </div>
       <Notice intent="info" role="status" className="mt-3" data-testid="draft-notice">
-        Draft preview. Nothing has been used from your allowance.
-      </Notice>
-      <Notice intent="info" className="mt-3" data-testid="review-reminder">
-        {REVIEW_REMINDER}
+        Draft preview. Nothing has been used from your allowance. {REVIEW_REMINDER}
       </Notice>
 
       {parsed.data.error === "DRAFT_CONFLICT" ? (
@@ -126,7 +130,10 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <VersionSwitcher view={view} doc={active} />
-          <nav aria-label="Documents" className="mt-4 flex flex-wrap gap-2" data-testid="document-tabs">
+          <h2 id="documents-heading" className="mt-4 text-sm font-medium">
+            Document
+          </h2>
+          <nav aria-labelledby="documents-heading" className="mt-2 flex flex-wrap gap-2" data-testid="document-tabs">
             {available.map((d) => (
               <Link key={d} href={tabUrl(d)} scroll={false} aria-current={d === active ? "page" : undefined} className={`${linkBase} ${d === active ? linkActive : ""}`}>
                 {DOCUMENT_LABELS[d]}
@@ -136,9 +143,19 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <ChangesIndicator adjust={view.adjust} />
             <UndoControl ctx={adjustCtx} />
+            <ExportEntryMobile flowMode={flowMode} exportEnabled={exportEnabled} draftId={view.draftId} versionId={view.versionId} rev={view.rev} />
           </div>
           <section className="mt-4" data-testid="draft-preview" data-document={active} data-version={view.versionId}>
             <p className="text-sm text-muted-foreground">{DOCUMENT_PURPOSE[active]}</p>
+            {active !== "worksheet" && available.includes("worksheet") && (
+              <p className="text-sm text-muted-foreground" data-testid="adjust-hint">
+                To replace or remove a question, open the{" "}
+                <Link href={tabUrl("worksheet")} scroll={false} className="inline-flex min-h-11 items-center underline">
+                  Student Practice Worksheet
+                </Link>{" "}
+                tab.
+              </p>
+            )}
             <div className="mt-3">
               <LessonDraft doc={doc} slots={slots} />
             </div>

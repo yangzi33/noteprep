@@ -7,7 +7,7 @@ import { exportConfirmHref } from "@/lib/ui/export-confirm";
 export function ExportEntry({ flowMode, exportEnabled, draftId, versionId, rev }: { flowMode: "legacy" | "draft"; exportEnabled: boolean; draftId: string; versionId: string; rev: number }) {
   if (flowMode !== "draft") return null;
   return (
-    <aside className="space-y-4">
+    <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
       <Card className="p-5">
         <h2 className="font-heading text-lg">Export</h2>
         {exportEnabled ? (
@@ -31,5 +31,19 @@ export function ExportEntry({ flowMode, exportEnabled, draftId, versionId, rev }
         )}
       </Card>
     </aside>
+  );
+}
+
+/** Below lg the aside sits after the whole document, so the toolbar row carries a second way in. Same target, different test id. */
+export function ExportEntryMobile({ flowMode, exportEnabled, draftId, versionId, rev }: { flowMode: "legacy" | "draft"; exportEnabled: boolean; draftId: string; versionId: string; rev: number }) {
+  if (flowMode !== "draft" || !exportEnabled) return null;
+  return (
+    <Link
+      href={exportConfirmHref(draftId, versionId, { rev })}
+      className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring lg:hidden"
+      data-testid="draft-export-mobile"
+    >
+      Export PDFs
+    </Link>
   );
 }

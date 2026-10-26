@@ -13,7 +13,7 @@ export default async function HistoryPage() {
   const { ctx } = await requireAccount();
   const dal = webDal();
   const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx)]);
-  const draftList = draftCards(drafts, 50);
+  const draftList = draftCards(drafts, 50, new Date());
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
