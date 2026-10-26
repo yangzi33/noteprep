@@ -18,6 +18,7 @@ import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { ContactText } from "@/components/app/contact-link";
 import { exhaustedNotice, generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
 import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepare-view";
@@ -43,7 +44,7 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
         <p className="text-sm" data-testid="allowance">
           {reminder ? <span data-testid="refresh-reminder">{reminder}</span> : allowanceText}
         </p>
-        {error && <Notice intent="error">{generationErrorMessage(error, source)}</Notice>}
+        {error && <Notice intent="error"><ContactText text={generationErrorMessage(error, source) ?? ""} /></Notice>}
       </header>
       <div className="mt-6">{children}</div>
     </main>
@@ -187,7 +188,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         {!topic && <p className="text-sm text-muted-foreground">Choose a topic to continue.</p>}
         {exhausted && context && (
           <Notice intent="info" role="status">
-            {exhaustedNotice(allowance.source)}
+            <ContactText text={exhaustedNotice(allowance.source)} />
           </Notice>
         )}
         {context && (

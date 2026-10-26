@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Files, LayoutDashboard, SquarePen } from "lucide-react";
+import { Files, LayoutDashboard, SquarePen, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { activeNavHref, NAV_ITEMS, type NavIcon } from "@/lib/ui/nav";
 
@@ -10,6 +10,7 @@ const ICONS: Record<NavIcon, typeof SquarePen> = {
   dashboard: LayoutDashboard,
   create: SquarePen,
   materials: Files,
+  account: UserRound,
 };
 
 export function WorkspaceNav() {

@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, BookOpenCheck, Check, ChevronDown, Clock, FileTex
 import { Logo } from "@/components/app/logo";
 import { Button } from "@/components/ui/button";
 import { landingContent as c } from "@/lib/marketing/content";
+import { supportEmail } from "@/lib/supabase/public-env";
 import { SamplePreview } from "./sample-preview";
 
 const wrap = "mx-auto w-full max-w-[1440px] px-4 md:px-10 lg:px-24";
@@ -350,6 +351,7 @@ export function FinalCtaSection() {
 }
 
 export function LandingFooter() {
+  const support = supportEmail();
   const link = "inline-flex min-h-11 items-center rounded-control px-2 text-sm text-foreground hover:text-text-accent focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
   return (
     <footer className="bg-background">
@@ -368,6 +370,11 @@ export function LandingFooter() {
             <Link href="/login" className={link}>
               Sign in
             </Link>
+            {support && (
+              <a href={`mailto:${support}`} className={link}>
+                Contact
+              </a>
+            )}
           </nav>
         </div>
         <p className="border-t pt-6 text-[13px] text-muted-foreground">{c.footer.copyright}</p>

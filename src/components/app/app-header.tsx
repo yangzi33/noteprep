@@ -20,7 +20,12 @@ export function AppHeader({ email }: { email: string }) {
         >
           {initial}
         </span>
-        <span className="max-sm:sr-only max-w-[240px] truncate text-sm sm:inline">{email}</span>
+        <Link
+          href="/account"
+          className="max-sm:sr-only inline-flex min-h-11 max-w-[240px] items-center truncate rounded-control text-sm hover:underline focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none sm:inline-flex"
+        >
+          {email}
+        </Link>
         <form>
           <Button type="submit" variant="outline" size="sm" formAction={signOut}>
             Sign out

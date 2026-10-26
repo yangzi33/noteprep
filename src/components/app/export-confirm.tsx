@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ContactLink, ContactText } from "@/components/app/contact-link";
 import { ExportConfirmButton } from "@/components/app/export-confirm-button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -72,7 +73,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
 
       {errorMessage && (
         <Notice intent="error" className="mt-4" data-testid="export-error">
-          {errorMessage}
+          <ContactText text={errorMessage} />
         </Notice>
       )}
 
@@ -113,6 +114,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
               {p.source === "daily"
                 ? "You have used all of today's free lesson packs. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
                 : "You have used all your free lesson packs. An unchanged re-export of a version you already exported is free."}{" "}
+              To get more, <ContactLink />.{" "}
               <Link href="/account" className="underline">
                 See your account
               </Link>

@@ -134,7 +134,9 @@ describe("export confirmation view", () => {
     const note = html.slice(html.indexOf('data-testid="export-free-note"'));
     expect(note).toContain("used all of today");
     expect(note).toContain("00:00 UTC");
-    expect(note.slice(0, note.indexOf("</div>")).toLowerCase()).not.toMatch(/subscri|checkout|contact/);
+    expect(note.slice(0, note.indexOf("</div>")).toLowerCase()).not.toMatch(/subscri|checkout/);
+    // U-33: the exhausted note now offers a contact path (words only when no address is configured)
+    expect(note).toContain("To get more, contact us.");
     expect(render({ remaining: 0, source: "trial" })).toContain("You have used all your free lesson packs.");
   });
 

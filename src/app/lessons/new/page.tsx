@@ -8,6 +8,7 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { ContactText } from "@/components/app/contact-link";
 import { exhaustedNotice, generationErrorMessage } from "@/lib/ui/messages";
 import { createLesson } from "./actions";
 
@@ -33,12 +34,12 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
 
       {error && (
         <Notice intent="error" className="mt-4">
-          {generationErrorMessage(error, allowance ? allowance.source : null)}
+          <ContactText text={generationErrorMessage(error, allowance ? allowance.source : null) ?? ""} />
         </Notice>
       )}
       {exhausted && (
         <Notice intent="info" role="status" className="mt-4">
-          {exhaustedNotice(allowance.source)} You can still view your history.
+          <ContactText text={exhaustedNotice(allowance.source)} /> You can still view your history.
         </Notice>
       )}
 
