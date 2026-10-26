@@ -1,6 +1,6 @@
 # Fresh worker droplet: every step from nothing (no snapshot)
 
-Purpose: rebuild the NotePrep worker host from a blank droplet. It is a checklist assembled from [worker-host-runbook.md](worker-host-runbook.md) (the reference, in Chinese, with the reasons behind each step), [staging-setup.md](staging-setup.md) and the files in `deploy/host/`. Nothing here creates paid resources for you: steps 1 to 2 are yours.
+Purpose: rebuild the NotePrep worker host from a blank droplet. It is a checklist assembled from [worker-host-runbook.md](worker-host-runbook.md) (the reference, with the reasons behind each step), [staging-setup.md](staging-setup.md) and the files in `deploy/host/`. Nothing here creates paid resources for you: steps 1 to 2 are yours.
 
 **Honesty about verification.** Verified on a real DigitalOcean droplet (Ubuntu 24.04, 4 GB / 2 vCPU, Docker 29.9.1) on 2026-10-20: the runner account and rootless daemon checks, the `--group 0` socket fix, pulling images by digest, the 41 host sandbox tests, the running-worker inspection, the metadata block, and a first `worker_started`. **Not verified anywhere yet:** a full reboot with no manual steps, a restart during a running job, restarting the runner's daemon, a rollback drill, the staging smoke test, `docker save | load` followed by referencing the LaTeX image by digest, and cgroup v1 hosts. Treat the first run of this document as a rehearsal and write down what differs.
 
