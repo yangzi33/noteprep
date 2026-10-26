@@ -2,12 +2,14 @@ import { defineConfig, devices } from "@playwright/test";
 import { E2E_URLS, e2eEnv } from "./tests/e2e/support/env";
 
 const env = e2eEnv();
-// Three servers from one production build, each with both flags pinned (so a developer's own .env cannot change what they do):
+// Four servers from one production build, each with its flags pinned (so a developer's own .env cannot change what they do):
 //   3100  FLOW_MODE=draft,  EXPORT_ENABLED=1  project "chromium" (default): everything except the specs below
 //   3101  FLOW_MODE=legacy, EXPORT_ENABLED=0  project "chromium-legacy": legacy-*.spec.ts (the old generate flow, kept as a kill switch)
 //   3102  FLOW_MODE=draft,  EXPORT_ENABLED=0  project "chromium-paused": *-paused.spec.ts (the documented export pause / rollback state)
+//   3103  FLOW_MODE=draft,  EXPORT_ENABLED=1, DAILY_REFRESH_ENABLED=1 (limit 5)  project "chromium-daily": *-daily.spec.ts (the beta daily refresh)
 const LEGACY_SPEC = /legacy-[^/]*\.spec\.ts$/;
 const PAUSED_SPEC = /[^/]*-paused\.spec\.ts$/;
+const DAILY_SPEC = /[^/]*-daily\.spec\.ts$/;
 const serverEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.apiUrl,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.publishableKey,
@@ -17,6 +19,7 @@ const serverEnv = {
   // Pinned so a developer's own .env (for example EXPORT_ENABLED=0 for manual testing) cannot change what these servers do.
   FLOW_MODE: "draft",
   EXPORT_ENABLED: "1",
+  DAILY_REFRESH_ENABLED: "0",
 };
 
 // Real browser, real local Supabase (Auth + Postgres), a production build of the app and, inside the
@@ -32,9 +35,10 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: { baseURL: env.webUrl, trace: "retain-on-failure" },
   projects: [
-    { name: "chromium", testIgnore: [LEGACY_SPEC, PAUSED_SPEC], use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: [LEGACY_SPEC, PAUSED_SPEC, DAILY_SPEC], use: { ...devices["Desktop Chrome"] } },
     { name: "chromium-legacy", testMatch: LEGACY_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.legacy } },
     { name: "chromium-paused", testMatch: PAUSED_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.paused } },
+    { name: "chromium-daily", testMatch: DAILY_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.daily } },
   ],
   webServer: [
     {
@@ -58,6 +62,13 @@ export default defineConfig({
       timeout: 60_000,
       reuseExistingServer: false,
       env: { ...serverEnv, EXPORT_ENABLED: "0" },
+    },
+    {
+      command: "pnpm exec next start -p 3103",
+      url: `${E2E_URLS.daily}/healthz`,
+      timeout: 60_000,
+      reuseExistingServer: false,
+      env: { ...serverEnv, DAILY_REFRESH_ENABLED: "1", DAILY_REFRESH_LIMIT: "5" },
     },
   ],
 });

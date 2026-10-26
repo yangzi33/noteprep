@@ -1,5 +1,6 @@
 import "server-only";
 import type { Db } from "../db";
+import { DEFAULT_ALLOWANCE_POLICY, type AllowancePolicy } from "./allowance-source";
 import { createAccountDal } from "./account";
 import { createCurriculumDal, type CurriculumDalOptions } from "./curriculum";
 import { createDraftsDal, createDraftsPurgeDal, type DraftDeps } from "./drafts";
@@ -27,16 +28,17 @@ export type { CurriculumSummary, SelectionOption, SelectionOptions, SelectionPat
 export type { ClaimedJob, ExportInput, HeartbeatResult, JobsDal, SweepReport, UsageCharge } from "./jobs";
 
 /** Web runtime: account setup, enqueueing, owner-filtered reads. Use the `app_runtime` connection. */
-export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions; drafts?: Omit<DraftDeps, "resolveContext">; exports?: Omit<ExportDeps, "generationLimits"> }) {
+export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions; drafts?: Omit<DraftDeps, "resolveContext">; exports?: Omit<ExportDeps, "generationLimits">; allowancePolicy?: AllowancePolicy }) {
+  const allowancePolicy = deps?.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
   const curriculum = createCurriculumDal(db, deps?.curriculum);
   return {
     account: createAccountDal(db, deps?.limits?.trialLimit),
-    generation: createGenerationDal(db, { ...deps, resolveContext: curriculum.resolveCurriculumContext }),
-    history: createHistoryDal(db, deps),
+    generation: createGenerationDal(db, { ...deps, allowancePolicy, resolveContext: curriculum.resolveCurriculumContext }),
+    history: createHistoryDal(db, { ...deps, allowancePolicy }),
     lessons: createLessonsDal(db),
     lessonDelete: createLessonDeleteDal(db),
     drafts: createDraftsDal(db, { ...deps?.drafts, resolveContext: curriculum.resolveCurriculumContext }),
-    exports: createExportDal(db, { clock: deps?.clock, ...deps?.exports, generationLimits: deps?.limits }),
+    exports: createExportDal(db, { clock: deps?.clock, allowancePolicy, ...deps?.exports, generationLimits: deps?.limits }),
     curriculum,
   };
 }

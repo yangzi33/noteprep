@@ -48,6 +48,7 @@ enum JobStage {
 enum BucketKind {
   trial
   paid
+  daily
 
   @@map("bucket_kind")
 }

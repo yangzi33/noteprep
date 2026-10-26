@@ -1,16 +1,18 @@
 import "server-only";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
-import { readAllowanceBucket } from "./allowance-source";
+import { DEFAULT_ALLOWANCE_POLICY, readAllowanceBucket, type AllowancePolicy } from "./allowance-source";
 
 export interface AllowanceView {
-  source: "trial" | "paid";
+  source: "trial" | "paid" | "daily";
   limit: number;
   used: number;
   /** Held by jobs still in flight; returns to `remaining` if they fail. */
   pending: number;
   /** limit - used - pending: what a new request can still reserve. */
   remaining: number;
+  /** The end of the UTC day the daily allowance belongs to (when it refreshes); null for trial and paid. */
+  resetsAt: Date | null;
 }
 
 export interface HistoryItem {
@@ -29,24 +31,28 @@ export interface HistoryItem {
 }
 
 export interface HistoryDeps {
+  /** Allowance settings (daily refresh, D-112); the allowance rule reads them. */
+  allowancePolicy?: AllowancePolicy;
   clock?: () => Date;
 }
 
 /** Read-only, owner-filtered views for the account's history and remaining allowance. */
 export function createHistoryDal(db: Db, deps: HistoryDeps = {}) {
   const clock = deps.clock ?? (() => new Date());
+  const policy = deps.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
   return {
     async getAllowance(ctx: AuthedCtx): Promise<AllowanceView | null> {
       return db.$transaction(async (tx) => {
-        const found = await readAllowanceBucket(tx, ctx.userId, clock());
+        const found = await readAllowanceBucket(tx, ctx.userId, clock(), policy);
         if (!found) return null;
-        const { bucket, source } = found;
+        const { bucket, source, resetsAt } = found;
         return {
           source,
           limit: bucket.limit_count,
           used: bucket.used,
           pending: bucket.reserved,
-          remaining: bucket.limit_count - bucket.used - bucket.reserved,
+          remaining: Math.max(0, bucket.limit_count - bucket.used - bucket.reserved),
+          resetsAt,
         };
       });
     },

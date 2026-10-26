@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DraftCard, MaterialCard, MaterialRow } from "@/components/app/material-card";
-import { allowanceSentence, draftCards, emptyExportsText, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
-import { stateLabel } from "@/lib/ui/messages";
+import { allowanceSentence, dailyRefreshReminder, exportAfterSentence, draftCards, emptyExportsText, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
+import { exhaustedMessage, generationErrorMessage, stateLabel } from "@/lib/ui/messages";
 
 const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
   jobId: "job-1",
@@ -17,8 +17,8 @@ const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
 
 describe("allowanceSentence", () => {
   it("keeps the exact existing format", () => {
-    expect(allowanceSentence({ remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 generations left.");
-    expect(allowanceSentence({ remaining: 1, limit: 3, pending: 1 })).toBe("1 of 3 generations left (1 in progress).");
+    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 generations left.");
+    expect(allowanceSentence({ source: "trial", remaining: 1, limit: 3, pending: 1 })).toBe("1 of 3 generations left (1 in progress).");
     expect(allowanceSentence(null)).toBe("Your account is being set up.");
   });
 });
@@ -167,5 +167,67 @@ describe("draftCards title fallback", () => {
   it("labels a draft without a topic title instead of showing null", () => {
     for (const bad of [null, undefined, "", "   "]) expect(draftCards([draft(bad)], 6)[0]!.title).toBe("Untitled draft");
     expect(draftCards([draft("Linear equations")], 6)[0]!.title).toBe("Linear equations");
+  });
+});
+
+const daily = (over: Partial<{ remaining: number; limit: number; pending: number }> = {}) => ({
+  source: "daily" as const,
+  remaining: 3,
+  limit: 5,
+  pending: 0,
+  ...over,
+});
+
+describe("dailyRefreshReminder", () => {
+  it("states the perk, the count and the reset with the owner-approved wording", () => {
+    expect(dailyRefreshReminder(daily())).toBe("Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.");
+  });
+  it("mentions jobs in progress", () => {
+    expect(dailyRefreshReminder(daily({ remaining: 2, pending: 1 }))).toBe("Beta perk: 5 free exports every day. 2 of 5 left today (1 in progress). Refreshes at 00:00 UTC.");
+  });
+  it("when none are left it says the count comes back at 00:00 UTC and never mentions subscribing", () => {
+    const text = dailyRefreshReminder(daily({ remaining: 0 }))!;
+    expect(text).toContain("0 of 5 left today");
+    expect(text).toContain("comes back at 00:00 UTC");
+    expect(text.toLowerCase()).not.toContain("subscri");
+  });
+  it("is null with the perk off (trial, paid) or no allowance, and the old sentence is unchanged", () => {
+    expect(dailyRefreshReminder({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBeNull();
+    expect(dailyRefreshReminder({ source: "paid", remaining: 2, limit: 30, pending: 0 })).toBeNull();
+    expect(dailyRefreshReminder(null)).toBeNull();
+    expect(allowanceSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBe("2 of 3 generations left.");
+    expect(allowanceSentence(null)).toBe("Your account is being set up.");
+  });
+});
+
+describe("exportAfterSentence", () => {
+  it("tells how many are left after this export", () => {
+    expect(exportAfterSentence(daily())).toBe("After this export you will have 2 left today.");
+    expect(exportAfterSentence(daily({ remaining: 1 }))).toBe("After this export you will have 0 left today. They come back at 00:00 UTC.");
+  });
+  it("is null when nothing is left, not daily, or unknown", () => {
+    expect(exportAfterSentence(daily({ remaining: 0 }))).toBeNull();
+    expect(exportAfterSentence({ source: "trial", remaining: 2, limit: 3, pending: 0 })).toBeNull();
+    expect(exportAfterSentence(null)).toBeNull();
+  });
+});
+
+describe("exhaustedMessage", () => {
+  it("daily says the count comes back at 00:00 UTC and to contact us, with no subscribe wording", () => {
+    const text = exhaustedMessage("daily");
+    expect(text).toContain("00:00 UTC");
+    expect(text).toContain("contact us");
+    expect(text.toLowerCase()).not.toContain("subscri");
+  });
+  it("trial says contact us with no subscribe wording; paid and unknown keep the generic text", () => {
+    expect(exhaustedMessage("trial")).toContain("contact us");
+    expect(exhaustedMessage("trial").toLowerCase()).not.toContain("subscri");
+    expect(exhaustedMessage(null)).toBe("You have no generations left. If a job is still in progress, its allowance comes back if that job fails.");
+    expect(exhaustedMessage("paid")).toBe(exhaustedMessage(null));
+  });
+  it("generationErrorMessage picks the wording from the source, and only for ALLOWANCE_EXHAUSTED", () => {
+    expect(generationErrorMessage("ALLOWANCE_EXHAUSTED", "daily")).toBe(exhaustedMessage("daily"));
+    expect(generationErrorMessage("ALLOWANCE_EXHAUSTED")).toBe(exhaustedMessage(null));
+    expect(generationErrorMessage("RATE_LIMITED", "daily")).toBe(generationErrorMessage("RATE_LIMITED"));
   });
 });

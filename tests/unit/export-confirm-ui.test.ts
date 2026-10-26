@@ -99,6 +99,37 @@ describe("export confirmation view", () => {
     expect(html).toContain('href="/account"');
   });
 
+  it("daily view shows the reminder and the after-export sentence; exhausted daily has no subscribe wording", () => {
+    const html = render({ allowanceText: "3 of 5 generations left.", remaining: 3, reminder: "Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.", afterText: "After this export you will have 2 left today." });
+    expect(html).toContain('data-testid="refresh-reminder"');
+    expect(html).toContain("Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.");
+    expect(html).toContain("After this export you will have 2 left today.");
+    const out = render({ remaining: 0, source: "daily", error: "ALLOWANCE_EXHAUSTED" });
+    expect(out).toContain("00:00 UTC");
+    expect(out).toContain("contact us");
+    expect(out.toLowerCase()).not.toMatch(/subscri|checkout/);
+    expect(render()).not.toContain("refresh-reminder");
+  });
+
+  it("daily view replaces the generic count with the reminder (shown once, inside the balance element)", () => {
+    const reminder = "Beta perk: 5 free exports every day. 3 of 5 left today. Refreshes at 00:00 UTC.";
+    const html = render({ allowanceText: "3 of 5 generations left.", remaining: 3, source: "daily", reminder });
+    expect(html).not.toContain("3 of 5 generations left.");
+    expect(html).toMatch(/data-testid="export-balance"[^>]*>\s*<span[^>]*data-testid="refresh-reminder"/);
+    expect(html.split(reminder)).toHaveLength(2);
+    // other sources keep the generic sentence
+    expect(render()).toContain("2 of 3 generations left.");
+  });
+
+  it("daily exhausted free note says the count returns at 00:00 UTC, without subscribe or checkout words", () => {
+    const html = render({ remaining: 0, source: "daily", reminder: "Beta perk: 5 free exports every day. 0 of 5 left today. The count comes back at 00:00 UTC." });
+    const note = html.slice(html.indexOf('data-testid="export-free-note"'));
+    expect(note).toContain("used all of today");
+    expect(note).toContain("00:00 UTC");
+    expect(note.slice(0, note.indexOf("</div>")).toLowerCase()).not.toMatch(/subscri|checkout|contact/);
+    expect(render({ remaining: 0, source: "trial" })).toContain("You have no generations left.");
+  });
+
   it("does not show the free note while generations remain; an error code shows its message", () => {
     expect(render()).not.toContain('href="/account"');
     expect(render({ error: "RATE_LIMITED" })).toContain(generationErrorMessage("RATE_LIMITED")!);

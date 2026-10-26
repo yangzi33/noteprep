@@ -28,6 +28,16 @@ describe("limits", () => {
     expect(() => parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "100001" })).toThrow();
   });
 
+  it("has the daily refresh settings (temporary beta perk, D-112) with defaults and bounds", () => {
+    expect([DEFAULT_LIMITS.dailyRefreshEnabled, DEFAULT_LIMITS.dailyRefreshLimit]).toEqual([0, 5]);
+    expect([LIMIT_ENV_NAMES.dailyRefreshEnabled, LIMIT_ENV_NAMES.dailyRefreshLimit]).toEqual(["DAILY_REFRESH_ENABLED", "DAILY_REFRESH_LIMIT"]);
+    expect(parseLimits({ DAILY_REFRESH_ENABLED: "1", DAILY_REFRESH_LIMIT: "7" })).toMatchObject({ dailyRefreshEnabled: 1, dailyRefreshLimit: 7 });
+    expect(parseLimits({ DAILY_REFRESH_ENABLED: "", DAILY_REFRESH_LIMIT: " " })).toMatchObject({ dailyRefreshEnabled: 0, dailyRefreshLimit: 5 });
+    expect(() => parseLimits({ DAILY_REFRESH_ENABLED: "2" })).toThrow();
+    expect(() => parseLimits({ DAILY_REFRESH_LIMIT: "0" })).toThrow();
+    expect(() => parseLimits({ DAILY_REFRESH_LIMIT: "1001" })).toThrow();
+  });
+
   it("every key has its own environment variable name", () => {
     const names = Object.values(LIMIT_ENV_NAMES);
     expect(new Set(names).size).toBe(names.length);

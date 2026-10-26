@@ -21,12 +21,13 @@ import { requestHash } from "@/lib/domain/hash";
 import { parseLessonRequest } from "@/lib/domain/lesson-request";
 import type { Prisma } from "@/generated/prisma/client";
 import type { AuthedCtx } from "../auth/context";
-import { lockAllowanceBucket } from "./allowance-source";
+import { DEFAULT_ALLOWANCE_POLICY, lockAllowanceBucket } from "./allowance-source";
 import type { Db } from "../db";
 import { cancelOwnedJob } from "./cancel";
 import { toJobDto, type JobDto } from "./dto";
 import { incrementRateLimit } from "./rate-limit";
 import { resolveRequestContext, type ResolveContext } from "./request-context";
+import type { AllowancePolicy } from "./allowance-source";
 import { inTransaction, type Tx } from "./tx";
 
 export type { ResolveContext };
@@ -35,6 +36,8 @@ export interface GenerationDeps {
   /** Resolves a v2 request's curriculum context (provided by createWebDal). Without it v2 requests are refused. */
   resolveContext?: ResolveContext;
   limits?: GenerationLimits;
+  /** Allowance settings (daily refresh, D-112); the allowance rule reads them. */
+  allowancePolicy?: AllowancePolicy;
   clock?: () => Date;
 }
 
@@ -54,6 +57,7 @@ const uuid = z.uuid();
 export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
   const limits = deps.limits ?? DEV_DEFAULT_LIMITS;
   const clock = deps.clock ?? (() => new Date());
+  const allowancePolicy = deps.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
 
   async function bumpRateLimit(tx: Tx, key: string, max: number) {
     if ((await incrementRateLimit(tx, key)) > max) throw new RateLimited();
@@ -130,7 +134,7 @@ export function createGenerationDal(db: Db, deps: GenerationDeps = {}) {
         if (backlog >= limits.maxQueuedJobsGlobal) throw new QueueBusy();
 
         // 3. Reserve. The conditional UPDATE is the arbiter; the CHECK constraint is the backstop.
-        const { bucket, source } = await lockAllowanceBucket(tx, ownerId, now);
+        const { bucket, source } = await lockAllowanceBucket(tx, ownerId, now, allowancePolicy);
         const reserved = await tx.$executeRaw`
           UPDATE usage_bucket SET reserved = reserved + 1
            WHERE id = ${bucket.id}::uuid AND used + reserved < limit_count`;

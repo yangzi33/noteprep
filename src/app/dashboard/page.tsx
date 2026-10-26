@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui/notice";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, draftCards, emptyExportsText, recentCards } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, recentCards } from "@/lib/ui/dashboard-view";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
         <Card className="flex flex-col gap-2 p-6">
           <h2 className="font-heading text-lg">Your allowance</h2>
           <p className="text-sm" data-testid="allowance">
-            {allowanceSentence(allowance)}
+            {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
           </p>
         </Card>
       </div>

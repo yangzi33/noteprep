@@ -2,8 +2,7 @@
 
 const GENERATION_ERRORS: Record<string, string> = {
   invalid: "Please check the form: every field needs a valid value.",
-  ALLOWANCE_EXHAUSTED:
-    "You have no generations left. If a job is still in progress, its allowance comes back if that job fails.",
+  ALLOWANCE_EXHAUSTED: "You have no generations left. If a job is still in progress, its allowance comes back if that job fails.",
   RATE_LIMITED: "You have made too many requests recently. Please try again later.",
   TOO_MANY_ACTIVE_JOBS: "You already have jobs in progress. Wait for one to finish, or cancel one.",
   QUEUE_BUSY: "The service is busy right now. Please try again in a few minutes.",
@@ -37,8 +36,30 @@ const GENERATION_ERRORS: Record<string, string> = {
   EXPORT_DISABLED: "PDF export is paused right now. Your draft is saved.",
 };
 
-export function generationErrorMessage(code: string | null | undefined): string | null {
+export type AllowanceSourceKind = "trial" | "paid" | "daily";
+
+/**
+ * The message for an exhausted allowance. Billing is off in this test version, so the daily and trial texts say "contact us"
+ * and never point at a subscribe action (words only, no address). With no source (the page has no allowance) or a paid source it is the generic text.
+ */
+export function exhaustedMessage(source: AllowanceSourceKind | null): string {
+  if (source === "daily") {
+    return "You have used all of today's free exports. The count comes back at 00:00 UTC. If a job is still in progress, its export comes back if that job fails. To get more sooner, contact us.";
+  }
+  if (source === "trial") {
+    return "You have no generations left. If a job is still in progress, its allowance comes back if that job fails. To get more, contact us.";
+  }
+  return GENERATION_ERRORS.ALLOWANCE_EXHAUSTED!;
+}
+
+/** The notice shown on the selection pages when the allowance is used up (the daily wording, or the trial one with no subscribe action). */
+export function exhaustedNotice(source: AllowanceSourceKind): string {
+  return source === "daily" ? exhaustedMessage("daily") : "You have used all of your free generations. To get more, contact us.";
+}
+
+export function generationErrorMessage(code: string | null | undefined, source: AllowanceSourceKind | null = null): string | null {
   if (!code) return null;
+  if (code === "ALLOWANCE_EXHAUSTED") return exhaustedMessage(source);
   return GENERATION_ERRORS[code] ?? "Something went wrong. Please try again.";
 }
 

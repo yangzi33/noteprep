@@ -56,6 +56,10 @@ const SHAPE = {
   llmMaxCallsPerDraft: int("LLM_MAX_CALLS_PER_DRAFT", 0, 0, 1_000),
   llmMaxTokensPerDraft: int("LLM_MAX_TOKENS_PER_DRAFT", 0, 0, 10_000_000),
   llmMaxCostMicrosPerDraft: int("LLM_MAX_COST_MICROS_PER_DRAFT", 0, 0, 1_000_000_000),
+
+  // Temporary beta perk (D-112), web app only: a free daily allowance on top of the trial; off unless enabled
+  dailyRefreshEnabled: int("DAILY_REFRESH_ENABLED", 0, 0, 1),
+  dailyRefreshLimit: int("DAILY_REFRESH_LIMIT", 5, 1, 1_000),
 } as const;
 
 const LimitsSchema = z

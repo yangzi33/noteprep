@@ -34,10 +34,33 @@ export function statusHref(item: Pick<HistoryLike, "jobId" | "kind" | "exportId"
   return item.kind === "export" && item.exportId && item.state !== "succeeded" ? `/exports/${item.exportId}` : `/jobs/${item.jobId}`;
 }
 
-export function allowanceSentence(allowance: { remaining: number; limit: number; pending: number } | null): string {
+/** The structural part of the DAL's AllowanceView the display helpers need. */
+export interface AllowanceLike {
+  source: "trial" | "paid" | "daily";
+  remaining: number;
+  limit: number;
+  pending: number;
+}
+
+export function allowanceSentence(allowance: AllowanceLike | null): string {
   return allowance
     ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
     : "Your account is being set up.";
+}
+
+/** The beta perk reminder (D-112); null unless the allowance is the daily one. The daily count refreshes at 00:00 UTC. */
+export function dailyRefreshReminder(allowance: AllowanceLike | null): string | null {
+  if (allowance?.source !== "daily") return null;
+  const pending = allowance.pending > 0 ? ` (${allowance.pending} in progress)` : "";
+  const tail = allowance.remaining > 0 ? "Refreshes at 00:00 UTC." : "The count comes back at 00:00 UTC.";
+  return `Beta perk: ${allowance.limit} free exports every day. ${allowance.remaining} of ${allowance.limit} left today${pending}. ${tail}`;
+}
+
+/** What is left after the export being confirmed; null unless the view is daily and at least one is left. */
+export function exportAfterSentence(allowance: AllowanceLike | null): string | null {
+  if (allowance?.source !== "daily" || allowance.remaining < 1) return null;
+  const after = allowance.remaining - 1;
+  return `After this export you will have ${after} left today.${after === 0 ? " They come back at 00:00 UTC." : ""}`;
 }
 
 export function recentCards(items: readonly HistoryLike[], max: number): MaterialCardModel[] {

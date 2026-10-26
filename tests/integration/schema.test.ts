@@ -169,6 +169,72 @@ describe("allowance buckets and reservations", () => {
     ).toBe(CHECK_VIOLATION);
   });
 
+  it("daily bucket requires period_key and ends_at", async () => {
+    const owner = await seedOwner(admin);
+    const insert = (cols: string, vals: string) =>
+      admin.query(`INSERT INTO usage_bucket (owner_id, kind, limit_count${cols}) VALUES ($1,'daily',1${vals})`, [owner]);
+    expect(await pgErrorCode(() => insert("", ""))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert(", period_key", ", 20000"))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert(", ends_at", ", now() + interval '1 day'"))).toBe(CHECK_VIOLATION);
+    expect(await pgErrorCode(() => insert(", period_key, ends_at", ", 20000, now() + interval '1 day'"))).toBeNull();
+  });
+
+  it("daily bucket rejects a subscription_id", async () => {
+    const owner = await seedOwner(admin);
+    const sub = await admin.query(
+      `INSERT INTO subscription (owner_id, stripe_subscription_id, stripe_price_id, status, synced_at)
+       VALUES ($1, $2, 'price_test', 'active', now()) RETURNING id`,
+      [owner, `sub_${randomUUID()}`],
+    );
+    expect(
+      await pgErrorCode(() =>
+        admin.query(
+          `INSERT INTO usage_bucket (owner_id, kind, limit_count, subscription_id, period_key, ends_at)
+           VALUES ($1,'daily',1,$2,20000, now() + interval '1 day')`,
+          [owner, sub.rows[0].id],
+        ),
+      ),
+    ).toBe(CHECK_VIOLATION);
+  });
+
+  it("one daily bucket per owner and day", async () => {
+    const owner = await seedOwner(admin);
+    const other = await seedOwner(admin);
+    const insert = (who: string, day: number) =>
+      admin.query(
+        `INSERT INTO usage_bucket (owner_id, kind, limit_count, period_key, ends_at)
+         VALUES ($1,'daily',1,$2, now() + interval '1 day')`,
+        [who, day],
+      );
+    expect(await pgErrorCode(() => insert(owner, 20000))).toBeNull();
+    expect(await pgErrorCode(() => insert(owner, 20000))).toBe(UNIQUE_VIOLATION);
+    expect(await pgErrorCode(() => insert(owner, 20001))).toBeNull();
+    expect(await pgErrorCode(() => insert(other, 20000))).toBeNull();
+  });
+
+  it("daily buckets show up in usage_bucket_drift only when counters disagree", async () => {
+    const owner = await seedOwner(admin);
+    const lesson = await seedLesson(admin, owner);
+    const bucket = randomUUID();
+    await admin.query(
+      `INSERT INTO usage_bucket (id, owner_id, kind, limit_count, period_key, ends_at)
+       VALUES ($1,$2,'daily',1,20000, now() + interval '1 day')`,
+      [bucket, owner],
+    );
+    await seedJobWithReservation(admin, owner, lesson, bucket); // counters consistent
+    const drift = async () => (await worker.query(`SELECT * FROM usage_bucket_drift WHERE bucket_id = $1`, [bucket])).rows;
+    expect(await drift()).toEqual([]);
+
+    await admin.query(`UPDATE usage_bucket SET reserved = 0 WHERE id = $1`, [bucket]); // simulate a bug
+    try {
+      expect(await drift()).toHaveLength(1);
+    } finally {
+      // other files assert that the whole drift view is empty: repair the shared database
+      await admin.query(`UPDATE usage_bucket SET reserved = 1 WHERE id = $1`, [bucket]);
+    }
+    expect(await drift()).toEqual([]);
+  });
+
   it("deduplicates paid buckets by (subscription, period)", async () => {
     const owner = await seedOwner(admin);
     const sub = await admin.query(
