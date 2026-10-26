@@ -41,7 +41,7 @@ test("choose a topic, create a free draft preview, and it survives a refresh wit
   const draftUrl = page.url();
   await expect(page.getByTestId("draft-title")).toHaveText("Sample topic: Unknown on both sides");
   await expect(page.getByTestId("draft-notice")).toHaveText("Draft preview. Nothing has been used from your allowance. AI-assisted material can contain mistakes. Read everything before you use it with a student.");
-  await expect(page.getByTestId("draft-expiry")).toContainText(/^Draft expires (today|tomorrow|in \d+ days) \(.+\)$/);
+  await expect(page.getByTestId("draft-expiry")).toContainText(/^Draft expires (today|tomorrow|in \d+ days) \(.+, UTC\)$/);
   // export is on here (the paused state is covered in draft-paused.spec.ts); this spec starts no export
   await expect(page.getByTestId("draft-export")).toHaveText("Export PDFs");
   await expect(page.getByTestId("draft-export-disabled")).toHaveCount(0);

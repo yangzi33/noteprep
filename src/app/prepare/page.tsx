@@ -210,7 +210,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
             <p className="text-sm text-muted-foreground" data-testid="cost-note">
               {draftFlow ? "Creating a draft is free. A lesson pack is used only when you export PDFs." : "Choosing fewer documents still uses one lesson pack."}
             </p>
-            <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} />
+            <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} pendingLabel={draftFlow ? "Creating your draft…" : "Creating your lesson pack…"} />
           </form>
         )}
         </PreparePendingProvider>

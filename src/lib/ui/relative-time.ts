@@ -11,7 +11,7 @@ export function relativeExpiry(expiresAt: Date, now: Date): string {
   return `in ${days} days`;
 }
 
-/** "in 2 days (Oct 28)"; the date part is a UTC date. An expired draft reads "expired (Oct 24)". */
+/** "in 2 days (Oct 28, UTC)"; the date part is a UTC date. An expired draft reads "expired (Oct 24, UTC)". */
 export function expiryPhrase(expiresAt: Date, now: Date): string {
-  return `${relativeExpiry(expiresAt, now)} (${shortDate.format(expiresAt).replace(/\s/g, " ")})`;
+  return `${relativeExpiry(expiresAt, now)} (${shortDate.format(expiresAt).replace(/\s/g, " ")}, UTC)`;
 }

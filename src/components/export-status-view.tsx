@@ -134,7 +134,7 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
       )}
       {phase === "failed" && (
         <p className="mt-3 text-sm text-muted-foreground">
-          Nothing was used. You can try again from your draft.{" "}
+          You can find your draft in My lesson packs, or start again.{" "}
           <Link href="/lessons" className="inline-flex min-h-11 items-center font-semibold underline" data-testid="export-failed-back">
             Back to My lesson packs
           </Link>

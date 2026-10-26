@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { EXPORT_PROMISE, ExportConfirmView, type ExportConfirmProps } from "@/components/app/export-confirm";
-import { ExportEntry } from "@/components/app/export-entry";
+import { ExportEntry, ExportEntryMobile } from "@/components/app/export-entry";
 import { CONFIRM_REDIRECT_CODES, confirmErrorTarget, confirmSuccessHref, exportConfirmHref } from "@/lib/ui/export-confirm";
 import { REVIEW_REMINDER } from "@/lib/ui/lesson-view";
 import { generationErrorMessage } from "@/lib/ui/messages";
@@ -194,5 +194,20 @@ describe("confirm action mapping", () => {
     for (const code of ["ALLOWANCE_EXHAUSTED", "RATE_LIMITED", "TOO_MANY_ACTIVE_JOBS", "QUEUE_BUSY", "EXPORT_BUSY", "EXPORT_UNAVAILABLE", "EXPORT_DISABLED", "EXPORT_NOT_VERIFIED", "EXPORT_RENDER_FAILED", "IDEMPOTENCY_KEY_REUSED", "ACCOUNT_NOT_ACTIVE", "INVALID_REQUEST", "EXPORT_CONFLICT", "DRAFT_EXPIRED"]) {
       expect(CONFIRM_REDIRECT_CODES as readonly string[]).toContain(code);
     }
+  });
+});
+
+describe("mobile export link on the draft page", () => {
+  const mobile = (flowMode: "legacy" | "draft", exportEnabled: boolean) => renderToStaticMarkup(createElement(ExportEntryMobile, { flowMode, exportEnabled, draftId: D, versionId: V, rev: 4 }));
+  it("links to the same export URL as the aside under its own test id", () => {
+    const html = mobile("draft", true);
+    expect(html).toContain(`href="/drafts/${D}/export?v=${V}&amp;rev=4"`);
+    expect(html).toContain('data-testid="draft-export-mobile"');
+    expect(html).toContain("lg:hidden");
+    expect(html).not.toContain('data-testid="draft-export"');
+  });
+  it("renders nothing when export is paused or the flow is legacy", () => {
+    expect(mobile("draft", false)).toBe("");
+    expect(mobile("legacy", true)).toBe("");
   });
 });

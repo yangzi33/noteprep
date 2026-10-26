@@ -29,6 +29,7 @@ test("with export paused, the draft page says so with a disabled button and the 
   await expect(page.getByTestId("draft-export-disabled")).toBeDisabled();
   await expect(page.getByText("PDF export is paused right now. Your draft is saved.")).toBeVisible();
   await expect(page.getByTestId("draft-export")).toHaveCount(0);
+  await expect(page.getByTestId("draft-export-mobile")).toHaveCount(0);
 
   await page.goto(`/drafts/${draftId}/export`);
   await expect(page.getByTestId("export-disabled")).toBeVisible();

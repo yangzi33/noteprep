@@ -162,6 +162,8 @@ test("keyboard: Tab reaches Replace then Export PDFs; Replace moves focus to the
         const el = document.activeElement as HTMLElement | null;
         return el ? (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 40) : "";
       });
+      // The toolbar's mobile Export link comes before Replace in tab order; only the aside's link (after Replace) counts.
+      const testId = await page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
       sequence.push(name);
       if (replaceAt < 0 && name === "Replace question 1") {
         replaceAt = n;
@@ -175,7 +177,7 @@ test("keyboard: Tab reaches Replace then Export PDFs; Replace moves focus to the
         await page.getByTestId("keep-original").click();
         await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
       }
-      if (name === "Export PDFs") exportAt = n;
+      if (replaceAt > 0 && testId === "draft-export") exportAt = n;
     }
     expect(replaceAt, `Replace was never focused: ${sequence.join(" | ")}`).toBeGreaterThan(0);
     expect(exportAt, `Export PDFs was never focused: ${sequence.join(" | ")}`).toBeGreaterThan(0);

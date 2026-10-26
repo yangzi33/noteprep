@@ -44,7 +44,7 @@ export default async function HistoryPage() {
 
       {items.length === 0 ? (
         <Card className="mt-6 p-6">
-          <p className="text-sm">{emptyExportsText(draftList.length)}.</p>
+          <p className="text-sm">{emptyExportsText(draftList.length)}</p>
           <TextAction href="/prepare">Create your first lesson pack</TextAction>
         </Card>
       ) : (

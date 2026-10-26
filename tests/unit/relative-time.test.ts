@@ -22,7 +22,7 @@ describe("relativeExpiry", () => {
 
 describe("expiryPhrase", () => {
   it("adds the UTC date", () => {
-    expect(expiryPhrase(new Date("2026-10-28T10:00:00Z"), now)).toBe("in 2 days (Oct 28)");
-    expect(expiryPhrase(new Date("2026-10-25T10:00:00Z"), now)).toBe("expired (Oct 25)");
+    expect(expiryPhrase(new Date("2026-10-28T10:00:00Z"), now)).toBe("in 2 days (Oct 28, UTC)");
+    expect(expiryPhrase(new Date("2026-10-25T10:00:00Z"), now)).toBe("expired (Oct 25, UTC)");
   });
 });

@@ -53,7 +53,7 @@ export const landingContent = {
       { label: "Curriculum", value: "Sample Mathematics (not a real curriculum)" },
       { label: "Level", value: "Sample Level A" },
       { label: "Course", value: "Sample Course 1" },
-      { label: "Topic", value: "Linear equations in one variable" },
+      { label: "Topic", value: "Sample topic: Unknown on both sides" },
       { label: "Lesson length", value: "60 minutes" },
       { label: "Difficulty", value: "Mixed (easy to hard)" },
     ],

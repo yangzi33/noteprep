@@ -186,3 +186,15 @@ describe("a free re-export does not read like a new charge", () => {
     expect(m).not.toMatch(/used|No generation/);
   });
 });
+
+describe("failed export recovery wording", () => {
+  it("never claims nothing was used unless the server confirmed the release", () => {
+    for (const charge of ["held", "unknown"] as const) {
+      const m = html(view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, charge));
+      expect(m).not.toContain("Nothing was used");
+      expect(m).not.toContain("No lesson pack was used");
+      expect(m).toContain("You can find your draft in My lesson packs, or start again.");
+    }
+    expect(html(failed)).toContain("No lesson pack was used.");
+  });
+});
