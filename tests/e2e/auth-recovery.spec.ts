@@ -31,9 +31,22 @@ for (const [path, heading, button, notice] of [
   });
 }
 
-test("an invalid recovery code lands on the login page with the fixed message and no echo", async ({ page }) => {
+test("opening the recovery page without parameters shows the invalid-link state and echoes nothing", async ({ page }) => {
+  await page.goto("/auth/recovery");
+  await expect(page.getByRole("heading", { level: 1, name: "This link cannot be used" })).toBeVisible();
+  await expect(page.locator("main [role=alert]")).toContainText("invalid or expired");
+  await expect(page.getByRole("link", { name: "Request a new link" })).toHaveAttribute("href", "/login/reset");
+  await expect(page.getByRole("button", { name: "Continue" })).toHaveCount(0);
+});
+
+test("a recovery code is only redeemed when Continue is pressed, and a bad one fails with the fixed message", async ({ page }) => {
   await page.goto("/auth/recovery?code=not-a-real-code&next=https://evil.example");
+  const origin = new URL(page.url()).origin;
+  await expect(page.getByRole("heading", { level: 1, name: "Reset your password" })).toBeVisible();
+  await expect(page.getByText("not-a-real-code")).toHaveCount(0);
+  await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/login\?error=recovery$/);
+  expect(new URL(page.url()).origin).toBe(origin);
   await expect(page.locator("main [role=alert]")).toContainText("invalid or expired");
 });
 
