@@ -91,6 +91,8 @@ Notes:
 | `ADMIN_REFRESH_TOKEN` | none | Bearer token for that route; at least 32 characters, required only when `ADMIN_REFRESH_ENABLED=1`. Server environment only |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | none | Optional public contact address shown to users. Inlined at build time, so set it in the build environment. Leave unset to show wording only |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
+| `AUTH_EMAIL_PER_IP_PER_HOUR` | `10` | Password-reset and confirmation-resend requests accepted per client IP and kind per hour (integer, 1 to 1000). Beyond it the request is ignored with the same response. See docs/auth-recovery.md |
+| `AUTH_EMAIL_GLOBAL_PER_HOUR` | `200` | The same limit across all addresses, per kind (integer, 1 to 100000) |
 | `DRAFT_*`, `EXPORT_*` limits | see file | Rate, concurrency, deadline, size and lifetime limits; every name is listed in `src/lib/server/limits.ts` |
 
 Rollback state "draft flow, export off": `FLOW_MODE=draft`, `EXPORT_ENABLED=0`. Set both flags explicitly in every hosted environment.
