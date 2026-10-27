@@ -28,6 +28,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | staging 项目 URL | staging 部署 |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | staging 的 publishable key | staging 部署 |
 | `NEXT_PUBLIC_SITE_URL` | staging 域名 | staging 部署 |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | (可选)公开的联系邮箱;构建时写入,改动需重新部署;不设置则只显示文字提示 | staging 部署 |
 | `CURRICULUM_ALLOW_SAMPLE` | `1`(显示**示例**课程数据,仅 staging;**生产不设置**) | staging 部署(M2 起需要) |
 | (Phase 3)`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET` | Stripe **测试模式** | staging 部署 |
 

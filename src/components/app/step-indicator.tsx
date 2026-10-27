@@ -1,6 +1,9 @@
 import * as React from "react";
 import { cn } from "cn";
 
+/** The tutor flow, shared by Prepare, the draft page and the export page. */
+export const FLOW_STEPS = ["Select", "Preview", "Adjust", "Export"] as const;
+
 type StepIndicatorProps = {
   steps: readonly string[];
   current: number;

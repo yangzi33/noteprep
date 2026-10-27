@@ -140,7 +140,14 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* The skip link focuses <main>; the whole page region needs no ring. */
+  main[tabindex="-1"]:focus-visible {
+    outline: none;
   }
   body {
     @apply bg-background text-foreground;

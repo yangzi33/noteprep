@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,6 +22,8 @@ const Search = z.object({
   error: z.string().regex(/^[A-Z_]{1,40}$/).optional(),
 });
 
+export const metadata: Metadata = { title: "Confirm export" };
+
 export default async function ExportConfirmPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
   const { id } = await params;
@@ -36,7 +39,7 @@ export default async function ExportConfirmPage({ params, searchParams }: { para
     if (code === "NOT_FOUND") notFound();
     if (code === "DRAFT_EXPIRED") {
       return (
-        <main className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+        <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
           <h1 className="font-heading text-[28px] leading-[1.2]">This draft has expired</h1>
           <Notice intent="error" className="mt-4" data-testid="draft-expired">
             {generationErrorMessage("DRAFT_EXPIRED")}

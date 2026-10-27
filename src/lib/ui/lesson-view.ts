@@ -7,6 +7,9 @@ export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
   solutions: "Solutions / Answer Key",
 };
 
+/** The review reminder shown on the draft, export confirmation and lesson pages. Never claims zero errors. */
+export const REVIEW_REMINDER = "AI-assisted material can contain mistakes. Read everything before you use it with a student.";
+
 export const DOCUMENT_PURPOSE: Record<DocumentKind, string> = {
   notes: "For you: explanations, worked examples and a teaching sequence",
   worksheet: "For the student: practice questions with space to write, no answers",

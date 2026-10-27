@@ -25,6 +25,9 @@ describe("activeNavHref", () => {
 
 describe("NAV_ITEMS", () => {
   it("lists the workspace destinations in order", () => {
-    expect(NAV_ITEMS.map((i) => i.href)).toEqual(["/dashboard", "/prepare", "/lessons"]);
+    expect(NAV_ITEMS.map((i) => i.href)).toEqual(["/dashboard", "/prepare", "/lessons", "/account"]);
+  });
+  it("highlights Account on the account page", () => {
+    expect(activeNavHref("/account", NAV_ITEMS.map((i) => i.href))).toBe("/account");
   });
 });

@@ -72,3 +72,12 @@ describe("GenerateButtonView", () => {
     expect(html).toMatch(/<button[^>]*\saria-busy="true"/);
   });
 });
+
+describe("GenerateButtonView submitting", () => {
+  it("shows the working label, stays disabled and keeps the type", () => {
+    const html = render(createElement(GenerateButtonView, { exhausted: false, pending: false, submitting: true, label: "Create draft preview" }));
+    expect(html).toContain("Creating your draft…");
+    expect(html).toMatch(/<button[^>]*\sdisabled=""[^>]*\saria-busy="true"|<button[^>]*\saria-busy="true"[^>]*\sdisabled=""/);
+    expect(html).not.toContain("Create draft preview");
+  });
+});

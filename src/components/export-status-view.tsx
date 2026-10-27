@@ -36,7 +36,7 @@ const OVERLINES: Record<ExportPhase, string> = {
   canceled: "CANCELED",
   retired: "LESSON DELETED",
   confirming: "FINISHING UP",
-  stalled: "CHECKING LATER",
+  stalled: "STILL WORKING",
   unknown: "CHECKING",
   session_expired: "SIGNED OUT",
   not_found: "NOT FOUND",
@@ -133,7 +133,12 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
         </Notice>
       )}
       {phase === "failed" && (
-        <p className="mt-3 text-sm text-muted-foreground">You can start again from Create another.</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          You can find your draft in My lesson packs, or start again.{" "}
+          <Link href="/lessons" className="inline-flex min-h-11 items-center font-semibold underline" data-testid="export-failed-back">
+            Back to My lesson packs
+          </Link>
+        </p>
       )}
 
       {showFiles && (
@@ -169,10 +174,10 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
       )}
 
       {phase === "stopping" || phase === "confirming" || phase === "unknown" || phase === "queued" || phase === "retrying" || phase === "running:compiling" || phase === "running:storing" ? (
-        <p className="mt-4 text-sm text-muted-foreground">Your progress is saved. You can leave this page and find this export in My materials.</p>
+        <p className="mt-4 text-sm text-muted-foreground">Your progress is saved. You can leave this page and find this export in My lesson packs.</p>
       ) : (
         <p className="mt-6 flex gap-6 text-sm font-semibold">
-          <TextAction href="/lessons">My materials</TextAction>
+          <TextAction href="/lessons">My lesson packs</TextAction>
           <TextAction href="/prepare">Create another</TextAction>
         </p>
       )}

@@ -15,7 +15,7 @@ test("a populated dashboard shows one recent card whose link names its title", a
 
     const recent = page.getByRole("region", { name: "Recent activity" });
     await expect(recent.getByRole("listitem")).toHaveCount(1);
-    await expect(recent.getByRole("link", { name: "See all materials" })).toHaveAttribute("href", "/lessons");
+    await expect(recent.getByRole("link", { name: "See all lesson packs" })).toHaveAttribute("href", "/lessons");
     await expect(recent.getByRole("listitem").getByRole("link")).toHaveAttribute("aria-label", /^(Open|View status): .+/);
   } finally {
     await worker.stop();

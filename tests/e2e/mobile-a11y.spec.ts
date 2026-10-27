@@ -105,7 +105,7 @@ test("no horizontal scroll, reachable nav and tall primary controls on every pag
   const { context, page } = await mobile(browser);
   try {
     const pages: { path: string; label: string; primary: (p: Page) => Locator[] }[] = [
-      { path: "/dashboard", label: "dashboard", primary: (p) => [p.getByRole("link", { name: "Create material" }).last()] },
+      { path: "/dashboard", label: "dashboard", primary: (p) => [p.getByRole("link", { name: "Create lesson pack" }).last()] },
       { path: "/lessons", label: "lessons", primary: (p) => [p.getByTestId("history-list").getByRole("link").first()] },
       { path: fixture.lessonPath, label: "lesson", primary: (p) => [p.getByTestId("export-notes")] },
       { path: fixture.exportPath, label: "export result", primary: (p) => [p.getByTestId("export-download-notes")] },
@@ -116,7 +116,7 @@ test("no horizontal scroll, reachable nav and tall primary controls on every pag
       await page.goto(entry.path);
       await noHorizontalScroll(page, entry.label);
       for (const control of entry.primary(page)) await expectTouchTarget(control, `${entry.label} primary control`);
-      for (const name of ["Dashboard", "Create material", "My materials"]) {
+      for (const name of ["Dashboard", "Create lesson pack", "My lesson packs", "Account"]) {
         await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name }), `${entry.label} nav ${name}`).toBeVisible();
       }
     }
@@ -125,7 +125,7 @@ test("no horizontal scroll, reachable nav and tall primary controls on every pag
     await noHorizontalScroll(page, "prepare");
     await expectTouchTarget(page.getByRole("button", { name: "Create draft preview" }), "prepare primary control");
     for (const id of ["select-v", "select-level", "select-course", "select-unit", "select-topic"]) await expectTouchTarget(page.getByTestId(id), id);
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "My materials" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "My lesson packs" })).toBeVisible();
   } finally {
     await context.close();
   }
@@ -162,6 +162,8 @@ test("keyboard: Tab reaches Replace then Export PDFs; Replace moves focus to the
         const el = document.activeElement as HTMLElement | null;
         return el ? (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 40) : "";
       });
+      // The toolbar's mobile Export link comes before Replace in tab order; only the aside's link (after Replace) counts.
+      const testId = await page.evaluate(() => document.activeElement?.getAttribute("data-testid") ?? "");
       sequence.push(name);
       if (replaceAt < 0 && name === "Replace question 1") {
         replaceAt = n;
@@ -175,7 +177,7 @@ test("keyboard: Tab reaches Replace then Export PDFs; Replace moves focus to the
         await page.getByTestId("keep-original").click();
         await expect(page.getByTestId("candidate-panel")).toHaveCount(0);
       }
-      if (name === "Export PDFs") exportAt = n;
+      if (replaceAt > 0 && testId === "draft-export") exportAt = n;
     }
     expect(replaceAt, `Replace was never focused: ${sequence.join(" | ")}`).toBeGreaterThan(0);
     expect(exportAt, `Export PDFs was never focused: ${sequence.join(" | ")}`).toBeGreaterThan(0);

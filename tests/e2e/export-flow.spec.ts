@@ -20,8 +20,8 @@ test.afterAll(async () => {
 
 const SAMPLE = "sample-math@sample-1";
 const COURSE = `${SAMPLE}/level-a/course-1`;
-const FULL_ALLOWANCE = "3 of 3 generations left.";
-const PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
+const FULL_ALLOWANCE = "3 of 3 free lesson packs left.";
+const PROMISE = "This will use 1 lesson pack when your PDFs are ready. If export fails, no lesson pack is used.";
 const DOCS = ["notes", "worksheet", "solutions"] as const;
 
 async function chooseTopic(page: Page) {
@@ -104,11 +104,11 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     const exportUrl = page.url();
     const exportId = exportUrl.split("/").pop()!;
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 45_000 });
-    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 generation.");
+    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 lesson pack.");
 
     // the allowance reads 2 of 3, in the database and on the history page
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
 
     // each download is a signed redirect to a PDF file, never a .tex (the signed URL is not logged)
     await page.goto(exportUrl);
@@ -131,7 +131,7 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     // a reload keeps the state
     await page.reload();
     await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded");
-    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 generation.");
+    await expect(page.getByTestId("export-charge")).toHaveText("This used 1 lesson pack.");
 
     // the same unchanged draft again: no new charge, no new export
     await page.goto(`/drafts/${draftId}`);
@@ -139,9 +139,9 @@ test("full flow: confirm, export, settle once, download all three PDFs, and re-e
     await page.getByTestId("export-confirm").click();
     await expect(page).toHaveURL(new RegExp(`/exports/${exportId}\\?outcome=reused$`));
     await expect(page.getByTestId("export-outcome-note")).toContainText("Downloading again is free");
-    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 generation. This one used none.");
-    expect(await page.content()).not.toContain("This used 1 generation.");
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    await expect(page.getByTestId("export-charge")).toHaveText("An export with the same content and page format already used 1 lesson pack. This one used none.");
+    expect(await page.content()).not.toContain("This used 1 lesson pack.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
     expect(await bucketOf(user.id)).toEqual([{ used: 1, reserved: 0 }]);
     expect(await exportsOf(draftId)).toHaveLength(1);
   });
@@ -231,7 +231,7 @@ test("a failed export releases the reservation, says so only after the server di
       await page.getByTestId("export-confirm").click();
       await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}$/);
       await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "failed", { timeout: 45_000 });
-      await expect(page.getByTestId("export-charge")).toHaveText("No generation was used.");
+      await expect(page.getByTestId("export-charge")).toHaveText("No lesson pack was used.");
 
       const rows = await exportsOf(draftId);
       expect(rows).toHaveLength(1);
@@ -290,7 +290,7 @@ test("canceling a queued export releases it: canceled, no generation used", asyn
   await page.getByRole("button", { name: "Cancel export" }).click();
   await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}$/);
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "canceled");
-  await expect(page.getByTestId("export-charge")).toHaveText("No generation was used.");
+  await expect(page.getByTestId("export-charge")).toHaveText("No lesson pack was used.");
   expect(await bucketOf(user.id)).toEqual([{ used: 0, reserved: 0 }]);
   expect(await allowanceText(page)).toBe(FULL_ALLOWANCE);
   expect((await exportsOf(draftId))[0]!.state).toBe("failed");

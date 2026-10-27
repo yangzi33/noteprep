@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -7,10 +8,13 @@ import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { ContactText } from "@/components/app/contact-link";
 import { exhaustedNotice, generationErrorMessage } from "@/lib/ui/messages";
 import { createLesson } from "./actions";
 
 const inputClass = "w-full rounded border px-3 py-2";
+
+export const metadata: Metadata = { title: "New lesson pack" };
 
 export default async function NewLessonPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { ctx } = await requireAccount();
@@ -22,7 +26,7 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
   const key = randomUUID();
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-3xl p-8">
       <h1 className="text-2xl font-semibold">New lesson</h1>
       <p className="mt-2 text-sm" data-testid="allowance">
         {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
@@ -30,12 +34,12 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
 
       {error && (
         <Notice intent="error" className="mt-4">
-          {generationErrorMessage(error, allowance ? allowance.source : null)}
+          <ContactText text={generationErrorMessage(error, allowance ? allowance.source : null) ?? ""} />
         </Notice>
       )}
       {exhausted && (
         <Notice intent="info" role="status" className="mt-4">
-          {exhaustedNotice(allowance.source)} You can still view your history.
+          <ContactText text={exhaustedNotice(allowance.source)} /> You can still view your history.
         </Notice>
       )}
 

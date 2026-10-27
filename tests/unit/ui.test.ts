@@ -17,9 +17,9 @@ describe("job view logic", () => {
 describe("user-facing messages", () => {
   it("never says a failed or canceled job used a generation", () => {
     for (const code of ["llm_timeout", "compile_failed", "storage_failed", "budget_exceeded", "something_unknown", null]) {
-      expect(describeOutcome("failed", code)).toMatch(/did not use one of your generations/);
+      expect(describeOutcome("failed", code)).toMatch(/did not use one of your lesson packs/);
     }
-    expect(describeOutcome("canceled", "canceled")).toMatch(/did not use one of your generations/);
+    expect(describeOutcome("canceled", "canceled")).toMatch(/did not use one of your lesson packs/);
   });
   it("has nothing to say for jobs that are still running or complete", () => {
     expect(describeOutcome("running", null)).toBeNull();

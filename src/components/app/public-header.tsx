@@ -7,7 +7,7 @@ const focus = "focus-visible:ring-3 focus-visible:ring-ring focus-visible:outlin
 
 /**
  * The header for signed-out visitors. "simple" (login, not-found) has one Sign in link; "landing" matches the landing
- * design: anchor links to sections of the page (hidden below md), a Login link and a Get started button.
+ * design: anchor links to sections of the page (hidden below md), a Sign in link and a Get started button.
  */
 export function PublicHeader({ variant = "simple" }: { variant?: "simple" | "landing" }) {
   if (variant === "landing") {
@@ -29,8 +29,8 @@ export function PublicHeader({ variant = "simple" }: { variant?: "simple" | "lan
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-1 md:ml-0 md:gap-3">
-            <Link href="/login" className={`inline-flex min-h-11 items-center rounded-control px-3 text-sm text-foreground hover:text-text-accent ${focus}`}>
-              Login
+            <Link href="/login" className={`hidden min-h-11 items-center rounded-control px-3 text-sm text-foreground hover:text-text-accent md:inline-flex ${focus}`}>
+              Sign in
             </Link>
             <Button asChild>
               <Link href="/login">Get started</Link>

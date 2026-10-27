@@ -16,7 +16,7 @@ test("choose a curriculum topic with the dropdowns, generate, and see the lesson
     await signIn(page, user);
     await page.goto("/prepare");
     await expect(page.getByTestId("selection-fields")).toHaveAttribute("data-hydrated", "true");
-    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 generations left.");
+    await expect(page.getByTestId("allowance")).toHaveText("3 of 3 free lesson packs left.");
 
     await expect(page.getByTestId("select-v")).toHaveValue(""); // nothing is chosen yet
     await page.getByTestId("select-v").selectOption({ label: "Sample Mathematics (not a real curriculum)" });
@@ -53,7 +53,7 @@ test("choose a curriculum topic with the dropdowns, generate, and see the lesson
     // the placeholder worker here does not store files in Storage, but the lesson is complete and opens on its preview page
     await expect(page).toHaveURL(/\/lessons\/[0-9a-f-]{36}\?rev=[0-9a-f-]{36}$/, { timeout: 45_000 });
     await expect(page.getByTestId("lesson-title")).toBeVisible();
-    expect(await allowanceText(page)).toBe("2 of 3 generations left.");
+    expect(await allowanceText(page)).toBe("2 of 3 free lesson packs left.");
   } finally {
     await worker.stop();
   }

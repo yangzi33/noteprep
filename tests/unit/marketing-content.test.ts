@@ -68,7 +68,9 @@ describe("landing content", () => {
   it("states that subscriptions are not available yet and has one subscription card", () => {
     expect(landingContent.pricing.subscription.note).toMatch(/not available yet/);
     expect(landingContent.pricing.free.title).toMatch(/free/i);
-    expect(landingContent.pricing.free.points.join(" ")).toMatch(/3/);
+    expect(landingContent.pricing.free.points.join(" ")).toMatch(/Free lesson packs to start/);
+    // true whether or not the daily beta perk is on: no lifetime or numeric allowance promise in marketing copy
+    expect(JSON.stringify(landingContent)).not.toMatch(/lifetime|\b3 (free|complete)/i);
   });
 
   it("has three benefits, four steps and the three documents", () => {
@@ -87,7 +89,7 @@ describe("landing content", () => {
     expect(landingContent.steps.map((x) => x.title)).toEqual(["Select", "Preview", "Adjust", "Export"]);
     expect(landingContent.how.title).toBe("Select → Preview → Adjust → Export.");
     expect(landingContent.builder.generate).toBe("Create draft preview");
-    expect(landingContent.steps[3]!.body).toMatch(/1 generation only when all .*PDFs are ready/);
+    expect(landingContent.steps[3]!.body).toMatch(/1 lesson pack only when all .*PDFs are ready/);
   });
 
   it("never says a PDF can be opened or read before export, or that a generate job starts", () => {

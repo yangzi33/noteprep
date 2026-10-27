@@ -35,12 +35,12 @@ export const landingContent = {
     { label: "Pricing", href: "#pricing" },
   ],
   hero: {
-    eyebrow: "For private math tutors · LaTeX-quality PDFs",
+    eyebrow: "For private math tutors · Print-ready PDFs",
     title: "Better teaching materials. Less prep time.",
     subtitle:
       "Choose a topic, a lesson length and a difficulty, and NotePrep builds tutor lesson notes, a student worksheet and a separate answer key as typeset PDFs. You review the AI-assisted material before teaching.",
     primaryCta: "Get started",
-    note: "3 free lesson packs. No credit card needed.",
+    note: "Free to try. No credit card needed.",
   },
   builder: {
     overline: "Real output · compiled by NotePrep",
@@ -53,7 +53,7 @@ export const landingContent = {
       { label: "Curriculum", value: "Sample Mathematics (not a real curriculum)" },
       { label: "Level", value: "Sample Level A" },
       { label: "Course", value: "Sample Course 1" },
-      { label: "Topic", value: "Unknown on both sides" },
+      { label: "Topic", value: "Sample topic: Unknown on both sides" },
       { label: "Lesson length", value: "60 minutes" },
       { label: "Difficulty", value: "Mixed (easy to hard)" },
     ],
@@ -77,7 +77,7 @@ export const landingContent = {
       },
       {
         title: "Professional printable documents.",
-        body: "LaTeX-quality typesetting, consistent layout and print-ready PDFs. Each document looks like a polished teaching resource.",
+        body: "Clean typesetting, consistent layout and print-ready PDFs. Each document looks like a polished teaching resource.",
       },
     ] satisfies Benefit[],
   },
@@ -87,9 +87,9 @@ export const landingContent = {
   },
   steps: [
     { title: "Select", body: "Pick the curriculum, level, course and topic, then the lesson length and difficulty.", tag: "Your teaching context" },
-    { title: "Preview", body: "Get a free draft you can read and adjust. Drafts use no generation.", tag: "Notes, worksheet and answer key" },
+    { title: "Preview", body: "Get a free draft you can read and adjust. Drafts use no lesson pack.", tag: "Notes, worksheet and answer key" },
     { title: "Adjust", body: "Replace or remove a question and make another version of the draft.", tag: "Free until you export" },
-    { title: "Export", body: "Export uses 1 generation only when all of your PDFs are ready. Then download them as separate PDFs.", tag: "PDF · Print or share your way" },
+    { title: "Export", body: "Export uses 1 lesson pack only when all of your PDFs are ready. Then download them as separate PDFs.", tag: "PDF · Print or share your way" },
   ] satisfies Step[],
   documents: [
     {
@@ -121,7 +121,7 @@ export const landingContent = {
     },
   ] satisfies DocumentCard[],
   showcase: {
-    eyebrow: "Real results",
+    eyebrow: "Sample output",
     title: "Typeset materials for every tutoring session.",
     packChip: "01 / Three documents",
     packTitle: "One lesson, three printable documents.",
@@ -134,7 +134,7 @@ export const landingContent = {
     reviewBody:
       "Please review AI-assisted material before teaching. Read the draft preview before you export, and read the PDFs before you teach. The math is produced and checked by code rather than written by the AI.",
     reviewPoints: ["Preview before you export", "Three separate documents, with answers kept apart", "A review reminder on every lesson"],
-    callout: "Print-ready PDFs with LaTeX quality",
+    callout: "Print-ready PDFs",
     calloutBody: "Consistent layouts, typeset equations and a separate tutor copy of the solutions.",
     answerPanelLabel: "Worked solutions",
     footnote: "Your expertise stays in the loop: review every document before teaching.",
@@ -146,7 +146,7 @@ export const landingContent = {
     free: {
       title: "Free",
       label: "Available now",
-      points: ["3 complete lesson packs, for the lifetime of your account", "No credit card required", "Full preview and PDF export"],
+      points: ["Free lesson packs to start, then a monthly plan later", "No credit card required", "Full preview and PDF export"],
       cta: "Get started",
     },
     subscription: {
@@ -175,7 +175,7 @@ export const landingContent = {
         answer: "No. Answers and step-by-step solutions are in the separate Solutions / Answer Key document.",
       },
       {
-        question: "What happens after the 3 free packs?",
+        question: "What happens after the free lesson packs?",
         answer: "Your earlier lessons stay available to view and download. Subscriptions are not available yet.",
       },
       {
@@ -185,7 +185,7 @@ export const landingContent = {
     ] satisfies FaqItem[],
   },
   finalCta: {
-    eyebrow: "For private tutors · LaTeX-quality PDFs",
+    eyebrow: "For private tutors · Print-ready PDFs",
     title: "Bring your teaching expertise. Leave the typesetting to NotePrep.",
     body: "Start with a topic. Leave with three printable PDFs for your lesson, ready for your review.",
     cta: "Get started",

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { learningObjectiveItems } from "@/lib/curriculum/context";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
@@ -5,7 +6,7 @@ import { GenerateButton } from "@/components/app/generate-button";
 import { PackageOption } from "@/components/app/package-option";
 import { PreparePendingProvider } from "@/components/app/prepare-pending";
 import { SelectionFields } from "@/components/app/selection-fields";
-import { StepIndicator } from "@/components/app/step-indicator";
+import { FLOW_STEPS, StepIndicator } from "@/components/app/step-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -17,13 +18,13 @@ import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
+import { ContactText } from "@/components/app/contact-link";
 import { exhaustedNotice, generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
 import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepare-view";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 import { prepareLesson } from "./actions";
 
-const STEPS = ["Select", "Generate", "Preview", "Export"] as const;
 const DURATIONS = [30, 45, 60, 90, 120].map((m) => ({ value: String(m), label: `${m} minutes` }));
 const DIFFICULTIES = [
   { value: "basic", label: "Basic" },
@@ -33,21 +34,23 @@ const DIFFICULTIES = [
 
 function PageFrame({ allowanceText, reminder, source, error, children }: { allowanceText: string; reminder: string | null; source: AllowanceSourceKind | null; error?: string; children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-text-accent">CREATE MATERIAL</p>
+        <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Create lesson pack</p>
         <h1 className="font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
-        <StepIndicator steps={STEPS} current={0} />
+        <StepIndicator steps={FLOW_STEPS} current={0} />
         <p className="text-sm" data-testid="allowance">
           {reminder ? <span data-testid="refresh-reminder">{reminder}</span> : allowanceText}
         </p>
-        {error && <Notice intent="error">{generationErrorMessage(error, source)}</Notice>}
+        {error && <Notice intent="error"><ContactText text={generationErrorMessage(error, source) ?? ""} /></Notice>}
       </header>
       <div className="mt-6">{children}</div>
     </main>
   );
 }
+
+export const metadata: Metadata = { title: "Create lesson pack" };
 
 export default async function PreparePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
@@ -169,7 +172,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         <SelectionFields fields={fields} params={params} />
         {topicOptions.some((o) => !o.supported) && (
           <p className="text-[13px] text-muted-foreground" data-testid="topic-hint">
-            Some topics are not available yet: we cannot verify practice for them.
+            Some topics cannot be chosen yet. We only offer topics whose practice questions we can check.
           </p>
         )}
         {topic && !topic.supported && (
@@ -184,7 +187,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         {!topic && <p className="text-sm text-muted-foreground">Choose a topic to continue.</p>}
         {exhausted && context && (
           <Notice intent="info" role="status">
-            {exhaustedNotice(allowance.source)}
+            <ContactText text={exhaustedNotice(allowance.source)} />
           </Notice>
         )}
         {context && (
@@ -204,10 +207,10 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
                 <SelectField label="Difficulty" name="difficulty" options={DIFFICULTIES} defaultValue="mixed" />
               </div>
             </div>
-            <p className="text-[13px] text-muted-foreground" data-testid="cost-note">
-              {draftFlow ? "Creating a preview is free" : "Choosing fewer documents still uses one generation."}
+            <p className="text-sm text-muted-foreground" data-testid="cost-note">
+              {draftFlow ? "Creating a draft is free. A lesson pack is used only when you export PDFs." : "Choosing fewer documents still uses one lesson pack."}
             </p>
-            <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} />
+            <GenerateButton exhausted={exhausted} label={draftFlow ? "Create draft preview" : undefined} pendingLabel={draftFlow ? "Creating your draft…" : "Creating your lesson pack…"} />
           </form>
         )}
         </PreparePendingProvider>
@@ -215,7 +218,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
       {context && (
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3 p-5" data-testid="topic-summary">
-            <Badge className="self-start">YOUR LESSON PACK</Badge>
+            <Badge className="self-start uppercase">Your lesson pack</Badge>
             <h2 className="font-heading text-lg">{context.topic.title}</h2>
             <h3 className="text-sm font-medium">Learning objectives</h3>
             <ul className="list-disc pl-5 text-sm">
@@ -238,7 +241,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
               </>
             )}
             <p className="text-sm">
-              <span className="font-medium">Format</span> Letter · Print-ready PDF
+              <span className="font-medium">Format:</span> print-ready PDF (page size chosen at export)
             </p>
           </Card>
           <p className="text-[13px] text-muted-foreground">Next, review the preview, then export your PDFs.</p>

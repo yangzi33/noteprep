@@ -1,4 +1,5 @@
 import { stateLabel } from "./messages";
+import { expiryPhrase } from "@/lib/ui/relative-time";
 
 export interface HistoryLike {
   jobId: string;
@@ -44,7 +45,7 @@ export interface AllowanceLike {
 
 export function allowanceSentence(allowance: AllowanceLike | null): string {
   return allowance
-    ? `${allowance.remaining} of ${allowance.limit} generations left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
+    ? `${allowance.remaining} of ${allowance.limit} free lesson packs left${allowance.pending > 0 ? ` (${allowance.pending} in progress)` : ""}.`
     : "Your account is being set up.";
 }
 
@@ -53,7 +54,7 @@ export function dailyRefreshReminder(allowance: AllowanceLike | null): string | 
   if (allowance?.source !== "daily") return null;
   const pending = allowance.pending > 0 ? ` (${allowance.pending} in progress)` : "";
   const tail = allowance.remaining > 0 ? "Refreshes at 00:00 UTC." : "The count comes back at 00:00 UTC.";
-  return `Beta perk: ${allowance.limit} free exports every day. ${allowance.remaining} of ${allowance.limit} left today${pending}. ${tail}`;
+  return `Beta perk: ${allowance.limit} free lesson packs every day. ${allowance.remaining} of ${allowance.limit} left today${pending}. ${tail}`;
 }
 
 /** What is left after the export being confirmed; null unless the view is daily and at least one is left. */
@@ -97,17 +98,17 @@ export interface DraftCardModel {
 export const UNTITLED_DRAFT = "Untitled draft";
 
 /** Cards for the caller's own active drafts (the DAL already filters by owner and expiry). Keeps the given order. */
-export function draftCards(items: readonly DraftSummaryLike[], max: number): DraftCardModel[] {
+export function draftCards(items: readonly DraftSummaryLike[], max: number, now?: Date): DraftCardModel[] {
   return items.slice(0, max).map((d) => ({
     draftId: d.draftId,
     title: d.title?.trim() ? d.title : UNTITLED_DRAFT, // the DAL reads it from JSON and it can be NULL
     href: `/drafts/${d.draftId}`,
     updated: formatUtc(d.updatedAt),
-    expires: `expires ${formatUtc(d.expiresAt)}`,
+    expires: now ? `expires ${expiryPhrase(d.expiresAt, now)}` : `expires ${formatUtc(d.expiresAt)}`,
   }));
 }
 
 /** Heading of the empty exports/activity area; accurate when the page also lists drafts above it. */
 export function emptyExportsText(draftCount: number): string {
-  return draftCount > 0 ? "No exported lessons yet" : "Nothing here yet";
+  return draftCount > 0 ? "No lesson packs yet. Exported lesson packs will appear here." : "Nothing here yet";
 }

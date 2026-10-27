@@ -60,7 +60,7 @@ describe("ExportStatusView states", () => {
     ["succeeded", "Your PDFs are ready.", done, "succeeded"],
     ["failed", "We could not build your PDFs.", failed, "failed"],
     ["canceled", "Export canceled.", canceled, "canceled"],
-    ["confirming", "Finishing up...", view({}, { state: "failed", errorCode: "compile_failed" }, "held"), "confirming"],
+    ["confirming", "Finishing up…", view({}, { state: "failed", errorCode: "compile_failed" }, "held"), "confirming"],
   ];
   it.each(cases)("%s renders its heading and phase", (_n, heading, v, phase) => {
     const m = html(v, { documents: [...docs] });
@@ -73,9 +73,9 @@ describe("ExportStatusView states", () => {
   it("unknown keeps the last known state and never claims a charge result", () => {
     const m = html(live, { net: { unreachable: true, gone: false } });
     expect(phaseOf(m)).toBe("unknown");
-    expect(m).toContain("We cannot check the status right now. Still trying...");
+    expect(m).toContain("We cannot check the status right now. Still trying…");
     expect(m).toMatch(/Building your PDFs/);
-    expect(m).not.toMatch(/No generation was used|This used 1 generation/);
+    expect(m).not.toMatch(/No lesson pack was used|This used 1 lesson pack/);
   });
   it("not found has no links and no cancel", () => {
     const m = html(live, { net: { unreachable: false, gone: true } });
@@ -86,13 +86,13 @@ describe("ExportStatusView states", () => {
 });
 
 describe("charge wording in the markup", () => {
-  it("'No generation was used.' only when released; 'used 1' only when consumed", () => {
-    expect(html(failed)).toContain("No generation was used.");
-    expect(html(canceled)).toContain("No generation was used.");
-    expect(html(done)).toContain("This used 1 generation.");
-    expect(html(done)).not.toContain("No generation was used.");
+  it("'No lesson pack was used.' only when released; 'used 1' only when consumed", () => {
+    expect(html(failed)).toContain("No lesson pack was used.");
+    expect(html(canceled)).toContain("No lesson pack was used.");
+    expect(html(done)).toContain("This used 1 lesson pack.");
+    expect(html(done)).not.toContain("No lesson pack was used.");
     for (const v of [view(), live, view({}, { state: "failed", errorCode: "x" }, "held"), view({}, { state: "running", cancelRequested: true })]) {
-      expect(html(v)).not.toMatch(/No generation was used|This used 1 generation/);
+      expect(html(v)).not.toMatch(/No lesson pack was used|This used 1 lesson pack/);
     }
   });
   it("shows the failure reason from the table", () => {
@@ -130,7 +130,7 @@ describe("session expired", () => {
     expect(phaseOf(m)).toBe("session_expired");
     expect(m).toContain("Your session has expired. Sign in again to see this export.");
     expect(m).toContain('href="/login"');
-    expect(m).not.toMatch(/No generation was used|This used 1 generation|export-charge/);
+    expect(m).not.toMatch(/No lesson pack was used|This used 1 lesson pack|export-charge/);
     expect(m).not.toMatch(cancelForm);
   });
 });
@@ -169,20 +169,32 @@ describe("links", () => {
 });
 
 describe("a free re-export does not read like a new charge", () => {
-  it("reused + succeeded + consumed says an export with the same content and format already used 1 generation and this one none", () => {
+  it("reused + succeeded + consumed says an export with the same content and format already used 1 lesson pack and this one none", () => {
     const m = html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"), { outcome: "reused" });
     expect(m).toContain("This one used none");
-    expect(m).toContain("An export with the same content and page format already used 1 generation.");
-    expect(m).not.toContain("This used 1 generation.");
+    expect(m).toContain("An export with the same content and page format already used 1 lesson pack.");
+    expect(m).not.toContain("This used 1 lesson pack.");
   });
   it("without the reused outcome the ordinary sentence stays, and a spoofed reused on a failed export never shows it", () => {
-    expect(html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"))).toContain("This used 1 generation.");
+    expect(html(view({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "used"))).toContain("This used 1 lesson pack.");
     expect(html(view({ state: "failed" }, { state: "failed" }, "not_used"), { outcome: "reused" })).not.toContain("This one used none");
   });
   it("the stalled phase makes no charge claim", () => {
     const v = view({}, { state: "succeeded" }, "used");
     const m = html(v, { net: { unreachable: false, gone: false, stalled: true } });
-    expect(m).toContain("We cannot confirm the final state.");
+    expect(m).toContain("We could not confirm the result yet.");
     expect(m).not.toMatch(/used|No generation/);
+  });
+});
+
+describe("failed export recovery wording", () => {
+  it("never claims nothing was used unless the server confirmed the release", () => {
+    for (const charge of ["held", "unknown"] as const) {
+      const m = html(view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, charge));
+      expect(m).not.toContain("Nothing was used");
+      expect(m).not.toContain("No lesson pack was used");
+      expect(m).toContain("You can find your draft in My lesson packs, or start again.");
+    }
+    expect(html(failed)).toContain("No lesson pack was used.");
   });
 });

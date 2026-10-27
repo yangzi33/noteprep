@@ -3,7 +3,7 @@ import { smokeTarget } from "./target";
 
 /*
  * Staging smoke for the draft and export flow. READ BEFORE RUNNING:
- * - Each run consumes ONE of the throwaway user's 3 lifetime free generations (the export). Creating the draft is free.
+ * - Each run consumes ONE of the throwaway user's 3 lifetime free lesson packs (the export). Creating the draft is free.
  *   Use a dedicated staging user and a new one when its allowance is gone.
  * - It exercises the real worker, and a real compile. Staging must run FLOW_MODE=draft and EXPORT_ENABLED=1 (set explicitly).
  * - The staging site needs CURRICULUM_ALLOW_SAMPLE=1 and the sample dataset loaded, or the topic page has no selectable course.
@@ -35,7 +35,7 @@ test("staging: sign in, draft, export, and every PDF downloads", async ({ page }
   }
   await page.goto("/prepare");
   const allowance = ((await page.getByTestId("allowance").textContent()) ?? "").trim();
-  expect(Number(/^(\d+) of \d+ generations left/.exec(allowance)?.[1] ?? 0), "no free generations left: use a new throwaway staging user").toBeGreaterThan(0);
+  expect(Number(/^(\d+) of \d+ free lesson packs left/.exec(allowance)?.[1] ?? 0), "no free lesson packs left: use a new throwaway staging user").toBeGreaterThan(0);
 
   await page.goto(TOPIC_URL);
   const create = page.getByRole("button", { name: "Create draft preview" });
@@ -58,7 +58,7 @@ test("staging: sign in, draft, export, and every PDF downloads", async ({ page }
   await expect(page).toHaveURL(/\/exports\/[0-9a-f-]{36}/);
   console.log(`export ${new URL(page.url()).pathname.split("/").pop()}`);
   await expect(page.getByTestId("export-status")).toHaveAttribute("data-phase", "succeeded", { timeout: 240_000 });
-  await expect(page.getByTestId("export-charge")).toHaveText("This used 1 generation.");
+  await expect(page.getByTestId("export-charge")).toHaveText("This used 1 lesson pack.");
 
   for (const doc of DOCS) {
     const href = await page.getByTestId("export-files").getByTestId(`export-download-${doc}`).getAttribute("href");

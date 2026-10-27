@@ -66,12 +66,12 @@ describe("landing page markup", () => {
 
 describe("landing header", () => {
   const header = renderToStaticMarkup(createElement(PublicHeader, { variant: "landing" }));
-  it("links the logo home, the three sections, Login and Get started", () => {
+  it("links the logo home, the three sections, Sign in and Get started", () => {
     expect(header).toMatch(/<a [^>]*href="\/"/);
     for (const [href, label] of [["#features", "Features"], ["#how-it-works", "How it works"], ["#pricing", "Pricing"]]) {
       expect(header).toMatch(new RegExp(`<a [^>]*href="${href}"[^>]*>${label}</a>`));
     }
-    expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Login<\/a>/);
+    expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Sign in<\/a>/);
     expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Get started<\/a>/);
     expect(header).not.toMatch(/<button/);
   });

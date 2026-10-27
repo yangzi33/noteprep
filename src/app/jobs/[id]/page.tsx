@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { JobStatus } from "@/components/job-status";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { toJobView } from "@/lib/ui/job-view";
+
+export const metadata: Metadata = { title: "Export status" };
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { ctx } = await requireAccount();
@@ -34,7 +37,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
     if (lesson) redirect(`/lessons/${lesson.lessonId}?rev=${lesson.revisionId}`);
   }
   return (
-    <main className="mx-auto max-w-2xl p-4 sm:p-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl p-4 sm:p-8">
       {/* key: re-mount when the server-side state changes (for example after canceling) */}
       <JobStatus key={`${view.state}-${view.attempt}-${view.cancelRequested}`} initial={view} hasPreview={hasPreview} />
     </main>

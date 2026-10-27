@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,13 +12,15 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, alignmentNotice } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice } from "@/lib/ui/lesson-view";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional() });
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
+
+export const metadata: Metadata = { title: "Your lesson pack" };
 
 export default async function LessonPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { ctx } = await requireAccount();
@@ -56,10 +59,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   const notice = lesson.alignment ? alignmentNotice(lesson.alignment) : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
       <p className="text-sm text-muted-foreground">
         <Link href="/lessons" className="underline">
-          My materials
+          My lesson packs
         </Link>
         {" / "}
         <span>{lesson.title}</span>
@@ -72,7 +75,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
       </div>
       <p className="mt-1 text-sm text-muted-foreground">Created {utc.format(lesson.createdAt)} UTC</p>
       <Notice intent="info" className="mt-3" data-testid="review-reminder">
-        AI-assisted material can contain mistakes. Read everything before you use it with a student.
+        {REVIEW_REMINDER}
       </Notice>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -86,10 +89,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           </nav>
           <nav aria-label="Preview type" className="mt-2 flex flex-wrap gap-2" data-testid="view-tabs">
             <Link href={tabUrl(active, "pdf")} aria-current={!draftView ? "true" : undefined} className={`${linkBase} ${!draftView ? linkActive : ""}`}>
-              PDF preview
+              PDF view
             </Link>
             <Link href={tabUrl(active, "draft")} aria-current={draftView ? "true" : undefined} className={`${linkBase} ${draftView ? linkActive : ""}`}>
-              Draft preview
+              Quick web view
             </Link>
           </nav>
 
@@ -111,7 +114,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
             {draft ? (
               <div className="mt-3 space-y-4">
                 <Notice intent="info" data-testid="draft-notice">
-                  Draft preview. The exported PDF is the final version.
+                  Quick web view. The PDF is the final version.
                 </Notice>
                 <LessonDraft doc={draft} />
               </div>
@@ -126,7 +129,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
 
         <aside className="space-y-4">
           <Card className="p-5" data-testid="export-card">
-            <h2 className="font-heading text-lg">Export</h2>
+            <h2 className="font-heading text-lg">Download</h2>
             <ul className="mt-3 space-y-2">
               {lesson.documents.map((d) => (
                 <li key={d.document}>

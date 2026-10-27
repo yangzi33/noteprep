@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { ContactText } from "@/components/app/contact-link";
 import { ExportConfirmButton } from "@/components/app/export-confirm-button";
+import { FLOW_STEPS, StepIndicator } from "@/components/app/step-indicator";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { PAGE_FORMATS, type PageFormat } from "@/lib/latex/templates";
 import type { DocumentKind } from "@/lib/package/schema";
-import { DOCUMENT_LABELS } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, REVIEW_REMINDER } from "@/lib/ui/lesson-view";
 import { generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 
-export const EXPORT_PROMISE = "This will use 1 generation when your PDFs are ready. If export fails, no generation is used.";
+export const EXPORT_PROMISE = "This will use 1 lesson pack when your PDFs are ready. If export fails, no lesson pack is used.";
 
 export const PAGE_FORMAT_LABELS: Record<PageFormat, string> = { letter: "US Letter (8.5 x 11 in)", a4: "A4 (210 x 297 mm)" };
 
@@ -20,7 +22,7 @@ export interface ExportConfirmProps {
   questionCount: number;
   changes: string;
   allowanceText: string;
-  /** Generations left, or null when unknown. */
+  /** Lesson packs left, or null when unknown. */
   remaining: number | null;
   /** Where the allowance comes from; picks the wording of an exhausted error. */
   source?: AllowanceSourceKind | null;
@@ -45,10 +47,13 @@ export function ExportConfirmView(p: ExportConfirmProps) {
   const errorMessage = generationErrorMessage(p.error, p.source ?? null);
   const gate = !p.enabled ? generationErrorMessage("EXPORT_DISABLED") : p.stale ? generationErrorMessage("EXPORT_CONFLICT") : null;
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 sm:px-8">
       <h1 className="font-heading text-[28px] leading-[1.2]" data-testid="export-title">
         Export PDFs
       </h1>
+      <div className="mt-3">
+        <StepIndicator steps={FLOW_STEPS} current={3} />
+      </div>
       <Card className="mt-4 p-5">
         <h2 className="font-heading text-lg">{p.title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{p.versionLabel}</p>
@@ -72,7 +77,7 @@ export function ExportConfirmView(p: ExportConfirmProps) {
 
       {errorMessage && (
         <Notice intent="error" className="mt-4" data-testid="export-error">
-          {errorMessage}
+          <ContactText text={errorMessage} />
         </Notice>
       )}
 
@@ -96,20 +101,24 @@ export function ExportConfirmView(p: ExportConfirmProps) {
             <legend className="text-sm font-semibold">Page format</legend>
             {PAGE_FORMATS.map((f) => (
               <label key={f} className="flex min-h-11 items-center gap-2 text-sm">
-                <input type="radio" name="pageFormat" value={f} defaultChecked={f === "letter"} data-testid={`export-format-${f}`} />
+                <input type="radio" name="pageFormat" className="size-4 accent-primary focus-visible:ring-2 focus-visible:ring-ring" value={f} defaultChecked={f === "letter"} data-testid={`export-format-${f}`} />
                 {PAGE_FORMAT_LABELS[f]}
               </label>
             ))}
-            <p className="text-sm text-muted-foreground">All PDFs of this export use the format you choose. Exporting the same lesson in another format uses another generation. Exporting the same content in the same page format again is free (already-exported content is reused).</p>
+            <p className="text-sm text-muted-foreground">All PDFs use this page size. Exporting the same content in the same size again is free while the lesson still exists.</p>
           </fieldset>
           <p className="text-sm font-semibold" data-testid="export-promise">
             {EXPORT_PROMISE}
           </p>
+          <p className="text-sm text-muted-foreground" data-testid="export-review-reminder">
+            {REVIEW_REMINDER}
+          </p>
           {p.remaining !== null && p.remaining <= 0 && (
             <Notice intent="info" data-testid="export-free-note">
               {p.source === "daily"
-                ? "You have used all of today's free exports. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
-                : "You have no generations left. An unchanged re-export of a version you already exported is free."}{" "}
+                ? "You have used all of today's free lesson packs. The count comes back at 00:00 UTC. An unchanged re-export of a version you already exported is free."
+                : "You have used all your free lesson packs. An unchanged re-export of a version you already exported is free."}{" "}
+              <ContactText text="To get more, contact us." />{" "}
               <Link href="/account" className="underline">
                 See your account
               </Link>

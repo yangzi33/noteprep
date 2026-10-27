@@ -35,7 +35,7 @@ const srText = (li: string) => /<span class="sr-only">([^<]*)<\/span>/.exec(li)?
 const stateText = (markup: string) => /<p[^>]*data-testid="job-state"[^>]*>([^<]*)<\/p>/.exec(markup)?.[1];
 const live = (markup: string) =>
   /<p(?=[^>]*data-testid="job-live")(?=[^>]*aria-live="polite")(?![^>]*role=)[^>]*class="sr-only"[^>]*>([^<]*)<\/p>|<p(?=[^>]*data-testid="job-live")(?=[^>]*aria-live="polite")(?![^>]*role=)[^>]*>([^<]*)<\/p>/.exec(markup)?.slice(1).find((v) => v !== undefined);
-const cancelButton = /<button[^>]*>[^<]*Cancel generation[^<]*<\/button>/;
+const cancelButton = /<button[^>]*>[^<]*Cancel lesson pack[^<]*<\/button>/;
 
 describe("JobStatusView", () => {
   it("renders a queued job with a four-step list and a cancel button", () => {
@@ -45,7 +45,7 @@ describe("JobStatusView", () => {
     expect(live(m)).toBe("Waiting to start.");
     expect(stateText(m)).toBe("Waiting to start");
     expect(m).toMatch(cancelButton);
-    expect(m).toMatch(/<ol[^>]*aria-label="Generation steps"/);
+    expect(m).toMatch(/<ol[^>]*aria-label="Lesson pack steps"/);
     const lis = items(m);
     expect(lis).toHaveLength(4);
     expect(lis.map(srText)).toEqual(["Done", "Not started", "Not started", "Not started"]);
@@ -74,11 +74,11 @@ describe("JobStatusView", () => {
   it("shows a canceled job with outcome and links, without a cancel button", () => {
     const m = html({ state: "canceled" });
     expect(stateText(m)).toBe("Canceled");
-    expect(m).toContain("did not use one of your generations");
+    expect(m).toContain("did not use one of your lesson packs");
     expect(m).not.toMatch(/<ol/);
-    expect(live(m)).toContain("did not use one of your generations");
+    expect(live(m)).toContain("did not use one of your lesson packs");
     expect(m).not.toMatch(/<button/);
-    expect(m).toMatch(/<a(?=[^>]*href="\/lessons")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>My materials<\/a>/);
+    expect(m).toMatch(/<a(?=[^>]*href="\/lessons")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>My lesson packs<\/a>/);
     expect(m).toMatch(/<a(?=[^>]*href="\/prepare")(?=[^>]*min-h-11)(?=[^>]*text-text-accent)[^>]*>Create another<\/a>/);
     expect(m).not.toContain("Your progress is saved.");
   });
@@ -87,7 +87,7 @@ describe("JobStatusView", () => {
     const m = html({ state: "failed", stage: null, errorCode: "compile_failed" });
     expect(m).not.toMatch(/<ol/);
     expect(m).toContain("The documents could not be built.");
-    expect(m).toContain("did not use one of your generations");
+    expect(m).toContain("did not use one of your lesson packs");
     expect(m).toMatch(/role="alert"/);
     expect(live(m)).toContain("The documents could not be built.");
     expect(m).not.toMatch(/<button/);

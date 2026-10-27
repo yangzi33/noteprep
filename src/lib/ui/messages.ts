@@ -1,8 +1,8 @@
 /** User-facing wording for domain error codes and job outcomes. Never includes internal detail. */
 
 const GENERATION_ERRORS: Record<string, string> = {
-  invalid: "Please check the form: every field needs a valid value.",
-  ALLOWANCE_EXHAUSTED: "You have no generations left. If a job is still in progress, its allowance comes back if that job fails.",
+  invalid: "Please choose at least one document, a lesson length and a difficulty, then try again.",
+  ALLOWANCE_EXHAUSTED: "You have used all your free lesson packs. If a job is still in progress, its lesson pack comes back if that job fails.",
   RATE_LIMITED: "You have made too many requests recently. Please try again later.",
   TOO_MANY_ACTIVE_JOBS: "You already have jobs in progress. Wait for one to finish, or cancel one.",
   QUEUE_BUSY: "The service is busy right now. Please try again in a few minutes.",
@@ -44,17 +44,17 @@ export type AllowanceSourceKind = "trial" | "paid" | "daily";
  */
 export function exhaustedMessage(source: AllowanceSourceKind | null): string {
   if (source === "daily") {
-    return "You have used all of today's free exports. The count comes back at 00:00 UTC. If a job is still in progress, its export comes back if that job fails. To get more sooner, contact us.";
+    return "You have used all of today's free lesson packs. The count comes back at 00:00 UTC. If a job is still in progress, its lesson pack comes back if that job fails. To get more sooner, contact us.";
   }
   if (source === "trial") {
-    return "You have no generations left. If a job is still in progress, its allowance comes back if that job fails. To get more, contact us.";
+    return "You have used all your free lesson packs. If a job is still in progress, its lesson pack comes back if that job fails. To get more, contact us.";
   }
   return GENERATION_ERRORS.ALLOWANCE_EXHAUSTED!;
 }
 
 /** The notice shown on the selection pages when the allowance is used up (the daily wording, or the trial one with no subscribe action). */
 export function exhaustedNotice(source: AllowanceSourceKind): string {
-  return source === "daily" ? exhaustedMessage("daily") : "You have used all of your free generations. To get more, contact us.";
+  return source === "daily" ? exhaustedMessage("daily") : "You have used all of your free lesson packs. To get more, contact us.";
 }
 
 export function generationErrorMessage(code: string | null | undefined, source: AllowanceSourceKind | null = null): string | null {
@@ -90,12 +90,12 @@ export const FAILURE_REASONS: Record<string, string> = {
   canceled: "The export was canceled.",
 };
 
-/** A failed or canceled job never costs a generation; the message says so. */
+/** A failed or canceled job never costs a lesson pack; the message says so. */
 export function describeOutcome(state: string, errorCode: string | null): string | null {
-  if (state === "canceled") return "Canceled. This did not use one of your generations.";
+  if (state === "canceled") return "Canceled. This did not use one of your lesson packs.";
   if (state !== "failed") return null;
   const reason = (errorCode && FAILURE_REASONS[errorCode]) || "The lesson could not be completed.";
-  return `${reason} This did not use one of your generations.`;
+  return `${reason} This did not use one of your lesson packs.`;
 }
 
 const STATE_LABELS: Record<string, string> = {
