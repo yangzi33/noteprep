@@ -9,12 +9,12 @@ export function ExportEntry({ flowMode, exportEnabled, draftId, versionId, rev }
   return (
     <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
       <Card className="p-5">
-        <h2 className="font-heading text-lg">Export</h2>
+        <h2 className="select-none font-heading text-lg">Export</h2>
         {exportEnabled ? (
           <>
             <Link
               href={exportConfirmHref(draftId, versionId, { rev })}
-              className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
+              className="mt-3 inline-flex min-h-12 w-full select-none items-center justify-center rounded-control transition-colors duration-150 active:translate-y-px bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
               data-testid="draft-export"
             >
               Export PDFs
@@ -40,7 +40,7 @@ export function ExportEntryMobile({ flowMode, exportEnabled, draftId, versionId,
   return (
     <Link
       href={exportConfirmHref(draftId, versionId, { rev })}
-      className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring lg:hidden"
+      className="inline-flex min-h-11 select-none items-center justify-center rounded-control transition-colors duration-150 active:translate-y-px bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring lg:hidden"
       data-testid="draft-export-mobile"
     >
       Export PDFs

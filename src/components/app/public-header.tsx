@@ -3,7 +3,7 @@ import { Logo } from "@/components/app/logo";
 import { Button } from "@/components/ui/button";
 import { landingContent } from "@/lib/marketing/content";
 
-const focus = "focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
+const focus = "transition-colors duration-150 focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
 
 /**
  * The header for signed-out visitors. "simple" (login, not-found) has one Sign in link; "landing" matches the landing
@@ -12,7 +12,7 @@ const focus = "focus-visible:ring-3 focus-visible:ring-ring focus-visible:outlin
 export function PublicHeader({ variant = "simple" }: { variant?: "simple" | "landing" }) {
   if (variant === "landing") {
     return (
-      <header className="border-b bg-background">
+      <header className="border-b bg-background select-none">
         <div className="mx-auto flex min-h-[72px] w-full max-w-[1440px] items-center gap-4 px-4 md:min-h-24 md:px-10 lg:px-20">
           <Link href="/" className={`rounded-control ${focus}`}>
             <Logo />
@@ -41,7 +41,7 @@ export function PublicHeader({ variant = "simple" }: { variant?: "simple" | "lan
     );
   }
   return (
-    <header className="flex min-h-[72px] items-center border-b bg-card px-4 md:min-h-20 md:px-8">
+    <header className="flex min-h-[72px] select-none items-center border-b bg-card px-4 md:min-h-20 md:px-8">
       <Link href="/" className={`rounded-control ${focus}`}>
         <Logo />
       </Link>

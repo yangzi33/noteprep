@@ -18,7 +18,7 @@ export function StepIndicator({ steps, current }: StepIndicatorProps) {
           key={label}
           aria-current={i === current ? "step" : undefined}
           className={cn(
-            "rounded-tag px-3 py-1.5",
+            "rounded-tag px-3 py-1.5 select-none",
             i === current ? "bg-accent text-text-accent font-semibold" : "text-muted-foreground",
           )}
         >

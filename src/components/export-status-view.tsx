@@ -88,7 +88,7 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
         {live}
       </p>
       <p className="text-xs font-semibold tracking-wider text-text-accent">{`EXPORT · ${OVERLINES[phase]}`}</p>
-      <h1 className="mt-2 font-heading text-3xl">{description.heading}</h1>
+      <h1 className="select-none mt-2 font-heading text-3xl">{description.heading}</h1>
       <p className="mt-3 text-base">{description.detail}</p>
       {description.lastKnown && <p className="mt-1 text-sm text-muted-foreground">Last known: {description.lastKnown}</p>}
       {(phase === "retrying" || phase === "running:compiling" || phase === "running:storing") && view.job.attempt > 1 && (

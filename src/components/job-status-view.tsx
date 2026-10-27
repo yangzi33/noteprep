@@ -58,7 +58,7 @@ export function JobStatusView({
         {liveText}
       </p>
       <p className="text-xs font-semibold tracking-wider text-text-accent">{jobOverline(job)}</p>
-      <h1 className="mt-2 font-heading text-3xl">{jobHeading(job)}</h1>
+      <h1 className="select-none mt-2 font-heading text-3xl">{jobHeading(job)}</h1>
 
       <p className="mt-3 text-base" data-testid="job-state">
         {isRetrying(job) ? "Waiting to retry" : stateLabel(job.state)}

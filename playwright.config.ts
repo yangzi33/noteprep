@@ -33,7 +33,8 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
-  use: { baseURL: env.webUrl, trace: "retain-on-failure" },
+  // reducedMotion: the 180ms page fade-in is disabled so axe/contrast checks and screenshots never see a half-faded page.
+  use: { baseURL: env.webUrl, trace: "retain-on-failure", reducedMotion: "reduce" },
   projects: [
     { name: "chromium", testIgnore: [LEGACY_SPEC, PAUSED_SPEC, DAILY_SPEC], use: { ...devices["Desktop Chrome"] } },
     { name: "chromium-legacy", testMatch: LEGACY_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.legacy } },

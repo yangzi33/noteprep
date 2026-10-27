@@ -155,4 +155,45 @@
   html {
     @apply font-sans;
   }
+  /* Cursors. Tailwind 4 preflight leaves buttons on the default cursor; text inputs keep the text cursor. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  label[for],
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  [role="tab"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  /* Safari mishandles an inherited user-select: none on form fields, so state it explicitly. */
+  input,
+  textarea,
+  select {
+    user-select: text;
+  }
+}
+
+/* Motion: opacity only (no transform, so sticky/fixed children and stacking contexts are unaffected), and only when the
+   user has not asked for reduced motion. Pages cannot fade out (no loading.tsx or view transitions). */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  main,
+  .fade-in {
+    animation: page-fade-in 180ms ease-out both;
+  }
 }
