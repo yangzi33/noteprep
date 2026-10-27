@@ -20,7 +20,7 @@ export function WorkspaceNav() {
     NAV_ITEMS.map((i) => i.href),
   );
   return (
-    <nav aria-label="Main">
+    <nav aria-label="Main" className="select-none">
       <ul className="grid grid-cols-4 gap-1 p-2 md:flex md:flex-col md:p-4">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.icon];
@@ -31,7 +31,7 @@ export function WorkspaceNav() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex min-h-11 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-xs leading-tight font-medium outline-none md:flex-row md:justify-start md:gap-2 md:px-3 md:text-left md:text-sm md:whitespace-nowrap focus-visible:ring-3 focus-visible:ring-ring",
+                  "flex min-h-11 transition-colors duration-150 flex-col items-center justify-center gap-1 rounded-control px-1 text-center text-xs leading-tight font-medium outline-none md:flex-row md:justify-start md:gap-2 md:px-3 md:text-left md:text-sm md:whitespace-nowrap focus-visible:ring-3 focus-visible:ring-ring",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-secondary",

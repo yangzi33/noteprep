@@ -9,7 +9,7 @@ import { SamplePreview } from "./sample-preview";
 const wrap = "mx-auto w-full max-w-[1440px] px-4 md:px-10 lg:px-24";
 const sectionPad = "py-14 md:py-20 lg:py-24";
 const overline = "text-[11px] font-semibold tracking-[0.12em] text-text-accent uppercase";
-const h2 = "font-heading text-[28px] leading-[1.2] font-normal text-foreground md:text-4xl lg:text-[40px]";
+const h2 = "select-none font-heading text-[28px] leading-[1.2] font-normal text-foreground md:text-4xl lg:text-[40px]";
 const body = "text-[15px] leading-6 text-muted-foreground md:text-base md:leading-[26px]";
 
 function SectionHead({ id, eyebrow, title }: { id: string; eyebrow: string; title: string }) {
@@ -43,7 +43,7 @@ export function HeroSection() {
         <p className={overline}>{hero.eyebrow}</p>
         <h1
           id="hero-title"
-          className="max-w-[900px] font-heading text-[40px] leading-[1.1] font-normal text-balance text-foreground md:text-6xl lg:text-[64px] lg:leading-[72px]"
+          className="select-none max-w-[900px] font-heading text-[40px] leading-[1.1] font-normal text-balance text-foreground md:text-6xl lg:text-[64px] lg:leading-[72px]"
         >
           {hero.title.split(/(?<=\.) /).map((sentence, i) => (
             <span key={sentence} className="block">
@@ -119,7 +119,7 @@ export function BenefitsSection() {
             return (
               <li key={b.title} className="flex flex-col gap-4">
                 <Icon aria-hidden="true" className="size-6 text-text-accent" strokeWidth={1.5} />
-                <h3 className="font-heading text-[22px] leading-[30px] font-normal text-foreground">{b.title}</h3>
+                <h3 className="select-none font-heading text-[22px] leading-[30px] font-normal text-foreground">{b.title}</h3>
                 <p className="text-[15px] leading-[26px] text-muted-foreground">{b.body}</p>
               </li>
             );
@@ -142,7 +142,7 @@ export function HowItWorksSection() {
               <span aria-hidden="true" className="border-b pb-3 font-heading text-[32px] leading-10 text-text-accent">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <h3 className="text-lg font-semibold text-foreground">
+              <h3 className="select-none text-lg font-semibold text-foreground">
                 <span className="sr-only">{`Step ${i + 1}: `}</span>
                 {s.title}
               </h3>
@@ -176,7 +176,7 @@ export function ShowcaseSection() {
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16">
           <div className="flex flex-col items-start gap-5">
             <span className="rounded-tag bg-accent px-2.5 py-1 text-xs font-medium text-text-accent">{showcase.packChip}</span>
-            <h3 className="font-heading text-[28px] leading-9 font-normal text-foreground md:text-[32px] md:leading-10">{showcase.packTitle}</h3>
+            <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground md:text-[32px] md:leading-10">{showcase.packTitle}</h3>
             <p className={body}>{showcase.packBody}</p>
             <ul className="flex flex-col gap-3">
               {showcase.packPoints.map((p) => (
@@ -227,7 +227,7 @@ export function ShowcaseSection() {
           )}
           <div className="order-1 flex flex-col items-start gap-5 lg:order-2">
             <span className="rounded-tag bg-accent px-2.5 py-1 text-xs font-medium text-text-accent">{showcase.reviewChip}</span>
-            <h3 className="font-heading text-[28px] leading-9 font-normal text-foreground md:text-[32px] md:leading-10">{showcase.reviewTitle}</h3>
+            <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground md:text-[32px] md:leading-10">{showcase.reviewTitle}</h3>
             <p className={body}>{showcase.reviewBody}</p>
             <ul className="flex flex-col gap-3">
               {showcase.reviewPoints.map((p) => (
@@ -268,7 +268,7 @@ export function PricingSection() {
         <div className="grid gap-5 md:grid-cols-2 md:gap-6">
           <div className="flex flex-col gap-5 rounded-card border border-border bg-card p-6 md:p-8">
             <p className="text-[11px] tracking-[0.08em] text-text-accent uppercase">{pricing.free.label}</p>
-            <h3 className="font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.free.title}</h3>
+            <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.free.title}</h3>
             <ul className="flex flex-col gap-3">
               {pricing.free.points.map((p) => (
                 <li key={p} className="flex items-start gap-3 text-[15px] text-foreground">
@@ -286,7 +286,7 @@ export function PricingSection() {
           </div>
           <div className="flex flex-col gap-5 rounded-card border-2 border-primary bg-card p-6 md:p-8">
             <p className="text-[11px] tracking-[0.08em] text-text-accent uppercase">{pricing.subscription.label}</p>
-            <h3 className="font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.subscription.title}</h3>
+            <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.subscription.title}</h3>
             <ul className="flex flex-col gap-3">
               {pricing.subscription.points.map((p) => (
                 <li key={p} className="flex items-start gap-3 text-[15px] text-foreground">
@@ -320,7 +320,7 @@ export function FaqSection() {
                 <Plus aria-hidden="true" className="size-4 shrink-0 text-text-accent group-open:hidden" />
                 <Minus aria-hidden="true" className="hidden size-4 shrink-0 text-text-accent group-open:block" />
               </summary>
-              <p className="pb-5 text-[15px] leading-[26px] text-muted-foreground">{item.answer}</p>
+              <p className="pb-5 text-[15px] leading-[26px] text-muted-foreground select-text">{item.answer}</p>
             </details>
           ))}
         </div>
@@ -335,7 +335,7 @@ export function FinalCtaSection() {
     <section aria-labelledby="cta-title" className="bg-accent">
       <div className={`${wrap} flex flex-col items-center gap-5 py-14 text-center md:py-20 lg:py-[84px]`}>
         <p className={overline}>{finalCta.eyebrow}</p>
-        <h2 id="cta-title" className="max-w-[660px] font-heading text-[30px] leading-[1.2] font-normal text-balance text-foreground md:text-4xl lg:text-[44px] lg:leading-[55px]">
+        <h2 id="cta-title" className="select-none max-w-[660px] font-heading text-[30px] leading-[1.2] font-normal text-balance text-foreground md:text-4xl lg:text-[44px] lg:leading-[55px]">
           {finalCta.title}
         </h2>
         <p className="max-w-[600px] text-base leading-7 text-muted-foreground md:text-[17px]">{finalCta.body}</p>
@@ -352,9 +352,9 @@ export function FinalCtaSection() {
 
 export function LandingFooter() {
   const support = supportEmail();
-  const link = "inline-flex min-h-11 items-center rounded-control px-2 text-sm text-foreground hover:text-text-accent focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
+  const link = "inline-flex transition-colors duration-150 min-h-11 items-center rounded-control px-2 text-sm text-foreground hover:text-text-accent focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
   return (
-    <footer className="bg-background">
+    <footer className="bg-background select-none">
       <div className={`${wrap} flex flex-col gap-8 py-10 md:py-12`}>
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div className="flex max-w-[420px] flex-col gap-3">
@@ -371,7 +371,7 @@ export function LandingFooter() {
               Sign in
             </Link>
             {support && (
-              <a href={`mailto:${support}`} className={link}>
+              <a href={`mailto:${support}`} className={`${link} select-text`}>
                 Contact
               </a>
             )}

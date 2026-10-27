@@ -24,7 +24,7 @@ export function EmailRequestPage({
       <SignedOutHeader />
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-md px-4 py-10 md:py-16">
         <Card className="p-6 md:p-8">
-          <h1 className="font-heading text-2xl font-semibold text-foreground">{title}</h1>
+          <h1 className="select-none font-heading text-2xl font-semibold text-foreground">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{intro}</p>
           {invalid && (
             <Notice intent="error" className="mt-4">

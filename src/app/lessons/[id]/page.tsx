@@ -129,7 +129,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
 
         <aside className="space-y-4">
           <Card className="p-5" data-testid="export-card">
-            <h2 className="font-heading text-lg">Download</h2>
+            <h2 className="select-none font-heading text-lg">Download</h2>
             <ul className="mt-3 space-y-2">
               {lesson.documents.map((d) => (
                 <li key={d.document}>
@@ -142,7 +142,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           </Card>
 
           <Card className="p-5" data-testid="alignment-panel">
-            <h2 className="font-heading text-lg">Curriculum</h2>
+            <h2 className="select-none font-heading text-lg">Curriculum</h2>
             {lesson.alignment && notice ? (
               <>
                 <p className="mt-2 text-sm" data-testid="alignment-notice">

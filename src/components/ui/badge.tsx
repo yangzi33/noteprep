@@ -12,7 +12,7 @@ const tones = {
 export function Badge({ tone = "accent", className, ...props }: BadgeProps) {
   return (
     <span
-      className={cn("inline-flex items-center rounded-tag px-[9px] py-[5px] text-xs font-medium", tones[tone], className)}
+      className={cn("inline-flex items-center select-none rounded-tag px-[9px] py-[5px] text-xs font-medium", tones[tone], className)}
       {...props}
     />
   );

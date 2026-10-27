@@ -145,7 +145,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
             <UndoControl ctx={adjustCtx} />
             <ExportEntryMobile flowMode={flowMode} exportEnabled={exportEnabled} draftId={view.draftId} versionId={view.versionId} rev={view.rev} />
           </div>
-          <section className="mt-4" data-testid="draft-preview" data-document={active} data-version={view.versionId}>
+          <section key={`${active}-${view.versionId}`} className="fade-in mt-4 select-text" data-testid="draft-preview" data-document={active} data-version={view.versionId}>
             <p className="text-sm text-muted-foreground">{DOCUMENT_PURPOSE[active]}</p>
             {active !== "worksheet" && available.includes("worksheet") && (
               <p className="text-sm text-muted-foreground" data-testid="adjust-hint">
