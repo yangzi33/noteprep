@@ -2,6 +2,7 @@ import "server-only";
 import type { Db } from "../db";
 import { DEFAULT_ALLOWANCE_POLICY, type AllowancePolicy } from "./allowance-source";
 import { createAccountDal } from "./account";
+import { createAuthRateDal } from "./auth-rate";
 import { createCurriculumDal, type CurriculumDalOptions } from "./curriculum";
 import { createDraftsDal, createDraftsPurgeDal, type DraftDeps } from "./drafts";
 import { createExportDal, type ExportDeps } from "./export";
@@ -33,6 +34,7 @@ export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: Curr
   const curriculum = createCurriculumDal(db, deps?.curriculum);
   return {
     account: createAccountDal(db, deps?.limits?.trialLimit),
+    authRate: createAuthRateDal(db, deps?.drafts?.limits),
     generation: createGenerationDal(db, { ...deps, allowancePolicy, resolveContext: curriculum.resolveCurriculumContext }),
     history: createHistoryDal(db, { ...deps, allowancePolicy }),
     lessons: createLessonsDal(db),

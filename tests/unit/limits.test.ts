@@ -73,6 +73,15 @@ describe("limits", () => {
   });
 });
 
+describe("auth email limit", () => {
+  it("defaults to 10 per IP per hour, is read from AUTH_EMAIL_PER_IP_PER_HOUR and is bounded to 1..1000", () => {
+    expect(DEFAULT_LIMITS.authEmailPerIpPerHour).toBe(10);
+    expect(LIMIT_ENV_NAMES.authEmailPerIpPerHour).toBe("AUTH_EMAIL_PER_IP_PER_HOUR");
+    expect(parseLimits({ AUTH_EMAIL_PER_IP_PER_HOUR: "25" }).authEmailPerIpPerHour).toBe(25);
+    for (const bad of ["0", "1001", "x"]) expect(() => parseLimits({ AUTH_EMAIL_PER_IP_PER_HOUR: bad })).toThrow();
+  });
+});
+
 describe("FLOW_MODE and the limits in the environment modules", () => {
   const db = "postgresql://web_login:x@127.0.0.1:5432/db";
   it("defaults to draft and accepts only legacy or draft", () => {
