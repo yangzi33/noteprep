@@ -165,7 +165,7 @@
   input[type="checkbox"],
   input[type="radio"],
   input[type="submit"],
-  [role="tab"] {
+  [role="tab"]:not([aria-disabled="true"]) {
     cursor: pointer;
   }
   button:disabled,
@@ -194,6 +194,6 @@
 @media (prefers-reduced-motion: no-preference) {
   main,
   .fade-in {
-    animation: page-fade-in 180ms ease-out both;
+    animation: page-fade-in 180ms ease-out backwards;
   }
 }
