@@ -20,3 +20,14 @@ export async function createServerSupabase() {
     },
   });
 }
+
+/**
+ * A client that neither reads nor keeps any cookie. For unauthenticated actions whose response must not depend on the
+ * outcome: any session or PKCE verifier the call would set is discarded, so no path differs by Set-Cookie.
+ */
+export function createStatelessSupabase() {
+  const env = publicEnv();
+  return createServerClient(env.url, env.publishableKey, {
+    cookies: { getAll: () => [], setAll: () => {} },
+  });
+}

@@ -16,7 +16,7 @@ export function loginMessage(key: string | undefined): string | undefined {
 const PASSWORD_MESSAGES: Record<string, string> = {
   invalid: "Use a password of 10 to 72 characters.",
   mismatch: "The two passwords do not match.",
-  failed: "We could not update your password. Request a new reset link and try again.",
+  failed: "We could not update your password. Check that it has at least 10 characters, or request a new reset link.",
 };
 const ACCOUNT_NOTICES: Record<string, string> = { "password-updated": "Your password has been updated." };
 

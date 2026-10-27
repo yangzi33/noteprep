@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { TextField } from "@/components/ui/text-field";
-import { requireUser } from "@/lib/server/auth/require-user";
+import { requireAccount } from "@/lib/server/auth/require-user";
 import { passwordMessage } from "@/lib/ui/login-messages";
 import { updatePassword } from "./actions";
 
 export const metadata: Metadata = { title: "Set a new password" };
 
 export default async function PasswordPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  await requireUser();
+  await requireAccount();
   const { error } = await searchParams;
   const message = passwordMessage(error);
   return (

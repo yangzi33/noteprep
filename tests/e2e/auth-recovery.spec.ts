@@ -22,19 +22,19 @@ for (const [path, heading, button, notice] of [
     await page.getByLabel("Email").fill("not-an-email");
     await page.getByRole("button", { name: button }).click();
     await expect(page).toHaveURL(new RegExp(`${path}\\?error=invalid$`));
-    await expect(page.getByRole("alert")).toContainText("valid email address");
+    await expect(page.locator("main [role=alert]")).toContainText("valid email address");
 
     await page.getByLabel("Email").fill(`nobody-${Date.now()}@example.test`);
     await page.getByRole("button", { name: button }).click();
     await expect(page).toHaveURL(/\/login\?notice=(reset-sent|check-email)$/);
-    await expect(page.getByRole("status")).toContainText(notice);
+    await expect(page.locator("main [role=status]")).toContainText(notice);
   });
 }
 
 test("an invalid recovery code lands on the login page with the fixed message and no echo", async ({ page }) => {
   await page.goto("/auth/recovery?code=not-a-real-code&next=https://evil.example");
   await expect(page).toHaveURL(/\/login\?error=recovery$/);
-  await expect(page.getByRole("alert")).toContainText("invalid or expired");
+  await expect(page.locator("main [role=alert]")).toContainText("invalid or expired");
 });
 
 test("the new-password page sends a signed-out visitor to sign in", async ({ page }) => {

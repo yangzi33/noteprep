@@ -59,6 +59,8 @@ const SHAPE = {
 
   // Sign-in recovery emails (reset link, confirmation resend): per client IP and kind per hour, key auth:<kind>:ip: (placeholder)
   authEmailPerIpPerHour: int("AUTH_EMAIL_PER_IP_PER_HOUR", 10, 1, 1_000),
+  // The same, across all addresses, per kind (keys auth:<kind>:global); checked first so a flood cannot create unbounded per-IP rows
+  authEmailGlobalPerHour: int("AUTH_EMAIL_GLOBAL_PER_HOUR", 200, 1, 100_000),
 
   // Temporary beta perk (D-112), web app only: a free daily allowance on top of the trial; off unless enabled
   dailyRefreshEnabled: int("DAILY_REFRESH_ENABLED", 0, 0, 1),
