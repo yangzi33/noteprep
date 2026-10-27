@@ -25,7 +25,7 @@ async function withinLimit(kind: AuthEmailKind): Promise<boolean> {
 /** One fixed-shape line: event, kind and error class only (never the address, the IP or a code). */
 function logFailure(event: string, kind: AuthEmailKind, error: unknown) {
   const status = Number((error as { status?: unknown } | null)?.status) || null;
-  console.error(JSON.stringify({ ts: new Date().toISOString(), event, kind, errorClass: error instanceof Error ? error.name : "unknown", status }));
+  console.error(JSON.stringify({ ts: new Date().toISOString(), event, kind, errorClass: (error as { name?: unknown } | null)?.name && typeof (error as { name: unknown }).name === "string" ? (error as { name: string }).name : "unknown", status }));
 }
 
 export async function requestPasswordReset(formData: FormData) {
@@ -34,7 +34,8 @@ export async function requestPasswordReset(formData: FormData) {
   if (await withinLimit("reset")) {
     try {
       const supabase = createStatelessSupabase();
-      await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${publicEnv().siteUrl}/auth/recovery` });
+      const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${publicEnv().siteUrl}/auth/recovery` });
+      if (error) logFailure("auth_email_failed", "reset", error);
     } catch (error) {
       logFailure("auth_email_failed", "reset", error); // the response must not depend on the address or on the provider
     }
@@ -49,7 +50,8 @@ export async function resendConfirmation(formData: FormData) {
   if (await withinLimit("resend")) {
     try {
       const supabase = createStatelessSupabase();
-      await supabase.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` } });
+      const { error } = await supabase.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` } });
+      if (error) logFailure("auth_email_failed", "resend", error);
     } catch (error) {
       logFailure("auth_email_failed", "resend", error);
     }

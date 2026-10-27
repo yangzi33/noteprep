@@ -15,11 +15,18 @@ export function createAuthRateDal(db: Db, limits: Pick<Limits, "authEmailPerIpPe
   return {
     async hit(ipHash: string, kind: AuthEmailKind): Promise<{ allowed: boolean; count: number }> {
       return inTransaction(db, async (tx) => {
-        // Global first: over it, no per-IP row is created or incremented (bounds row growth under a flood).
-        const global = await incrementRateLimit(tx, `auth:${kind}:global`);
-        if (global > limits.authEmailGlobalPerHour) return { allowed: false, count: global };
+        const globalKey = `auth:${kind}:global`;
+        // 1. Already at the global cap: refuse without creating a per-IP row or touching the counter (bounds row growth).
+        const rows = await tx.$queryRaw<{ count: number }[]>`
+          SELECT count FROM rate_limit_window WHERE key = ${globalKey} AND window_start = date_trunc('hour', now())`;
+        const current = rows[0]?.count ?? 0;
+        if (current >= limits.authEmailGlobalPerHour) return { allowed: false, count: current };
+        // 2. Per-IP: a refused request never counts toward the global cap, so one host cannot exhaust it for everyone.
         const count = await incrementRateLimit(tx, `auth:${kind}:ip:${ipHash}`);
-        return { allowed: count <= limits.authEmailPerIpPerHour, count };
+        if (count > limits.authEmailPerIpPerHour) return { allowed: false, count };
+        // 3. Only accepted requests count globally; a race past the cap refuses (and rolls nothing back: the row stays counted).
+        const global = await incrementRateLimit(tx, globalKey);
+        return { allowed: global <= limits.authEmailGlobalPerHour, count };
       });
     },
   };

@@ -65,8 +65,29 @@ describe("authRate.hit", () => {
     expect(results).toEqual([true, true, true, false, false, false]);
     const perIp = (await h.admin.query(`SELECT count(*)::int AS n FROM rate_limit_window WHERE key LIKE 'auth:reset:ip:%'`)).rows[0].n;
     expect(perIp).toBe(3);
-    expect((await rows("auth:reset:global"))[0]?.count).toBe(6);
+    expect((await rows("auth:reset:global"))[0]?.count).toBe(3); // refused requests are not counted globally
     expect((await d.hit(randomUUID(), "resend")).allowed).toBe(true); // the other kind has its own cap
+  });
+
+  it("counts only requests the per-IP limit allows toward the global cap", async () => {
+    const d = dal(3, 100);
+    const ip = randomUUID();
+    for (let i = 0; i < 8; i++) await d.hit(ip, "reset");
+    expect((await rows("auth:reset:global"))[0]?.count).toBe(3);
+    expect((await rows(`auth:reset:ip:${ip}`))[0]?.count).toBe(8);
+  });
+
+  it("two different IPs share the global cap and no per-IP row appears once it is reached", async () => {
+    const d = dal(10, 4);
+    const a = randomUUID();
+    const b = randomUUID();
+    const c = randomUUID();
+    expect([(await d.hit(a, "resend")).allowed, (await d.hit(a, "resend")).allowed, (await d.hit(b, "resend")).allowed, (await d.hit(b, "resend")).allowed]).toEqual([true, true, true, true]);
+    expect((await d.hit(c, "resend")).allowed).toBe(false);
+    expect((await d.hit(a, "resend")).allowed).toBe(false);
+    expect(await rows(`auth:resend:ip:${c}`)).toHaveLength(0);
+    expect((await rows(`auth:resend:ip:${a}`))[0]?.count).toBe(2);
+    expect((await rows("auth:resend:global"))[0]?.count).toBe(4);
   });
 
   it("keys on whatever hash it is given, so /64 and IPv4-mapped equivalence comes from clientIpHash", async () => {

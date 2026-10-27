@@ -13,12 +13,16 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = OTP_TYPES.find((t) => t === searchParams.get("type"));
   let ok = false;
-  if (tokenHash && type) {
-    const supabase = await createServerSupabase();
-    ok = !(await supabase.auth.verifyOtp({ type, token_hash: tokenHash })).error;
-  } else if (code) {
-    const supabase = await createServerSupabase();
-    ok = !(await supabase.auth.exchangeCodeForSession(code)).error;
+  try {
+    if (tokenHash && type) {
+      const supabase = await createServerSupabase();
+      ok = !(await supabase.auth.verifyOtp({ type, token_hash: tokenHash })).error;
+    } else if (code) {
+      const supabase = await createServerSupabase();
+      ok = !(await supabase.auth.exchangeCodeForSession(code)).error;
+    }
+  } catch {
+    ok = false; // fail closed, same redirect as any other failure
   }
   if (ok) return NextResponse.redirect(new URL(safeNextPath(searchParams.get("next")), origin));
   return NextResponse.redirect(new URL("/login?error=callback", origin));

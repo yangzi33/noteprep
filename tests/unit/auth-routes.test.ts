@@ -58,6 +58,12 @@ describe("GET /auth/callback", () => {
     expect(loc(await callback(req("/auth/callback?token_hash=h&type=recovery")))).toBe("https://site.test/login?error=callback");
     expect(loc(await callback(req("/auth/callback?token_hash=h")))).toBe("https://site.test/login?error=callback");
   });
+  it("fails closed when verification throws", async () => {
+    m.verifyOtp.mockRejectedValueOnce(new Error("boom"));
+    expect(loc(await callback(req("/auth/callback?token_hash=h&type=signup")))).toBe("https://site.test/login?error=callback");
+    m.exchange.mockRejectedValueOnce(new Error("boom"));
+    expect(loc(await callback(req("/auth/callback?code=c")))).toBe("https://site.test/login?error=callback");
+  });
   it("keeps the code path and the failure redirect", async () => {
     expect(loc(await callback(req("/auth/callback?code=c")))).toBe("https://site.test/dashboard");
     expect(m.exchange).toHaveBeenCalledWith("c");

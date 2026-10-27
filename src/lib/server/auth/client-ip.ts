@@ -27,12 +27,13 @@ function expandV6(addr: string): number[] | null {
 
 /**
  * The key an address is limited under: IPv4 as is, IPv4-mapped IPv6 as its IPv4, other IPv6 as its /64 (one subscriber can
- * rotate through the whole /64), anything unparseable as itself.
+ * rotate through the whole /64). Anything that is not a valid address (malformed, bracketed, leading zeros) shares the
+ * FALLBACK bucket, so a forged header value cannot mint buckets.
  */
 export function normalizeIp(raw: string): string {
   const ip = raw.trim().toLowerCase().split("%")[0] ?? "";
   if (isIPv4(ip)) return ip;
-  if (!isIPv6(ip)) return ip;
+  if (!isIPv6(ip)) return FALLBACK;
   const mapped = ip.match(/^(?:0{0,4}:){0,5}:?ffff:(\d+\.\d+\.\d+\.\d+)$/) ?? ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
   if (mapped?.[1] && isIPv4(mapped[1])) return mapped[1];
   let v6 = ip;
@@ -42,7 +43,7 @@ export function normalizeIp(raw: string): string {
     v6 = ip.slice(0, ip.length - tail[1].length) + (((o[0]! << 8) | o[1]!).toString(16)) + ":" + (((o[2]! << 8) | o[3]!).toString(16));
   }
   const groups = expandV6(v6);
-  if (!groups) return ip;
+  if (!groups) return FALLBACK;
   if (groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff) return `${groups[6]! >> 8}.${groups[6]! & 255}.${groups[7]! >> 8}.${groups[7]! & 255}`;
   return `${groups.slice(0, 4).map((g) => g.toString(16)).join(":")}::/64`;
 }

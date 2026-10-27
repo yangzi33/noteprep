@@ -24,7 +24,8 @@ The two actions can send email to any address, so each is limited per kind, per 
 
 - `AUTH_EMAIL_PER_IP_PER_HOUR`: integer 1 to 1000, default 10.
 - `AUTH_EMAIL_GLOBAL_PER_HOUR`: integer 1 to 100000, default 200, per kind.
-- IPv6 addresses are bucketed by /64; IPv4-mapped IPv6 counts as its IPv4.
+- IPv6 addresses are bucketed by /64; IPv4-mapped IPv6 counts as its IPv4. A value that is not a valid IPv4 or IPv6 address (malformed, bracketed, leading zeros) uses the shared fallback bucket.
+- Only requests the per-IP limit accepts count toward the global cap, so one host cannot use up the global cap for everyone.
 - The address comes from `x-real-ip`, else the first `x-forwarded-for` entry, and is stored only as a truncated SHA-256 hash. Requests with no address share one fallback bucket.
 - This relies on the hosting proxy setting those headers; behind a proxy that passes client-supplied values through, the limit can be evaded by rotating the header.
 
@@ -36,6 +37,7 @@ Remote settings are not changed by this repository.
    - Reset password: link `{{ .SiteURL }}/auth/recovery?token_hash={{ .TokenHash }}&type=recovery`
    - Confirm signup: link `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup`
    - Site URL (Authentication, URL Configuration) must be the exact origin, for example `https://noteprep.app`, with no trailing slash.
+   - Until the hosted "Confirm signup" template is also switched, resent confirmation links land on `/login?error=callback`; the address may already be confirmed server-side, so the user can just sign in.
    - `/auth/recovery` also accepts old `code` links, but only if the browser still has its verifier.
 1. Authentication, URL Configuration, Redirect URLs: add the exact URL `<SITE_URL>/auth/recovery` (for example `https://noteprep.app/auth/recovery`). `<SITE_URL>/auth/callback` is already required.
 2. Authentication, Providers, Email: minimum password length 10; "Secure password change" on; leaked password protection on if the plan offers it. Locally `supabase/config.toml` sets `minimum_password_length = 10` and `secure_password_change = true`.

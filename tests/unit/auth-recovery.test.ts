@@ -127,6 +127,22 @@ describe("the email actions keep no cookies", () => {
   });
 });
 
+describe("a returned provider error is logged without identifying data", () => {
+  it("logs name and status only, identically for both actions", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    m.reset.mockResolvedValueOnce({ error: { name: "AuthApiError", status: 429, message: "for a@example.test" } });
+    m.resend.mockResolvedValueOnce({ error: { name: "AuthApiError", status: 429, message: "for a@example.test" } });
+    expect(await run(requestPasswordReset, form({ email: "a@example.test" }))).toBe("/login?notice=reset-sent");
+    expect(await run(resendConfirmation, form({ email: "a@example.test" }))).toBe("/login?notice=check-email");
+    const lines = spy.mock.calls.map((c) => String(c[0]));
+    spy.mockRestore();
+    expect(lines).toHaveLength(2);
+    for (const l of lines) expect(l).not.toMatch(/example\.test|for a@/);
+    expect(JSON.parse(lines[0]!)).toMatchObject({ event: "auth_email_failed", kind: "reset", errorClass: "AuthApiError", status: 429 });
+    expect(JSON.parse(lines[1]!)).toMatchObject({ kind: "resend", errorClass: "AuthApiError", status: 429 });
+  });
+});
+
 describe("resendConfirmation", () => {
   it("rejects a malformed email", async () => {
     expect(await run(resendConfirmation, form({ email: "nope" }))).toBe("/login/resend?error=invalid");
@@ -211,6 +227,10 @@ describe("clientIpHash buckets", () => {
     expect(clientIpHash(h("2001:0db8:0001:0002::1"))).toBe(a);
     expect(clientIpHash(h("2001:DB8:1:2:ffff:ffff:ffff:ffff"))).toBe(a);
     expect(clientIpHash(h("2001:db8:1:3::1"))).not.toBe(a);
+  });
+  it("sends anything that is not a valid address to the shared fallback bucket", () => {
+    const fallback = clientIpHash({ get: () => null });
+    for (const bad of ["[2001:db8::1]", "01.2.3.4", "999.1.1.1", "garbage", "1.2.3", "2001:db8::1::2"]) expect(clientIpHash(h(bad)), bad).toBe(fallback);
   });
   it("maps IPv4-mapped IPv6 to the IPv4 and leaves IPv4 alone", () => {
     const v4 = clientIpHash(h("203.0.113.7"));
