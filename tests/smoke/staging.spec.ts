@@ -42,7 +42,7 @@ test("staging: sign in, draft, export, and every PDF downloads", async ({ page }
   if (!(await create.isVisible())) {
     const body = (await page.locator("body").textContent()) ?? "";
     throw new Error(
-      /No curriculum is available yet|nothing here is available yet|not available yet/.test(body)
+      /No curriculum is available yet|No courses are available yet|nothing here is available yet|not available yet/.test(body)
         ? "staging has no sample curriculum: set CURRICULUM_ALLOW_SAMPLE=1 and load the sample dataset on staging"
         : "the Create draft preview button is not visible (staging may still run FLOW_MODE=legacy: set FLOW_MODE=draft explicitly)",
     );

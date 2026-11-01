@@ -21,7 +21,7 @@ import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view
 import { ContactText } from "@/components/app/contact-link";
 import { exhaustedNotice, generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
-import { buildSelectFields, datasetBanner, resolveCountry } from "@/lib/ui/prepare-view";
+import { buildSelectFields, datasetBanner, resolveCountry, staleSelectionFallback } from "@/lib/ui/prepare-view";
 import { prepareHref, readPrepareParams, upTo } from "@/lib/ui/prepare-url";
 import { prepareLesson } from "./actions";
 
@@ -68,24 +68,14 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
     </PageFrame>
   );
 
-  const curricula = await dal.curriculum.listCurricula();
+  // Only curricula with at least one topic we can generate are offered (one aggregate query); the data layer still
+  // refuses anything unsupported, whatever the request names.
+  const curricula = await dal.curriculum.listCurricula({ selectableOnly: true });
   if (curricula.length === 0) {
     return frame(
-      <Card className="p-6">
-        <p className="text-sm" data-testid="no-curricula">
-          No curriculum is available yet.
-          {!draftFlow && (
-            <>
-              {" "}
-              You can still use the{" "}
-              <Link href="/lessons/new" className="underline">
-                quick form
-              </Link>
-              .
-            </>
-          )}
-        </p>
-      </Card>,
+      <Notice intent="info" data-testid="no-curricula">
+        No courses are available yet.
+      </Notice>,
     );
   }
 
@@ -106,24 +96,51 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   params = { ...rawParams, country: countryState.showStep ? countryState.country : undefined };
 
   // Resolve the selection path and the options of every step whose earlier values are present.
-  // A bad or inconsistent selection (hand-edited URL) becomes a Notice, never an error page.
+  // A bad or inconsistent selection (hand-edited URL) becomes a Notice, never an error page. A selection that is
+  // consistent but now hidden (a curriculum, level or course with nothing usable below it, e.g. a stale link) falls
+  // back to the nearest valid step instead.
   let path: SelectionPath | null = null;
   let steps: SelectionStep[] = [];
-  const stepOptions: Partial<Record<SelectionStep, SelectionOption[]>> = {};
+  let stepOptions: Partial<Record<SelectionStep, SelectionOption[]>> = {};
+  const visibleVersions = new Set(curricula.flatMap((c) => c.versions.map((v) => v.id)));
+  const resolveSelection = async (p: typeof params) => {
+    const options: Partial<Record<SelectionStep, SelectionOption[]>> = {};
+    const versionId = p.v!;
+    const found = await dal.curriculum.getSelectionPath({ versionId, levelId: p.level, courseId: p.course, unitId: p.unit, topicId: p.topic });
+    const stale = (levels: SelectionOption[] | undefined, courses: SelectionOption[] | undefined) =>
+      staleSelectionFallback({ params: p, versionVisible: visibleVersions.has(versionId), levelOptions: levels ?? null, courseOptions: courses ?? null });
+    const hiddenVersion = stale(undefined, undefined);
+    if (hiddenVersion) return { fallback: hiddenVersion } as const;
+    const stepList = await dal.curriculum.getSelectionSteps(versionId);
+    const hasLevel = stepList.includes("level");
+    const load = async (step: SelectionStep, input: Parameters<typeof dal.curriculum.getSelectionOptions>[0]) => {
+      options[step] = (await dal.curriculum.getSelectionOptions(input, { hideUnusable: true })).options;
+    };
+    if (hasLevel) {
+      await load("level", { versionId });
+      const fallback = stale(options.level, undefined);
+      if (fallback) return { fallback } as const;
+    }
+    if (!hasLevel || p.level) {
+      await load("course", { versionId, levelId: p.level });
+      const fallback = stale(options.level, options.course);
+      if (fallback) return { fallback } as const;
+    }
+    if (p.course && (!hasLevel || p.level)) await load("unit", { versionId, levelId: p.level, courseId: p.course });
+    if (p.unit && p.course && (!hasLevel || p.level)) await load("topic", { versionId, levelId: p.level, courseId: p.course, unitId: p.unit });
+    return { path: found, steps: stepList, options } as const;
+  };
   if (params.v) {
     try {
-      const versionId = params.v;
-      path = await dal.curriculum.getSelectionPath({ versionId, levelId: params.level, courseId: params.course, unitId: params.unit, topicId: params.topic });
-      steps = await dal.curriculum.getSelectionSteps(versionId);
-      const hasLevel = steps.includes("level");
-      const load = async (step: SelectionStep, input: Parameters<typeof dal.curriculum.getSelectionOptions>[0]) => {
-        stepOptions[step] = (await dal.curriculum.getSelectionOptions(input)).options;
-      };
-      if (hasLevel) await load("level", { versionId });
-      if (!hasLevel || params.level) await load("course", { versionId, levelId: params.level });
-      if (params.course && (!hasLevel || params.level)) await load("unit", { versionId, levelId: params.level, courseId: params.course });
-      if (params.unit && params.course && (!hasLevel || params.level)) {
-        await load("topic", { versionId, levelId: params.level, courseId: params.course, unitId: params.unit });
+      let outcome = await resolveSelection(params);
+      if ("fallback" in outcome) {
+        params = { ...outcome.fallback, country: params.country };
+        outcome = params.v ? await resolveSelection(params) : outcome;
+      }
+      if (!("fallback" in outcome)) {
+        path = outcome.path;
+        steps = outcome.steps;
+        stepOptions = outcome.options;
       }
     } catch (error) {
       const code = domainErrorCode(error);

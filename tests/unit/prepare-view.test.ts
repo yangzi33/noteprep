@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SelectionOption, SelectionStep } from "@/lib/server/dal/curriculum";
 import { readPrepareParams } from "@/lib/ui/prepare-url";
-import { buildSelectFields, countryLabel, countryOptions, curriculaForCountry, datasetBanner, changeSelection, resolveCountry, selectionHref } from "@/lib/ui/prepare-view";
+import { buildSelectFields, countryLabel, countryOptions, curriculaForCountry, datasetBanner, changeSelection, resolveCountry, selectionHref, staleSelectionFallback } from "@/lib/ui/prepare-view";
 
 const full = { v: "a", level: "l", course: "c", unit: "u", topic: "t" };
 const curricula = [{ id: "cur1", name: "Sample Curriculum", latestVersionId: "ver1" }];
@@ -211,5 +211,38 @@ describe("readPrepareParams", () => {
     expect(readPrepareParams({ country: "CA", v: "x" })).toMatchObject({ country: "CA", v: "x" });
     expect(readPrepareParams({ country: ["CA", "GB"] }).country).toBeUndefined();
     expect(readPrepareParams({ country: "x".repeat(201) }).country).toBeUndefined();
+  });
+});
+
+describe("staleSelectionFallback", () => {
+  const levels = [{ id: "l1" }];
+  const courses = [{ id: "c1" }];
+  const base = { country: "CA", v: "ver1", level: "l1", course: "c1", unit: "u", topic: "t" };
+
+  it("keeps a selection that is still offered", () => {
+    expect(staleSelectionFallback({ params: base, versionVisible: true, levelOptions: levels, courseOptions: courses })).toBeNull();
+  });
+
+  it("drops everything below a curriculum that is no longer offered", () => {
+    expect(staleSelectionFallback({ params: base, versionVisible: false, levelOptions: null, courseOptions: null })).toEqual({ country: "CA" });
+  });
+
+  it("falls back to the curriculum when the level is hidden", () => {
+    expect(staleSelectionFallback({ params: base, versionVisible: true, levelOptions: [{ id: "other" }], courseOptions: null })).toEqual({ country: "CA", v: "ver1" });
+  });
+
+  it("falls back to the level when the course is hidden, or to the curriculum when there are no levels", () => {
+    expect(staleSelectionFallback({ params: base, versionVisible: true, levelOptions: levels, courseOptions: [{ id: "other" }] })).toEqual({ country: "CA", v: "ver1", level: "l1" });
+    const noLevel = { ...base, level: undefined };
+    expect(staleSelectionFallback({ params: noLevel, versionVisible: true, levelOptions: null, courseOptions: [] })).toEqual({ country: "CA", v: "ver1" });
+  });
+});
+
+describe("countries of the offered curricula", () => {
+  it("does not offer a country when none of its curricula is offered", () => {
+    const offered = [cur("on", "Ontario", "on-v", "CA")];
+    const dropped = cur("ib", "IB Math", "ib-v", "INT");
+    expect(countryOptions([...offered, dropped]).map((o) => o.value)).toEqual(["CA", "INT"]);
+    expect(countryOptions(offered).map((o) => o.value)).toEqual(["CA"]);
   });
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { capabilityFor } from "@/lib/curriculum/capabilities";
+import { CAPABILITIES, capabilityFor } from "@/lib/curriculum/capabilities";
 import { alignmentClaimsAllowedFor, withContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import type { Coverage, DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { CurriculumNotFound, InvalidSelection, TopicUnsupported } from "@/lib/domain/errors";
@@ -114,7 +114,7 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
 
   return {
     /** Published curricula visible here, with their versions (latest first). */
-    async listCurricula(): Promise<CurriculumSummary[]> {
+    async listCurricula(listOptions: { selectableOnly?: boolean } = {}): Promise<CurriculumSummary[]> {
       const curricula = await defaultDb.curriculum.findMany({
         where: { versions: { some: { status: "published", datasetKind: { in: kinds } } } },
         include: {
@@ -123,7 +123,20 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
         },
         orderBy: { name: "asc" },
       });
-      return curricula.map((c) => ({
+      // One aggregate query for every curriculum: which published, visible versions hold a topic linked to a concept
+      // the code registry knows. A version without one has nothing a tutor could use, at any level below it.
+      let usable: Set<string> | null = null;
+      if (listOptions.selectableOnly) {
+        const rows = await defaultDb.topicConcept.findMany({
+          where: { conceptId: { in: Object.keys(CAPABILITIES) }, topic: { version: { status: "published", datasetKind: { in: kinds } } } },
+          select: { versionId: true },
+          distinct: ["versionId"],
+        });
+        usable = new Set(rows.map((r) => r.versionId));
+      }
+      return curricula
+        .filter((c) => usable === null || usable.has(c.versions[0]!.id))
+        .map((c) => ({
         id: c.id,
         name: c.name,
         educationSystem: { id: c.educationSystem.id, name: c.educationSystem.name, regionCode: c.educationSystem.regionCode },
@@ -172,7 +185,7 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
      * The options for the NEXT step given what has been chosen so far. The chain must be consistent
      * (the course belongs to the level, the unit to the course); anything else is an invalid selection.
      */
-    async getSelectionOptions(input: SelectionInput): Promise<SelectionOptions> {
+    async getSelectionOptions(input: SelectionInput, selectionOptions: { hideUnusable?: boolean } = {}): Promise<SelectionOptions> {
       const tree = await loadTree(input.versionId);
       const hasLevels = tree.levels.length > 0;
       const topicSupported = (topicId: string) => tree.supportedConcepts.has(topicId);
@@ -184,12 +197,15 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
         return {
           versionId: input.versionId,
           step: "level",
-          options: tree.levels.map((l) => ({ id: l.id, label: l.label, supported: tree.courses.some((c) => c.levelId === l.id && courseSupported(c.id)) })),
+          options: tree.levels
+            .map((l) => ({ id: l.id, label: l.label, supported: tree.courses.some((c) => c.levelId === l.id && courseSupported(c.id)) }))
+            .filter((o) => !selectionOptions.hideUnusable || o.supported),
         };
       }
       if (!course) {
         const courses = tree.courses.filter((c) => !hasLevels || c.levelId === level!.id);
-        return { versionId: input.versionId, step: "course", options: courses.map((c) => ({ id: c.id, label: `${c.title} (${c.code})`, supported: courseSupported(c.id) })) };
+        const options = courses.map((c) => ({ id: c.id, label: `${c.title} (${c.code})`, supported: courseSupported(c.id) }));
+        return { versionId: input.versionId, step: "course", options: selectionOptions.hideUnusable ? options.filter((o) => o.supported) : options };
       }
       if (!unit) {
         const units = tree.units.filter((u) => u.courseId === course.id);
