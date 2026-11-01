@@ -1,0 +1,521 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "uk-wales@suggested-1/wal-lower",
+      "code": "NP-WAL-LOWER",
+      "title": "Mathematics and Numeracy (Years 7-9)",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse",
+      "code": "NP-WAL-GCSE",
+      "title": "GCSE Mathematics and Numeracy",
+      "ordinal": 2
+    }
+  ],
+  "units": [
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number",
+      "courseId": "uk-wales@suggested-1/wal-lower",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra",
+      "courseId": "uk-wales@suggested-1/wal-lower",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/functions",
+      "courseId": "uk-wales@suggested-1/wal-lower",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/geometry-and-measurement",
+      "courseId": "uk-wales@suggested-1/wal-lower",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/data-and-probability",
+      "courseId": "uk-wales@suggested-1/wal-lower",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Graphs and functions",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/trigonometry-and-vectors",
+      "courseId": "uk-wales@suggested-1/wal-gcse",
+      "title": "Trigonometry and vectors",
+      "ordinal": 6
+    }
+  ],
+  "topics": [
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number/rational-number-operations",
+      "unitId": "uk-wales@suggested-1/wal-lower/number",
+      "title": "Operations with rational numbers",
+      "summary": "Compute with positive and negative fractions and decimals using the order of operations.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number/square-roots",
+      "unitId": "uk-wales@suggested-1/wal-lower/number",
+      "title": "Square roots and perfect squares",
+      "summary": "Find and estimate square roots and recognize perfect squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number/proportions",
+      "unitId": "uk-wales@suggested-1/wal-lower/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number/percent-change",
+      "unitId": "uk-wales@suggested-1/wal-lower/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/number/exponent-laws",
+      "unitId": "uk-wales@suggested-1/wal-lower/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/simplify-like-terms",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/one-step-equations",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/two-step-equations",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/unknown-both-sides",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/like-terms-before-solving",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/algebra/patterns-sequences",
+      "unitId": "uk-wales@suggested-1/wal-lower/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/functions/linear-relations-graphs",
+      "unitId": "uk-wales@suggested-1/wal-lower/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/geometry-and-measurement/triangle-properties",
+      "unitId": "uk-wales@suggested-1/wal-lower/geometry-and-measurement",
+      "title": "Properties of triangles",
+      "summary": "Classify triangles and use their properties, including congruence.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "uk-wales@suggested-1/wal-lower/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/geometry-and-measurement/volume-surface-area",
+      "unitId": "uk-wales@suggested-1/wal-lower/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/geometry-and-measurement/geometric-transformations",
+      "unitId": "uk-wales@suggested-1/wal-lower/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/data-and-probability/scatter-plots-best-fit",
+      "unitId": "uk-wales@suggested-1/wal-lower/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-lower/data-and-probability/compound-probability",
+      "unitId": "uk-wales@suggested-1/wal-lower/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/fractions-add-subtract",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Adding and subtracting fractions",
+      "summary": "Add and subtract fractions and mixed numbers using common denominators.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/fractions-multiply-divide",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Multiplying and dividing fractions",
+      "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/decimal-operations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Operations with decimals",
+      "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/percent-of-quantity",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/percent-change",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/ratios-and-rates",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/proportions",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/unit-rates-and-conversions",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/number/exponent-laws",
+      "unitId": "uk-wales@suggested-1/wal-gcse/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/simplify-like-terms",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/one-step-equations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/two-step-equations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/unknown-both-sides",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/like-terms-before-solving",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/equations-with-brackets",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/linear-inequalities",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/patterns-sequences",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/factoring-polynomials",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/quadratic-equations-factoring",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 10
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/quadratic-formula",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "The quadratic formula",
+      "summary": "Solve quadratic equations with the quadratic formula and interpret the discriminant.",
+      "ordinal": 11
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/completing-the-square",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Completing the square",
+      "summary": "Rewrite a quadratic in vertex form by completing the square.",
+      "ordinal": 12
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/algebra/rational-expressions",
+      "unitId": "uk-wales@suggested-1/wal-gcse/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 13
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/linear-relations-graphs",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/equations-of-lines",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/systems-linear-equations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/quadratic-functions-graphs",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/function-transformations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/graphs-and-functions/exponential-functions",
+      "unitId": "uk-wales@suggested-1/wal-gcse/graphs-and-functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/angle-relationships",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Angle relationships",
+      "summary": "Use angles on lines, in triangles and in polygons to find unknown angles.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/perimeter-and-area",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/circles-circumference-area",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Circles: circumference and area",
+      "summary": "Calculate the circumference and area of circles and parts of circles.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/volume-surface-area",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/similar-figures-scale",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/geometric-transformations",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement/sine-cosine-laws",
+      "unitId": "uk-wales@suggested-1/wal-gcse/geometry-and-measurement",
+      "title": "Sine law and cosine law",
+      "summary": "Solve non-right triangles using the sine law and the cosine law.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability/measures-of-centre",
+      "unitId": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability/data-displays",
+      "unitId": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability/scatter-plots-best-fit",
+      "unitId": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability/simple-probability",
+      "unitId": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/data-and-probability/compound-probability",
+      "unitId": "uk-wales@suggested-1/wal-gcse/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/trigonometry-and-vectors/trigonometric-functions",
+      "unitId": "uk-wales@suggested-1/wal-gcse/trigonometry-and-vectors",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-wales@suggested-1/wal-gcse/trigonometry-and-vectors/vectors",
+      "unitId": "uk-wales@suggested-1/wal-gcse/trigonometry-and-vectors",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 2
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-gcse/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-gcse/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-gcse/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-gcse/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-as/algebra-and-functions/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-as/algebra-and-functions/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-as/algebra-and-functions/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "uk-ccea@suggested-1/ccea-as/algebra-and-functions/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    }
+  ],
+  "prerequisites": []
+}

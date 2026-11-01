@@ -1,0 +1,493 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math",
+      "code": "NP-SG-O-MATH",
+      "title": "O-Level Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath",
+      "code": "NP-SG-O-ADDMATH",
+      "title": "O-Level Additional Mathematics",
+      "ordinal": 2
+    }
+  ],
+  "units": [
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Graphs and functions",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/trigonometry-and-vectors",
+      "courseId": "sg-o-level@suggested-1/sg-o-math",
+      "title": "Trigonometry and vectors",
+      "ordinal": 6
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/algebra",
+      "courseId": "sg-o-level@suggested-1/sg-o-addmath",
+      "title": "Algebra",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/functions",
+      "courseId": "sg-o-level@suggested-1/sg-o-addmath",
+      "title": "Functions",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/trigonometry",
+      "courseId": "sg-o-level@suggested-1/sg-o-addmath",
+      "title": "Trigonometry",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics",
+      "courseId": "sg-o-level@suggested-1/sg-o-addmath",
+      "title": "Calculus basics",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/coordinate-geometry",
+      "courseId": "sg-o-level@suggested-1/sg-o-addmath",
+      "title": "Coordinate geometry",
+      "ordinal": 5
+    }
+  ],
+  "topics": [
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/fractions-add-subtract",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Adding and subtracting fractions",
+      "summary": "Add and subtract fractions and mixed numbers using common denominators.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/fractions-multiply-divide",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Multiplying and dividing fractions",
+      "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/decimal-operations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Operations with decimals",
+      "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/percent-of-quantity",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/percent-change",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/ratios-and-rates",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 6
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/proportions",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 7
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/unit-rates-and-conversions",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 8
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/number/exponent-laws",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 9
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/simplify-like-terms",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/one-step-equations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/two-step-equations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/unknown-both-sides",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/like-terms-before-solving",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/equations-with-brackets",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/linear-inequalities",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 7
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/patterns-sequences",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 8
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/factoring-polynomials",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 9
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/quadratic-equations-factoring",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 10
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/quadratic-formula",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "The quadratic formula",
+      "summary": "Solve quadratic equations with the quadratic formula and interpret the discriminant.",
+      "ordinal": 11
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/completing-the-square",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Completing the square",
+      "summary": "Rewrite a quadratic in vertex form by completing the square.",
+      "ordinal": 12
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/algebra/rational-expressions",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 13
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/linear-relations-graphs",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/equations-of-lines",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/systems-linear-equations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/quadratic-functions-graphs",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/function-transformations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions/exponential-functions",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/graphs-and-functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 6
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/angle-relationships",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Angle relationships",
+      "summary": "Use angles on lines, in triangles and in polygons to find unknown angles.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/perimeter-and-area",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/circles-circumference-area",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Circles: circumference and area",
+      "summary": "Calculate the circumference and area of circles and parts of circles.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/volume-surface-area",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/similar-figures-scale",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 6
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/geometric-transformations",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 7
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 8
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement/sine-cosine-laws",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/geometry-and-measurement",
+      "title": "Sine law and cosine law",
+      "summary": "Solve non-right triangles using the sine law and the cosine law.",
+      "ordinal": 9
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability/measures-of-centre",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability/data-displays",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability/scatter-plots-best-fit",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability/simple-probability",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/data-and-probability/compound-probability",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 5
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/trigonometry-and-vectors/trigonometric-functions",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/trigonometry-and-vectors",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-math/trigonometry-and-vectors/vectors",
+      "unitId": "sg-o-level@suggested-1/sg-o-math/trigonometry-and-vectors",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/algebra/quadratic-formula",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/algebra",
+      "title": "The quadratic formula",
+      "summary": "Solve quadratic equations with the quadratic formula and interpret the discriminant.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/algebra/completing-the-square",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/algebra",
+      "title": "Completing the square",
+      "summary": "Rewrite a quadratic in vertex form by completing the square.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/algebra/polynomial-functions",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/algebra",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/algebra/rational-expressions",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 4
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/functions/function-transformations",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/functions/exponential-functions",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/functions/logarithms",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/trigonometry/trigonometric-functions",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/trigonometry/trigonometric-identities",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics/derivative-rules",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics/derivative-applications",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 2
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics/integrals",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 3
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/coordinate-geometry/equations-of-lines",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/coordinate-geometry",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 1
+    },
+    {
+      "id": "sg-o-level@suggested-1/sg-o-addmath/coordinate-geometry/coordinate-geometry",
+      "unitId": "sg-o-level@suggested-1/sg-o-addmath/coordinate-geometry",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 2
+    }
+  ]
+}

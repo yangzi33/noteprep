@@ -1,0 +1,743 @@
+{
+  "levels": [
+    {
+      "id": "nz-curriculum@suggested-1/year-7",
+      "label": "Year 7",
+      "kind": "Year",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8",
+      "label": "Year 8",
+      "kind": "Year",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9",
+      "label": "Year 9",
+      "kind": "Year",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10",
+      "label": "Year 10",
+      "kind": "Year",
+      "ordinal": 4
+    }
+  ],
+  "courses": [
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7",
+      "levelId": "nz-curriculum@suggested-1/year-7",
+      "code": "NP-Y7",
+      "title": "Year 7 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8",
+      "levelId": "nz-curriculum@suggested-1/year-8",
+      "code": "NP-Y8",
+      "title": "Year 8 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9",
+      "levelId": "nz-curriculum@suggested-1/year-9",
+      "code": "NP-Y9",
+      "title": "Year 9 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10",
+      "levelId": "nz-curriculum@suggested-1/year-10",
+      "code": "NP-Y10",
+      "title": "Year 10 Mathematics",
+      "ordinal": 1
+    }
+  ],
+  "units": [
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number",
+      "courseId": "nz-curriculum@suggested-1/year-7/y7",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "courseId": "nz-curriculum@suggested-1/year-7/y7",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement",
+      "courseId": "nz-curriculum@suggested-1/year-7/y7",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/data-and-probability",
+      "courseId": "nz-curriculum@suggested-1/year-7/y7",
+      "title": "Data and probability",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number",
+      "courseId": "nz-curriculum@suggested-1/year-8/y8",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "courseId": "nz-curriculum@suggested-1/year-8/y8",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/functions",
+      "courseId": "nz-curriculum@suggested-1/year-8/y8",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement",
+      "courseId": "nz-curriculum@suggested-1/year-8/y8",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/data-and-probability",
+      "courseId": "nz-curriculum@suggested-1/year-8/y8",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/number",
+      "courseId": "nz-curriculum@suggested-1/year-9/y9",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "courseId": "nz-curriculum@suggested-1/year-9/y9",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/functions",
+      "courseId": "nz-curriculum@suggested-1/year-9/y9",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement",
+      "courseId": "nz-curriculum@suggested-1/year-9/y9",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/data-and-probability",
+      "courseId": "nz-curriculum@suggested-1/year-9/y9",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/number",
+      "courseId": "nz-curriculum@suggested-1/year-10/y10",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "courseId": "nz-curriculum@suggested-1/year-10/y10",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/functions",
+      "courseId": "nz-curriculum@suggested-1/year-10/y10",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement",
+      "courseId": "nz-curriculum@suggested-1/year-10/y10",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/data-and-probability",
+      "courseId": "nz-curriculum@suggested-1/year-10/y10",
+      "title": "Data and probability",
+      "ordinal": 5
+    }
+  ],
+  "topics": [
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/whole-number-operations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Operations with whole numbers",
+      "summary": "Add, subtract, multiply and divide whole numbers, including multi-digit and word problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/factors-multiples",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Factors, multiples and primes",
+      "summary": "Find factors, multiples, common factors, common multiples and prime factorizations.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/integer-operations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Operations with integers",
+      "summary": "Add, subtract, multiply and divide positive and negative whole numbers.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/fractions-add-subtract",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Adding and subtracting fractions",
+      "summary": "Add and subtract fractions and mixed numbers using common denominators.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/fractions-multiply-divide",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Multiplying and dividing fractions",
+      "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/decimal-operations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Operations with decimals",
+      "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
+      "ordinal": 6
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/order-of-operations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Order of operations",
+      "summary": "Evaluate expressions with brackets, exponents and several operations in the correct order.",
+      "ordinal": 7
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/ratios-and-rates",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 8
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/number/percent-of-quantity",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 9
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/evaluate-expressions",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Evaluating algebraic expressions",
+      "summary": "Substitute values for variables and evaluate expressions.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/one-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/two-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/unknown-both-sides",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/like-terms-before-solving",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/algebra/patterns-sequences",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement/angle-relationships",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement",
+      "title": "Angle relationships",
+      "summary": "Use angles on lines, in triangles and in polygons to find unknown angles.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement/perimeter-and-area",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement/circles-circumference-area",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/geometry-and-measurement",
+      "title": "Circles: circumference and area",
+      "summary": "Calculate the circumference and area of circles and parts of circles.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/data-and-probability/measures-of-centre",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/data-and-probability/data-displays",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-7/y7/data-and-probability/simple-probability",
+      "unitId": "nz-curriculum@suggested-1/year-7/y7/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number/rational-number-operations",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/number",
+      "title": "Operations with rational numbers",
+      "summary": "Compute with positive and negative fractions and decimals using the order of operations.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number/square-roots",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/number",
+      "title": "Square roots and perfect squares",
+      "summary": "Find and estimate square roots and recognize perfect squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number/proportions",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number/percent-change",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/number/exponent-laws",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/simplify-like-terms",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/one-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/two-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/unknown-both-sides",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/like-terms-before-solving",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/algebra/patterns-sequences",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/functions/linear-relations-graphs",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement/triangle-properties",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement",
+      "title": "Properties of triangles",
+      "summary": "Classify triangles and use their properties, including congruence.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement/volume-surface-area",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement/geometric-transformations",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/data-and-probability/scatter-plots-best-fit",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-8/y8/data-and-probability/compound-probability",
+      "unitId": "nz-curriculum@suggested-1/year-8/y8/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/number/exponent-laws",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/number/scientific-notation",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/number",
+      "title": "Scientific notation",
+      "summary": "Write very large and very small numbers in scientific notation and compute with them.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/number/rational-irrational-numbers",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/number",
+      "title": "Rational and irrational numbers",
+      "summary": "Classify numbers as rational or irrational and place them on a number line.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/number/unit-rates-and-conversions",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/polynomials-add-subtract",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Adding and subtracting polynomials",
+      "summary": "Add and subtract polynomial expressions by combining like terms.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/polynomials-multiply",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/simplify-like-terms",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/one-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/two-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/unknown-both-sides",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/like-terms-before-solving",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/equations-with-brackets",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/algebra/linear-inequalities",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 9
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/functions/linear-relations-graphs",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/functions/slope-rate-of-change",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/functions",
+      "title": "Slope and rate of change",
+      "summary": "Calculate and interpret the slope of a line as a rate of change.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/functions/equations-of-lines",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/functions/systems-linear-equations",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement/similar-figures-scale",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement/volume-surface-area",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement/coordinate-geometry",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/data-and-probability/scatter-plots-best-fit",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-9/y9/data-and-probability/compound-probability",
+      "unitId": "nz-curriculum@suggested-1/year-9/y9/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/number/zero-negative-exponents",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/number",
+      "title": "Zero and negative exponents",
+      "summary": "Evaluate and simplify powers with zero and negative exponents.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/number/simple-compound-interest",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/polynomials-multiply",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/factoring-polynomials",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/quadratic-equations-factoring",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/one-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/two-step-equations",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/unknown-both-sides",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/like-terms-before-solving",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/algebra/equations-with-brackets",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/functions/function-notation",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/functions/equations-of-lines",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/functions/systems-linear-equations",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/functions/quadratic-functions-graphs",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement/similar-figures-scale",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement/coordinate-geometry",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/data-and-probability/data-displays",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "nz-curriculum@suggested-1/year-10/y10/data-and-probability/compound-probability",
+      "unitId": "nz-curriculum@suggested-1/year-10/y10/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    }
+  ]
+}

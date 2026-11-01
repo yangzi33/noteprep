@@ -1,0 +1,978 @@
+{
+  "levels": [
+    {
+      "id": "in-cisce@suggested-1/class-7",
+      "label": "Class 7",
+      "kind": "Class",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8",
+      "label": "Class 8",
+      "kind": "Class",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9",
+      "label": "Class 9",
+      "kind": "Class",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10",
+      "label": "Class 10",
+      "kind": "Class",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11",
+      "label": "Class 11",
+      "kind": "Class",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12",
+      "label": "Class 12",
+      "kind": "Class",
+      "ordinal": 6
+    }
+  ],
+  "courses": [
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7",
+      "levelId": "in-cisce@suggested-1/class-7",
+      "code": "NP-ICSE-C7",
+      "title": "ICSE Class 7 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8",
+      "levelId": "in-cisce@suggested-1/class-8",
+      "code": "NP-ICSE-C8",
+      "title": "ICSE Class 8 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9",
+      "levelId": "in-cisce@suggested-1/class-9",
+      "code": "NP-ICSE-C9",
+      "title": "ICSE Class 9 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10",
+      "levelId": "in-cisce@suggested-1/class-10",
+      "code": "NP-ICSE-C10",
+      "title": "ICSE Class 10 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11",
+      "levelId": "in-cisce@suggested-1/class-11",
+      "code": "NP-ISC-C11",
+      "title": "ISC Mathematics Class 11",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12",
+      "levelId": "in-cisce@suggested-1/class-12",
+      "code": "NP-ISC-C12",
+      "title": "ISC Mathematics Class 12",
+      "ordinal": 1
+    }
+  ],
+  "units": [
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "courseId": "in-cisce@suggested-1/class-7/icse-c7",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "courseId": "in-cisce@suggested-1/class-7/icse-c7",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement",
+      "courseId": "in-cisce@suggested-1/class-7/icse-c7",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability",
+      "courseId": "in-cisce@suggested-1/class-7/icse-c7",
+      "title": "Data and probability",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "courseId": "in-cisce@suggested-1/class-8/icse-c8",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "courseId": "in-cisce@suggested-1/class-8/icse-c8",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/functions",
+      "courseId": "in-cisce@suggested-1/class-8/icse-c8",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement",
+      "courseId": "in-cisce@suggested-1/class-8/icse-c8",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/data-and-probability",
+      "courseId": "in-cisce@suggested-1/class-8/icse-c8",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/number",
+      "courseId": "in-cisce@suggested-1/class-9/icse-c9",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "courseId": "in-cisce@suggested-1/class-9/icse-c9",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/functions",
+      "courseId": "in-cisce@suggested-1/class-9/icse-c9",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement",
+      "courseId": "in-cisce@suggested-1/class-9/icse-c9",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/data-and-probability",
+      "courseId": "in-cisce@suggested-1/class-9/icse-c9",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/number",
+      "courseId": "in-cisce@suggested-1/class-10/icse-c10",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "courseId": "in-cisce@suggested-1/class-10/icse-c10",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/functions",
+      "courseId": "in-cisce@suggested-1/class-10/icse-c10",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement",
+      "courseId": "in-cisce@suggested-1/class-10/icse-c10",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/data-and-probability",
+      "courseId": "in-cisce@suggested-1/class-10/icse-c10",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "courseId": "in-cisce@suggested-1/class-11/isc-c11",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/trigonometry",
+      "courseId": "in-cisce@suggested-1/class-11/isc-c11",
+      "title": "Trigonometry",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers",
+      "courseId": "in-cisce@suggested-1/class-11/isc-c11",
+      "title": "Vectors, sequences and complex numbers",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/calculus-basics",
+      "courseId": "in-cisce@suggested-1/class-11/isc-c11",
+      "title": "Calculus basics",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics",
+      "courseId": "in-cisce@suggested-1/class-12/isc-c12",
+      "title": "Calculus basics",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/vectors-and-geometry",
+      "courseId": "in-cisce@suggested-1/class-12/isc-c12",
+      "title": "Vectors and geometry",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/data-and-probability",
+      "courseId": "in-cisce@suggested-1/class-12/isc-c12",
+      "title": "Data and probability",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/algebra",
+      "courseId": "in-cisce@suggested-1/class-12/isc-c12",
+      "title": "Algebra",
+      "ordinal": 4
+    }
+  ],
+  "topics": [
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/whole-number-operations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Operations with whole numbers",
+      "summary": "Add, subtract, multiply and divide whole numbers, including multi-digit and word problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/factors-multiples",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Factors, multiples and primes",
+      "summary": "Find factors, multiples, common factors, common multiples and prime factorizations.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/integer-operations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Operations with integers",
+      "summary": "Add, subtract, multiply and divide positive and negative whole numbers.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/fractions-add-subtract",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Adding and subtracting fractions",
+      "summary": "Add and subtract fractions and mixed numbers using common denominators.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/fractions-multiply-divide",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Multiplying and dividing fractions",
+      "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/decimal-operations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Operations with decimals",
+      "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/order-of-operations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Order of operations",
+      "summary": "Evaluate expressions with brackets, exponents and several operations in the correct order.",
+      "ordinal": 7
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/ratios-and-rates",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 8
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/number/percent-of-quantity",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 9
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/evaluate-expressions",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Evaluating algebraic expressions",
+      "summary": "Substitute values for variables and evaluate expressions.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/one-step-equations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/two-step-equations",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/unknown-both-sides",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/like-terms-before-solving",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/algebra/patterns-sequences",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement/angle-relationships",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement",
+      "title": "Angle relationships",
+      "summary": "Use angles on lines, in triangles and in polygons to find unknown angles.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement/perimeter-and-area",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement/circles-circumference-area",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/geometry-and-measurement",
+      "title": "Circles: circumference and area",
+      "summary": "Calculate the circumference and area of circles and parts of circles.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability/measures-of-centre",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability/data-displays",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability/simple-probability",
+      "unitId": "in-cisce@suggested-1/class-7/icse-c7/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number/rational-number-operations",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "title": "Operations with rational numbers",
+      "summary": "Compute with positive and negative fractions and decimals using the order of operations.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number/square-roots",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "title": "Square roots and perfect squares",
+      "summary": "Find and estimate square roots and recognize perfect squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number/proportions",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number/percent-change",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/number/exponent-laws",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/simplify-like-terms",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/one-step-equations",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/two-step-equations",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/unknown-both-sides",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/like-terms-before-solving",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/algebra/patterns-sequences",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/functions/linear-relations-graphs",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement/triangle-properties",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement",
+      "title": "Properties of triangles",
+      "summary": "Classify triangles and use their properties, including congruence.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement/volume-surface-area",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement/geometric-transformations",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/data-and-probability/scatter-plots-best-fit",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-8/icse-c8/data-and-probability/compound-probability",
+      "unitId": "in-cisce@suggested-1/class-8/icse-c8/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/number/exponent-laws",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/number/scientific-notation",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/number",
+      "title": "Scientific notation",
+      "summary": "Write very large and very small numbers in scientific notation and compute with them.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/number/rational-irrational-numbers",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/number",
+      "title": "Rational and irrational numbers",
+      "summary": "Classify numbers as rational or irrational and place them on a number line.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/number/unit-rates-and-conversions",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/polynomials-add-subtract",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Adding and subtracting polynomials",
+      "summary": "Add and subtract polynomial expressions by combining like terms.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/polynomials-multiply",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/simplify-like-terms",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/one-step-equations",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/two-step-equations",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/unknown-both-sides",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/like-terms-before-solving",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/equations-with-brackets",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/algebra/linear-inequalities",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 9
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/functions/linear-relations-graphs",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/functions/slope-rate-of-change",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/functions",
+      "title": "Slope and rate of change",
+      "summary": "Calculate and interpret the slope of a line as a rate of change.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/functions/equations-of-lines",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/functions/systems-linear-equations",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement/similar-figures-scale",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement/volume-surface-area",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement/coordinate-geometry",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/data-and-probability/scatter-plots-best-fit",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-9/icse-c9/data-and-probability/compound-probability",
+      "unitId": "in-cisce@suggested-1/class-9/icse-c9/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/number/zero-negative-exponents",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/number",
+      "title": "Zero and negative exponents",
+      "summary": "Evaluate and simplify powers with zero and negative exponents.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/number/simple-compound-interest",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/polynomials-multiply",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/factoring-polynomials",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/quadratic-equations-factoring",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/one-step-equations",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/two-step-equations",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/unknown-both-sides",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/like-terms-before-solving",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/algebra/equations-with-brackets",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/functions/function-notation",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/functions/equations-of-lines",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/functions/systems-linear-equations",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/functions/quadratic-functions-graphs",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement/similar-figures-scale",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement/coordinate-geometry",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/data-and-probability/data-displays",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-10/icse-c10/data-and-probability/compound-probability",
+      "unitId": "in-cisce@suggested-1/class-10/icse-c10/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/function-notation",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/function-transformations",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/polynomial-functions",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/rational-expressions",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/exponential-functions",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 5
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/functions/logarithms",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 6
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/trigonometry/trigonometric-functions",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/trigonometry/trigonometric-identities",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/trigonometry/sine-cosine-laws",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/trigonometry",
+      "title": "Sine law and cosine law",
+      "summary": "Solve non-right triangles using the sine law and the cosine law.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers/vectors",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers/sequences-series",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers/complex-numbers",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/vectors-sequences-and-complex-numbers",
+      "title": "Complex numbers",
+      "summary": "Add, subtract, multiply and divide numbers of the form a + bi.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-11/isc-c11/calculus-basics/limits",
+      "unitId": "in-cisce@suggested-1/class-11/isc-c11/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics/limits",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics/derivative-rules",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics/derivative-applications",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics/integrals",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/vectors-and-geometry/vectors",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/vectors-and-geometry",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/vectors-and-geometry/coordinate-geometry",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/vectors-and-geometry",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/data-and-probability/compound-probability",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/data-and-probability/counting-permutations-combinations",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 2
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/algebra/complex-numbers",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/algebra",
+      "title": "Complex numbers",
+      "summary": "Add, subtract, multiply and divide numbers of the form a + bi.",
+      "ordinal": 1
+    },
+    {
+      "id": "in-cisce@suggested-1/class-12/isc-c12/algebra/rational-expressions",
+      "unitId": "in-cisce@suggested-1/class-12/isc-c12/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 2
+    }
+  ]
+}

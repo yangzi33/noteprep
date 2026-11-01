@@ -1,0 +1,30 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "hk-dse@suggested-1/dse-compulsory/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "hk-dse@suggested-1/dse-compulsory/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "hk-dse@suggested-1/dse-compulsory/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "hk-dse@suggested-1/dse-compulsory/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    }
+  ],
+  "prerequisites": []
+}

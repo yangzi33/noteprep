@@ -1,0 +1,102 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-2/myp-y2/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-2/myp-y2/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-2/myp-y2/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-2/myp-y2/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-3/myp-y3/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-3/myp-y3/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-3/myp-y3/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-3/myp-y3/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-4/myp-y4/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-4/myp-y4/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-4/myp-y4/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-4/myp-y4/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-5/myp-y5/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-5/myp-y5/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-5/myp-y5/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "ib-myp@suggested-1/myp-year-5/myp-y5/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    }
+  ],
+  "prerequisites": []
+}

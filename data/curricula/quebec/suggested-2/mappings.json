@@ -1,0 +1,150 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "quebec@suggested-2/secondary-1/qc-sec1/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-1/qc-sec1/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-1/qc-sec1/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-1/qc-sec1/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-2/qc-sec2/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-2/qc-sec2/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-2/qc-sec2/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-2/qc-sec2/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-3/qc-sec3/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-3/qc-sec3/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-3/qc-sec3/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-3/qc-sec3/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-cst/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-cst/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-cst/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-cst/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-ts/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-ts/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-ts/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-ts/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-sn/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-sn/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-sn/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "quebec@suggested-2/secondary-4/qc-sec4-sn/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    }
+  ],
+  "prerequisites": []
+}

@@ -1,0 +1,54 @@
+{
+  "topicObjectives": [],
+  "topicConcepts": [
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-a/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-a/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-a/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-a/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-b/algebra/one-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-b/algebra/two-step-equations",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-b/algebra/unknown-both-sides",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    },
+    {
+      "topicId": "edexcel-international@suggested-1/intl-gcse-b/algebra/like-terms-before-solving",
+      "conceptId": "linear-equations-one-variable",
+      "coverage": "partial",
+      "note": "Questions come from the general linear-equations generator and do not yet differ by topic."
+    }
+  ],
+  "prerequisites": []
+}

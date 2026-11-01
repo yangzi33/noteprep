@@ -1,0 +1,359 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory",
+      "code": "NP-DSE-COMPULSORY",
+      "title": "Mathematics Compulsory Part",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1",
+      "code": "NP-DSE-M1",
+      "title": "Mathematics Extended Module M1",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2",
+      "code": "NP-DSE-M2",
+      "title": "Mathematics Extended Module M2",
+      "ordinal": 3
+    }
+  ],
+  "units": [
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/number",
+      "courseId": "hk-dse@suggested-1/dse-compulsory",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "courseId": "hk-dse@suggested-1/dse-compulsory",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/functions",
+      "courseId": "hk-dse@suggested-1/dse-compulsory",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement",
+      "courseId": "hk-dse@suggested-1/dse-compulsory",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/data-and-probability",
+      "courseId": "hk-dse@suggested-1/dse-compulsory",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/calculus-basics",
+      "courseId": "hk-dse@suggested-1/dse-m1",
+      "title": "Calculus basics",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "courseId": "hk-dse@suggested-1/dse-m1",
+      "title": "Data and probability",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/algebra",
+      "courseId": "hk-dse@suggested-1/dse-m2",
+      "title": "Algebra",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/trigonometry",
+      "courseId": "hk-dse@suggested-1/dse-m2",
+      "title": "Trigonometry",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/calculus-basics",
+      "courseId": "hk-dse@suggested-1/dse-m2",
+      "title": "Calculus basics",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/vectors-and-geometry",
+      "courseId": "hk-dse@suggested-1/dse-m2",
+      "title": "Vectors and geometry",
+      "ordinal": 4
+    }
+  ],
+  "topics": [
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/number/zero-negative-exponents",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/number",
+      "title": "Zero and negative exponents",
+      "summary": "Evaluate and simplify powers with zero and negative exponents.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/number/simple-compound-interest",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/polynomials-multiply",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/factoring-polynomials",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/quadratic-equations-factoring",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/one-step-equations",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/two-step-equations",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/unknown-both-sides",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/like-terms-before-solving",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/algebra/equations-with-brackets",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/functions/function-notation",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/functions/equations-of-lines",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/functions/systems-linear-equations",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/functions/quadratic-functions-graphs",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement/similar-figures-scale",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement/coordinate-geometry",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/data-and-probability/data-displays",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-compulsory/data-and-probability/compound-probability",
+      "unitId": "hk-dse@suggested-1/dse-compulsory/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/calculus-basics/limits",
+      "unitId": "hk-dse@suggested-1/dse-m1/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/calculus-basics/derivative-rules",
+      "unitId": "hk-dse@suggested-1/dse-m1/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/calculus-basics/derivative-applications",
+      "unitId": "hk-dse@suggested-1/dse-m1/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/calculus-basics/integrals",
+      "unitId": "hk-dse@suggested-1/dse-m1/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability/counting-permutations-combinations",
+      "unitId": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability/standard-deviation",
+      "unitId": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "title": "Spread and standard deviation",
+      "summary": "Measure and compare the spread of data using quartiles and standard deviation.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability/normal-distribution",
+      "unitId": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability/compound-probability",
+      "unitId": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m1/data-and-probability/sampling-inference",
+      "unitId": "hk-dse@suggested-1/dse-m1/data-and-probability",
+      "title": "Sampling and inference",
+      "summary": "Describe sampling methods and draw cautious conclusions from sample data.",
+      "ordinal": 5
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/algebra/sequences-series",
+      "unitId": "hk-dse@suggested-1/dse-m2/algebra",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/algebra/rational-expressions",
+      "unitId": "hk-dse@suggested-1/dse-m2/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/algebra/logarithms",
+      "unitId": "hk-dse@suggested-1/dse-m2/algebra",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/algebra/exponential-functions",
+      "unitId": "hk-dse@suggested-1/dse-m2/algebra",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 4
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/trigonometry/trigonometric-functions",
+      "unitId": "hk-dse@suggested-1/dse-m2/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/trigonometry/trigonometric-identities",
+      "unitId": "hk-dse@suggested-1/dse-m2/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/calculus-basics/derivative-rules",
+      "unitId": "hk-dse@suggested-1/dse-m2/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 1
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/calculus-basics/derivative-applications",
+      "unitId": "hk-dse@suggested-1/dse-m2/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 2
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/calculus-basics/integrals",
+      "unitId": "hk-dse@suggested-1/dse-m2/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 3
+    },
+    {
+      "id": "hk-dse@suggested-1/dse-m2/vectors-and-geometry/vectors",
+      "unitId": "hk-dse@suggested-1/dse-m2/vectors-and-geometry",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 1
+    }
+  ]
+}
