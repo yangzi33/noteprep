@@ -19,6 +19,8 @@ Run `pnpm curricula:build` after every edit and commit the generated files toget
 - Never write "aligned", "aligns with" or "official". The word "suggested" is added for you.
 - Grade placement is an unofficial NotePrep estimate; the generated dataset says so.
 
+Scope: the catalog is math only and secondary school only. Primary-school courses (below Grade 7 or the equivalent) and other subjects are out of scope and must not be added.
+
 ## 1. Topics: `topics.json`
 
 An object from a topic key to its details. The key is lowercase words joined by `-` and is part of the stored ids, so choose it once and do not rename it later.
@@ -136,3 +138,11 @@ After the generated files are merged to `main`, run the **Load curriculum datase
 3. Open `/prepare`: the Country dropdown appears once more than one country is loaded.
 
 The workflow needs the `staging` or `production` environment approval, like the database migrations. The database migrations must be applied first (the `suggested` dataset kind needs migration `20261021120000_dataset_kind_suggested`).
+
+## 6. Candidate curricula (not live)
+
+`data/curricula-src/curricula-candidates.json` holds curricula for markets that are not launched yet. It has the same schema as `curricula.json` (its own `templates` and `curricula`, the same topic keys) but the build never reads it for dataset generation, so nothing in it is generated, loaded or shown to users. It stays in this file until the market has been checked.
+
+- `pnpm curricula:build --candidates` validates the file with the same code as the normal build and writes nothing. The entries are PLACEHOLDERS: each is one generic Grade 7-12 template per country (Grade 7-10 for one), the named courses of the owner's P1/P2 list are NOT modelled, and nothing in the file is verified against any source. A candidate must get a real, checked course list before it is promoted into `curricula.json`. A unit test (`tests/unit/curricula-catalog.test.ts`) does the same and also checks that no candidate id equals a live id.
+- To promote a candidate: move its entry (and any template it uses) into `curricula.json`, review the course titles and unit lists, run `pnpm curricula:build`, and commit the generated `suggested-1` directory. A new curriculum starts at version 1; nothing is bumped.
+- A loaded curriculum cannot change its country or display name in a later version (the loader refuses a different education system or name for an existing curriculum id), so choose these before the first load.

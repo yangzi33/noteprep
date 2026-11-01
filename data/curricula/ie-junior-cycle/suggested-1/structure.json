@@ -1,0 +1,206 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math",
+      "code": "NP-JC-MATH",
+      "title": "Junior Cycle Mathematics",
+      "ordinal": 1
+    }
+  ],
+  "units": [
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/number",
+      "courseId": "ie-junior-cycle@suggested-1/jc-math",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "courseId": "ie-junior-cycle@suggested-1/jc-math",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/functions",
+      "courseId": "ie-junior-cycle@suggested-1/jc-math",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement",
+      "courseId": "ie-junior-cycle@suggested-1/jc-math",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/data-and-probability",
+      "courseId": "ie-junior-cycle@suggested-1/jc-math",
+      "title": "Data and probability",
+      "ordinal": 5
+    }
+  ],
+  "topics": [
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/number/exponent-laws",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/number/scientific-notation",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/number",
+      "title": "Scientific notation",
+      "summary": "Write very large and very small numbers in scientific notation and compute with them.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/number/rational-irrational-numbers",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/number",
+      "title": "Rational and irrational numbers",
+      "summary": "Classify numbers as rational or irrational and place them on a number line.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/number/unit-rates-and-conversions",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/polynomials-add-subtract",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Adding and subtracting polynomials",
+      "summary": "Add and subtract polynomial expressions by combining like terms.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/polynomials-multiply",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/simplify-like-terms",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/one-step-equations",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/two-step-equations",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/unknown-both-sides",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/like-terms-before-solving",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/equations-with-brackets",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/algebra/linear-inequalities",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 9
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/functions/linear-relations-graphs",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/functions/slope-rate-of-change",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/functions",
+      "title": "Slope and rate of change",
+      "summary": "Calculate and interpret the slope of a line as a rate of change.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/functions/equations-of-lines",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/functions/systems-linear-equations",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement/similar-figures-scale",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement/volume-surface-area",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement/coordinate-geometry",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/data-and-probability/scatter-plots-best-fit",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-junior-cycle@suggested-1/jc-math/data-and-probability/compound-probability",
+      "unitId": "ie-junior-cycle@suggested-1/jc-math/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    }
+  ]
+}

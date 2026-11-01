@@ -1,0 +1,373 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "code": "NP-LC-ORDINARY",
+      "title": "Mathematics Ordinary Level",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher",
+      "code": "NP-LC-HIGHER",
+      "title": "Mathematics Higher Level",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied",
+      "code": "NP-LC-APPLIED",
+      "title": "Applied Mathematics",
+      "ordinal": 3
+    }
+  ],
+  "units": [
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/number",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/functions",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/data-and-probability",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-ordinary",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-higher",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/trigonometry",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-higher",
+      "title": "Trigonometry",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-higher",
+      "title": "Calculus basics",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-higher",
+      "title": "Data and probability",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-applied",
+      "title": "Calculus basics",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/vectors-and-geometry",
+      "courseId": "ie-leaving-certificate@suggested-1/lc-applied",
+      "title": "Vectors and geometry",
+      "ordinal": 2
+    }
+  ],
+  "topics": [
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/number/zero-negative-exponents",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/number",
+      "title": "Zero and negative exponents",
+      "summary": "Evaluate and simplify powers with zero and negative exponents.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/number/simple-compound-interest",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/polynomials-multiply",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/factoring-polynomials",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/quadratic-equations-factoring",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/one-step-equations",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/two-step-equations",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/unknown-both-sides",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/like-terms-before-solving",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra/equations-with-brackets",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/functions/function-notation",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/functions/equations-of-lines",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/functions/systems-linear-equations",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/functions/quadratic-functions-graphs",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement/similar-figures-scale",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement/coordinate-geometry",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/data-and-probability/data-displays",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-ordinary/data-and-probability/compound-probability",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-ordinary/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/function-notation",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/function-transformations",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/polynomial-functions",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/quadratic-functions-graphs",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/exponential-functions",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 5
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/functions/logarithms",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 6
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/trigonometry/trigonometric-functions",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/trigonometry/trigonometric-identities",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics/limits",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics/derivative-rules",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics/derivative-applications",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics/integrals",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability/compound-probability",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability/normal-distribution",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability/counting-permutations-combinations",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-higher/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics/limits",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics/derivative-rules",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics/derivative-applications",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics/integrals",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/vectors-and-geometry/vectors",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/vectors-and-geometry",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "ie-leaving-certificate@suggested-1/lc-applied/vectors-and-geometry/coordinate-geometry",
+      "unitId": "ie-leaving-certificate@suggested-1/lc-applied/vectors-and-geometry",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 2
+    }
+  ]
+}

@@ -1,0 +1,1174 @@
+{
+  "levels": [
+    {
+      "id": "za-caps@suggested-1/grade-8",
+      "label": "Grade 8",
+      "kind": "Grade",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9",
+      "label": "Grade 9",
+      "kind": "Grade",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10",
+      "label": "Grade 10",
+      "kind": "Grade",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11",
+      "label": "Grade 11",
+      "kind": "Grade",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12",
+      "label": "Grade 12",
+      "kind": "Grade",
+      "ordinal": 5
+    }
+  ],
+  "courses": [
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8",
+      "levelId": "za-caps@suggested-1/grade-8",
+      "code": "NP-ZA-G8",
+      "title": "Grade 8 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9",
+      "levelId": "za-caps@suggested-1/grade-9",
+      "code": "NP-ZA-G9",
+      "title": "Grade 9 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10",
+      "levelId": "za-caps@suggested-1/grade-10",
+      "code": "NP-ZA-G10",
+      "title": "Grade 10 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11",
+      "levelId": "za-caps@suggested-1/grade-11",
+      "code": "NP-ZA-G11",
+      "title": "Grade 11 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12",
+      "levelId": "za-caps@suggested-1/grade-12",
+      "code": "NP-ZA-G12",
+      "title": "Grade 12 Mathematics",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy",
+      "levelId": "za-caps@suggested-1/grade-10",
+      "code": "NP-ZA-G10-LITERACY",
+      "title": "Grade 10 Mathematical Literacy",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy",
+      "levelId": "za-caps@suggested-1/grade-11",
+      "code": "NP-ZA-G11-LITERACY",
+      "title": "Grade 11 Mathematical Literacy",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy",
+      "levelId": "za-caps@suggested-1/grade-12",
+      "code": "NP-ZA-G12-LITERACY",
+      "title": "Grade 12 Mathematical Literacy",
+      "ordinal": 2
+    }
+  ],
+  "units": [
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number",
+      "courseId": "za-caps@suggested-1/grade-8/za-g8",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "courseId": "za-caps@suggested-1/grade-8/za-g8",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/functions",
+      "courseId": "za-caps@suggested-1/grade-8/za-g8",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-8/za-g8",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-8/za-g8",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/number",
+      "courseId": "za-caps@suggested-1/grade-9/za-g9",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "courseId": "za-caps@suggested-1/grade-9/za-g9",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/functions",
+      "courseId": "za-caps@suggested-1/grade-9/za-g9",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-9/za-g9",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-9/za-g9",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/number",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/functions",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/number",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/algebra",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/number",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/algebra",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/calculus-basics",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12",
+      "title": "Calculus basics",
+      "ordinal": 6
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10-literacy",
+      "title": "Number and finance",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10-literacy",
+      "title": "Data and probability",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-10/za-g10-literacy",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11-literacy",
+      "title": "Number and finance",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11-literacy",
+      "title": "Data and probability",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-11/za-g11-literacy",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12-literacy",
+      "title": "Number and finance",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12-literacy",
+      "title": "Data and probability",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement",
+      "courseId": "za-caps@suggested-1/grade-12/za-g12-literacy",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    }
+  ],
+  "topics": [
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number/rational-number-operations",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/number",
+      "title": "Operations with rational numbers",
+      "summary": "Compute with positive and negative fractions and decimals using the order of operations.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number/square-roots",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/number",
+      "title": "Square roots and perfect squares",
+      "summary": "Find and estimate square roots and recognize perfect squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number/proportions",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number/percent-change",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/number/exponent-laws",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/simplify-like-terms",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/one-step-equations",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/two-step-equations",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/unknown-both-sides",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/like-terms-before-solving",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/algebra/patterns-sequences",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 6
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/functions/linear-relations-graphs",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement/triangle-properties",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement",
+      "title": "Properties of triangles",
+      "summary": "Classify triangles and use their properties, including congruence.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement/volume-surface-area",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement/geometric-transformations",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/data-and-probability/scatter-plots-best-fit",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-8/za-g8/data-and-probability/compound-probability",
+      "unitId": "za-caps@suggested-1/grade-8/za-g8/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/number/exponent-laws",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/number/scientific-notation",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/number",
+      "title": "Scientific notation",
+      "summary": "Write very large and very small numbers in scientific notation and compute with them.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/number/rational-irrational-numbers",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/number",
+      "title": "Rational and irrational numbers",
+      "summary": "Classify numbers as rational or irrational and place them on a number line.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/number/unit-rates-and-conversions",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/polynomials-add-subtract",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Adding and subtracting polynomials",
+      "summary": "Add and subtract polynomial expressions by combining like terms.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/polynomials-multiply",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/simplify-like-terms",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/one-step-equations",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/two-step-equations",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/unknown-both-sides",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/like-terms-before-solving",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/equations-with-brackets",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/algebra/linear-inequalities",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 9
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/functions/linear-relations-graphs",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/functions/slope-rate-of-change",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/functions",
+      "title": "Slope and rate of change",
+      "summary": "Calculate and interpret the slope of a line as a rate of change.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/functions/equations-of-lines",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/functions/systems-linear-equations",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement/similar-figures-scale",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement/volume-surface-area",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement/coordinate-geometry",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/data-and-probability/scatter-plots-best-fit",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-9/za-g9/data-and-probability/compound-probability",
+      "unitId": "za-caps@suggested-1/grade-9/za-g9/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/number/zero-negative-exponents",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/number",
+      "title": "Zero and negative exponents",
+      "summary": "Evaluate and simplify powers with zero and negative exponents.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/number/simple-compound-interest",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/polynomials-multiply",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/factoring-polynomials",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/quadratic-equations-factoring",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/one-step-equations",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/two-step-equations",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/unknown-both-sides",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/like-terms-before-solving",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/algebra/equations-with-brackets",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/functions/function-notation",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/functions/equations-of-lines",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/functions/systems-linear-equations",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/functions/quadratic-functions-graphs",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement/similar-figures-scale",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement/coordinate-geometry",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/data-and-probability/data-displays",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10/data-and-probability/compound-probability",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/number/radical-expressions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/number",
+      "title": "Simplifying radicals",
+      "summary": "Simplify, add and multiply radical expressions.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/number/simple-compound-interest",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/algebra/quadratic-formula",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/algebra",
+      "title": "The quadratic formula",
+      "summary": "Solve quadratic equations with the quadratic formula and interpret the discriminant.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/algebra/completing-the-square",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/algebra",
+      "title": "Completing the square",
+      "summary": "Rewrite a quadratic in vertex form by completing the square.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/algebra/rational-expressions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions/function-transformations",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions/quadratic-functions-graphs",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions/exponential-functions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions/sequences-series",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/functions/polynomial-functions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/geometry-and-measurement/sine-cosine-laws",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/geometry-and-measurement",
+      "title": "Sine law and cosine law",
+      "summary": "Solve non-right triangles using the sine law and the cosine law.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/geometry-and-measurement/trigonometric-functions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/geometry-and-measurement",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/data-and-probability/counting-permutations-combinations",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/data-and-probability/standard-deviation",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/data-and-probability",
+      "title": "Spread and standard deviation",
+      "summary": "Measure and compare the spread of data using quartiles and standard deviation.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11/data-and-probability/normal-distribution",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/number/complex-numbers",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/number",
+      "title": "Complex numbers",
+      "summary": "Add, subtract, multiply and divide numbers of the form a + bi.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/algebra/rational-expressions",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions/exponential-functions",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions/logarithms",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions/polynomial-functions",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions/function-transformations",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/functions/sequences-series",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/functions",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 5
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement/trigonometric-functions",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement/trigonometric-identities",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement/vectors",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/geometry-and-measurement",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/data-and-probability/counting-permutations-combinations",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/data-and-probability/normal-distribution",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/data-and-probability/sampling-inference",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/data-and-probability",
+      "title": "Sampling and inference",
+      "summary": "Describe sampling methods and draw cautious conclusions from sample data.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/calculus-basics/limits",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/calculus-basics/derivative-rules",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12/calculus-basics/derivative-applications",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance/percent-change",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance/simple-compound-interest",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance/unit-rates-and-conversions",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance/ratios-and-rates",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/number-and-finance",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability/data-displays",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability/measures-of-centre",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability/scatter-plots-best-fit",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability/simple-probability",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement/perimeter-and-area",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement/volume-surface-area",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement/similar-figures-scale",
+      "unitId": "za-caps@suggested-1/grade-10/za-g10-literacy/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance/percent-change",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance/simple-compound-interest",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance/unit-rates-and-conversions",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance/ratios-and-rates",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/number-and-finance",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability/data-displays",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability/measures-of-centre",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability/scatter-plots-best-fit",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability/simple-probability",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement/perimeter-and-area",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement/volume-surface-area",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement/similar-figures-scale",
+      "unitId": "za-caps@suggested-1/grade-11/za-g11-literacy/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance/percent-change",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance/simple-compound-interest",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance/unit-rates-and-conversions",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance/ratios-and-rates",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/number-and-finance",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability/data-displays",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability/measures-of-centre",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability/scatter-plots-best-fit",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability/simple-probability",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement/perimeter-and-area",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 1
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement/volume-surface-area",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement/similar-figures-scale",
+      "unitId": "za-caps@suggested-1/grade-12/za-g12-literacy/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 3
+    }
+  ]
+}

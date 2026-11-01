@@ -1,0 +1,738 @@
+{
+  "templates": {
+    "grades-7-12": {
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "G7-MATH",
+          "title": "Grade 7 Mathematics",
+          "level": "Grade 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "G8-MATH",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G9-MATH",
+          "title": "Grade 9 Mathematics",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G10-MATH",
+          "title": "Grade 10 Mathematics",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G11-MATH",
+          "title": "Grade 11 Mathematics",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "G12-MATH",
+          "title": "Grade 12 Mathematics",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Number", "topics": ["complex-numbers"] },
+            { "title": "Algebra", "topics": ["rational-expressions"] },
+            { "title": "Functions", "topics": ["exponential-functions", "logarithms", "polynomial-functions", "function-transformations", "sequences-series"] },
+            { "title": "Geometry and measurement", "topics": ["trigonometric-functions", "trigonometric-identities", "vectors"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "normal-distribution", "sampling-inference"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        }
+      ]
+    },
+    "grades-7-10": {
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "G7-MATH",
+          "title": "Grade 7 Mathematics",
+          "level": "Grade 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "G8-MATH",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G9-MATH",
+          "title": "Grade 9 Mathematics",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G10-MATH",
+          "title": "Grade 10 Mathematics",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        }
+      ]
+    }
+  },
+  "curricula": [
+    {
+      "id": "china-national-curriculum",
+      "name": "China National Curriculum",
+      "country": {
+        "regionCode": "CN",
+        "name": "China"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "taiwan-12-year-basic-education",
+      "name": "Taiwan 12-Year Basic Education",
+      "country": {
+        "regionCode": "TW",
+        "name": "Taiwan"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "japan-course-of-study",
+      "name": "Japan Course of Study",
+      "country": {
+        "regionCode": "JP",
+        "name": "Japan"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "south-korea-national-curriculum",
+      "name": "South Korea National Curriculum",
+      "country": {
+        "regionCode": "KR",
+        "name": "South Korea"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "malaysia-kssm",
+      "name": "Malaysia KSSM",
+      "country": {
+        "regionCode": "MY",
+        "name": "Malaysia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "indonesia-kurikulum-merdeka",
+      "name": "Indonesia Kurikulum Merdeka",
+      "country": {
+        "regionCode": "ID",
+        "name": "Indonesia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "thailand-core-curriculum",
+      "name": "Thailand Basic Education Core Curriculum",
+      "country": {
+        "regionCode": "TH",
+        "name": "Thailand"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "vietnam-general-education",
+      "name": "Vietnam General Education Curriculum",
+      "country": {
+        "regionCode": "VN",
+        "name": "Vietnam"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "pakistan-fbise",
+      "name": "Pakistan FBISE",
+      "country": {
+        "regionCode": "PK",
+        "name": "Pakistan"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "bangladesh-nctb",
+      "name": "Bangladesh NCTB",
+      "country": {
+        "regionCode": "BD",
+        "name": "Bangladesh"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "sri-lanka-gce",
+      "name": "Sri Lanka GCE",
+      "country": {
+        "regionCode": "LK",
+        "name": "Sri Lanka"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "nepal-cdc",
+      "name": "Nepal CDC",
+      "country": {
+        "regionCode": "NP",
+        "name": "Nepal"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "uae-moe",
+      "name": "UAE Ministry of Education",
+      "country": {
+        "regionCode": "AE",
+        "name": "United Arab Emirates"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "saudi-arabia-national",
+      "name": "Saudi Arabia National Curriculum",
+      "country": {
+        "regionCode": "SA",
+        "name": "Saudi Arabia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "qatar-national-curriculum",
+      "name": "Qatar National Curriculum",
+      "country": {
+        "regionCode": "QA",
+        "name": "Qatar"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "turkey-maarif",
+      "name": "Turkey Maarif Model",
+      "country": {
+        "regionCode": "TR",
+        "name": "Turkey"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "france-national-curriculum",
+      "name": "France National Curriculum",
+      "country": {
+        "regionCode": "FR",
+        "name": "France"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "germany-lander",
+      "name": "Germany State Curricula",
+      "country": {
+        "regionCode": "DE",
+        "name": "Germany"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "spain-lomloe",
+      "name": "Spain LOMLOE",
+      "country": {
+        "regionCode": "ES",
+        "name": "Spain"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "italy-national",
+      "name": "Italy National Curriculum",
+      "country": {
+        "regionCode": "IT",
+        "name": "Italy"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "netherlands-national",
+      "name": "Netherlands National Curriculum",
+      "country": {
+        "regionCode": "NL",
+        "name": "Netherlands"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "switzerland-lehrplan-21",
+      "name": "Switzerland Lehrplan 21 and Matura",
+      "country": {
+        "regionCode": "CH",
+        "name": "Switzerland"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "portugal-national",
+      "name": "Portugal National Curriculum",
+      "country": {
+        "regionCode": "PT",
+        "name": "Portugal"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "norway-lk20",
+      "name": "Norway LK20",
+      "country": {
+        "regionCode": "NO",
+        "name": "Norway"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "sweden-national",
+      "name": "Sweden National Curriculum",
+      "country": {
+        "regionCode": "SE",
+        "name": "Sweden"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "finland-national",
+      "name": "Finland National Curriculum",
+      "country": {
+        "regionCode": "FI",
+        "name": "Finland"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "denmark-national",
+      "name": "Denmark National Curriculum",
+      "country": {
+        "regionCode": "DK",
+        "name": "Denmark"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "poland-national",
+      "name": "Poland National Curriculum",
+      "country": {
+        "regionCode": "PL",
+        "name": "Poland"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "czech-republic-rvp",
+      "name": "Czech Republic RVP",
+      "country": {
+        "regionCode": "CZ",
+        "name": "Czech Republic"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "austria-national",
+      "name": "Austria National Curriculum",
+      "country": {
+        "regionCode": "AT",
+        "name": "Austria"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "greece-national",
+      "name": "Greece National Curriculum",
+      "country": {
+        "regionCode": "GR",
+        "name": "Greece"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "malta-national",
+      "name": "Malta National Curriculum",
+      "country": {
+        "regionCode": "MT",
+        "name": "Malta"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "brazil-bncc",
+      "name": "Brazil BNCC",
+      "country": {
+        "regionCode": "BR",
+        "name": "Brazil"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "mexico-national",
+      "name": "Mexico National Curriculum",
+      "country": {
+        "regionCode": "MX",
+        "name": "Mexico"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "chile-national",
+      "name": "Chile National Curriculum",
+      "country": {
+        "regionCode": "CL",
+        "name": "Chile"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "argentina-nap",
+      "name": "Argentina NAP",
+      "country": {
+        "regionCode": "AR",
+        "name": "Argentina"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "colombia-national",
+      "name": "Colombia National Curriculum",
+      "country": {
+        "regionCode": "CO",
+        "name": "Colombia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "peru-national",
+      "name": "Peru National Curriculum",
+      "country": {
+        "regionCode": "PE",
+        "name": "Peru"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "kenya-cbc",
+      "name": "Kenya CBC",
+      "country": {
+        "regionCode": "KE",
+        "name": "Kenya"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "nigeria-nerdc",
+      "name": "Nigeria NERDC",
+      "country": {
+        "regionCode": "NG",
+        "name": "Nigeria"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "ghana-nacca",
+      "name": "Ghana NaCCA",
+      "country": {
+        "regionCode": "GH",
+        "name": "Ghana"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "egypt-national",
+      "name": "Egypt National Curriculum",
+      "country": {
+        "regionCode": "EG",
+        "name": "Egypt"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "belgium-national",
+      "name": "Belgium National Curricula",
+      "country": {
+        "regionCode": "BE",
+        "name": "Belgium"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "romania-national",
+      "name": "Romania National Curriculum",
+      "country": {
+        "regionCode": "RO",
+        "name": "Romania"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "hungary-nat",
+      "name": "Hungary NAT",
+      "country": {
+        "regionCode": "HU",
+        "name": "Hungary"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "ukraine-new-school",
+      "name": "Ukraine New Ukrainian School",
+      "country": {
+        "regionCode": "UA",
+        "name": "Ukraine"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "slovakia-national",
+      "name": "Slovakia National Curriculum",
+      "country": {
+        "regionCode": "SK",
+        "name": "Slovakia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "croatia-national",
+      "name": "Croatia National Curriculum",
+      "country": {
+        "regionCode": "HR",
+        "name": "Croatia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "slovenia-national",
+      "name": "Slovenia National Curriculum",
+      "country": {
+        "regionCode": "SI",
+        "name": "Slovenia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "israel-bagrut",
+      "name": "Israel Bagrut",
+      "country": {
+        "regionCode": "IL",
+        "name": "Israel"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "kuwait-national",
+      "name": "Kuwait National Curriculum",
+      "country": {
+        "regionCode": "KW",
+        "name": "Kuwait"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "bahrain-national",
+      "name": "Bahrain National Curriculum",
+      "country": {
+        "regionCode": "BH",
+        "name": "Bahrain"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "oman-national",
+      "name": "Oman National Curriculum",
+      "country": {
+        "regionCode": "OM",
+        "name": "Oman"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "jordan-national",
+      "name": "Jordan National Curriculum",
+      "country": {
+        "regionCode": "JO",
+        "name": "Jordan"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "uganda-national",
+      "name": "Uganda National Curriculum",
+      "country": {
+        "regionCode": "UG",
+        "name": "Uganda"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "rwanda-national",
+      "name": "Rwanda National Curriculum",
+      "country": {
+        "regionCode": "RW",
+        "name": "Rwanda"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "tanzania-national",
+      "name": "Tanzania National Curriculum",
+      "country": {
+        "regionCode": "TZ",
+        "name": "Tanzania"
+      },
+      "template": "grades-7-10"
+    },
+    {
+      "id": "morocco-national",
+      "name": "Morocco National Curriculum",
+      "country": {
+        "regionCode": "MA",
+        "name": "Morocco"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "tunisia-national",
+      "name": "Tunisia National Curriculum",
+      "country": {
+        "regionCode": "TN",
+        "name": "Tunisia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "ecuador-bgu",
+      "name": "Ecuador BGU",
+      "country": {
+        "regionCode": "EC",
+        "name": "Ecuador"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "costa-rica-national",
+      "name": "Costa Rica National Curriculum",
+      "country": {
+        "regionCode": "CR",
+        "name": "Costa Rica"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "uruguay-national",
+      "name": "Uruguay National Curriculum",
+      "country": {
+        "regionCode": "UY",
+        "name": "Uruguay"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "paraguay-national",
+      "name": "Paraguay National Curriculum",
+      "country": {
+        "regionCode": "PY",
+        "name": "Paraguay"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "bolivia-national",
+      "name": "Bolivia National Curriculum",
+      "country": {
+        "regionCode": "BO",
+        "name": "Bolivia"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "dominican-republic-national",
+      "name": "Dominican Republic National Curriculum",
+      "country": {
+        "regionCode": "DO",
+        "name": "Dominican Republic"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "jamaica-national",
+      "name": "Jamaica National Curriculum",
+      "country": {
+        "regionCode": "JM",
+        "name": "Jamaica"
+      },
+      "template": "grades-7-12"
+    },
+    {
+      "id": "trinidad-and-tobago-national",
+      "name": "Trinidad and Tobago National Curriculum",
+      "country": {
+        "regionCode": "TT",
+        "name": "Trinidad and Tobago"
+      },
+      "template": "grades-7-12"
+    }
+  ]
+}

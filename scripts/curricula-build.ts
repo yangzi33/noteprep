@@ -2,10 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { buildSuggestedDatasets, ConfigError } from "../src/lib/curriculum/suggested-build";
 
-// Usage: pnpm curricula:build [--check]
+// Usage: pnpm curricula:build [--check | --candidates]
 // Reads data/curricula-src/{topics,curricula}.json and writes one dataset directory per curriculum to
 // data/curricula/<curriculum-id>/suggested-<version>/. With --check nothing is written: it exits non-zero when
 // a generated file differs from the committed one (CI runs this) or when the config has errors.
+// With --candidates the not-yet-live file curricula-candidates.json is validated with the same code and nothing is written.
 // Older version directories (e.g. suggested-1 after a bump to 2) are never touched: published versions are immutable.
 const SRC = "data/curricula-src";
 const OUT = "data/curricula";
@@ -21,10 +22,16 @@ function readConfig(file: string): unknown {
 
 function main() {
   const check = process.argv.includes("--check");
-  const unknownArgs = process.argv.slice(2).filter((a) => a !== "--check");
-  if (unknownArgs.length > 0) {
-    console.error(`usage: curricula:build [--check] (unknown: ${unknownArgs.join(" ")})`);
+  const candidates = process.argv.includes("--candidates");
+  const unknownArgs = process.argv.slice(2).filter((a) => a !== "--check" && a !== "--candidates");
+  if (unknownArgs.length > 0 || (check && candidates)) {
+    console.error(`usage: curricula:build [--check | --candidates] (unknown: ${unknownArgs.join(" ")})`);
     process.exit(2);
+  }
+  if (candidates) {
+    const generated = buildSuggestedDatasets({ topics: readConfig("topics.json"), curricula: readConfig("curricula-candidates.json") });
+    console.log(`ok: curricula-candidates.json is valid (${generated.length} candidate curricula, nothing written)`);
+    return;
   }
   const datasets = buildSuggestedDatasets({ topics: readConfig("topics.json"), curricula: readConfig("curricula.json") });
   const stale: string[] = [];

@@ -1,0 +1,960 @@
+{
+  "levels": [],
+  "courses": [
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge",
+      "code": "NP-SCO-BGE",
+      "title": "Broad General Education Mathematics (S1-S3)",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5",
+      "code": "NP-SCO-N5",
+      "title": "National 5 Mathematics",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications",
+      "code": "NP-SCO-N5-APPLICATIONS",
+      "title": "National 5 Applications of Mathematics",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher",
+      "code": "NP-SCO-HIGHER",
+      "title": "Higher Mathematics",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "code": "NP-SCO-ADVANCED-HIGHER",
+      "title": "Advanced Higher Mathematics",
+      "ordinal": 5
+    }
+  ],
+  "units": [
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/number",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-bge",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-bge",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/functions",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-bge",
+      "title": "Functions",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-bge",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/data-and-probability",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-bge",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Graphs and functions",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Geometry and measurement",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Data and probability",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/trigonometry-and-vectors",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5",
+      "title": "Trigonometry and vectors",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5-applications",
+      "title": "Number",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5-applications",
+      "title": "Algebra",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5-applications",
+      "title": "Geometry and measurement",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-n5-applications",
+      "title": "Data and probability",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-higher",
+      "title": "Functions",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/trigonometry",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-higher",
+      "title": "Trigonometry",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-higher",
+      "title": "Calculus basics",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-higher",
+      "title": "Data and probability",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "title": "Number and algebra",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/vectors-and-geometry",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "title": "Vectors and geometry",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/trigonometry",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "title": "Trigonometry",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "title": "Calculus basics",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/data-and-probability",
+      "courseId": "uk-scotland-cfe@suggested-1/sco-advanced-higher",
+      "title": "Data and probability",
+      "ordinal": 5
+    }
+  ],
+  "topics": [
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/number/exponent-laws",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/number/scientific-notation",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/number",
+      "title": "Scientific notation",
+      "summary": "Write very large and very small numbers in scientific notation and compute with them.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/number/rational-irrational-numbers",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/number",
+      "title": "Rational and irrational numbers",
+      "summary": "Classify numbers as rational or irrational and place them on a number line.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/number/unit-rates-and-conversions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/polynomials-add-subtract",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Adding and subtracting polynomials",
+      "summary": "Add and subtract polynomial expressions by combining like terms.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/polynomials-multiply",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Multiplying polynomials",
+      "summary": "Multiply monomials, binomials and larger polynomials using expansion.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/simplify-like-terms",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/one-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/two-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/unknown-both-sides",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/like-terms-before-solving",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/equations-with-brackets",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/algebra/linear-inequalities",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/functions/linear-relations-graphs",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/functions/slope-rate-of-change",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/functions",
+      "title": "Slope and rate of change",
+      "summary": "Calculate and interpret the slope of a line as a rate of change.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/functions/equations-of-lines",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/functions/systems-linear-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement/similar-figures-scale",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement/volume-surface-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement/coordinate-geometry",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/geometry-and-measurement",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/data-and-probability/scatter-plots-best-fit",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-bge/data-and-probability/compound-probability",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-bge/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/fractions-add-subtract",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Adding and subtracting fractions",
+      "summary": "Add and subtract fractions and mixed numbers using common denominators.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/fractions-multiply-divide",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Multiplying and dividing fractions",
+      "summary": "Multiply and divide fractions and mixed numbers, and simplify the results.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/decimal-operations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Operations with decimals",
+      "summary": "Add, subtract, multiply and divide decimal numbers and estimate to check answers.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/percent-of-quantity",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/percent-change",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/ratios-and-rates",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/proportions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Solving proportions",
+      "summary": "Use equivalent ratios and cross-multiplying to find a missing value in a proportion.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/unit-rates-and-conversions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/number/exponent-laws",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/number",
+      "title": "Exponent laws",
+      "summary": "Multiply, divide and raise powers to powers using the exponent laws.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/simplify-like-terms",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Simplifying expressions with like terms",
+      "summary": "Simplify algebraic expressions by combining like terms and using the distributive property.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/one-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/two-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/unknown-both-sides",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/like-terms-before-solving",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/equations-with-brackets",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Equations with brackets",
+      "summary": "Expand brackets with the distributive property and then solve the equation.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/linear-inequalities",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Solving linear inequalities",
+      "summary": "Solve linear inequalities and show the solution on a number line.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/patterns-sequences",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Patterns and linear sequences",
+      "summary": "Describe, extend and write rules for number patterns and linear sequences.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/factoring-polynomials",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Factoring polynomials",
+      "summary": "Factor common factors, trinomials and differences of squares.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/quadratic-equations-factoring",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Solving quadratic equations by factoring",
+      "summary": "Solve quadratic equations by factoring and using the zero product property.",
+      "ordinal": 10
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/quadratic-formula",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "The quadratic formula",
+      "summary": "Solve quadratic equations with the quadratic formula and interpret the discriminant.",
+      "ordinal": 11
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/completing-the-square",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Completing the square",
+      "summary": "Rewrite a quadratic in vertex form by completing the square.",
+      "ordinal": 12
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/algebra/rational-expressions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 13
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/linear-relations-graphs",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Graphing linear relations",
+      "summary": "Make tables of values and graph linear relations on a coordinate grid.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/equations-of-lines",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Equations of lines",
+      "summary": "Write and use equations of lines in slope-intercept and standard forms.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/systems-linear-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Systems of linear equations",
+      "summary": "Solve two linear equations in two unknowns by graphing, substitution and elimination.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/quadratic-functions-graphs",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/function-transformations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions/exponential-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/graphs-and-functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/angle-relationships",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Angle relationships",
+      "summary": "Use angles on lines, in triangles and in polygons to find unknown angles.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/perimeter-and-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/circles-circumference-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Circles: circumference and area",
+      "summary": "Calculate the circumference and area of circles and parts of circles.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/volume-surface-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/similar-figures-scale",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Similar figures and scale",
+      "summary": "Use scale factors to compare similar shapes and solve scale problems.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/geometric-transformations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Translations, reflections and rotations",
+      "summary": "Describe and perform transformations of shapes on a coordinate grid.",
+      "ordinal": 7
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 8
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement/sine-cosine-laws",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/geometry-and-measurement",
+      "title": "Sine law and cosine law",
+      "summary": "Solve non-right triangles using the sine law and the cosine law.",
+      "ordinal": 9
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability/measures-of-centre",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability/data-displays",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability/scatter-plots-best-fit",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability/simple-probability",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability/compound-probability",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/trigonometry-and-vectors/trigonometric-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/trigonometry-and-vectors",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5/trigonometry-and-vectors/vectors",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5/trigonometry-and-vectors",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number/percent-of-quantity",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "title": "Percent of a quantity",
+      "summary": "Find a percent of a number and relate fractions, decimals and percents.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number/percent-change",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "title": "Percent increase and decrease",
+      "summary": "Calculate discounts, markups, taxes and other percent changes.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number/simple-compound-interest",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "title": "Simple and compound interest",
+      "summary": "Compare simple and compound interest on savings and loans.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number/ratios-and-rates",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "title": "Ratios and rates",
+      "summary": "Write, compare and simplify ratios and rates, including equivalent ratios.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/number/unit-rates-and-conversions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/number",
+      "title": "Unit rates and unit conversions",
+      "summary": "Find unit rates and convert between units of length, mass, volume and time.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra/evaluate-expressions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "title": "Evaluating algebraic expressions",
+      "summary": "Substitute values for variables and evaluate expressions.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra/one-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "title": "Solving one-step equations",
+      "summary": "Undo a single operation to find the unknown in an equation.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra/two-step-equations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "title": "Solving two-step equations",
+      "summary": "Undo two operations in order to solve an equation for the unknown.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra/unknown-both-sides",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "title": "Equations with the unknown on both sides",
+      "summary": "Collect the unknown on one side and then solve the equation.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra/like-terms-before-solving",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/algebra",
+      "title": "Collecting like terms before solving",
+      "summary": "Combine like terms on each side of an equation, then solve for the unknown.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement/perimeter-and-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement",
+      "title": "Perimeter and area",
+      "summary": "Find the perimeter and area of rectangles, triangles, parallelograms and composite shapes.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement/volume-surface-area",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement",
+      "title": "Volume and surface area",
+      "summary": "Find the volume and surface area of prisms, cylinders and other solids.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement/pythagorean-theorem",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement",
+      "title": "Pythagorean theorem",
+      "summary": "Use the Pythagorean theorem to find unknown side lengths in right triangles.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement/right-triangle-trigonometry",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/geometry-and-measurement",
+      "title": "Right-triangle trigonometry",
+      "summary": "Use sine, cosine and tangent to find sides and angles in right triangles.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability/measures-of-centre",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability",
+      "title": "Mean, median and mode",
+      "summary": "Calculate and compare measures of centre and range for a data set.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability/data-displays",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability",
+      "title": "Reading and drawing data displays",
+      "summary": "Read, draw and interpret tables, bar graphs, line graphs and circle graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability/scatter-plots-best-fit",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability",
+      "title": "Scatter plots and lines of best fit",
+      "summary": "Plot paired data, describe the trend and draw a line of best fit.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability/simple-probability",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-n5-applications/data-and-probability",
+      "title": "Simple probability",
+      "summary": "Find and compare the probability of single events using fractions, decimals and percents.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/function-notation",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Functions and function notation",
+      "summary": "Decide whether a relation is a function and use f(x) notation.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/function-transformations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Transformations of functions",
+      "summary": "Describe and apply shifts, stretches and reflections of function graphs.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/polynomial-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Polynomial functions",
+      "summary": "Analyze the graphs, zeros and end behaviour of polynomial functions.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/quadratic-functions-graphs",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Graphing quadratic functions",
+      "summary": "Graph quadratic functions and find the vertex, intercepts and axis of symmetry.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/exponential-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Exponential functions",
+      "summary": "Model and graph exponential growth and decay.",
+      "ordinal": 5
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/functions/logarithms",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/functions",
+      "title": "Logarithms",
+      "summary": "Evaluate logarithms, use the logarithm laws and solve exponential equations.",
+      "ordinal": 6
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/trigonometry/trigonometric-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/trigonometry/trigonometric-identities",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics/limits",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics",
+      "title": "Limits",
+      "summary": "Understand and evaluate limits of functions at a point and at infinity.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics/derivative-rules",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics/derivative-applications",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics/integrals",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 4
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability/compound-probability",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability",
+      "title": "Probability of compound events",
+      "summary": "Find probabilities of independent and dependent events using tables and trees.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability/normal-distribution",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability",
+      "title": "Normal distribution",
+      "summary": "Use the normal distribution and z-scores to describe data.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability/counting-permutations-combinations",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-higher/data-and-probability",
+      "title": "Counting, permutations and combinations",
+      "summary": "Count arrangements and selections using the counting principle, permutations and combinations.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra/complex-numbers",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra",
+      "title": "Complex numbers",
+      "summary": "Add, subtract, multiply and divide numbers of the form a + bi.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra/sequences-series",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra",
+      "title": "Sequences and series",
+      "summary": "Work with arithmetic and geometric sequences and their sums.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra/rational-expressions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/number-and-algebra",
+      "title": "Rational expressions",
+      "summary": "Simplify, multiply, divide, add and subtract algebraic fractions.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/vectors-and-geometry/vectors",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/vectors-and-geometry",
+      "title": "Vectors",
+      "summary": "Represent vectors, add them and use them to solve geometric problems.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/vectors-and-geometry/coordinate-geometry",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/vectors-and-geometry",
+      "title": "Distance and midpoint",
+      "summary": "Use coordinates to find distances, midpoints and properties of shapes.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/trigonometry/trigonometric-identities",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/trigonometry",
+      "title": "Trigonometric identities",
+      "summary": "Prove and use basic trigonometric identities to solve equations.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/trigonometry/trigonometric-functions",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/trigonometry",
+      "title": "Graphs of trigonometric functions",
+      "summary": "Graph and transform sine and cosine functions and use radian measure.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics/derivative-rules",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics",
+      "title": "Derivatives and derivative rules",
+      "summary": "Find derivatives using the power, product, quotient and chain rules.",
+      "ordinal": 1
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics/derivative-applications",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics",
+      "title": "Applications of derivatives",
+      "summary": "Use derivatives to analyze rates of change, optimization and curve sketching.",
+      "ordinal": 2
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics/integrals",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/calculus-basics",
+      "title": "Integrals",
+      "summary": "Find antiderivatives and use definite integrals to compute areas.",
+      "ordinal": 3
+    },
+    {
+      "id": "uk-scotland-cfe@suggested-1/sco-advanced-higher/data-and-probability/sampling-inference",
+      "unitId": "uk-scotland-cfe@suggested-1/sco-advanced-higher/data-and-probability",
+      "title": "Sampling and inference",
+      "summary": "Describe sampling methods and draw cautious conclusions from sample data.",
+      "ordinal": 1
+    }
+  ]
+}
