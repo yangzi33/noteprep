@@ -27,7 +27,7 @@ export default async function NewLessonPage({ searchParams }: { searchParams: Pr
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-semibold">New lesson</h1>
+      <h1 className="select-none text-2xl font-semibold">New lesson</h1>
       <p className="mt-2 text-sm" data-testid="allowance">
         {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
       </p>

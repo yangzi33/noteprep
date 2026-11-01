@@ -41,7 +41,7 @@ export function SamplePreview({ documents, defaultId, openLabel }: { documents: 
               tabIndex={d.id === active ? 0 : -1}
               onClick={() => setActive(d.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`min-h-11 rounded-control px-2 text-xs font-medium focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none md:px-3 md:text-[13px] ${
+              className={`min-h-11 transition-colors duration-150 rounded-control px-2 text-xs font-medium focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none md:px-3 md:text-[13px] ${
                 d.id === active ? "text-text-accent underline decoration-2 underline-offset-8" : "text-muted-foreground hover:text-foreground"
               }`}
             >

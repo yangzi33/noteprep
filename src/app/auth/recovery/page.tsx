@@ -30,7 +30,7 @@ export default async function RecoveryPage({
         <Card className="p-6 md:p-8">
           {parsed ? (
             <>
-              <h1 className="font-heading text-2xl font-semibold text-foreground">Reset your password</h1>
+              <h1 className="select-none font-heading text-2xl font-semibold text-foreground">Reset your password</h1>
               <p className="mt-1 text-sm text-muted-foreground">Press Continue to choose a new password.</p>
               <form action={confirmRecovery} className="mt-6">
                 <input type="hidden" name={parsed.kind} value={parsed.value} />
@@ -39,7 +39,7 @@ export default async function RecoveryPage({
             </>
           ) : (
             <>
-              <h1 className="font-heading text-2xl font-semibold text-foreground">This link cannot be used</h1>
+              <h1 className="select-none font-heading text-2xl font-semibold text-foreground">This link cannot be used</h1>
               <Notice intent="error" className="mt-4">
                 {loginMessage("recovery")}
               </Notice>

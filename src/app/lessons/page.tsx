@@ -19,7 +19,7 @@ export default async function HistoryPage() {
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
         <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Your workspace</p>
-        <h1 className="font-heading text-[34px] leading-[1.2]">My lesson packs</h1>
+        <h1 className="select-none font-heading text-[34px] leading-[1.2]">My lesson packs</h1>
         <p className="text-sm" data-testid="allowance">
           {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
         </p>
@@ -28,7 +28,7 @@ export default async function HistoryPage() {
 
       {draftList.length > 0 && (
         <section aria-labelledby="drafts-heading" className="mt-6" data-testid="drafts-section">
-          <h2 id="drafts-heading" className="font-heading text-2xl">
+          <h2 id="drafts-heading" className="select-none font-heading text-2xl">
             Drafts
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">Free to read and adjust. A draft uses no lesson pack until you export it.</p>

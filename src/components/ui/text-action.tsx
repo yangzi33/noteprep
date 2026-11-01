@@ -9,7 +9,7 @@ type TextActionProps =
   | (CommonProps & { href?: undefined } & React.ComponentProps<"button">);
 
 const base =
-  "inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold text-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "inline-flex select-none transition-colors duration-150 min-h-11 items-center gap-1.5 text-[13px] font-semibold text-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function TextAction(props: TextActionProps) {
   if (props.href !== undefined) {

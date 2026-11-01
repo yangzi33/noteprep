@@ -23,7 +23,7 @@ export function VersionSwitcher({ view, doc }: { view: DraftViewDto; doc: Docume
   );
   return (
     <section id="versions" className="scroll-mt-4 space-y-3" aria-labelledby="versions-heading">
-      <h2 id="versions-heading" className="text-sm font-medium">
+      <h2 id="versions-heading" className="select-none text-sm font-medium">
         Versions
       </h2>
       <nav aria-label="Versions" data-testid="version-switcher">

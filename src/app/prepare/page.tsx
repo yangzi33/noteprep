@@ -37,7 +37,7 @@ function PageFrame({ allowanceText, reminder, source, error, children }: { allow
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
         <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Create lesson pack</p>
-        <h1 className="font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
+        <h1 className="select-none font-heading text-[34px] leading-[1.2]">Prepare a lesson pack</h1>
         <p className="text-muted-foreground">A few familiar choices. Three documents shaped around your lesson.</p>
         <StepIndicator steps={FLOW_STEPS} current={0} />
         <p className="text-sm" data-testid="allowance">
@@ -158,7 +158,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
     <div className={context ? "grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" : "grid grid-cols-[minmax(0,1fr)] gap-6"}>
       <Card className="flex flex-col gap-6 p-6">
         <PreparePendingProvider>
-        <h2 className="font-heading text-xl">Start with your teaching context</h2>
+        <h2 className="select-none font-heading text-xl">Start with your teaching context</h2>
         {sample && (
           <Notice intent="info" data-testid="sample-banner">
             Sample data, not a real curriculum. No curriculum alignment is claimed for lessons made from it.
@@ -201,7 +201,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
               ))}
             </fieldset>
             <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold">Settings</h3>
+              <h3 className="select-none text-sm font-semibold">Settings</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <SelectField label="Lesson length" name="durationMinutes" options={DURATIONS} defaultValue="60" />
                 <SelectField label="Difficulty" name="difficulty" options={DIFFICULTIES} defaultValue="mixed" />
@@ -219,8 +219,8 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
         <aside className="flex flex-col gap-4">
           <Card className="flex flex-col gap-3 p-5" data-testid="topic-summary">
             <Badge className="self-start uppercase">Your lesson pack</Badge>
-            <h2 className="font-heading text-lg">{context.topic.title}</h2>
-            <h3 className="text-sm font-medium">Learning objectives</h3>
+            <h2 className="select-none font-heading text-lg">{context.topic.title}</h2>
+            <h3 className="select-none text-sm font-medium">Learning objectives</h3>
             <ul className="list-disc pl-5 text-sm">
               {context.objectives.length === 0 && learningObjectiveItems(context).map((item) => <li key={item}>{item}</li>)}
               {context.objectives.map((o) => (
@@ -232,7 +232,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
             </ul>
             {context.prerequisites.length > 0 && (
               <>
-                <h3 className="text-sm font-medium">Builds on</h3>
+                <h3 className="select-none text-sm font-medium">Builds on</h3>
                 <ul className="list-disc pl-5 text-sm">
                   {context.prerequisites.map((p) => (
                     <li key={p.topicId}>{p.title}</li>

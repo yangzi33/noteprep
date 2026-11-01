@@ -21,20 +21,20 @@ export default async function DashboardPage() {
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <header className="flex flex-col gap-3">
         <p className="text-xs font-semibold tracking-[0.16em] text-text-accent uppercase">Your workspace</p>
-        <h1 className="font-heading text-[34px] leading-[1.2]">A little less prep. More teaching.</h1>
+        <h1 className="select-none font-heading text-[34px] leading-[1.2]">A little less prep. More teaching.</h1>
         <p className="text-muted-foreground">Pick a topic, and get lesson notes, a worksheet and solutions to review before you teach.</p>
       </header>
 
       <div className="mt-6 grid gap-4 md:grid-cols-[2fr_1fr]">
         <Card className="flex flex-col items-start gap-3 p-6">
-          <h2 className="font-heading text-2xl">What are you teaching next?</h2>
+          <h2 className="select-none font-heading text-2xl">What are you teaching next?</h2>
           <p className="text-muted-foreground">Choose a curriculum topic and we will prepare the documents. Read them over before the lesson.</p>
           <Button asChild>
             <Link href="/prepare">Create lesson pack</Link>
           </Button>
         </Card>
         <Card className="flex flex-col gap-2 p-6">
-          <h2 className="font-heading text-lg">Your allowance</h2>
+          <h2 className="select-none font-heading text-lg">Your allowance</h2>
           <p className="text-sm" data-testid="allowance">
             {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
           </p>
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
 
       {draftList.length > 0 && (
         <section aria-labelledby="drafts-heading" className="mt-10" data-testid="drafts-section">
-          <h2 id="drafts-heading" className="font-heading text-2xl">
+          <h2 id="drafts-heading" className="select-none font-heading text-2xl">
             Drafts
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">Free to read and adjust. A draft uses no lesson pack until you export it.</p>
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
       <section aria-labelledby="recent-heading" className="mt-10">
         <div className="flex items-center justify-between gap-4">
-          <h2 id="recent-heading" className="font-heading text-2xl">
+          <h2 id="recent-heading" className="select-none font-heading text-2xl">
             Recent activity
           </h2>
           {cards.length > 0 && <TextAction href="/lessons">See all lesson packs</TextAction>}

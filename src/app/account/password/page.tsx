@@ -16,7 +16,7 @@ export default async function PasswordPage({ searchParams }: { searchParams: Pro
   const message = passwordMessage(error);
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 md:px-8">
-      <h1 className="font-heading text-2xl font-semibold text-foreground">Set a new password</h1>
+      <h1 className="select-none font-heading text-2xl font-semibold text-foreground">Set a new password</h1>
       <Card className="mt-6 p-6">
         {message && (
           <Notice intent="error" className="mb-4">

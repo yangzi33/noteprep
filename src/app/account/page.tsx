@@ -21,7 +21,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const support = supportEmail();
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-4 py-8 md:px-8">
-      <h1 className="font-heading text-2xl font-semibold text-foreground">Account</h1>
+      <h1 className="select-none font-heading text-2xl font-semibold text-foreground">Account</h1>
       {noticeText && (
         <Notice intent="success" className="mt-4">
           {noticeText}
@@ -36,7 +36,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </form>
       </Card>
       <Card className="mt-4 flex flex-col gap-2 p-6">
-        <h2 className="font-heading text-lg">Your allowance</h2>
+        <h2 className="select-none font-heading text-lg">Your allowance</h2>
         <p className="text-sm" data-testid="allowance">
           {reminder ? <span data-testid="refresh-reminder">{reminder}</span> : allowanceSentence(allowance)}
         </p>
@@ -44,7 +44,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <p className="text-sm text-muted-foreground">Subscriptions are not available yet.</p>
       </Card>
       <Card className="mt-4 flex flex-col gap-2 p-6">
-        <h2 className="font-heading text-lg">Help and your files</h2>
+        <h2 className="select-none font-heading text-lg">Help and your files</h2>
         <p className="text-sm">
           {support ? (
             <>

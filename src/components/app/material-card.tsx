@@ -11,7 +11,7 @@ export function MaterialCard({ card }: { card: MaterialCardModel }) {
       <Badge tone={badgeTone(card.state)} className="self-start">
         {card.label}
       </Badge>
-      <h3 className="font-heading text-lg leading-snug break-words">{card.title}</h3>
+      <h3 className="select-none font-heading text-lg leading-snug break-words">{card.title}</h3>
       <p className="text-sm text-muted-foreground">{card.date}</p>
       <Link
         href={card.href}
@@ -69,7 +69,7 @@ export function DraftCard({ card }: { card: DraftCardModel }) {
       <Badge tone="neutral" className="self-start">
         Draft
       </Badge>
-      <h3 className="font-heading text-lg leading-snug break-words">{card.title}</h3>
+      <h3 className="select-none font-heading text-lg leading-snug break-words">{card.title}</h3>
       <p className="text-sm text-muted-foreground">
         {card.updated} · <span data-testid="draft-expires">{card.expires}</span>
       </p>
