@@ -9,45 +9,10 @@
           "level": "Grade 7",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "whole-number-operations",
-                "factors-multiples",
-                "integer-operations",
-                "fractions-add-subtract",
-                "fractions-multiply-divide",
-                "decimal-operations",
-                "order-of-operations",
-                "ratios-and-rates",
-                "percent-of-quantity"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "evaluate-expressions",
-                "one-step-equations",
-                "two-step-equations",
-                "patterns-sequences"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "angle-relationships",
-                "perimeter-and-area",
-                "circles-circumference-area"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "measures-of-centre",
-                "data-displays",
-                "simple-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
           ]
         },
         {
@@ -56,49 +21,11 @@
           "level": "Grade 8",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "rational-number-operations",
-                "square-roots",
-                "proportions",
-                "percent-change",
-                "exponent-laws"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "simplify-like-terms",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "patterns-sequences"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "linear-relations-graphs"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "triangle-properties",
-                "pythagorean-theorem",
-                "volume-surface-area",
-                "geometric-transformations"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "scatter-plots-best-fit",
-                "compound-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
           ]
         },
         {
@@ -107,54 +34,11 @@
           "level": "Grade 9",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "exponent-laws",
-                "scientific-notation",
-                "rational-irrational-numbers",
-                "unit-rates-and-conversions"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "polynomials-add-subtract",
-                "polynomials-multiply",
-                "simplify-like-terms",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "equations-with-brackets",
-                "linear-inequalities"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "linear-relations-graphs",
-                "slope-rate-of-change",
-                "equations-of-lines",
-                "systems-linear-equations"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "similar-figures-scale",
-                "volume-surface-area",
-                "pythagorean-theorem",
-                "coordinate-geometry"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "scatter-plots-best-fit",
-                "compound-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
           ]
         },
         {
@@ -163,50 +47,11 @@
           "level": "Grade 10",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "zero-negative-exponents",
-                "simple-compound-interest"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "polynomials-multiply",
-                "factoring-polynomials",
-                "quadratic-equations-factoring",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "equations-with-brackets"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "equations-of-lines",
-                "systems-linear-equations",
-                "quadratic-functions-graphs"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "right-triangle-trigonometry",
-                "similar-figures-scale",
-                "coordinate-geometry"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "data-displays",
-                "compound-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
           ]
         },
         {
@@ -215,46 +60,11 @@
           "level": "Grade 11",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "radical-expressions",
-                "simple-compound-interest"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "quadratic-formula",
-                "completing-the-square",
-                "rational-expressions"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-transformations",
-                "quadratic-functions-graphs",
-                "exponential-functions",
-                "sequences-series",
-                "polynomial-functions"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "sine-cosine-laws",
-                "trigonometric-functions"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "counting-permutations-combinations",
-                "standard-deviation",
-                "normal-distribution"
-              ]
-            }
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
           ]
         },
         {
@@ -263,311 +73,367 @@
           "level": "Grade 12",
           "ordinal": 1,
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "complex-numbers"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "rational-expressions"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "exponential-functions",
-                "logarithms",
-                "polynomial-functions",
-                "function-transformations",
-                "sequences-series"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "trigonometric-functions",
-                "trigonometric-identities",
-                "vectors"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "counting-permutations-combinations",
-                "normal-distribution",
-                "sampling-inference"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications"
-              ]
-            }
+            { "title": "Number", "topics": ["complex-numbers"] },
+            { "title": "Algebra", "topics": ["rational-expressions"] },
+            { "title": "Functions", "topics": ["exponential-functions", "logarithms", "polynomial-functions", "function-transformations", "sequences-series"] },
+            { "title": "Geometry and measurement", "topics": ["trigonometric-functions", "trigonometric-identities", "vectors"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "normal-distribution", "sampling-inference"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
           ]
         }
       ]
     },
-    "quebec-secondary-1-5": {
-      "levelKind": "Secondary",
+    "us-secondary": {
+      "levelKind": "Grade",
       "courses": [
         {
-          "code": "SEC1-MATH",
-          "title": "Secondary 1 Mathematics",
-          "level": "Secondary 1",
-          "ordinal": 1,
+          "code": "G7-MATH",
+          "title": "Grade 7 Mathematics",
+          "level": "Grade 7",
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "whole-number-operations",
-                "factors-multiples",
-                "integer-operations",
-                "fractions-add-subtract",
-                "fractions-multiply-divide",
-                "decimal-operations",
-                "order-of-operations",
-                "ratios-and-rates",
-                "percent-of-quantity"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "evaluate-expressions",
-                "one-step-equations",
-                "two-step-equations",
-                "patterns-sequences"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "angle-relationships",
-                "perimeter-and-area",
-                "circles-circumference-area"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "measures-of-centre",
-                "data-displays",
-                "simple-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
           ]
         },
         {
-          "code": "SEC2-MATH",
-          "title": "Secondary 2 Mathematics",
-          "level": "Secondary 2",
-          "ordinal": 1,
+          "code": "G8-MATH",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "rational-number-operations",
-                "square-roots",
-                "proportions",
-                "percent-change",
-                "exponent-laws"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "simplify-like-terms",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "patterns-sequences"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "linear-relations-graphs"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "triangle-properties",
-                "pythagorean-theorem",
-                "volume-surface-area",
-                "geometric-transformations"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "scatter-plots-best-fit",
-                "compound-probability"
-              ]
-            }
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
           ]
         },
         {
-          "code": "SEC3-MATH",
-          "title": "Secondary 3 Mathematics",
-          "level": "Secondary 3",
-          "ordinal": 1,
+          "code": "ALG1",
+          "title": "Algebra I",
+          "level": "Grade 9",
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "exponent-laws",
-                "scientific-notation",
-                "rational-irrational-numbers",
-                "unit-rates-and-conversions"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "polynomials-add-subtract",
-                "polynomials-multiply",
-                "simplify-like-terms",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "equations-with-brackets",
-                "linear-inequalities"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "linear-relations-graphs",
-                "slope-rate-of-change",
-                "equations-of-lines",
-                "systems-linear-equations"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "similar-figures-scale",
-                "volume-surface-area",
-                "pythagorean-theorem",
-                "coordinate-geometry"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "scatter-plots-best-fit",
-                "compound-probability"
-              ]
-            }
+            { "title": "Algebra", "topics": ["simplify-like-terms", "evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations", "function-notation", "exponential-functions"] },
+            { "title": "Polynomials and quadratics", "topics": ["polynomials-add-subtract", "polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "quadratic-functions-graphs"] },
+            { "title": "Number", "topics": ["exponent-laws", "square-roots"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "measures-of-centre"] }
           ]
         },
         {
-          "code": "SEC4-MATH",
-          "title": "Secondary 4 Mathematics",
-          "level": "Secondary 4",
-          "ordinal": 1,
+          "code": "GEO",
+          "title": "Geometry",
+          "level": "Grade 10",
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "zero-negative-exponents",
-                "simple-compound-interest"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "polynomials-multiply",
-                "factoring-polynomials",
-                "quadratic-equations-factoring",
-                "one-step-equations",
-                "two-step-equations",
-                "unknown-both-sides",
-                "like-terms-before-solving",
-                "equations-with-brackets"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "equations-of-lines",
-                "systems-linear-equations",
-                "quadratic-functions-graphs"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "right-triangle-trigonometry",
-                "similar-figures-scale",
-                "coordinate-geometry"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "data-displays",
-                "compound-probability"
-              ]
-            }
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "triangle-properties", "pythagorean-theorem", "similar-figures-scale", "geometric-transformations", "coordinate-geometry", "circles-circumference-area", "volume-surface-area"] },
+            { "title": "Trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["compound-probability"] }
           ]
         },
         {
-          "code": "SEC5-MATH",
-          "title": "Secondary 5 Mathematics",
-          "level": "Secondary 5",
-          "ordinal": 1,
+          "code": "ALG2",
+          "title": "Algebra II",
+          "level": "Grade 11",
           "units": [
-            {
-              "title": "Number",
-              "topics": [
-                "radical-expressions",
-                "simple-compound-interest"
-              ]
-            },
-            {
-              "title": "Algebra",
-              "topics": [
-                "quadratic-formula",
-                "completing-the-square",
-                "rational-expressions"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-transformations",
-                "quadratic-functions-graphs",
-                "exponential-functions",
-                "sequences-series",
-                "polynomial-functions"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "sine-cosine-laws",
-                "trigonometric-functions"
-              ]
-            },
-            {
-              "title": "Data and probability",
-              "topics": [
-                "counting-permutations-combinations",
-                "standard-deviation",
-                "normal-distribution"
-              ]
-            }
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "radical-expressions", "complex-numbers"] },
+            { "title": "Functions", "topics": ["polynomial-functions", "exponential-functions", "logarithms", "function-transformations", "sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "PRECALC",
+          "title": "Precalculus",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "rational-expressions", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Vectors, sequences and complex numbers", "topics": ["vectors", "sequences-series", "complex-numbers"] },
+            { "title": "Calculus basics", "topics": ["limits"] }
+          ]
+        }
+      ]
+    },
+    "canada-ontario-lower": {
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "G7-MATH",
+          "title": "Grade 7 Mathematics",
+          "level": "Grade 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "G8-MATH",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G9-MATH",
+          "title": "Grade 9 Mathematics",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    "canada-mathematics-7-9": {
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "G7-MATH",
+          "title": "Mathematics 7",
+          "level": "Grade 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "G8-MATH",
+          "title": "Mathematics 8",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "G9-MATH",
+          "title": "Mathematics 9",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    "year-7-9": {
+      "levelKind": "Year",
+      "courses": [
+        {
+          "code": "Y7",
+          "title": "Year 7 Mathematics",
+          "level": "Year 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "Y8",
+          "title": "Year 8 Mathematics",
+          "level": "Year 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "Y9",
+          "title": "Year 9 Mathematics",
+          "level": "Year 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    "year-7-10": {
+      "levelKind": "Year",
+      "courses": [
+        {
+          "code": "Y7",
+          "title": "Year 7 Mathematics",
+          "level": "Year 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "Y8",
+          "title": "Year 8 Mathematics",
+          "level": "Year 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "Y9",
+          "title": "Year 9 Mathematics",
+          "level": "Year 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "Y10",
+          "title": "Year 10 Mathematics",
+          "level": "Year 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    "gcse-foundation-higher": {
+      "courses": [
+        {
+          "code": "GCSE-FOUNDATION",
+          "title": "GCSE Mathematics Foundation",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "GCSE-HIGHER",
+          "title": "GCSE Mathematics Higher",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        }
+      ]
+    },
+    "uk-a-level": {
+      "courses": [
+        {
+          "code": "AS-MATH",
+          "title": "AS Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["linear-inequalities", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "quadratic-formula", "completing-the-square", "polynomial-functions", "systems-linear-equations"] },
+            { "title": "Coordinate geometry", "topics": ["equations-of-lines", "coordinate-geometry"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "A-LEVEL-MATH",
+          "title": "A-Level Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "polynomial-functions", "function-transformations"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "counting-permutations-combinations", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "A-LEVEL-FURTHER",
+          "title": "A-Level Further Mathematics",
+          "units": [
+            { "title": "Algebra and number", "topics": ["complex-numbers", "polynomial-functions", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        }
+      ]
+    },
+    "au-senior": {
+      "courses": [
+        {
+          "code": "ESSENTIAL",
+          "title": "Essential Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["percent-of-quantity", "percent-change", "simple-compound-interest", "ratios-and-rates", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "pythagorean-theorem", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "GENERAL",
+          "title": "General Mathematics",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "METHODS",
+          "title": "Mathematical Methods",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "quadratic-functions-graphs", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "normal-distribution", "counting-permutations-combinations"] }
+          ]
+        },
+        {
+          "code": "SPECIALIST",
+          "title": "Specialist Mathematics",
+          "units": [
+            { "title": "Number and algebra", "topics": ["complex-numbers", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["sampling-inference"] }
           ]
         }
       ]
@@ -575,13 +441,141 @@
   },
   "curricula": [
     {
+      "id": "us-common-core",
+      "name": "Common Core State Standards",
+      "country": {
+        "regionCode": "US",
+        "name": "United States"
+      },
+      "template": "us-secondary"
+    },
+    {
+      "id": "us-texas",
+      "name": "Texas TEKS",
+      "country": {
+        "regionCode": "US",
+        "name": "United States"
+      },
+      "template": "us-secondary"
+    },
+    {
+      "id": "us-california",
+      "name": "California State Standards",
+      "country": {
+        "regionCode": "US",
+        "name": "United States"
+      },
+      "template": "us-secondary",
+      "removeCourses": ["PRECALC"],
+      "courses": [
+        {
+          "code": "IM1",
+          "title": "Integrated Mathematics I",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Algebra", "topics": ["one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "function-notation", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "measures-of-centre"] }
+          ]
+        },
+        {
+          "code": "IM2",
+          "title": "Integrated Mathematics II",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula"] },
+            { "title": "Functions", "topics": ["quadratic-functions-graphs", "function-transformations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "geometric-transformations", "circles-circumference-area", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["compound-probability"] }
+          ]
+        },
+        {
+          "code": "IM3",
+          "title": "Integrated Mathematics III",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Algebra", "topics": ["rational-expressions", "complex-numbers"] },
+            { "title": "Functions", "topics": ["polynomial-functions", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["standard-deviation", "normal-distribution", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
       "id": "ontario",
       "name": "Ontario",
       "country": {
         "regionCode": "CA",
         "name": "Canada"
       },
-      "template": "canada-grades-7-12"
+      "version": 2,
+      "template": "canada-ontario-lower",
+      "courses": [
+        {
+          "code": "ON-G10-PRINCIPLES",
+          "title": "Principles of Mathematics",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ON-G11-FUNCTIONS",
+          "title": "Functions",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "ON-G11-FUNCTIONS-APPLICATIONS",
+          "title": "Functions and Applications",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "quadratic-functions-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation"] }
+          ]
+        },
+        {
+          "code": "ON-G12-ADVANCED-FUNCTIONS",
+          "title": "Advanced Functions",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["polynomial-functions", "rational-expressions", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        },
+        {
+          "code": "ON-G12-CALCULUS-VECTORS",
+          "title": "Calculus and Vectors",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] }
+          ]
+        },
+        {
+          "code": "ON-G12-DATA-MANAGEMENT",
+          "title": "Mathematics of Data Management",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "standard-deviation", "simple-probability", "compound-probability", "counting-permutations-combinations", "normal-distribution", "sampling-inference"] }
+          ]
+        }
+      ]
     },
     {
       "id": "british-columbia",
@@ -590,7 +584,93 @@
         "regionCode": "CA",
         "name": "Canada"
       },
-      "template": "canada-grades-7-12"
+      "version": 2,
+      "template": "canada-mathematics-7-9",
+      "courses": [
+        {
+          "code": "BC-G10-FOUNDATIONS-PRECALC",
+          "title": "Foundations of Mathematics and Pre-calculus 10",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "BC-G10-WORKPLACE",
+          "title": "Workplace Mathematics 10",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["percent-of-quantity", "percent-change", "simple-compound-interest", "ratios-and-rates", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "pythagorean-theorem", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "BC-G11-FOUNDATIONS",
+          "title": "Foundations of Mathematics 11",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "quadratic-functions-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation"] }
+          ]
+        },
+        {
+          "code": "BC-G11-PRECALC",
+          "title": "Pre-calculus 11",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "BC-G12-FOUNDATIONS",
+          "title": "Foundations of Mathematics 12",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "BC-G12-PRECALC",
+          "title": "Pre-calculus 12",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["polynomial-functions", "rational-expressions", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        },
+        {
+          "code": "BC-G12-CALCULUS",
+          "title": "Calculus 12",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "exponential-functions", "logarithms", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        },
+        {
+          "code": "BC-G12-STATISTICS",
+          "title": "Statistics 12",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "standard-deviation", "simple-probability", "compound-probability", "counting-permutations-combinations", "normal-distribution", "sampling-inference"] }
+          ]
+        }
+      ]
     },
     {
       "id": "alberta",
@@ -599,7 +679,189 @@
         "regionCode": "CA",
         "name": "Canada"
       },
-      "template": "canada-grades-7-12"
+      "version": 2,
+      "template": "canada-mathematics-7-9",
+      "courses": [
+        {
+          "code": "AB-G10-10C",
+          "title": "Mathematics 10C",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "AB-G11-20-1",
+          "title": "Mathematics 20-1",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "AB-G11-20-2",
+          "title": "Mathematics 20-2",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "quadratic-functions-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation"] }
+          ]
+        },
+        {
+          "code": "AB-G12-30-1",
+          "title": "Mathematics 30-1",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["polynomial-functions", "rational-expressions", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        },
+        {
+          "code": "AB-G12-30-2",
+          "title": "Mathematics 30-2",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "AB-G12-31",
+          "title": "Mathematics 31",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "exponential-functions", "logarithms", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quebec",
+      "name": "Quebec",
+      "country": {
+        "regionCode": "CA",
+        "name": "Canada"
+      },
+      "version": 2,
+      "levelKind": "Secondary",
+      "courses": [
+        {
+          "code": "QC-SEC1",
+          "title": "Secondary 1 Mathematics (Cycle One)",
+          "level": "Secondary 1",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC2",
+          "title": "Secondary 2 Mathematics (Cycle One)",
+          "level": "Secondary 2",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC3",
+          "title": "Secondary 3 Mathematics",
+          "level": "Secondary 3",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC4-CST",
+          "title": "Secondary 4 Mathematics: Cultural, Social and Technical",
+          "level": "Secondary 4",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC4-TS",
+          "title": "Secondary 4 Mathematics: Technical and Scientific",
+          "level": "Secondary 4",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC4-SN",
+          "title": "Secondary 4 Mathematics: Sciences",
+          "level": "Secondary 4",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "QC-SEC5-CST",
+          "title": "Secondary 5 Mathematics: Cultural, Social and Technical",
+          "level": "Secondary 5",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "QC-SEC5-TS",
+          "title": "Secondary 5 Mathematics: Technical and Scientific",
+          "level": "Secondary 5",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "QC-SEC5-SN",
+          "title": "Secondary 5 Mathematics: Sciences",
+          "level": "Secondary 5",
+          "units": [
+            { "title": "Functions", "topics": ["polynomial-functions", "rational-expressions", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        }
+      ]
     },
     {
       "id": "saskatchewan",
@@ -618,15 +880,6 @@
         "name": "Canada"
       },
       "template": "canada-grades-7-12"
-    },
-    {
-      "id": "quebec",
-      "name": "Quebec",
-      "country": {
-        "regionCode": "CA",
-        "name": "Canada"
-      },
-      "template": "quebec-secondary-1-5"
     },
     {
       "id": "new-brunswick",
@@ -692,6 +945,1012 @@
       "template": "canada-grades-7-12"
     },
     {
+      "id": "uk-england-national-curriculum",
+      "name": "England National Curriculum",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "template": "year-7-9"
+    },
+    {
+      "id": "uk-aqa-gcse",
+      "name": "AQA GCSE",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "template": "gcse-foundation-higher"
+    },
+    {
+      "id": "uk-edexcel-gcse",
+      "name": "Edexcel GCSE",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "template": "gcse-foundation-higher"
+    },
+    {
+      "id": "uk-ocr-gcse",
+      "name": "OCR GCSE",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "courses": [
+        {
+          "code": "GCSE-MATH",
+          "title": "GCSE Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uk-aqa-a-level",
+      "name": "AQA A-Level",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "template": "uk-a-level"
+    },
+    {
+      "id": "uk-edexcel-a-level",
+      "name": "Edexcel A-Level",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "template": "uk-a-level"
+    },
+    {
+      "id": "uk-scotland-cfe",
+      "name": "Scotland Curriculum for Excellence",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "courses": [
+        {
+          "code": "SCO-BGE",
+          "title": "Broad General Education Mathematics (S1-S3)",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "SCO-N5",
+          "title": "National 5 Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "SCO-N5-APPLICATIONS",
+          "title": "National 5 Applications of Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["percent-of-quantity", "percent-change", "simple-compound-interest", "ratios-and-rates", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "pythagorean-theorem", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "SCO-HIGHER",
+          "title": "Higher Mathematics",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "quadratic-functions-graphs", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "normal-distribution", "counting-permutations-combinations"] }
+          ]
+        },
+        {
+          "code": "SCO-ADVANCED-HIGHER",
+          "title": "Advanced Higher Mathematics",
+          "units": [
+            { "title": "Number and algebra", "topics": ["complex-numbers", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uk-wales",
+      "name": "Wales Curriculum",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "courses": [
+        {
+          "code": "WAL-LOWER",
+          "title": "Mathematics and Numeracy (Years 7-9)",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "WAL-GCSE",
+          "title": "GCSE Mathematics and Numeracy",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uk-ccea",
+      "name": "Northern Ireland CCEA",
+      "country": {
+        "regionCode": "GB",
+        "name": "United Kingdom"
+      },
+      "courses": [
+        {
+          "code": "CCEA-GCSE",
+          "title": "GCSE Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "CCEA-AS",
+          "title": "GCE AS Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["linear-inequalities", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "quadratic-formula", "completing-the-square", "polynomial-functions", "systems-linear-equations"] },
+            { "title": "Coordinate geometry", "topics": ["equations-of-lines", "coordinate-geometry"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "CCEA-A2",
+          "title": "GCE A2 Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "polynomial-functions", "function-transformations"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "counting-permutations-combinations", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ie-junior-cycle",
+      "name": "Irish Junior Cycle",
+      "country": {
+        "regionCode": "IE",
+        "name": "Ireland"
+      },
+      "courses": [
+        {
+          "code": "JC-MATH",
+          "title": "Junior Cycle Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ie-leaving-certificate",
+      "name": "Irish Leaving Certificate",
+      "country": {
+        "regionCode": "IE",
+        "name": "Ireland"
+      },
+      "courses": [
+        {
+          "code": "LC-ORDINARY",
+          "title": "Mathematics Ordinary Level",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "LC-HIGHER",
+          "title": "Mathematics Higher Level",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "quadratic-functions-graphs", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "normal-distribution", "counting-permutations-combinations"] }
+          ]
+        },
+        {
+          "code": "LC-APPLIED",
+          "title": "Applied Mathematics",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "au-australian-curriculum",
+      "name": "Australian Curriculum",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "template": "year-7-10"
+    },
+    {
+      "id": "au-senior-secondary",
+      "name": "Senior Secondary Australian Curriculum",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "template": "au-senior"
+    },
+    {
+      "id": "au-vce",
+      "name": "Victoria VCE",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "template": "au-senior",
+      "removeCourses": ["ESSENTIAL"],
+      "courses": [
+        {
+          "code": "FOUNDATION",
+          "title": "Foundation Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["percent-of-quantity", "percent-change", "simple-compound-interest", "ratios-and-rates", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "pythagorean-theorem", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "au-nsw-hsc",
+      "name": "NSW HSC",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "courses": [
+        {
+          "code": "HSC-STANDARD",
+          "title": "Mathematics Standard",
+          "units": [
+            { "title": "Number", "topics": ["percent-of-quantity", "percent-change", "simple-compound-interest", "ratios-and-rates", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "pythagorean-theorem", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "HSC-ADVANCED",
+          "title": "Mathematics Advanced",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "quadratic-functions-graphs", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "normal-distribution", "counting-permutations-combinations"] }
+          ]
+        },
+        {
+          "code": "HSC-EXT1",
+          "title": "Mathematics Extension 1",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] }
+          ]
+        },
+        {
+          "code": "HSC-EXT2",
+          "title": "Mathematics Extension 2",
+          "units": [
+            { "title": "Algebra and number", "topics": ["complex-numbers", "polynomial-functions", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "au-qce",
+      "name": "Queensland QCE",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "template": "au-senior"
+    },
+    {
+      "id": "au-sace",
+      "name": "South Australia SACE",
+      "country": {
+        "regionCode": "AU",
+        "name": "Australia"
+      },
+      "template": "au-senior"
+    },
+    {
+      "id": "nz-curriculum",
+      "name": "New Zealand Curriculum",
+      "country": {
+        "regionCode": "NZ",
+        "name": "New Zealand"
+      },
+      "template": "year-7-10"
+    },
+    {
+      "id": "nz-ncea",
+      "name": "NCEA",
+      "country": {
+        "regionCode": "NZ",
+        "name": "New Zealand"
+      },
+      "courses": [
+        {
+          "code": "NCEA-L1",
+          "title": "Level 1 Mathematics and Statistics",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "NCEA-L2-MATH",
+          "title": "Level 2 Mathematics",
+          "units": [
+            { "title": "Functions", "topics": ["polynomial-functions", "rational-expressions", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        },
+        {
+          "code": "NCEA-L2-STATS",
+          "title": "Level 2 Statistics",
+          "units": [
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "standard-deviation", "simple-probability", "compound-probability", "counting-permutations-combinations", "normal-distribution", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "NCEA-L3-CALCULUS",
+          "title": "Level 3 Calculus",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "exponential-functions", "logarithms", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        },
+        {
+          "code": "NCEA-L3-STATS",
+          "title": "Level 3 Statistics",
+          "units": [
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "standard-deviation", "simple-probability", "compound-probability", "counting-permutations-combinations", "normal-distribution", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "in-cbse",
+      "name": "CBSE",
+      "country": {
+        "regionCode": "IN",
+        "name": "India"
+      },
+      "levelKind": "Class",
+      "courses": [
+        {
+          "code": "CBSE-C7",
+          "title": "Class 7 Mathematics",
+          "level": "Class 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "CBSE-C8",
+          "title": "Class 8 Mathematics",
+          "level": "Class 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CBSE-C9",
+          "title": "Class 9 Mathematics",
+          "level": "Class 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CBSE-C10-STANDARD",
+          "title": "Class 10 Mathematics Standard",
+          "level": "Class 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CBSE-C10-BASIC",
+          "title": "Class 10 Mathematics Basic",
+          "level": "Class 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CBSE-C11",
+          "title": "Class 11 Mathematics",
+          "level": "Class 11",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "rational-expressions", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Vectors, sequences and complex numbers", "topics": ["vectors", "sequences-series", "complex-numbers"] },
+            { "title": "Calculus basics", "topics": ["limits"] }
+          ]
+        },
+        {
+          "code": "CBSE-C12",
+          "title": "Class 12 Mathematics",
+          "level": "Class 12",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "counting-permutations-combinations"] },
+            { "title": "Algebra", "topics": ["complex-numbers", "rational-expressions"] }
+          ]
+        },
+        {
+          "code": "CBSE-APPLIED",
+          "title": "Class 11-12 Applied Mathematics",
+          "level": "Class 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "in-cisce",
+      "name": "CISCE (ICSE and ISC)",
+      "country": {
+        "regionCode": "IN",
+        "name": "India"
+      },
+      "levelKind": "Class",
+      "courses": [
+        {
+          "code": "ICSE-C7",
+          "title": "ICSE Class 7 Mathematics",
+          "level": "Class 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "ICSE-C8",
+          "title": "ICSE Class 8 Mathematics",
+          "level": "Class 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ICSE-C9",
+          "title": "ICSE Class 9 Mathematics",
+          "level": "Class 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ICSE-C10",
+          "title": "ICSE Class 10 Mathematics",
+          "level": "Class 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ISC-C11",
+          "title": "ISC Mathematics Class 11",
+          "level": "Class 11",
+          "units": [
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "rational-expressions", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Vectors, sequences and complex numbers", "topics": ["vectors", "sequences-series", "complex-numbers"] },
+            { "title": "Calculus basics", "topics": ["limits"] }
+          ]
+        },
+        {
+          "code": "ISC-C12",
+          "title": "ISC Mathematics Class 12",
+          "level": "Class 12",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "counting-permutations-combinations"] },
+            { "title": "Algebra", "topics": ["complex-numbers", "rational-expressions"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sg-moe-secondary",
+      "name": "Singapore MOE Secondary",
+      "country": {
+        "regionCode": "SG",
+        "name": "Singapore"
+      },
+      "courses": [
+        {
+          "code": "SG-G1",
+          "title": "Secondary G1 Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "SG-G2",
+          "title": "Secondary G2 Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "SG-G3",
+          "title": "Secondary G3 Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "SG-ADDMATH",
+          "title": "Additional Mathematics",
+          "units": [
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "polynomial-functions", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Coordinate geometry", "topics": ["equations-of-lines", "coordinate-geometry"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sg-o-level",
+      "name": "Singapore O-Level",
+      "country": {
+        "regionCode": "SG",
+        "name": "Singapore"
+      },
+      "courses": [
+        {
+          "code": "SG-O-MATH",
+          "title": "O-Level Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "SG-O-ADDMATH",
+          "title": "O-Level Additional Mathematics",
+          "units": [
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "polynomial-functions", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Coordinate geometry", "topics": ["equations-of-lines", "coordinate-geometry"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sg-a-level",
+      "name": "Singapore-Cambridge A-Level",
+      "country": {
+        "regionCode": "SG",
+        "name": "Singapore"
+      },
+      "courses": [
+        {
+          "code": "SG-H1",
+          "title": "H1 Mathematics",
+          "units": [
+            { "title": "Algebra", "topics": ["linear-inequalities", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "quadratic-formula"] },
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["compound-probability", "normal-distribution", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "SG-H2",
+          "title": "H2 Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "polynomial-functions", "function-transformations"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "counting-permutations-combinations", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "SG-H2-FURTHER",
+          "title": "H2 Further Mathematics",
+          "units": [
+            { "title": "Algebra and number", "topics": ["complex-numbers", "polynomial-functions", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hk-edb",
+      "name": "Hong Kong EDB",
+      "country": {
+        "regionCode": "HK",
+        "name": "Hong Kong"
+      },
+      "levelKind": "Secondary",
+      "courses": [
+        {
+          "code": "HK-S1",
+          "title": "Secondary 1 Mathematics",
+          "level": "Secondary 1",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "HK-S2",
+          "title": "Secondary 2 Mathematics",
+          "level": "Secondary 2",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "HK-S3",
+          "title": "Secondary 3 Mathematics",
+          "level": "Secondary 3",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hk-dse",
+      "name": "HKDSE",
+      "country": {
+        "regionCode": "HK",
+        "name": "Hong Kong"
+      },
+      "courses": [
+        {
+          "code": "DSE-COMPULSORY",
+          "title": "Mathematics Compulsory Part",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "DSE-M1",
+          "title": "Mathematics Extended Module M1",
+          "units": [
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "DSE-M2",
+          "title": "Mathematics Extended Module M2",
+          "units": [
+            { "title": "Algebra", "topics": ["sequences-series", "rational-expressions", "logarithms", "exponential-functions"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ph-matatag",
+      "name": "MATATAG Curriculum and Senior High School",
+      "country": {
+        "regionCode": "PH",
+        "name": "Philippines"
+      },
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "PH-G7",
+          "title": "Grade 7 Mathematics",
+          "level": "Grade 7",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "PH-G8",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "PH-G9",
+          "title": "Grade 9 Mathematics",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "PH-G10",
+          "title": "Grade 10 Mathematics",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "PH-SHS-GENERAL",
+          "title": "General Mathematics",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["simple-compound-interest", "percent-change"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "exponential-functions", "sequences-series"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "za-caps",
+      "name": "South Africa CAPS",
+      "country": {
+        "regionCode": "ZA",
+        "name": "South Africa"
+      },
+      "levelKind": "Grade",
+      "courses": [
+        {
+          "code": "ZA-G8",
+          "title": "Grade 8 Mathematics",
+          "level": "Grade 8",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ZA-G9",
+          "title": "Grade 9 Mathematics",
+          "level": "Grade 9",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ZA-G10",
+          "title": "Grade 10 Mathematics",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "ZA-G11",
+          "title": "Grade 11 Mathematics",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number", "topics": ["radical-expressions", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "quadratic-functions-graphs", "exponential-functions", "sequences-series", "polynomial-functions"] },
+            { "title": "Geometry and measurement", "topics": ["sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "standard-deviation", "normal-distribution"] }
+          ]
+        },
+        {
+          "code": "ZA-G12",
+          "title": "Grade 12 Mathematics",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Number", "topics": ["complex-numbers"] },
+            { "title": "Algebra", "topics": ["rational-expressions"] },
+            { "title": "Functions", "topics": ["exponential-functions", "logarithms", "polynomial-functions", "function-transformations", "sequences-series"] },
+            { "title": "Geometry and measurement", "topics": ["trigonometric-functions", "trigonometric-identities", "vectors"] },
+            { "title": "Data and probability", "topics": ["counting-permutations-combinations", "normal-distribution", "sampling-inference"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
+          ]
+        },
+        {
+          "code": "ZA-G10-LITERACY",
+          "title": "Grade 10 Mathematical Literacy",
+          "level": "Grade 10",
+          "units": [
+            { "title": "Number and finance", "topics": ["percent-change", "simple-compound-interest", "unit-rates-and-conversions", "ratios-and-rates"] },
+            { "title": "Data and probability", "topics": ["data-displays", "measures-of-centre", "scatter-plots-best-fit", "simple-probability"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "similar-figures-scale"] }
+          ]
+        },
+        {
+          "code": "ZA-G11-LITERACY",
+          "title": "Grade 11 Mathematical Literacy",
+          "level": "Grade 11",
+          "units": [
+            { "title": "Number and finance", "topics": ["percent-change", "simple-compound-interest", "unit-rates-and-conversions", "ratios-and-rates"] },
+            { "title": "Data and probability", "topics": ["data-displays", "measures-of-centre", "scatter-plots-best-fit", "simple-probability"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "similar-figures-scale"] }
+          ]
+        },
+        {
+          "code": "ZA-G12-LITERACY",
+          "title": "Grade 12 Mathematical Literacy",
+          "level": "Grade 12",
+          "units": [
+            { "title": "Number and finance", "topics": ["percent-change", "simple-compound-interest", "unit-rates-and-conversions", "ratios-and-rates"] },
+            { "title": "Data and probability", "topics": ["data-displays", "measures-of-centre", "scatter-plots-best-fit", "simple-probability"] },
+            { "title": "Geometry and measurement", "topics": ["perimeter-and-area", "volume-surface-area", "similar-figures-scale"] }
+          ]
+        }
+      ]
+    },
+    {
       "id": "ib-mathematics",
       "name": "IB Mathematics",
       "country": {
@@ -703,209 +1962,44 @@
           "code": "IB-AA-SL",
           "title": "IB Mathematics: Analysis and Approaches SL",
           "units": [
-            {
-              "title": "Number and algebra",
-              "topics": [
-                "sequences-series",
-                "exponent-laws",
-                "logarithms",
-                "rational-expressions"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "function-transformations",
-                "quadratic-functions-graphs",
-                "exponential-functions",
-                "polynomial-functions"
-              ]
-            },
-            {
-              "title": "Geometry and trigonometry",
-              "topics": [
-                "right-triangle-trigonometry",
-                "sine-cosine-laws",
-                "trigonometric-functions",
-                "trigonometric-identities"
-              ]
-            },
-            {
-              "title": "Statistics and probability",
-              "topics": [
-                "measures-of-centre",
-                "standard-deviation",
-                "normal-distribution",
-                "compound-probability"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications",
-                "integrals"
-              ]
-            }
+            { "title": "Number and algebra", "topics": ["sequences-series", "exponent-laws", "logarithms", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "quadratic-functions-graphs", "exponential-functions", "polynomial-functions"] },
+            { "title": "Geometry and trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws", "trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Statistics and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
           ]
         },
         {
           "code": "IB-AA-HL",
           "title": "IB Mathematics: Analysis and Approaches HL",
           "units": [
-            {
-              "title": "Number and algebra",
-              "topics": [
-                "sequences-series",
-                "exponent-laws",
-                "logarithms",
-                "rational-expressions",
-                "complex-numbers"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "function-transformations",
-                "quadratic-functions-graphs",
-                "exponential-functions",
-                "polynomial-functions"
-              ]
-            },
-            {
-              "title": "Geometry and trigonometry",
-              "topics": [
-                "right-triangle-trigonometry",
-                "sine-cosine-laws",
-                "trigonometric-functions",
-                "trigonometric-identities",
-                "vectors"
-              ]
-            },
-            {
-              "title": "Statistics and probability",
-              "topics": [
-                "measures-of-centre",
-                "standard-deviation",
-                "normal-distribution",
-                "compound-probability"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications",
-                "integrals"
-              ]
-            }
+            { "title": "Number and algebra", "topics": ["sequences-series", "exponent-laws", "logarithms", "rational-expressions", "complex-numbers"] },
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "quadratic-functions-graphs", "exponential-functions", "polynomial-functions"] },
+            { "title": "Geometry and trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws", "trigonometric-functions", "trigonometric-identities", "vectors"] },
+            { "title": "Statistics and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
           ]
         },
         {
           "code": "IB-AI-SL",
           "title": "IB Mathematics: Applications and Interpretation SL",
           "units": [
-            {
-              "title": "Number and algebra",
-              "topics": [
-                "sequences-series",
-                "simple-compound-interest",
-                "exponent-laws",
-                "scientific-notation"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "linear-relations-graphs",
-                "quadratic-functions-graphs",
-                "exponential-functions"
-              ]
-            },
-            {
-              "title": "Geometry and trigonometry",
-              "topics": [
-                "right-triangle-trigonometry",
-                "sine-cosine-laws",
-                "trigonometric-functions"
-              ]
-            },
-            {
-              "title": "Statistics and probability",
-              "topics": [
-                "measures-of-centre",
-                "scatter-plots-best-fit",
-                "standard-deviation",
-                "normal-distribution",
-                "compound-probability"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications"
-              ]
-            }
+            { "title": "Number and algebra", "topics": ["sequences-series", "simple-compound-interest", "exponent-laws", "scientific-notation"] },
+            { "title": "Functions", "topics": ["function-notation", "linear-relations-graphs", "quadratic-functions-graphs", "exponential-functions"] },
+            { "title": "Geometry and trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws", "trigonometric-functions"] },
+            { "title": "Statistics and probability", "topics": ["measures-of-centre", "scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications"] }
           ]
         },
         {
           "code": "IB-AI-HL",
           "title": "IB Mathematics: Applications and Interpretation HL",
           "units": [
-            {
-              "title": "Number and algebra",
-              "topics": [
-                "sequences-series",
-                "simple-compound-interest",
-                "exponent-laws",
-                "scientific-notation"
-              ]
-            },
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "linear-relations-graphs",
-                "quadratic-functions-graphs",
-                "exponential-functions",
-                "function-transformations"
-              ]
-            },
-            {
-              "title": "Geometry and trigonometry",
-              "topics": [
-                "right-triangle-trigonometry",
-                "sine-cosine-laws",
-                "trigonometric-functions",
-                "vectors"
-              ]
-            },
-            {
-              "title": "Statistics and probability",
-              "topics": [
-                "measures-of-centre",
-                "scatter-plots-best-fit",
-                "standard-deviation",
-                "normal-distribution",
-                "compound-probability"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications",
-                "integrals"
-              ]
-            }
+            { "title": "Number and algebra", "topics": ["sequences-series", "simple-compound-interest", "exponent-laws", "scientific-notation"] },
+            { "title": "Functions", "topics": ["function-notation", "linear-relations-graphs", "quadratic-functions-graphs", "exponential-functions", "function-transformations"] },
+            { "title": "Geometry and trigonometry", "topics": ["right-triangle-trigonometry", "sine-cosine-laws", "trigonometric-functions", "vectors"] },
+            { "title": "Statistics and probability", "topics": ["measures-of-centre", "scatter-plots-best-fit", "standard-deviation", "normal-distribution", "compound-probability"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
           ]
         }
       ]
@@ -922,91 +2016,224 @@
           "code": "AP-PRECALC",
           "title": "AP Precalculus",
           "units": [
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "function-transformations",
-                "polynomial-functions",
-                "rational-expressions",
-                "exponential-functions",
-                "logarithms",
-                "sequences-series"
-              ]
-            },
-            {
-              "title": "Geometry and measurement",
-              "topics": [
-                "trigonometric-functions",
-                "trigonometric-identities"
-              ]
-            }
+            { "title": "Functions", "topics": ["function-notation", "function-transformations", "polynomial-functions", "rational-expressions", "exponential-functions", "logarithms", "sequences-series"] },
+            { "title": "Geometry and measurement", "topics": ["trigonometric-functions", "trigonometric-identities"] }
           ]
         },
         {
           "code": "AP-CALC-AB",
           "title": "AP Calculus AB",
           "units": [
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "exponential-functions",
-                "logarithms"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications",
-                "integrals"
-              ]
-            }
+            { "title": "Functions", "topics": ["function-notation", "exponential-functions", "logarithms"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] }
           ]
         },
         {
           "code": "AP-CALC-BC",
           "title": "AP Calculus BC",
           "units": [
-            {
-              "title": "Functions",
-              "topics": [
-                "function-notation",
-                "exponential-functions",
-                "logarithms"
-              ]
-            },
-            {
-              "title": "Calculus basics",
-              "topics": [
-                "limits",
-                "derivative-rules",
-                "derivative-applications",
-                "integrals",
-                "sequences-series"
-              ]
-            }
+            { "title": "Functions", "topics": ["function-notation", "exponential-functions", "logarithms"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals", "sequences-series"] }
           ]
         },
         {
           "code": "AP-STATS",
           "title": "AP Statistics",
           "units": [
-            {
-              "title": "Data and probability",
-              "topics": [
-                "measures-of-centre",
-                "data-displays",
-                "scatter-plots-best-fit",
-                "standard-deviation",
-                "simple-probability",
-                "compound-probability",
-                "normal-distribution",
-                "sampling-inference"
-              ]
-            }
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "standard-deviation", "simple-probability", "compound-probability", "normal-distribution", "sampling-inference"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ib-myp",
+      "name": "IB MYP Mathematics",
+      "country": {
+        "regionCode": "INT",
+        "name": "International"
+      },
+      "levelKind": "MYP Year",
+      "courses": [
+        {
+          "code": "MYP-Y2",
+          "title": "MYP Mathematics Year 2",
+          "level": "MYP Year 2",
+          "units": [
+            { "title": "Number", "topics": ["whole-number-operations", "factors-multiples", "integer-operations", "fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "order-of-operations", "ratios-and-rates", "percent-of-quantity"] },
+            { "title": "Algebra", "topics": ["evaluate-expressions", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "perimeter-and-area", "circles-circumference-area"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "simple-probability"] }
+          ]
+        },
+        {
+          "code": "MYP-Y3",
+          "title": "MYP Mathematics Year 3",
+          "level": "MYP Year 3",
+          "units": [
+            { "title": "Number", "topics": ["rational-number-operations", "square-roots", "proportions", "percent-change", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "patterns-sequences"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["triangle-properties", "pythagorean-theorem", "volume-surface-area", "geometric-transformations"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "MYP-Y4",
+          "title": "MYP Mathematics Year 4",
+          "level": "MYP Year 4",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "MYP-Y5",
+          "title": "MYP Mathematics Year 5",
+          "level": "MYP Year 5",
+          "units": [
+            { "title": "Number", "topics": ["zero-negative-exponents", "simple-compound-interest"] },
+            { "title": "Algebra", "topics": ["polynomials-multiply", "factoring-polynomials", "quadratic-equations-factoring", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets"] },
+            { "title": "Functions", "topics": ["function-notation", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["right-triangle-trigonometry", "similar-figures-scale", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["data-displays", "compound-probability"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cambridge-international",
+      "name": "Cambridge International",
+      "country": {
+        "regionCode": "INT",
+        "name": "International"
+      },
+      "courses": [
+        {
+          "code": "CAM-LOWER",
+          "title": "Cambridge Lower Secondary Mathematics",
+          "units": [
+            { "title": "Number", "topics": ["exponent-laws", "scientific-notation", "rational-irrational-numbers", "unit-rates-and-conversions"] },
+            { "title": "Algebra", "topics": ["polynomials-add-subtract", "polynomials-multiply", "simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities"] },
+            { "title": "Functions", "topics": ["linear-relations-graphs", "slope-rate-of-change", "equations-of-lines", "systems-linear-equations"] },
+            { "title": "Geometry and measurement", "topics": ["similar-figures-scale", "volume-surface-area", "pythagorean-theorem", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["scatter-plots-best-fit", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CAM-IGCSE-CORE",
+          "title": "IGCSE Mathematics Core",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] }
+          ]
+        },
+        {
+          "code": "CAM-IGCSE-EXTENDED",
+          "title": "IGCSE Mathematics Extended",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "CAM-IGCSE-ADDITIONAL",
+          "title": "IGCSE Additional Mathematics",
+          "units": [
+            { "title": "Algebra", "topics": ["quadratic-formula", "completing-the-square", "polynomial-functions", "rational-expressions"] },
+            { "title": "Functions", "topics": ["function-transformations", "exponential-functions", "logarithms"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Coordinate geometry", "topics": ["equations-of-lines", "coordinate-geometry"] }
+          ]
+        },
+        {
+          "code": "CAM-AS-A-MATH",
+          "title": "AS and A Level Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "polynomial-functions", "function-transformations"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "counting-permutations-combinations", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "CAM-AS-A-FURTHER",
+          "title": "AS and A Level Further Mathematics",
+          "units": [
+            { "title": "Algebra and number", "topics": ["complex-numbers", "polynomial-functions", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "edexcel-international",
+      "name": "Edexcel International",
+      "country": {
+        "regionCode": "INT",
+        "name": "International"
+      },
+      "courses": [
+        {
+          "code": "INTL-GCSE-A",
+          "title": "International GCSE Mathematics A",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "INTL-GCSE-B",
+          "title": "International GCSE Mathematics B",
+          "units": [
+            { "title": "Number", "topics": ["fractions-add-subtract", "fractions-multiply-divide", "decimal-operations", "percent-of-quantity", "percent-change", "ratios-and-rates", "proportions", "unit-rates-and-conversions", "exponent-laws"] },
+            { "title": "Algebra", "topics": ["simplify-like-terms", "one-step-equations", "two-step-equations", "unknown-both-sides", "like-terms-before-solving", "equations-with-brackets", "linear-inequalities", "patterns-sequences", "factoring-polynomials", "quadratic-equations-factoring", "quadratic-formula", "completing-the-square", "rational-expressions"] },
+            { "title": "Graphs and functions", "topics": ["linear-relations-graphs", "equations-of-lines", "systems-linear-equations", "quadratic-functions-graphs", "function-transformations", "exponential-functions"] },
+            { "title": "Geometry and measurement", "topics": ["angle-relationships", "pythagorean-theorem", "perimeter-and-area", "circles-circumference-area", "volume-surface-area", "similar-figures-scale", "geometric-transformations", "right-triangle-trigonometry", "sine-cosine-laws"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "data-displays", "scatter-plots-best-fit", "simple-probability", "compound-probability"] },
+            { "title": "Trigonometry and vectors", "topics": ["trigonometric-functions", "vectors"] }
+          ]
+        },
+        {
+          "code": "INTL-A-MATH",
+          "title": "International A Level Mathematics",
+          "units": [
+            { "title": "Algebra and functions", "topics": ["quadratic-formula", "completing-the-square", "rational-expressions", "polynomial-functions", "function-transformations"] },
+            { "title": "Exponentials and logarithms", "topics": ["exponential-functions", "logarithms"] },
+            { "title": "Sequences and series", "topics": ["sequences-series"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-functions", "trigonometric-identities", "sine-cosine-laws"] },
+            { "title": "Calculus basics", "topics": ["limits", "derivative-rules", "derivative-applications", "integrals"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Data and probability", "topics": ["measures-of-centre", "standard-deviation", "normal-distribution", "compound-probability", "counting-permutations-combinations", "sampling-inference"] }
+          ]
+        },
+        {
+          "code": "INTL-A-FURTHER",
+          "title": "International A Level Further Mathematics",
+          "units": [
+            { "title": "Algebra and number", "topics": ["complex-numbers", "polynomial-functions", "sequences-series", "rational-expressions"] },
+            { "title": "Vectors and geometry", "topics": ["vectors", "coordinate-geometry"] },
+            { "title": "Trigonometry", "topics": ["trigonometric-identities", "trigonometric-functions"] },
+            { "title": "Calculus basics", "topics": ["derivative-rules", "derivative-applications", "integrals"] }
           ]
         }
       ]
