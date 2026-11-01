@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import pg from "pg";
@@ -34,11 +34,27 @@ const urlFor = (db: string, user?: string) => {
 };
 const maintenance = new pg.Client({ connectionString: urlFor("postgres") });
 
-const suggestedDirs = readdirSync(path.join(root, "data/curricula"), { withFileTypes: true })
+// Every data/curricula/*/suggested-* directory, loaded per curriculum in numeric version order (what the
+// "Load curriculum dataset" workflow does with sort -V), so v1 is always published before a v2 that supersedes it.
+const curriculaRoot = path.join(root, "data/curricula");
+const versionOf = (dir: string) => Number(path.basename(dir).slice("suggested-".length));
+const suggestedDirs = readdirSync(curriculaRoot, { withFileTypes: true })
   .filter((d) => d.isDirectory())
-  .map((d) => path.join(root, "data/curricula", d.name, "suggested-1"))
-  .filter((dir) => existsSync(path.join(dir, "dataset.json")));
+  .sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0))
+  .flatMap((d) =>
+    readdirSync(path.join(curriculaRoot, d.name))
+      .filter((v) => /^suggested-\d+$/.test(v))
+      .map((v) => path.join(curriculaRoot, d.name, v))
+      .filter((dir) => existsSync(path.join(dir, "dataset.json")))
+      .sort((x, y) => versionOf(x) - versionOf(y)),
+  );
 const datasets = suggestedDirs.map((dir) => readDatasetDir(dir));
+const source = JSON.parse(readFileSync(path.join(root, "data/curricula-src/curricula.json"), "utf8")) as {
+  curricula: { id: string; name: string; version?: number; country: { regionCode: string; name: string } }[];
+};
+const curriculumIds = [...new Set(datasets.map((d) => d.meta.curriculum.id))];
+const sourceByCountry = (code: string) => source.curricula.filter((c) => c.country.regionCode === code).map((c) => c.id).sort();
+const sourceCountryCodes = [...new Set(source.curricula.map((c) => c.country.regionCode))].sort();
 
 let ownerDb: ReturnType<typeof createDb>;
 let appDb: ReturnType<typeof createDb>;
@@ -66,25 +82,44 @@ afterAll(async () => {
 });
 
 describe("generated suggested datasets", () => {
-  it("finds the 15 shipped curricula: 13 Canadian regions, IB and AP", () => {
-    expect(datasets).toHaveLength(15);
+  it("finds every shipped dataset: one directory per version, one curriculum per source entry", () => {
+    expect(datasets).toHaveLength(suggestedDirs.length);
+    expect(curriculumIds.sort()).toEqual(source.curricula.map((c) => c.id).sort());
+    expect(curriculumIds).toHaveLength(49);
+    // 49 current datasets plus the superseded v1 directories of ontario, british-columbia, alberta and quebec
+    expect(datasets).toHaveLength(53);
     expect(datasets.every((d) => d.meta.version.kind === "suggested")).toBe(true);
+    const ontarioVersions = datasets.filter((d) => d.meta.curriculum.id === "ontario").map((d) => d.meta.version.id);
+    expect(ontarioVersions).toEqual(["ontario@suggested-1", "ontario@suggested-2"]);
   });
 
-  it("lists them grouped by country: Canada and International", async () => {
+  it("lists one entry per curriculum, latest version first, grouped by country", async () => {
     const all = await dal.listCurricula();
-    expect(all).toHaveLength(15);
-    expect(countryOptions(all)).toEqual([
-      { value: "CA", label: "Canada" },
-      { value: "INT", label: "International" },
-    ]);
+    expect(all).toHaveLength(49);
+    const options = countryOptions(all);
+    expect(options.map((o) => o.value).sort()).toEqual(sourceCountryCodes);
+    expect(options.map((o) => o.label)).toEqual(options.map((o) => o.label).sort((x, y) => x.localeCompare(y)));
+    expect(options.find((o) => o.value === "CA")!.label).toBe("Canada");
+    expect(options.find((o) => o.value === "INT")!.label).toBe("International");
+    expect(countryOptions(all).map((c) => c.value).sort()).toEqual(["AU", "CA", "GB", "HK", "IE", "IN", "INT", "NZ", "PH", "SG", "US", "ZA"]);
     expect(curriculaForCountry(all, "CA")).toHaveLength(13);
-    expect(curriculaForCountry(all, "INT").map((c) => c.id).sort()).toEqual(["ap-mathematics", "ib-mathematics"]);
-    expect(all.find((c) => c.id === "ontario")).toMatchObject({ name: "Ontario (suggested topics)", versions: [{ id: "ontario@suggested-1", kind: "suggested" }] });
+    for (const code of sourceCountryCodes) expect(curriculaForCountry(all, code).map((c) => c.id).sort()).toEqual(sourceByCountry(code));
+    expect(curriculaForCountry(all, "INT").map((c) => c.id)).toEqual(expect.arrayContaining(["ap-mathematics", "ib-mathematics"]));
+    for (const c of source.curricula) {
+      const entry = all.find((x) => x.id === c.id)!;
+      expect(entry.name).toBe(`${c.name} (suggested topics)`);
+      expect(entry.latestVersionId).toBe(`${c.id}@suggested-${c.version ?? 1}`);
+      expect(entry.versions[0]!.id).toBe(entry.latestVersionId);
+      expect(entry.versions.every((v) => v.kind === "suggested")).toBe(true);
+    }
+    const ontario = all.find((c) => c.id === "ontario")!;
+    expect(ontario.versions[0]).toMatchObject({ id: "ontario@suggested-2", kind: "suggested" });
+    // Only published versions are listed: loading v2 marks ontario@suggested-1 superseded, so it is no longer offered.
+    expect(ontario.versions.map((v) => v.id)).toEqual(["ontario@suggested-2"]);
   });
 
-  it("offers Ontario Grade 9 Algebra with the supported topics as partial and the rest unsupported", async () => {
-    const versionId = "ontario@suggested-1";
+  it("offers Ontario Grade 9 Algebra (version 2; version 1 is superseded and no longer selectable) with the supported topics as partial and the rest unsupported", async () => {
+    const versionId = "ontario@suggested-2";
     expect(await dal.getSelectionSteps(versionId)).toEqual(["level", "course", "unit", "topic"]);
     const levels = (await dal.getSelectionOptions({ versionId })).options;
     const grade9 = levels.find((l) => l.label === "Grade 9")!;
@@ -106,6 +141,33 @@ describe("generated suggested datasets", () => {
     expect(unsupported.every((t) => t.unsupportedReason === "no_verified_generator")).toBe(true);
   });
 
+  it("publishes ontario@suggested-2 with the named courses and the supported equation topics, superseding v1", async () => {
+    const v2 = datasets.find((d) => d.meta.version.id === "ontario@suggested-2")!;
+    expect(v2.meta.version.supersedes).toBe("ontario@suggested-1");
+    const versionId = v2.meta.version.id;
+    const levels = (await dal.getSelectionOptions({ versionId })).options;
+    const courseLabels: string[] = [];
+    const supportedByLevel = new Map<string, string[]>();
+    for (const level of levels) {
+      const courses = (await dal.getSelectionOptions({ versionId, levelId: level.id })).options;
+      courseLabels.push(...courses.map((c) => c.label));
+      for (const course of courses) {
+        const units = (await dal.getSelectionOptions({ versionId, levelId: level.id, courseId: course.id })).options;
+        const algebra = units.find((u) => u.label === "Algebra");
+        if (!algebra) continue;
+        const topics = (await dal.getSelectionOptions({ versionId, levelId: level.id, courseId: course.id, unitId: algebra.id })).options;
+        supportedByLevel.set(`${level.label}|${course.label}`, topics.filter((t) => t.supported).map((t) => t.label));
+      }
+    }
+    expect(courseLabels.some((l) => l.startsWith("Principles of Mathematics"))).toBe(true);
+    expect(courseLabels.some((l) => l.startsWith("Advanced Functions"))).toBe(true);
+    for (const [key, labels] of supportedByLevel) {
+      if (key.startsWith("Grade 9|") || key.startsWith("Grade 10|")) expect(labels, key).toHaveLength(4);
+    }
+    expect([...supportedByLevel.keys()].some((k) => k.startsWith("Grade 9|"))).toBe(true);
+    expect([...supportedByLevel.keys()].some((k) => k.startsWith("Grade 10|"))).toBe(true);
+  });
+
   it("loads the IB and AP courses with every topic unsupported", async () => {
     for (const versionId of ["ib-mathematics@suggested-1", "ap-mathematics@suggested-1"]) {
       expect(await dal.getSelectionSteps(versionId)).toEqual(["course", "unit", "topic"]);
@@ -124,7 +186,7 @@ describe("generated suggested datasets", () => {
   });
 
   it("resolves a lesson context for a supported topic with alignment disabled, and refuses an unsupported one", async () => {
-    const ontario = datasets.find((d) => d.meta.curriculum.id === "ontario")!;
+    const ontario = datasets.find((d) => d.meta.version.id === "ontario@suggested-2")!;
     const byTitle = (title: string) => ontario.structure.topics.find((t) => t.unitId.includes("/g9-math/") && t.title === title)!;
     const ctx = await dal.resolveCurriculumContext({ versionId: ontario.meta.version.id, topicId: byTitle("Solving two-step equations").id });
     expect(ctx.alignmentClaimsAllowed).toBe(false);
