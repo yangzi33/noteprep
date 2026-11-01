@@ -76,6 +76,8 @@ const EXPECTED: Record<string, Record<string, string[]>> = {
     "edexcel-international": ["International GCSE Mathematics A", "International A Level Further Mathematics"],
   },
 };
+// Exact course count per curriculum (pinned from the generated state): catches a silently dropped course.
+const COURSE_COUNTS: Record<string, number> = {"alberta": 9, "ap-mathematics": 4, "au-australian-curriculum": 4, "au-nsw-hsc": 4, "au-qce": 4, "au-sace": 4, "au-senior-secondary": 4, "au-vce": 4, "british-columbia": 11, "cambridge-international": 6, "edexcel-international": 4, "hk-dse": 3, "hk-edb": 3, "ib-mathematics": 4, "ib-myp": 4, "ie-junior-cycle": 1, "ie-leaving-certificate": 3, "in-cbse": 8, "in-cisce": 6, "manitoba": 6, "new-brunswick": 6, "newfoundland-and-labrador": 6, "northwest-territories": 6, "nova-scotia": 6, "nunavut": 6, "nz-curriculum": 4, "nz-ncea": 5, "ontario": 9, "ph-matatag": 5, "prince-edward-island": 6, "quebec": 9, "saskatchewan": 6, "sg-a-level": 3, "sg-moe-secondary": 4, "sg-o-level": 2, "uk-aqa-a-level": 3, "uk-aqa-gcse": 2, "uk-ccea": 3, "uk-edexcel-a-level": 3, "uk-edexcel-gcse": 2, "uk-england-national-curriculum": 3, "uk-ocr-gcse": 1, "uk-scotland-cfe": 5, "uk-wales": 2, "us-california": 8, "us-common-core": 6, "us-texas": 6, "yukon": 6, "za-caps": 8};
 const COUNTRY_NAMES: Record<string, string> = {
   US: "United States", CA: "Canada", GB: "United Kingdom", IE: "Ireland", AU: "Australia", NZ: "New Zealand", IN: "India",
   SG: "Singapore", HK: "Hong Kong", PH: "Philippines", ZA: "South Africa", INT: "International",
@@ -92,6 +94,11 @@ describe("P0 catalog", () => {
         for (const t of titles) expect(have, `${id}: ${t}`).toContain(t);
       }
     }
+  });
+
+  it("pins the exact course count of every curriculum", () => {
+    const actual = Object.fromEntries(DATASETS.map((d) => [d.meta.curriculum.id, d.structure.courses.length]));
+    expect(actual).toEqual(COURSE_COUNTS);
   });
 
   it("uses one consistent country name per region code", () => {
@@ -119,7 +126,7 @@ describe("P0 catalog", () => {
     for (const file of [LIVE_SRC, CANDIDATES]) {
       const templates = Object.values(file.templates ?? {}) as { courses: { title: string }[] }[];
       const own = (file.curricula as { courses?: { title: string }[] }[]).flatMap((c) => c.courses ?? []);
-      for (const course of [...templates.flatMap((t) => t.courses), ...own]) expect(course.title).not.toMatch(/Kindergarten|Primary|Grade [1-6]\b|(?<!MYP Mathematics )Year [1-6]\b/);
+      for (const course of [...templates.flatMap((t) => t.courses), ...own]) expect(course.title).not.toMatch(/Kindergarten|Primary|PSLE|PYP|Grade [1-6]\b|Class [1-6]\b|(?<!MYP Mathematics )Year [1-6]\b/);
     }
   });
 
