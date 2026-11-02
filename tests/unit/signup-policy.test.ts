@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mayCreateAccount, parseAllowlist, parseSignupPolicy, type SignupPolicy } from "@/lib/server/auth/signup-policy";
+import { mayCreateAccount, parseAllowlist, parseSignupPolicy, readAllowlist, type SignupPolicy } from "@/lib/server/auth/signup-policy";
 
 const m = vi.hoisted(() => ({
   policy: { mode: "invite", allowlist: new Set(["tutor@example.test"]) } as SignupPolicy,
@@ -65,6 +65,13 @@ describe("parseSignupPolicy", () => {
     expect(parseSignupPolicy({ NODE_ENV: "production", SIGNUP_MODE: "OPEN" }).mode).toBe("invite");
     expect(parseSignupPolicy({ NODE_ENV: "production", SIGNUP_MODE: "yes" }).mode).toBe("invite");
   });
+  it("only the exact strings open and invite are recognised; anything else, or an unset NODE_ENV, means invite", () => {
+    expect(parseSignupPolicy({}).mode).toBe("invite");
+    expect(parseSignupPolicy({ NODE_ENV: "" }).mode).toBe("invite");
+    expect(parseSignupPolicy({ NODE_ENV: "development", SIGNUP_MODE: "Open" }).mode).toBe("invite");
+    expect(parseSignupPolicy({ NODE_ENV: "development", SIGNUP_MODE: "open " }).mode).toBe("invite");
+    expect(parseSignupPolicy({ NODE_ENV: "test", SIGNUP_MODE: "yes" }).mode).toBe("invite");
+  });
   it("is open in development and test unless told otherwise, and open only when asked in production", () => {
     expect(parseSignupPolicy({ NODE_ENV: "development" }).mode).toBe("open");
     expect(parseSignupPolicy({ NODE_ENV: "test" }).mode).toBe("open");
@@ -88,6 +95,15 @@ describe("parseAllowlist and mayCreateAccount", () => {
   it("an empty allowlist in invite mode admits nobody; open mode admits everybody", () => {
     expect(mayCreateAccount(parseSignupPolicy({ NODE_ENV: "production" }), "tutor@example.test")).toBe(false);
     expect(mayCreateAccount(parseSignupPolicy({ NODE_ENV: "test" }), "anyone@example.test")).toBe(true);
+  });
+  it("removes duplicates before the cap and reports invalid, duplicate and over-cap entries separately", () => {
+    const repeated = Array.from({ length: 600 }, () => "same@example.test").join(",");
+    const report = readAllowlist(`${repeated},bad-entry,@x.test,Same@Example.test,other@example.test`);
+    expect([...report.allowlist].sort()).toEqual(["other@example.test", "same@example.test"]);
+    expect(report).toMatchObject({ invalid: 2, duplicate: 600, overCap: 0 });
+    const many = readAllowlist(Array.from({ length: 503 }, (_, i) => `u${i}@example.test`).join(" "));
+    expect(many).toMatchObject({ invalid: 0, duplicate: 0, overCap: 3 });
+    expect(many.allowlist.size).toBe(500);
   });
   it("caps the list", () => {
     const raw = Array.from({ length: 800 }, (_, i) => `u${i}@example.test`).join(",");

@@ -11,22 +11,47 @@ export interface SignupPolicy {
 const MAX_ENTRIES = 500;
 const email = z.email().max(254);
 
-/** Splits a comma, semicolon or whitespace separated list; entries that are not plain email addresses are dropped (they can never grant access). */
+export interface AllowlistReport {
+  allowlist: Set<string>;
+  /** Entries that are not plain email addresses (never counted as duplicates). */
+  invalid: number;
+  /** Valid entries repeating an earlier one (case-insensitive). */
+  duplicate: number;
+  /** Distinct valid entries beyond the cap. */
+  overCap: number;
+}
+
+/** Splits a comma, semicolon or whitespace separated list; entries that are not plain email addresses are dropped (they can never grant access). Duplicates are removed before the cap applies. */
+export function readAllowlist(raw: string | undefined): AllowlistReport {
+  const allowlist = new Set<string>();
+  let invalid = 0;
+  let duplicate = 0;
+  let overCap = 0;
+  for (const token of (raw ?? "").split(/[\s,;]+/)) {
+    const entry = token.trim().toLowerCase();
+    if (entry.length === 0) continue;
+    if (!email.safeParse(entry).success) invalid += 1;
+    else if (allowlist.has(entry)) duplicate += 1;
+    else if (allowlist.size >= MAX_ENTRIES) overCap += 1;
+    else allowlist.add(entry);
+  }
+  return { allowlist, invalid, duplicate, overCap };
+}
+
 export function parseAllowlist(raw: string | undefined): Set<string> {
-  const entries = (raw ?? "")
-    .split(/[\s,;]+/)
-    .map((entry) => entry.trim().toLowerCase())
-    .filter((entry) => entry.length > 0 && email.safeParse(entry).success);
-  return new Set(entries.slice(0, MAX_ENTRIES));
+  return readAllowlist(raw).allowlist;
 }
 
 /**
- * Invite-only is the default in production builds (fail closed: an unset variable never opens sign-up); development and
- * tests default to open. SIGNUP_MODE=open must be set on purpose to open a production deployment.
+ * Invite-only is the default everywhere except an explicit development or test run (fail closed: an unset, empty or
+ * unrecognised variable, or an unset NODE_ENV, never opens sign-up). SIGNUP_MODE=open must be set on purpose to open a
+ * production deployment. Only the exact strings "open" and "invite" are recognised.
  */
 export function parseSignupPolicy(source: { NODE_ENV?: string | undefined; SIGNUP_MODE?: string | undefined; SIGNUP_ALLOWLIST?: string | undefined }): SignupPolicy {
-  const mode = z.enum(["open", "invite"]).catch(source.NODE_ENV === "production" ? "invite" : "open").parse(source.SIGNUP_MODE || undefined);
-  return { mode, allowlist: parseAllowlist(source.SIGNUP_ALLOWLIST) };
+  const explicit = source.SIGNUP_MODE;
+  const mode: SignupMode =
+    explicit === "open" || explicit === "invite" ? explicit : !explicit && (source.NODE_ENV === "development" || source.NODE_ENV === "test") ? "open" : "invite";
+  return { mode, allowlist: readAllowlist(source.SIGNUP_ALLOWLIST).allowlist };
 }
 
 /** True when this address may create an account under the policy. */
