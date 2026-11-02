@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { withinLimit } from "@/lib/server/auth/email-limit";
 import { mayCreateAccount } from "@/lib/server/auth/signup-policy";
 import { signupPolicy } from "@/lib/server/env";
 import { publicEnv } from "@/lib/supabase/public-env";
@@ -30,14 +31,16 @@ export async function signUp(formData: FormData) {
   const parsed = parse(formData);
   if (!parsed.success) redirect("/login?error=invalid");
   const policy = signupPolicy();
-  if (mayCreateAccount(policy, parsed.data.email)) {
+  // The counter is hit for every address, listed or not, so both branches do the same metered work before the (listed-only) Auth call.
+  const withinRate = await withinLimit("signup");
+  if (withinRate && mayCreateAccount(policy, parsed.data.email)) {
     const supabase = await createServerSupabase();
     await supabase.auth.signUp({
       ...parsed.data,
       options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` },
     });
   }
-  // Same response whether or not the address already exists or is invited, so this cannot be used to probe accounts or the invite list.
+  // The reply is the same whether or not the address exists, is invited or was rate limited. Response time still differs for a listed address (it also pays the remote Auth round trip), so this does not fully hide invite-list membership; see docs/auth-recovery.md.
   redirect(policy.mode === "invite" ? "/login?notice=check-email-invite" : "/login?notice=check-email");
 }
 

@@ -1,34 +1,14 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { clientIpHash } from "@/lib/server/auth/client-ip";
-import { webDal } from "@/lib/server/dal/instance";
+import { logFailure, withinLimit } from "@/lib/server/auth/email-limit";
 import { mayCreateAccount } from "@/lib/server/auth/signup-policy";
 import { signupPolicy } from "@/lib/server/env";
 import { publicEnv } from "@/lib/supabase/public-env";
 import { createStatelessSupabase } from "@/lib/supabase/server";
-import type { AuthEmailKind } from "@/lib/server/dal/auth-rate";
 
 const EmailOnly = z.object({ email: z.email().max(254) });
-
-/** True when this request may send an email. A failing counter counts as "no": never send unmetered. */
-async function withinLimit(kind: AuthEmailKind): Promise<boolean> {
-  try {
-    const { allowed } = await webDal().authRate.hit(clientIpHash(await headers()), kind);
-    return allowed;
-  } catch (error) {
-    logFailure("auth_rate_failed", kind, error);
-    return false;
-  }
-}
-
-/** One fixed-shape line: event, kind and error class only (never the address, the IP or a code). */
-function logFailure(event: string, kind: AuthEmailKind, error: unknown) {
-  const status = Number((error as { status?: unknown } | null)?.status) || null;
-  console.error(JSON.stringify({ ts: new Date().toISOString(), event, kind, errorClass: (error as { name?: unknown } | null)?.name && typeof (error as { name: unknown }).name === "string" ? (error as { name: string }).name : "unknown", status }));
-}
 
 export async function requestPasswordReset(formData: FormData) {
   const parsed = EmailOnly.safeParse({ email: formData.get("email") });
@@ -50,7 +30,9 @@ export async function resendConfirmation(formData: FormData) {
   const parsed = EmailOnly.safeParse({ email: formData.get("email") });
   if (!parsed.success) redirect("/login/resend?error=invalid");
   const policy = signupPolicy();
-  if (mayCreateAccount(policy, parsed.data.email) && (await withinLimit("resend"))) {
+  // The counter is hit for every address, listed or not, so both branches do the same metered work before the (listed-only) provider call.
+  const withinRate = await withinLimit("resend");
+  if (withinRate && mayCreateAccount(policy, parsed.data.email)) {
     try {
       const supabase = createStatelessSupabase();
       const { error } = await supabase.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` } });

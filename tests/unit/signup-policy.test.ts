@@ -5,6 +5,7 @@ const m = vi.hoisted(() => ({
   policy: { mode: "invite", allowlist: new Set(["tutor@example.test"]) } as SignupPolicy,
   signUp: vi.fn(),
   resend: vi.fn(),
+  hit: vi.fn(),
   getStatus: vi.fn(),
   ensureAccount: vi.fn(),
   user: { ctx: { userId: "u1" }, email: "tutor@example.test" } as { ctx: { userId: string }; email: string } | null,
@@ -25,7 +26,7 @@ vi.mock("next/headers", () => ({ headers: async () => ({ get: () => null }) }));
 vi.mock("@/lib/server/env", () => ({ signupPolicy: () => m.policy }));
 vi.mock("@/lib/supabase/public-env", () => ({ publicEnv: () => ({ siteUrl: "https://site.test" }) }));
 vi.mock("@/lib/server/dal/instance", () => ({
-  webDal: () => ({ authRate: { hit: async () => ({ allowed: true, count: 1 }) }, account: { getStatus: m.getStatus, ensureAccount: m.ensureAccount } }),
+  webDal: () => ({ authRate: { hit: m.hit }, account: { getStatus: m.getStatus, ensureAccount: m.ensureAccount } }),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: async () => ({
@@ -99,6 +100,7 @@ beforeEach(() => {
   m.policy = { mode: "invite", allowlist: new Set(["tutor@example.test"]) };
   m.signUp.mockResolvedValue({ error: null });
   m.resend.mockResolvedValue({ error: null });
+  m.hit.mockResolvedValue({ allowed: true, count: 1 });
   m.getStatus.mockResolvedValue(null);
   m.user = { ctx: { userId: "u1" }, email: "tutor@example.test" };
   m.confirmedAt = "2026-01-01T00:00:00Z";
@@ -126,6 +128,48 @@ describe("resendConfirmation in invite mode", () => {
     expect(m.resend).not.toHaveBeenCalled();
     expect(await redirectOf(() => resendConfirmation(form({ email: "tutor@example.test" })))).toBe("/login?notice=check-email-invite");
     expect(m.resend).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("invite-list membership does not change the metered work", () => {
+  const listed = "tutor@example.test";
+  const unlisted = "stranger@example.test";
+  const run = {
+    signUp: (email: string) => redirectOf(() => signUp(form({ email, password: "correct horse battery" }))),
+    resend: (email: string) => redirectOf(() => resendConfirmation(form({ email }))),
+  };
+
+  it.each(["signUp", "resend"] as const)("%s hits the per-IP limiter exactly once for a listed and for an unlisted address", async (action) => {
+    await run[action](listed);
+    await run[action](unlisted);
+    expect(m.hit).toHaveBeenCalledTimes(2);
+    expect(m.hit.mock.calls.map((c) => c[1])).toEqual([action === "signUp" ? "signup" : "resend", action === "signUp" ? "signup" : "resend"]);
+  });
+  it.each(["signUp", "resend"] as const)("%s meters before any provider call", async (action) => {
+    const order: string[] = [];
+    m.hit.mockImplementation(async () => (order.push("hit"), { allowed: true, count: 1 }));
+    m.signUp.mockImplementation(async () => (order.push("provider"), { error: null }));
+    m.resend.mockImplementation(async () => (order.push("provider"), { error: null }));
+    await run[action](listed);
+    expect(order).toEqual(["hit", "provider"]);
+  });
+  it.each(["signUp", "resend"] as const)("%s over the limit skips the provider and answers like an accepted request", async (action) => {
+    const accepted = await run[action](listed);
+    m.signUp.mockClear();
+    m.resend.mockClear();
+    m.hit.mockResolvedValue({ allowed: false, count: 11 });
+    expect(await run[action](listed)).toBe(accepted);
+    expect(m.signUp).not.toHaveBeenCalled();
+    expect(m.resend).not.toHaveBeenCalled();
+  });
+  it.each(["signUp", "resend"] as const)("%s treats a failing counter as over the limit, silently and without the address", async (action) => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    m.hit.mockRejectedValue(new Error(`db down for ${listed}`));
+    expect(await run[action](listed)).toBe("/login?notice=check-email-invite");
+    expect(m.signUp).not.toHaveBeenCalled();
+    expect(m.resend).not.toHaveBeenCalled();
+    expect(spy.mock.calls.flat().join(" ")).not.toContain("example.test");
+    spy.mockRestore();
   });
 });
 
