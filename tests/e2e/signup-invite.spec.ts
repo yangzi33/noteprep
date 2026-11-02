@@ -15,6 +15,8 @@ test("a confirmed account that is not on the allowlist is sent to /not-invited a
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/not-invited$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByText("no NotePrep workspace or free generations were set up")).toBeVisible();
+  await expect(page.getByText("no account was created")).toHaveCount(0);
 
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/not-invited$/);
@@ -35,16 +37,21 @@ test("an allowlisted account signs in and reaches the dashboard", async ({ page 
 test("an existing account keeps working after its address is off the allowlist (the list gates creation only)", async ({ page }) => {
   const user = await createUser();
   await sql("insert into profile (id) values ($1)", [user.id]);
+  await sql("insert into usage_bucket (owner_id, kind, limit_count) values ($1, 'trial', 3)", [user.id]);
   await signIn(page, user);
   await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto("/not-invited");
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 
 test("the sign-up form gives the same answer for an invited and an uninvited address", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(`stranger-${Date.now()}@example.test`);
+  const stranger = `stranger-${Date.now()}@example.test`;
+  await page.getByLabel("Email").fill(stranger);
   await page.getByLabel("Password").fill("correct horse battery staple");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/login\?notice=check-email-invite$/);
   await expect(page.locator("main [role=status]")).toBeVisible();
+  expect(await sql("select 1 from auth.users where email = $1", [stranger])).toHaveLength(0);
 });
