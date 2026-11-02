@@ -1,15 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
-import { E2E_URLS, e2eEnv } from "./tests/e2e/support/env";
+import { E2E_URLS, INVITED_E2E_ADDRESS, e2eEnv } from "./tests/e2e/support/env";
 
 const env = e2eEnv();
-// Four servers from one production build, each with its flags pinned (so a developer's own .env cannot change what they do):
+// Five servers from one production build, each with its flags pinned (so a developer's own .env cannot change what they do):
 //   3100  FLOW_MODE=draft,  EXPORT_ENABLED=1  project "chromium" (default): everything except the specs below
 //   3101  FLOW_MODE=legacy, EXPORT_ENABLED=0  project "chromium-legacy": legacy-*.spec.ts (the old generate flow, kept as a kill switch)
 //   3102  FLOW_MODE=draft,  EXPORT_ENABLED=0  project "chromium-paused": *-paused.spec.ts (the documented export pause / rollback state)
 //   3103  FLOW_MODE=draft,  EXPORT_ENABLED=1, DAILY_REFRESH_ENABLED=1 (limit 5)  project "chromium-daily": *-daily.spec.ts (the beta daily refresh)
+//   3104  SIGNUP_MODE=invite, SIGNUP_ALLOWLIST=INVITED_E2E_ADDRESS  project "chromium-invite": *-invite.spec.ts (invite-only sign-up)
 const LEGACY_SPEC = /legacy-[^/]*\.spec\.ts$/;
 const PAUSED_SPEC = /[^/]*-paused\.spec\.ts$/;
 const DAILY_SPEC = /[^/]*-daily\.spec\.ts$/;
+const INVITE_SPEC = /[^/]*-invite\.spec\.ts$/;
 const serverEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.apiUrl,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.publishableKey,
@@ -38,10 +40,11 @@ export default defineConfig({
   // reducedMotion: the 180ms page fade-in is disabled so axe/contrast checks and screenshots never see a half-faded page.
   use: { baseURL: env.webUrl, trace: "retain-on-failure", reducedMotion: "reduce" },
   projects: [
-    { name: "chromium", testIgnore: [LEGACY_SPEC, PAUSED_SPEC, DAILY_SPEC], use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", testIgnore: [LEGACY_SPEC, PAUSED_SPEC, DAILY_SPEC, INVITE_SPEC], use: { ...devices["Desktop Chrome"] } },
     { name: "chromium-legacy", testMatch: LEGACY_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.legacy } },
     { name: "chromium-paused", testMatch: PAUSED_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.paused } },
     { name: "chromium-daily", testMatch: DAILY_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.daily } },
+    { name: "chromium-invite", testMatch: INVITE_SPEC, use: { ...devices["Desktop Chrome"], baseURL: E2E_URLS.invite } },
   ],
   webServer: [
     {
@@ -72,6 +75,13 @@ export default defineConfig({
       timeout: 60_000,
       reuseExistingServer: false,
       env: { ...serverEnv, DAILY_REFRESH_ENABLED: "1", DAILY_REFRESH_LIMIT: "5" },
+    },
+    {
+      command: "pnpm exec next start -p 3104",
+      url: `${E2E_URLS.invite}/healthz`,
+      timeout: 60_000,
+      reuseExistingServer: false,
+      env: { ...serverEnv, SIGNUP_MODE: "invite", SIGNUP_ALLOWLIST: INVITED_E2E_ADDRESS },
     },
   ],
 });
