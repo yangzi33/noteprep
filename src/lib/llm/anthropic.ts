@@ -43,7 +43,7 @@ export function costMicros(inputTokens: number, outputTokens: number, config: Pi
 /**
  * Worst case for a call whose usage is unknown: the full output allowance plus a rough input size (about 3
  * UTF-8 bytes per token, rounded up: bytes, not UTF-16 units, so CJK and emoji text, which runs about one token per
- * character, is never under-estimated) at the configured prices. A call that failed may still have been billed, so
+ * character, is conservative for typical text; rare byte-wise tokenization can exceed it) at the configured prices. A call that failed may still have been billed, so
  * it is counted against the job's budget at this ceiling rather than at zero.
  */
 export function usageCeiling(requestBody: string, maxOutputTokens: number, config: Pick<AnthropicConfig, "priceInputMicrosPerMTok" | "priceOutputMicrosPerMTok">): Usage {

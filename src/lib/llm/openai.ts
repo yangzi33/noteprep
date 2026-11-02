@@ -71,7 +71,7 @@ function errorFields(text: string): { type?: string; code?: string } {
   }
 }
 
-const SCHEMA_LIMITS = { maxProperties: 5_000, maxDepth: 10, maxNameChars: 120_000, maxEnumValues: 1_000 } as const;
+const SCHEMA_LIMITS = { maxProperties: 5_000, maxDepth: 10, maxNameChars: 120_000, maxEnumValues: 1_000, maxVisits: 50_000 } as const;
 const UNSUPPORTED_KEYWORDS = ["allOf", "not", "dependentRequired", "dependentSchemas", "if", "then", "else"] as const;
 const SCHEMA_NAME = /^[A-Za-z0-9_-]{1,64}$/;
 const REQUEST_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -93,8 +93,13 @@ export function strictSchemaProblems(schema: Json): string[] {
   if (schema.type !== "object") codes.add("root_not_object");
   if ("anyOf" in schema) codes.add("root_any_of");
 
+  let visits = 0;
   const visit = (node: unknown, depth: number): void => {
     if (!isObject(node)) return;
+    if (++visits > SCHEMA_LIMITS.maxVisits) {
+      codes.add("too_many_nodes"); // shared sub-schemas can be walked exponentially often; stop the walk
+      return;
+    }
     if (depth > SCHEMA_LIMITS.maxDepth) {
       codes.add("too_deep");
       return; // also bounds recursion on a hostile or cyclic structure
@@ -173,7 +178,7 @@ export class OpenAiProvider implements LlmProvider {
 
   constructor(config: OpenAiConfig) {
     // Messages never include a value: the key is a secret and the others are not worth echoing.
-    if (typeof config.apiKey !== "string" || config.apiKey === "" || /[\s\u0000-\u001f\u007f]/.test(config.apiKey)) throw new Error("an API key without whitespace or control characters is required");
+    if (typeof config.apiKey !== "string" || !/^[\x21-\x7e]+$/.test(config.apiKey)) throw new Error("an API key of printable ASCII characters without spaces is required");
     if (typeof config.model !== "string" || config.model.length === 0 || config.model.length > 200) throw new Error("a model id of 1 to 200 characters is required");
     for (const price of [config.priceInputMicrosPerMTok, config.priceOutputMicrosPerMTok]) {
       if (!Number.isSafeInteger(price) || price <= 0) throw new Error("both prices must be positive safe integers");
@@ -224,7 +229,12 @@ export class OpenAiProvider implements LlmProvider {
     }
     if (new TextEncoder().encode(requestBody).byteLength > OPENAI_LIMITS.maxRequestBytes) return refusedLocally();
 
-    const timeout = AbortSignal.timeout(request.limits.timeoutMs);
+    // Unusable limits are refused before anything is sent: a bad timeout would throw or become a 1 ms timer, and a
+    // non-finite output limit serializes as null (probably uncapped) and could not be priced.
+    const { timeoutMs, maxOutputTokens } = request.limits;
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2_147_483_647) return refusedLocally();
+    if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1) return refusedLocally();
+    const timeout = AbortSignal.timeout(timeoutMs);
     const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;
     const unknownUsage = (type: LlmErrorType, providerRequestId?: string): StructuredResult =>
       fail(type, this.#ceiling(requestBody, request.limits.maxOutputTokens), providerRequestId, true);
@@ -251,9 +261,15 @@ export class OpenAiProvider implements LlmProvider {
     try {
       body = await readTextCapped(response, OPENAI_LIMITS.maxResponseBytes);
     } catch {
-      return unknownUsage("invalid_output", providerRequestId); // the read failed: the request was sent, so assume spend
+      body = { ok: false, reason: "read_failed" }; // readTextCapped never throws; belt and braces
     }
-    if (!body.ok) return unknownUsage("invalid_output", providerRequestId);
+    if (!body.ok) {
+      // readTextCapped swallows an abort as a failed read, so look at the signals: a caller cancel propagates (as on
+      // the fetch and error-body paths), a timeout is typed as such; anything else is unusable output. All assume spend.
+      if (request.signal?.aborted) throw request.signal.reason ?? new DOMException("aborted", "AbortError");
+      if (body.reason === "read_failed" && timeout.aborted) return unknownUsage("timeout", providerRequestId);
+      return unknownUsage("invalid_output", providerRequestId); // the request was sent, so assume spend
+    }
     return this.interpretResponse(body.text, request, unknownUsage, providerRequestId);
   }
 

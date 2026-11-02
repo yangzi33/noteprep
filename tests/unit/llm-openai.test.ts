@@ -423,7 +423,7 @@ describe("OpenAI constructor validation and cost hardening", () => {
   it.each([[""], ["m".repeat(201)], [5], [undefined]])("rejects the model %p", (model) => {
     expect(make({ model })).toThrow();
   });
-  it.each([[""], ["sk bad"], ["sk\nbad"], ["sk\u0000"], [undefined], [5]])("rejects the api key %p", (apiKey) => {
+  it.each([[""], ["sk bad"], ["sk\nbad"], ["sk\u0000"], ["sk-\u043a\u043b\u044e\u0447"], ["sk-caf\u00e9"], [undefined], [5]])("rejects the api key %p", (apiKey) => {
     let message = "";
     try { make({ apiKey })(); } catch (e) { message = (e as Error).message; }
     expect(message).not.toBe("");
@@ -431,7 +431,7 @@ describe("OpenAI constructor validation and cost hardening", () => {
   });
   it("accepts valid values and a ceiling stays a positive safe integer even with a huge price and a bad token limit", async () => {
     const big = Number.MAX_SAFE_INTEGER;
-    for (const maxOutputTokens of [1_000, 0, -5, NaN, Infinity]) {
+    for (const maxOutputTokens of [1_000]) { // bad token limits are now refused locally (see "unusable limits")
       const { fetchImpl } = mockFetch(() => new Response("<html>"));
       const r = await new OpenAiProvider({ apiKey: SECRET, model: "m", priceInputMicrosPerMTok: big, priceOutputMicrosPerMTok: big, fetch: fetchImpl }).generateStructured(request({ limits: { timeoutMs: 5_000, maxOutputTokens, maxCostMicros: 1 } }));
       expect(r).toMatchObject({ ok: false, usageEstimated: true });
@@ -581,10 +581,48 @@ describe("OpenAI secret hygiene on every path", () => {
         expect(JSON.stringify(p)).not.toContain(SECRET);
         expect(inspect(p, { depth: 5, showHidden: true })).not.toContain(SECRET);
       }
-      expect(() => new OpenAiProvider({ apiKey: "", model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1 })).toThrow(/^an API key without whitespace or control characters is required$/);
+      expect(() => new OpenAiProvider({ apiKey: "", model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1 })).toThrow(/^an API key of printable ASCII characters without spaces is required$/);
       for (const s of spies) expect(s).not.toHaveBeenCalled();
     } finally {
       for (const s of spies) s.mockRestore();
     }
+  });
+});
+
+describe("OpenAI unusable limits, read aborts and schema budget", () => {
+  const withLimits = (limits: Partial<StructuredRequest["limits"]>) => request({ limits: { timeoutMs: 5_000, maxOutputTokens: 1_000, maxCostMicros: 1, ...limits } });
+  it.each([[NaN], [-1], [1.5], [0], [3e9], [Infinity], [2_147_483_648]])("timeoutMs %p is refused locally: no fetch, no usage, no throw", async (timeoutMs) => {
+    const { fetchImpl, calls } = mockFetch(() => json(responseOk()));
+    expect(await provider(fetchImpl).generateStructured(withLimits({ timeoutMs }))).toEqual(BAD);
+    expect(calls).toHaveLength(0);
+  });
+  it("accepts the largest valid timeout", async () => {
+    const { fetchImpl, calls } = mockFetch(() => json(responseOk()));
+    expect((await provider(fetchImpl).generateStructured(withLimits({ timeoutMs: 2_147_483_647 }))).ok).toBe(true);
+    expect(calls).toHaveLength(1);
+  });
+  it.each([[0], [-5], [NaN], [Infinity], [1.5], [1e300]])("maxOutputTokens %p is refused locally: no fetch, no usage", async (maxOutputTokens) => {
+    const { fetchImpl, calls } = mockFetch(() => json(responseOk()));
+    expect(await provider(fetchImpl).generateStructured(withLimits({ maxOutputTokens }))).toEqual(BAD);
+    expect(calls).toHaveLength(0);
+  });
+  const stalled = (signal: AbortSignal) => new Response(new ReadableStream({ start(c) { signal.addEventListener("abort", () => c.error(signal.reason)); } }), { status: 200 });
+  it("a caller cancel while reading a 2xx body rejects", async () => {
+    const controller = new AbortController();
+    const pending = provider(mockFetch(({ init }) => stalled(init.signal!)).fetchImpl).generateStructured(request({ signal: controller.signal }));
+    setTimeout(() => controller.abort(), 20);
+    await expect(pending).rejects.toThrow();
+  });
+  it("a timeout while reading a 2xx body is a typed timeout with the ceiling", async () => {
+    const r = await provider(mockFetch(({ init }) => stalled(init.signal!)).fetchImpl).generateStructured(withLimits({ timeoutMs: 30, maxOutputTokens: 100 }));
+    expect(r).toMatchObject({ ok: false, error: { type: "timeout", retryable: true }, usageEstimated: true, usage: { outputTokens: 100 } });
+  });
+  it("a shared sub-schema blown up under anyOf (8 wide x 9 deep) stops at the node budget, fast", () => {
+    let shared: Record<string, unknown> = { type: "string" };
+    for (let i = 0; i < 9; i++) shared = { anyOf: Array.from({ length: 8 }, () => shared) };
+    const started = performance.now();
+    const codes = strictSchemaProblems({ type: "object", properties: { a: shared }, required: ["a"], additionalProperties: false });
+    expect(performance.now() - started).toBeLessThan(250);
+    expect(codes).toContain("too_many_nodes");
   });
 });
