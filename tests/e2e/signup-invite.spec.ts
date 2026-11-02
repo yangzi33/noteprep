@@ -32,6 +32,14 @@ test("an allowlisted account signs in and reaches the dashboard", async ({ page 
   expect(profiles).toHaveLength(1);
 });
 
+test("an existing account keeps working after its address is off the allowlist (the list gates creation only)", async ({ page }) => {
+  const user = await createUser();
+  await sql("insert into profile (id) values ($1)", [user.id]);
+  await signIn(page, user);
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/dashboard$/);
+});
+
 test("the sign-up form gives the same answer for an invited and an uninvited address", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(`stranger-${Date.now()}@example.test`);
