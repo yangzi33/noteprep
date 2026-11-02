@@ -39,7 +39,8 @@ const LATIN_LETTER = /^[À-ſ]$/u;
  * set up"), found by compiling the whole range in the real image (tests/latex/escape-chars.test.ts): H and T with stroke,
  * kra, the two Ls with middle dot, n with a leading apostrophe, long s.
  */
-const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
+/** Exported so the MathText text allowlist shares this one list. */
+export const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
 
 const MAX_TEXT = 5000;
 

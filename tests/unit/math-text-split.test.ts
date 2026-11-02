@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import golden from "../fixtures/math-text/golden.json";
 import samples from "../fixtures/math-text/samples.json";
 import { HOSTILE_CASES } from "../fixtures/math-text/hostile";
+import { UNPRINTABLE_LETTERS } from "@/lib/latex/escape";
 import { normalizeMathTextInput, splitMathText } from "@/lib/math-text/split";
 
 describe("splitMathText", () => {
@@ -37,6 +38,19 @@ describe("splitMathText", () => {
     expect(splitMathText("see https://evil.test")).toMatchObject({ code: "text_url" });
     expect(splitMathText("visit WWW.evil.test")).toMatchObject({ code: "text_url" });
     expect(splitMathText("a@b.co")).toMatchObject({ code: "text_email" });
+  });
+  it("measures the input limit after NFC", () => {
+    const decomposed = "e\u0301".repeat(1000) + "e"; // 2001 UTF-16 units, 1001 characters after NFC
+    expect(decomposed.length).toBe(2001);
+    expect(splitMathText(decomposed)).toMatchObject({ ok: true });
+    expect(splitMathText("e\u0301".repeat(1000) + "ee")).toMatchObject({ ok: true });
+    expect(splitMathText("\u00E9".repeat(2001))).toEqual({ ok: false, code: "too_long" });
+    expect(splitMathText("e\u0301".repeat(2001))).toEqual({ ok: false, code: "too_long" }); // 4002 units, NFC 2001
+    expect(splitMathText("x".repeat(8001))).toEqual({ ok: false, code: "too_long" });
+  });
+  it("rejects every letter the pinned fonts cannot print", () => {
+    expect(UNPRINTABLE_LETTERS.size).toBe(9);
+    for (const ch of UNPRINTABLE_LETTERS) expect(splitMathText(ch), ch).toMatchObject({ ok: false, code: "text_bad_char" });
   });
   it("enforces size limits", () => {
     expect(splitMathText("x".repeat(100_000))).toEqual({ ok: false, code: "too_long" });

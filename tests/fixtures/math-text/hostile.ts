@@ -43,6 +43,11 @@ export const HOSTILE_CASES: readonly HostileCase[] = [
   { in: "x\\", expect: "reject", code: "text_backslash" },
   { in: "\\(x\\) and \\)", expect: "reject", code: "delim_unexpected_close" },
   { in: "\\(x \\(y\\)\\)", expect: "reject", code: "delim_nested" },
+  // Tokenizer stage (A3): split passes these on, the tokenizer rejects any character outside the math character set.
+  { in: "\\(\uD800\\)", expect: "reject", code: "math_bad_char" }, // lone surrogate inside a span
+  { in: "\\(x\u2028y\\)", expect: "reject", code: "math_bad_char" }, // line separator inside a span
+  { in: "\\(x\u2029y\\)", expect: "reject", code: "math_bad_char" }, // paragraph separator inside a span
+  { in: "\\(x\\\\)", expect: "reject", code: "math_bad_char" }, // span source ends with a lone backslash
   { in: "$$x$$", expect: "reject_or_safe" }, // plain text: `$` is an ordinary character
   // Over the 2000-character string limit.
   { in: "\\(" + "(".repeat(10_000) + "\\)", expect: "reject", code: "too_long" },

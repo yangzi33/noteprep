@@ -1,3 +1,4 @@
+import { UNPRINTABLE_LETTERS } from "@/lib/latex/escape";
 import { MATHTEXT_LIMITS, type MathTextErrorCode } from "@/lib/math-text/ast";
 
 export type SplitPart = { t: "text"; s: string } | { t: "span"; src: string; at: number };
@@ -16,8 +17,6 @@ export function normalizeMathTextInput(input: string): string {
   return trimSpaces(mapWhitespace(input).replace(/ {2,}/g, " "));
 }
 
-// Letters the pinned fonts cannot print (the same set as UNPRINTABLE_LETTERS in src/lib/latex/escape.ts).
-const UNPRINTABLE = new Set([0x126, 0x127, 0x138, 0x13f, 0x140, 0x149, 0x166, 0x167, 0x17f]);
 const TEXT_PUNCT = new Set([..." .,;:!?'\"’-–—()[]/%$&+="].map((c) => c.codePointAt(0) as number));
 
 /** Text allowlist of docs/mathtext.md: explicit Latin ranges, digits, space and the documented punctuation. */
@@ -25,7 +24,7 @@ function isAllowedTextChar(cp: number): boolean {
   if ((cp >= 0x41 && cp <= 0x5a) || (cp >= 0x61 && cp <= 0x7a) || (cp >= 0x30 && cp <= 0x39)) return true;
   if (TEXT_PUNCT.has(cp)) return true;
   if ((cp >= 0xc0 && cp <= 0xd6) || (cp >= 0xd8 && cp <= 0xf6) || (cp >= 0xf8 && cp <= 0xff)) return true;
-  return cp >= 0x100 && cp <= 0x17f && !UNPRINTABLE.has(cp);
+  return cp >= 0x100 && cp <= 0x17f && !UNPRINTABLE_LETTERS.has(String.fromCodePoint(cp));
 }
 
 function isControl(cp: number): boolean {
@@ -46,7 +45,8 @@ function isBidiOrInvisible(cp: number): boolean {
  */
 export function splitMathText(input: string): SplitResult {
   const L = MATHTEXT_LIMITS;
-  if (input.length > L.maxInputChars) return { ok: false, code: "too_long" }; // O(1): before any other work
+  // O(1) early reject. The documented limit is measured after NFC, which can shrink a string, so this cap is a safe multiple.
+  if (input.length > 4 * L.maxInputChars) return { ok: false, code: "too_long" };
   const mapped = mapWhitespace(input);
   if (mapped.length > L.maxInputChars) return { ok: false, code: "too_long" };
   const s = trimSpaces(mapped.replace(/ {2,}/g, " "));
