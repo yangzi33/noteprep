@@ -27,8 +27,10 @@ export interface OpenAiConfig {
   model: string;
   priceInputMicrosPerMTok: number;
   priceOutputMicrosPerMTok: number;
+  /** Optional proxy or test server root; `/v1/responses` is appended. https only (http allowed for localhost, 127.0.0.1, [::1]); no credentials, query or fragment. */
   baseUrl?: string;
   fetch?: typeof fetch;
+  /** Clock in ms, injectable for tests; B5 uses it to turn an HTTP-date Retry-After into a delay. */
   now?: () => number;
 }
 
@@ -74,7 +76,8 @@ export function strictSchemaProblems(schema: Json): string[] {
       if (node.additionalProperties !== false) codes.add(depth === 1 ? "additional_properties_not_false" : "nested_additional_properties_not_false");
       const keys = isObject(props) ? Object.keys(props) : [];
       const required = Array.isArray(node.required) ? node.required : [];
-      if (keys.some((k) => !required.includes(k))) codes.add("property_not_required");
+      const requiredSet = new Set(required);
+      if (keys.some((k) => !requiredSet.has(k))) codes.add("property_not_required");
       properties += keys.length;
       for (const k of keys) {
         nameChars += k.length;
@@ -99,6 +102,21 @@ export function strictSchemaProblems(schema: Json): string[] {
   return [...codes];
 }
 
+/** Configuration check, never a request path; messages deliberately never include the URL (it could carry a secret). */
+function validatedBaseUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("baseUrl is not a valid URL");
+  }
+  const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !localHttp) throw new Error("baseUrl must use https (http only for localhost)");
+  if (url.username || url.password) throw new Error("baseUrl must not contain credentials");
+  if (url.search || url.hash || raw.includes("?") || raw.includes("#")) throw new Error("baseUrl must not contain a query or fragment");
+  return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
+}
+
 const fail = (type: LlmErrorType, usage?: Usage, providerRequestId?: string, usageEstimated = false): StructuredResult => ({
   ok: false,
   error: { type, retryable: isRetryableLlmError(type) },
@@ -121,21 +139,29 @@ export class OpenAiProvider implements LlmProvider {
     if (!config.apiKey) throw new Error("an API key is required");
     this.#apiKey = config.apiKey;
     this.#doFetch = config.fetch ?? fetch;
-    this.#url = `${(config.baseUrl ?? "https://api.openai.com").replace(/\/+$/, "")}/v1/responses`;
+    this.#url = `${validatedBaseUrl(config.baseUrl ?? "https://api.openai.com")}/v1/responses`;
     this.#config = { model: config.model, priceInputMicrosPerMTok: config.priceInputMicrosPerMTok, priceOutputMicrosPerMTok: config.priceOutputMicrosPerMTok };
   }
 
   async generateStructured(request: StructuredRequest): Promise<StructuredResult> {
-    if (!SCHEMA_NAME.test(request.task) || !request.responseSchema || strictSchemaProblems(request.responseSchema).length > 0) return refusedLocally();
-    const requestBody = JSON.stringify({
-      model: this.#config.model,
-      // The input is data. It travels as one JSON document in the user message, never in `instructions`.
-      instructions: request.system,
-      input: [{ role: "user", content: [{ type: "input_text", text: JSON.stringify(request.input) }] }],
-      text: { format: { type: "json_schema", name: request.task, schema: request.responseSchema, strict: true } },
-      store: false, // documented opt-out of application state; abuse-monitoring logs still apply (architecture 8.1)
-      max_output_tokens: request.limits.maxOutputTokens,
-    });
+    let requestBody: string;
+    try {
+      if (!SCHEMA_NAME.test(request.task) || !request.responseSchema || strictSchemaProblems(request.responseSchema).length > 0) return refusedLocally();
+      // A value JSON cannot represent (undefined, a function, a symbol) must never produce a body without `text`.
+      const inputText: unknown = JSON.stringify(request.input);
+      if (typeof inputText !== "string") return refusedLocally();
+      requestBody = JSON.stringify({
+        model: this.#config.model,
+        // The input is data. It travels as one JSON document in the user message, never in `instructions`.
+        instructions: request.system,
+        input: [{ role: "user", content: [{ type: "input_text", text: inputText }] }],
+        text: { format: { type: "json_schema", name: request.task, schema: request.responseSchema, strict: true } },
+        store: false, // documented opt-out of application state; abuse-monitoring logs still apply (architecture 8.1)
+        max_output_tokens: request.limits.maxOutputTokens,
+      });
+    } catch {
+      return refusedLocally(); // circular structure, BigInt, a throwing toJSON: not serializable, so nothing is sent
+    }
     if (new TextEncoder().encode(requestBody).byteLength > OPENAI_LIMITS.maxRequestBytes) return refusedLocally();
 
     const timeout = AbortSignal.timeout(request.limits.timeoutMs);
@@ -206,7 +232,7 @@ export class OpenAiProvider implements LlmProvider {
     }
     return {
       ok: true, value, resultSchemaVersion: request.schemaVersion, provider: this.id,
-      model: typeof parsed.model === "string" ? parsed.model : this.#config.model, usage,
+      model: this.#config.model, usage, // the configured model, never the provider-supplied string (it flows into persisted provenance)
       ...(providerRequestId ? { providerRequestId } : {}),
     };
   }

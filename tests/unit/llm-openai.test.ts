@@ -158,7 +158,57 @@ describe("OpenAI local refusals", () => {
   });
 });
 
+describe("OpenAI never throws on unserializable requests", () => {
+  const circular: Record<string, unknown> = {};
+  circular.self = circular;
+  const cases: [string, Partial<StructuredRequest>][] = [
+    ["circular input", { input: circular }],
+    ["BigInt input", { input: 1n }],
+    ["BigInt in the schema", { responseSchema: { type: "object", properties: { a: { type: "string", default: 1n } }, required: ["a"], additionalProperties: false } }],
+    ["undefined input", { input: undefined }],
+    ["function input", { input: () => 1 }],
+    ["throwing toJSON", { input: { toJSON() { throw new Error("boom"); } } }],
+  ];
+  it.each(cases)("%s gives the local refusal with no fetch", async (_name, over) => {
+    const { fetchImpl, calls } = mockFetch(() => json(responseOk()));
+    expect(await provider(fetchImpl).generateStructured(request(over))).toEqual(BAD);
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe("OpenAI result model", () => {
+  it("returns the configured model, never the provider-supplied string", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ model: "EVIL\n<script>" })));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r.ok && r.model).toBe("test-model-1");
+  });
+});
+
+describe("OpenAI baseUrl validation", () => {
+  const make = (baseUrl: string) => () => new OpenAiProvider({ apiKey: SECRET, model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1, baseUrl });
+  it.each(["http://example.test", "ftp://example.test", "https://user:pass@example.test", "https://example.test?x=1", "https://example.test#f", "not a url", "https://example.test/?"])("rejects %s without leaking the key or the URL", (u) => {
+    expect(make(u)).toThrow(Error);
+    try { make(u)(); } catch (e) { expect(String((e as Error).message)).not.toContain(SECRET); expect(String((e as Error).message)).not.toContain("pass"); }
+  });
+  it.each(["http://localhost:8080", "http://127.0.0.1:9", "http://[::1]:9", "https://proxy.example.test/prefix/"])("accepts %s", (u) => {
+    expect(make(u)).not.toThrow();
+  });
+  it("appends /v1/responses after an optional path prefix", async () => {
+    const { fetchImpl, calls } = mockFetch(() => json(responseOk()));
+    await provider(fetchImpl, { baseUrl: "https://proxy.example.test/prefix/" }).generateStructured(request());
+    expect(calls[0]!.url).toBe("https://proxy.example.test/prefix/v1/responses");
+  });
+});
+
 describe("strictSchemaProblems", () => {
+  it("is linear in the number of required entries", () => {
+    const n = 30_000;
+    const names = Array.from({ length: n }, (_, i) => `p${i}`);
+    const schema = { type: "object", properties: Object.fromEntries(names.map((k) => [k, { type: "string" }])), required: names, additionalProperties: false };
+    const start = performance.now();
+    expect(strictSchemaProblems(schema)).toContain("too_many_properties");
+    expect(performance.now() - start).toBeLessThan(250);
+  });
   const ok = { type: "object", properties: { a: { type: "string" } }, required: ["a"], additionalProperties: false };
   it("accepts the existing prose schema", () => expect(strictSchemaProblems(PROSE_RESPONSE_SCHEMA)).toEqual([]));
   it("accepts a nested, strict-compatible schema with anyOf below the root", () =>
