@@ -289,3 +289,86 @@ describe("OpenAI key handling", () => {
     expect(() => new OpenAiProvider({ apiKey: "", model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1 })).toThrow(/API key/);
   });
 });
+
+describe("OpenAI response failure modes and usage accounting", () => {
+  const msg = (parts: unknown[]) => [{ type: "message", content: parts }];
+  const text = (t: string) => ({ type: "output_text", text: t });
+  const ACTUAL = { inputTokens: 1_000, outputTokens: 200 };
+  it.each([
+    ["refusal content", responseOk({ output: msg([{ type: "refusal", refusal: "no way" }]) }), { type: "refused", retryable: false }],
+    ["max_output_tokens", responseOk({ status: "incomplete", incomplete_details: { reason: "max_output_tokens" }, output: [] }), { type: "invalid_output", retryable: false, truncated: true }],
+    ["content_filter", responseOk({ status: "incomplete", incomplete_details: { reason: "content_filter" } }), { type: "refused", retryable: false }],
+    ["max_messages", responseOk({ status: "incomplete", incomplete_details: { reason: "max_messages" } }), { type: "invalid_output", retryable: false }],
+    ["steered", responseOk({ status: "incomplete", incomplete_details: { reason: "steered" } }), { type: "invalid_output", retryable: false }],
+    ["an unknown incomplete reason", responseOk({ status: "incomplete", incomplete_details: { reason: "brand_new" } }), { type: "invalid_output", retryable: false }],
+    ["incomplete without details", responseOk({ status: "incomplete" }), { type: "invalid_output", retryable: false }],
+    ["status failed", responseOk({ status: "failed", error: { message: "SECRET-PROVIDER-TEXT" } }), { type: "server_error", retryable: true }],
+    ["status cancelled", responseOk({ status: "cancelled" }), { type: "unknown", retryable: false }],
+    ["status queued", responseOk({ status: "queued" }), { type: "invalid_output", retryable: false }],
+    ["status in_progress", responseOk({ status: "in_progress" }), { type: "invalid_output", retryable: false }],
+    ["an unknown status", responseOk({ status: "weird" }), { type: "invalid_output", retryable: false }],
+    ["a missing status", responseOk({ status: undefined }), { type: "invalid_output", retryable: false }],
+    ["text that is not JSON", responseOk({ output: msg([text("{oops")]) }), { type: "invalid_output", retryable: false }],
+    ["no output text", responseOk({ output: [] }), { type: "invalid_output", retryable: false }],
+    ["empty output text", responseOk({ output: msg([text("")]) }), { type: "invalid_output", retryable: false }],
+    ["two output_text parts", responseOk({ output: msg([text('{"a":"x"}'), text('{"a":"y"}')]) }), { type: "invalid_output", retryable: false }],
+  ])("a 200 with %s is a failure carrying the actual usage and no provider text", async (_n, body, error) => {
+    const { fetchImpl } = mockFetch(() => json(body));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error, usage: ACTUAL });
+    expect(r).not.toHaveProperty("usageEstimated");
+    expect(JSON.stringify(r)).not.toMatch(/SECRET-PROVIDER-TEXT|no way/);
+    if (!("truncated" in error) && !r.ok) expect(r.error).not.toHaveProperty("truncated");
+  });
+  it("never reports zero spend: missing, partial or untrustworthy usage gives the conservative ceiling", async () => {
+    const bad = [
+      undefined, null, [], { input_tokens: 10 }, { output_tokens: 10 }, { input_tokens: "10", output_tokens: 1 },
+      { input_tokens: -5, output_tokens: 1 }, { input_tokens: 5, output_tokens: -1 }, { input_tokens: 1.5, output_tokens: 1 },
+      { input_tokens: NaN, output_tokens: 1 }, { input_tokens: 1, output_tokens: 1e300 }, { input_tokens: 10, output_tokens: 1e300 },
+      { input_tokens: 2 ** 53, output_tokens: 1 }, { input_tokens: null, output_tokens: null },
+    ];
+    for (const usage of bad) {
+      const { fetchImpl } = mockFetch(() => json(responseOk({ usage })));
+      const r = await provider(fetchImpl).generateStructured(request());
+      expect(r).toMatchObject({ ok: false, error: { type: "invalid_output" }, usageEstimated: true });
+      expect(!r.ok && r.usage!.outputTokens).toBe(1_000);
+      expect(!r.ok && r.usage!.costMicros).toBeGreaterThan(0);
+    }
+  });
+  it("an Infinity count (not expressible in JSON) also falls back via a non-JSON-safe route to the ceiling", async () => {
+    const { fetchImpl } = mockFetch(() => new Response('{"status":"completed","usage":{"input_tokens":1e999,"output_tokens":1}}'));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, usageEstimated: true });
+  });
+  it("a cost that is not a safe integer falls back to the ceiling", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ usage: { input_tokens: Number.MAX_SAFE_INTEGER, output_tokens: 1 } })));
+    const r = await provider(fetchImpl, { priceInputMicrosPerMTok: Number.MAX_SAFE_INTEGER }).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, usageEstimated: true });
+  });
+  it("a missing usage on a failure status also carries the ceiling", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ status: "failed", usage: undefined })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "server_error", retryable: true }, usageEstimated: true, usage: { outputTokens: 1_000 } });
+  });
+  it("reasoning tokens are never added, with the nested field present or absent", async () => {
+    for (const details of [{ output_tokens_details: { reasoning_tokens: 150 } }, {}]) {
+      const { fetchImpl } = mockFetch(() => json(responseOk({ usage: { input_tokens: 1_000, output_tokens: 200, ...details } })));
+      const r = await provider(fetchImpl).generateStructured(request());
+      expect(r.ok && r.usage).toEqual({ inputTokens: 1_000, outputTokens: 200, costMicros: 6_000 });
+    }
+  });
+  it("a body that is not JSON, not an object, or over the cap fails with the ceiling and never throws", async () => {
+    const bodies = ["<html>", "x".repeat(OPENAI_LIMITS.maxResponseBytes + 10), "null", "[]", "42", '"s"'];
+    for (const b of bodies) {
+      const { fetchImpl } = mockFetch(() => new Response(b));
+      expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output", retryable: false }, usageEstimated: true, usage: { outputTokens: 1_000 } });
+    }
+  });
+  it("a body whose read fails fails with the ceiling", async () => {
+    const broken = new Response(new ReadableStream({ pull() { throw new Error("boom"); } }));
+    const { fetchImpl } = mockFetch(() => broken);
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output" }, usageEstimated: true });
+  });
+  it("finds the output text by type, not by position (reasoning items first)", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ output: [{ type: "reasoning", summary: [] }, { type: "message", content: [{ type: "reasoning_text" }, text('{"a":"hello"}')] }] })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: true, value: { a: "hello" } });
+  });
+});

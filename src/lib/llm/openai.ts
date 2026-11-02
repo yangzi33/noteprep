@@ -18,8 +18,8 @@ import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type Structur
  * Local refusals (an oversized body, a schema strict mode would reject, a bad schema name, a missing schema) return
  * `bad_request` with no usage and without any network call: provably nothing was sent.
  *
- * Only the success path lives here so far; failure modes of a response (refusal, truncation, usage rules) are
- * refined in `interpretResponse`, and HTTP errors in `failFromHttp`.
+ * Response failure modes and usage rules live in `interpretResponse`; HTTP error classification is still the
+ * `failFromHttp` stub (B5).
  */
 export interface OpenAiConfig {
   apiKey: string;
@@ -185,7 +185,12 @@ export class OpenAiProvider implements LlmProvider {
 
     const rawId = response.headers.get("x-request-id") ?? undefined;
     const providerRequestId = rawId && REQUEST_ID.test(rawId) ? rawId : undefined;
-    const body = await readTextCapped(response, OPENAI_LIMITS.maxResponseBytes);
+    let body: Awaited<ReturnType<typeof readTextCapped>>;
+    try {
+      body = await readTextCapped(response, OPENAI_LIMITS.maxResponseBytes);
+    } catch {
+      return unknownUsage("invalid_output", providerRequestId); // the read failed: the request was sent, so assume spend
+    }
     if (!body.ok) return unknownUsage("invalid_output", providerRequestId);
     if (!response.ok) return this.failFromHttp(response.status, unknownUsage, providerRequestId);
     return this.interpretResponse(body.text, request, unknownUsage, providerRequestId);
@@ -196,7 +201,11 @@ export class OpenAiProvider implements LlmProvider {
     return unknownUsage("unknown", providerRequestId);
   }
 
-  /** A 2xx response body (B4 refines refusal, truncation and usage rules). */
+  /**
+   * A 2xx response body. Never throws; every failure is typed and carries usage (actual when trustworthy, otherwise
+   * the conservative ceiling with `usageEstimated`), because a request that reached the provider may have been billed.
+   * Provider text (the `error` object, a refusal message) is never copied into a result.
+   */
   private interpretResponse(text: string, request: StructuredRequest, unknownUsage: (type: LlmErrorType, id?: string) => StructuredResult, providerRequestId?: string): StructuredResult {
     let parsed: unknown;
     try {
@@ -205,31 +214,64 @@ export class OpenAiProvider implements LlmProvider {
       return unknownUsage("invalid_output", providerRequestId); // billed, but we cannot see how much
     }
     if (!isObject(parsed)) return unknownUsage("invalid_output", providerRequestId);
-    // Output tokens already include reasoning tokens; `output_tokens_details.reasoning_tokens` is never added again.
-    const u = isObject(parsed.usage) ? parsed.usage : {};
-    const usage: Usage | undefined =
-      typeof u.input_tokens === "number" && typeof u.output_tokens === "number"
-        ? { inputTokens: u.input_tokens, outputTokens: u.output_tokens, costMicros: costMicros(u.input_tokens, u.output_tokens, this.#config) }
-        : undefined;
-    if (!usage) return unknownUsage("invalid_output", providerRequestId);
-    if (parsed.status !== "completed") return fail("invalid_output", usage, providerRequestId);
 
-    let outputText: unknown;
-    for (const item of Array.isArray(parsed.output) ? parsed.output : []) {
-      if (!isObject(item) || item.type !== "message" || !Array.isArray(item.content)) continue;
-      const part = item.content.find((c: unknown) => isObject(c) && c.type === "output_text");
-      if (isObject(part)) {
-        outputText = part.text;
-        break;
+    // Usage is trusted only when BOTH counts are non-negative safe integers (a negative, fractional, NaN, Infinity or
+    // huge value must never reduce recorded spend) and the computed cost is a safe integer; otherwise the ceiling is
+    // used. `output_tokens` already includes reasoning tokens, so `output_tokens_details.reasoning_tokens` is never
+    // added again. Whether `input_tokens` already includes `cached_tokens` is UNVERIFIED (architecture 8.1, open
+    // question 1), so cost is computed at the FULL input price: a safe over-estimate, never an under-estimate.
+    const u = isObject(parsed.usage) ? parsed.usage : {};
+    const known = (x: unknown): x is number => typeof x === "number" && Number.isSafeInteger(x) && x >= 0;
+    let usage: Usage | undefined;
+    if (known(u.input_tokens) && known(u.output_tokens)) {
+      const cost = costMicros(u.input_tokens, u.output_tokens, this.#config);
+      if (Number.isSafeInteger(cost)) usage = { inputTokens: u.input_tokens, outputTokens: u.output_tokens, costMicros: cost };
+    }
+    const failWith = (type: LlmErrorType, extra: { truncated?: boolean } = {}): StructuredResult => {
+      if (!usage) return unknownUsage(type, providerRequestId);
+      const r = fail(type, usage, providerRequestId);
+      return extra.truncated && !r.ok ? { ...r, error: { ...r.error, truncated: true } } : r;
+    };
+
+    // Any status other than `completed` is a failure. The `error` object of a `failed` response is never read.
+    if (parsed.status !== "completed") {
+      switch (parsed.status) {
+        case "failed":
+          return failWith("server_error");
+        case "cancelled":
+          return failWith("unknown");
+        case "incomplete": {
+          const reason = isObject(parsed.incomplete_details) ? parsed.incomplete_details.reason : undefined;
+          if (reason === "max_output_tokens") return failWith("invalid_output", { truncated: true });
+          if (reason === "content_filter") return failWith("refused");
+          return failWith("invalid_output"); // max_messages, steered, unknown or missing reason
+        }
+        default:
+          return failWith("invalid_output"); // queued / in_progress are non-terminal on a synchronous call; unknown or missing
       }
     }
-    if (typeof outputText !== "string") return fail("invalid_output", usage, providerRequestId);
+
+    // Find content by `type`, never by position. A refusal anywhere wins; exactly one non-empty output_text is required.
+    let refusal = false;
+    const texts: unknown[] = [];
+    for (const item of Array.isArray(parsed.output) ? parsed.output : []) {
+      if (!isObject(item) || item.type !== "message" || !Array.isArray(item.content)) continue;
+      for (const part of item.content) {
+        if (!isObject(part)) continue;
+        if (part.type === "refusal") refusal = true;
+        else if (part.type === "output_text") texts.push(part.text);
+      }
+    }
+    if (refusal) return failWith("refused");
+    const outputText = texts[0];
+    if (texts.length !== 1 || typeof outputText !== "string" || outputText === "") return failWith("invalid_output");
     let value: unknown;
     try {
       value = JSON.parse(outputText);
     } catch {
-      return fail("invalid_output", usage, providerRequestId);
+      return failWith("invalid_output");
     }
+    if (!usage) return unknownUsage("invalid_output", providerRequestId); // an answer we cannot account for is not a success
     return {
       ok: true, value, resultSchemaVersion: request.schemaVersion, provider: this.id,
       model: this.#config.model, usage, // the configured model, never the provider-supplied string (it flows into persisted provenance)
