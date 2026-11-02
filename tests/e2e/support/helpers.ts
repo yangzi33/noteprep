@@ -18,10 +18,10 @@ export interface TestUser {
 const created: string[] = [];
 
 /** A confirmed account created through the Auth admin API (the email round trip is covered elsewhere). */
-export async function createUser(): Promise<TestUser> {
+export async function createUser(address?: string): Promise<TestUser> {
   const env = e2eEnv();
   const admin = createClient(env.apiUrl, env.secretKey, { auth: { persistSession: false } });
-  const email = `e2e-${randomUUID()}@example.test`;
+  const email = address ?? `e2e-${randomUUID()}@example.test`;
   const { data, error } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   if (error || !data.user) throw error ?? new Error("createUser failed");
   created.push(data.user.id);

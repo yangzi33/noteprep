@@ -1,14 +1,15 @@
 import { execFileSync } from "node:child_process";
 
 /**
- * The four pinned test servers (playwright.config.ts). Each pins FLOW_MODE and EXPORT_ENABLED explicitly, so a developer's own .env
- * cannot change them: default = draft flow with export on; legacy = the old generate flow; paused = draft flow with export off; daily = draft flow with export on and the beta daily refresh on (limit 5).
+ * The five pinned test servers (playwright.config.ts). Each pins FLOW_MODE and EXPORT_ENABLED explicitly, so a developer's own .env
+ * cannot change them: default = draft flow with export on; legacy = the old generate flow; paused = draft flow with export off; daily = draft flow with export on and the beta daily refresh on (limit 5); invite = invite-only sign-up with a one-address allowlist.
  */
 export const E2E_URLS = {
   default: "http://127.0.0.1:3100",
   legacy: "http://127.0.0.1:3101",
   paused: "http://127.0.0.1:3102",
   daily: "http://127.0.0.1:3103",
+  invite: "http://127.0.0.1:3104",
 } as const;
 
 export interface E2eEnv {
@@ -57,3 +58,6 @@ export function e2eEnv(): E2eEnv {
   };
   return cached;
 }
+
+/** The only address on the invite server's allowlist (playwright.config.ts). */
+export const INVITED_E2E_ADDRESS = "invited-tutor@example.test";
