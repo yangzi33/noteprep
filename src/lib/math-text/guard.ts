@@ -19,6 +19,12 @@ const VAR = /^[A-Za-z]$/;
  * chain of 149 `bin` nodes, docs/mathtext.md), far below the stack limit.
  */
 const MAX_GUARD_DEPTH = 256;
+/**
+ * Most nodes a document may hold. A source is at most 2000 characters and a node needs at least two thirds of a
+ * character (`xy` is three nodes for two characters, the densest shape), so the parser cannot produce more than about
+ * 3000; 4000 leaves margin and stops a hand-built document from making the checks do unbounded work.
+ */
+export const MAX_DOC_NODES = 4000;
 
 /** A plain object: prototype exactly `Object.prototype` (not null, not a class instance, not `Object.create(x)`). */
 const isRecord = (x: unknown): x is Record<string, unknown> =>
@@ -41,7 +47,7 @@ function exactKeys(o: Record<string, unknown>, allowed: readonly string[]): bool
 
 /** A dense plain array: `Array.prototype`, only own data elements at every index (no holes, no extra keys). */
 function denseArray(a: unknown): a is unknown[] {
-  if (!Array.isArray(a) || Object.getPrototypeOf(a) !== Array.prototype) return false;
+  if (!Array.isArray(a) || a.length > MAX_DOC_NODES || Object.getPrototypeOf(a) !== Array.prototype) return false;
   const keys = Reflect.ownKeys(a);
   if (keys.length !== a.length + 1) return false; // indices plus `length`
   for (let i = 0; i < a.length; i++) {
@@ -51,8 +57,8 @@ function denseArray(a: unknown): a is unknown[] {
   return keys.every((k) => k === "length" || (typeof k === "string" && /^(0|[1-9]\d*)$/.test(k) && Number(k) < a.length));
 }
 
-function isNode(n: unknown, depth: number): boolean {
-  if (depth > MAX_GUARD_DEPTH || !isRecord(n) || typeof n.t !== "string") return false;
+function isNode(n: unknown, depth: number, budget: { left: number }): boolean {
+  if (--budget.left < 0 || depth > MAX_GUARD_DEPTH || !isRecord(n) || typeof n.t !== "string") return false;
   const allowed = Object.hasOwn(KEYS, n.t) ? KEYS[n.t] : undefined;
   if (!allowed || !exactKeys(n, allowed)) return false;
   const d = depth + 1;
@@ -61,22 +67,22 @@ function isNode(n: unknown, depth: number): boolean {
     case "var": return typeof n.name === "string" && VAR.test(n.name);
     case "greek": return typeof n.name === "string" && GREEK.has(n.name);
     case "ldots": return true;
-    case "bin": return typeof n.op === "string" && BIN_OPS.has(n.op) && isNode(n.l, d) && isNode(n.r, d);
-    case "imp": case "list": return denseArray(n.items) && n.items.length >= 2 && n.items.every((x) => isNode(x, d));
-    case "unary": return typeof n.op === "string" && UNARY_OPS.has(n.op) && isNode(n.arg, d);
+    case "bin": return typeof n.op === "string" && BIN_OPS.has(n.op) && isNode(n.l, d, budget) && isNode(n.r, d, budget);
+    case "imp": case "list": return denseArray(n.items) && n.items.length >= 2 && n.items.every((x) => isNode(x, d, budget));
+    case "unary": return typeof n.op === "string" && UNARY_OPS.has(n.op) && isNode(n.arg, d, budget);
     case "rel":
-      return isNode(n.first, d) && denseArray(n.rest) && n.rest.length >= 1 &&
-        n.rest.every((r) => isRecord(r) && exactKeys(r, ["op", "rhs"]) && typeof r.op === "string" && REL_OPS.has(r.op) && isNode(r.rhs, d));
-    case "group": return (n.open === "(" || n.open === "[") && isNode(n.body, d);
-    case "abs": return isNode(n.body, d);
-    case "frac": return isNode(n.num, d) && isNode(n.den, d);
-    case "sqrt": return isNode(n.body, d) && (!("index" in n) || isNode(n.index, d));
-    case "sup": return isNode(n.base, d) && isNode(n.exp, d);
-    case "sub": return isNode(n.base, d) && isNode(n.sub, d);
-    case "pct": case "deg": return isNode(n.arg, d);
+      return isNode(n.first, d, budget) && denseArray(n.rest) && n.rest.length >= 1 &&
+        n.rest.every((r) => isRecord(r) && exactKeys(r, ["op", "rhs"]) && typeof r.op === "string" && REL_OPS.has(r.op) && isNode(r.rhs, d, budget));
+    case "group": return (n.open === "(" || n.open === "[") && isNode(n.body, d, budget);
+    case "abs": return isNode(n.body, d, budget);
+    case "frac": return isNode(n.num, d, budget) && isNode(n.den, d, budget);
+    case "sqrt": return isNode(n.body, d, budget) && (!Object.hasOwn(n, "index") || isNode(n.index, d, budget));
+    case "sup": return isNode(n.base, d, budget) && isNode(n.exp, d, budget);
+    case "sub": return isNode(n.base, d, budget) && isNode(n.sub, d, budget);
+    case "pct": case "deg": return isNode(n.arg, d, budget);
     case "fn":
-      return typeof n.name === "string" && FNS.has(n.name) && isNode(n.arg, d) &&
-        (!("base" in n) || (n.name === "log" && isNode(n.base, d)));
+      return typeof n.name === "string" && FNS.has(n.name) && isNode(n.arg, d, budget) &&
+        (!Object.hasOwn(n, "base") || (n.name === "log" && isNode(n.base, d, budget)));
     default: return false;
   }
 }
@@ -93,10 +99,11 @@ function isNode(n: unknown, depth: number): boolean {
 export function isMathTextDoc(value: unknown): value is MathTextDoc {
   try {
     if (!isRecord(value) || !exactKeys(value, ["v", "parts"]) || value.v !== MATHTEXT_PARSER_VERSION || !denseArray(value.parts)) return false;
+    const budget = { left: MAX_DOC_NODES };
     return value.parts.every((p) => {
       if (!isRecord(p)) return false;
       if (p.t === "text") return exactKeys(p, ["t", "s"]) && typeof p.s === "string";
-      if (p.t === "math") return exactKeys(p, ["t", "m"]) && isNode(p.m, 0);
+      if (p.t === "math") return exactKeys(p, ["t", "m"]) && isNode(p.m, 0, budget);
       return false;
     });
   } catch {

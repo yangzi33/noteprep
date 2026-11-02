@@ -108,3 +108,39 @@ describe("checkMathTextRenders fails closed on a hand-built document", () => {
     expect(checkMathTextRenders({ v: "mathtext/1" } as unknown as MathTextDoc)).toBe("render_tex_disallowed");
   });
 });
+
+describe("checkMathTextRenders applies the grammar to hand-built documents", () => {
+  const one = (m: unknown): MathTextDoc => doc(m) as MathTextDoc;
+  const text = (s: string): MathTextDoc => ({ v: MATHTEXT_PARSER_VERSION, parts: [{ t: "text", s }] });
+  const bin = { t: "bin", op: "+", l: x, r: x };
+  const cases: [string, MathTextDoc][] = [
+    ["raw URL in text", text("see http://evil.example/x")],
+    ["bidi character in text", text("abc\u202edef")],
+    ["empty text", text("")],
+    ["empty parts", { v: MATHTEXT_PARSER_VERSION, parts: [] }],
+    ["sup of a bin (x+x^{2} would mean something else)", one({ t: "sup", base: bin, exp: x })],
+    ["root index with a [ group", one({ t: "sqrt", index: { t: "group", open: "[", body: x }, body: x })],
+    ["nested abs", one({ t: "abs", body: { t: "abs", body: x } })],
+    ["two adjacent text parts", { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "text", s: "a" }, { t: "text", s: "b" }] }],
+  ];
+  for (const [name, d] of cases) {
+    it(`returns a typed code for ${name}`, () => {
+      expect(checkMathTextRenders(d)).toBe("render_tex_disallowed");
+    });
+  }
+  it("every parser-accepted fixture still returns null", () => {
+    for (const d of acceptedFixtureDocs()) expect(checkMathTextRenders(d), JSON.stringify(d)).toBeNull();
+  });
+  it("rejects an 80000-item hand-built imp quickly, in the guard and in the check", () => {
+    const big = one({ t: "imp", items: Array.from({ length: 80_000 }, () => x) });
+    const started = performance.now();
+    expect(isMathTextDoc(big)).toBe(false);
+    expect(checkMathTextRenders(big)).toBe("render_tex_disallowed");
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+  it("caps the node count at 4000", () => {
+    const wide = (n: number) => one({ t: "list", items: Array.from({ length: n }, () => x) });
+    expect(isMathTextDoc(wide(3000))).toBe(true);
+    expect(isMathTextDoc(wide(4000))).toBe(false); // 4000 leaves plus the list node
+  });
+});
