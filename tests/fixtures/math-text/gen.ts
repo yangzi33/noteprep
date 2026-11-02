@@ -1,4 +1,7 @@
-import type { BinOp, FnName, Greek, MathNode, RelOp } from "@/lib/math-text/ast";
+import golden from "./golden.json";
+import samples from "./samples.json";
+import { MATHTEXT_PARSER_VERSION, type BinOp, type FnName, type Greek, type MathNode, type MathTextDoc, type MathTextPart, type RelOp } from "@/lib/math-text/ast";
+import { parseMathText } from "@/lib/math-text/parse";
 
 /** mulberry32: a small seeded PRNG so property tests are reproducible. */
 export function rng(seed: number): () => number {
@@ -17,6 +20,7 @@ interface Ctx {
   d: number; // parser depth already used (open constructs and prefix signs)
   exp: number; // enclosing exponent scripts
   abs: boolean; // inside an absolute value: no further bars
+  idx?: boolean; // inside a root index: a nested root's `]` would end the optional argument early (KaTeX and TeX both refuse it)
   budget: { left: number }; // shared node budget: keeps trees small enough for one math span
 }
 
@@ -63,9 +67,9 @@ function genPrimary(c: Ctx): MathNode {
   if (r <= 1 && room(1)) return { t: "group", open: chance(c, 0.5) ? "(" : "[", body: genList(sub(c)) };
   if (r === 2 && room(1) && !c.abs) return { t: "abs", body: genExpr(sub(c, { abs: true })) };
   if (r === 3 && room(1)) return { t: "frac", num: genList(sub(c)), den: genList(sub(c)) };
-  if (r === 4 && room(1)) {
+  if (r === 4 && room(1) && !c.idx) {
     const body = genList(sub(c));
-    return chance(c, 0.4) ? { t: "sqrt", index: genList(sub(c)), body } : { t: "sqrt", body };
+    return chance(c, 0.4) ? { t: "sqrt", index: genList(sub(c, { idx: true })), body } : { t: "sqrt", body };
   }
   return genAtom(c);
 }
@@ -182,4 +186,40 @@ function genList(c: Ctx): MathNode {
  */
 export function genMathNode(next: () => number, depth = 0): MathNode {
   return genList({ next, d: depth, exp: 0, abs: false, budget: { left: 14 + Math.floor(next() * 14) } });
+}
+
+const TEXT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,;:!?'\"-()[]/%$&+=";
+
+/** Documents built from random allowed text fragments (never starting or ending a span) and `genMathNode` spans. */
+export function generatedDocs(next: () => number, count: number): MathTextDoc[] {
+  const docs: MathTextDoc[] = [];
+  for (let i = 0; i < count; i++) {
+    const parts: MathTextPart[] = [];
+    const spans = 1 + Math.floor(next() * 3);
+    for (let s = 0; s < spans; s++) {
+      if (next() < 0.7) {
+        let text = "";
+        const len = 1 + Math.floor(next() * 20);
+        for (let k = 0; k < len; k++) text += TEXT_CHARS[Math.floor(next() * TEXT_CHARS.length)];
+        parts.push({ t: "text", s: ` ${text} ` });
+      }
+      parts.push({ t: "math", m: genMathNode(next) });
+    }
+    docs.push({ v: MATHTEXT_PARSER_VERSION, parts });
+  }
+  return docs;
+}
+
+/** The accepted documents of the reviewed fixtures (golden and samples). */
+export function acceptedFixtureDocs(): MathTextDoc[] {
+  const inputs = [
+    ...(golden as { in: string; ok: boolean }[]).filter((r) => r.ok).map((r) => r.in),
+    ...(samples as { input: string; expect: unknown }[]).filter((s) => s.expect === "accept").map((s) => s.input),
+  ];
+  const docs: MathTextDoc[] = [];
+  for (const input of inputs) {
+    const r = parseMathText(input);
+    if (r.ok) docs.push(r.doc);
+  }
+  return docs;
 }

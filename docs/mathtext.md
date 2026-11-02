@@ -89,6 +89,12 @@ Known gaps, not yet resolved (both fail safe, as a reject with a code): a canoni
 | `math_exponent_depth` | `\(2^{3^{4^{5^{6}}}}\)` |
 | `render_tex_disallowed`, `render_tex_too_long`, `render_katex_rejected` | render-time checks (Tasks A7, A8), not parse errors |
 
+## Static preview check
+
+`checkMathTextRenders` (`src/lib/math-text/check.ts`) is total (never throws, a caught throw maps to a typed code) and returns `null` or a render code. Order: per part in document order, a text part goes through `escapeTextFragment` and a math span through `mathToTex`; every emitted piece is refused (`render_tex_disallowed`) for a control character, a bare `%` or `#`, `^^`, or a control sequence outside the allowlist (a math span: `MATH_TEX_COMMANDS`/`MATH_TEX_SYMBOLS`, also no `$`; text: `PDF_BODY_COMMANDS`); a span over 500 TeX characters is `render_tex_too_long`; KaTeX refusing a span (`renderMathHtml`) is `render_katex_rejected`. Then the whole document's TeX (`mathTextToTex`) is checked against the total bound of 40 000 characters (`MAX_TOTAL_TEX` = 20 spans x 500 + 2000 text characters x 15, the widest escape of an allowed character) with `render_tex_too_long`, and again against `PDF_BODY_COMMANDS` and the unsafe constructs. HTML parts (`mathTextToInlineParts`): text parts carry the raw string (React escapes it), math parts carry `mathToTex`; no other path reaches `dangerouslySetInnerHTML`.
+
+Known gap (fails safe): the parser accepts a root inside a root index (`\(\sqrt[\sqrt[3]{x}]{2}\)`), but its `]` ends the optional argument early in KaTeX and TeX, so the static check returns `render_katex_rejected`.
+
 ## Change policy
 
 The grammar grows only by deliberate change: edit this page, bump `MATHTEXT_PARSER_VERSION`, and extend the fixtures.
