@@ -16,7 +16,7 @@ import { webDal } from "@/lib/server/dal/instance";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice, lessonErrorNotice } from "@/lib/ui/lesson-view";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
-const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional(), error: z.string().max(40).optional() });
+const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional(), error: z.string().max(40).optional().catch(undefined) });
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
