@@ -1,4 +1,5 @@
 import { MATHTEXT_LIMITS, type MathTextDoc, type MathTextErrorCode } from "@/lib/math-text/ast";
+import { isMathTextDoc } from "@/lib/math-text/guard";
 import { MATH_TEX_COMMANDS, MATH_TEX_SYMBOLS } from "@/lib/math-text/commands";
 import { mathTextToTex, mathToTex } from "@/lib/math-text/to-tex";
 import { escapeTextFragment, RenderError } from "@/lib/latex/escape";
@@ -31,6 +32,8 @@ export function hasUnsafeConstruct(tex: string): boolean {
  * unsafe constructs.
  */
 export function checkMathTextRenders(doc: MathTextDoc): MathTextErrorCode | null {
+  // Runtime shape first: a hand-built value that is not a valid document never reaches `mathToTex`.
+  if (!isMathTextDoc(doc)) return "render_tex_disallowed";
   try {
     for (const p of doc.parts) {
       if (p.t === "text") {

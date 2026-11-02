@@ -190,8 +190,31 @@ export function genMathNode(next: () => number, depth = 0): MathNode {
 
 const TEXT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,;:!?'\"-()[]/%$&+=";
 
-/** Documents built from random allowed text fragments (never starting or ending a span) and `genMathNode` spans. */
-export function generatedDocs(next: () => number, count: number): MathTextDoc[] {
+const NEAR_LIMIT_TERMS = ["x^2", "a_n", "3.5", "\\frac{1}{2}", "\\pi", "7", "2y", "(x+1)", "\\sqrt{x}", "|k|", "b^{3}"];
+
+/**
+ * A math span of 250 to 300 characters as the raw parser reads it: a random sum of short terms, written with unbraced
+ * scripts half of the time (those have a longer canonical form, so a source near the span cap can exceed it).
+ */
+function nearLimitNode(next: () => number): MathNode {
+  for (;;) {
+    let src = "";
+    while (src.length < 250 + Math.floor(next() * 50)) {
+      const term = NEAR_LIMIT_TERMS[Math.floor(next() * NEAR_LIMIT_TERMS.length)] as string;
+      src += (src ? "+" : "") + term;
+    }
+    if (src.length > 300) continue;
+    const r = parseMathText(`\\(${src}\\)`);
+    const part = r.ok ? r.doc.parts[0] : undefined;
+    if (part?.t === "math") return part.m;
+  }
+}
+
+/**
+ * Documents built from random allowed text fragments (never starting or ending a span) and `genMathNode` spans. With
+ * `nearLimit`, one span in four is a 250 to 300 character sum instead, so the span-cap region is exercised.
+ */
+export function generatedDocs(next: () => number, count: number, opts: { nearLimit?: boolean } = {}): MathTextDoc[] {
   const docs: MathTextDoc[] = [];
   for (let i = 0; i < count; i++) {
     const parts: MathTextPart[] = [];
@@ -203,7 +226,7 @@ export function generatedDocs(next: () => number, count: number): MathTextDoc[] 
         for (let k = 0; k < len; k++) text += TEXT_CHARS[Math.floor(next() * TEXT_CHARS.length)];
         parts.push({ t: "text", s: ` ${text} ` });
       }
-      parts.push({ t: "math", m: genMathNode(next) });
+      parts.push({ t: "math", m: opts.nearLimit && next() < 0.25 ? nearLimitNode(next) : genMathNode(next) });
     }
     docs.push({ v: MATHTEXT_PARSER_VERSION, parts });
   }
@@ -222,4 +245,30 @@ export function acceptedFixtureDocs(): MathTextDoc[] {
     if (r.ok) docs.push(r.doc);
   }
   return docs;
+}
+
+/** A random accepted input: a golden accepted row or an accepted sample, as written. */
+export function pickAccepted(next: () => number): string {
+  const pool = [
+    ...(golden as { in: string; ok: boolean }[]).filter((r) => r.ok).map((r) => r.in),
+    ...(samples as { input: string; expect: unknown }[]).filter((x) => x.expect === "accept").map((x) => x.input),
+  ];
+  return pool[Math.floor(next() * pool.length)] as string;
+}
+
+const MUTATION_CHARS = [..."abcxyz09 +-=*/()[]|,.:;!?'\"", ..."\\{}^_$%#&~<>", "\u202e", "\u200d", "\uff3c", "\u2212"];
+
+/** 1 to 5 random inserts, deletes or replacements, drawn from ASCII, TeX-special and hostile Unicode characters. */
+export function mutate(input: string, next: () => number): string {
+  const chars = [...input];
+  const edits = 1 + Math.floor(next() * 5);
+  for (let e = 0; e < edits; e++) {
+    const ch = MUTATION_CHARS[Math.floor(next() * MUTATION_CHARS.length)] as string;
+    const at = Math.floor(next() * (chars.length + 1));
+    const kind = Math.floor(next() * 3);
+    if (kind === 0) chars.splice(at, 0, ch);
+    else if (kind === 1 && chars.length > 0) chars.splice(Math.min(at, chars.length - 1), 1);
+    else if (chars.length > 0) chars[Math.min(at, chars.length - 1)] = ch;
+  }
+  return chars.join("");
 }

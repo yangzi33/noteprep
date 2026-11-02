@@ -4,6 +4,7 @@ import samples from "../fixtures/math-text/samples.json";
 import { HOSTILE_CASES } from "../fixtures/math-text/hostile";
 import { parseMath, parseMathText } from "@/lib/math-text/parse";
 import type { MathNode } from "@/lib/math-text/ast";
+import { isMathTextDoc } from "@/lib/math-text/guard";
 
 const ok = (src: string): MathNode => {
   const r = parseMath(src, 0);
@@ -65,50 +66,13 @@ describe("parseMath", () => {
   });
 });
 
-// Shape check for accepted ASTs: every node is a known type with exactly its documented keys and well-formed children.
-const KEYS: Record<string, string[]> = {
-  num: ["t", "v"], var: ["t", "name"], greek: ["t", "name"], ldots: ["t"], bin: ["t", "op", "l", "r"], imp: ["t", "items"],
-  list: ["t", "items"], unary: ["t", "op", "arg"], rel: ["t", "first", "rest"], group: ["t", "open", "body"], abs: ["t", "body"],
-  frac: ["t", "num", "den"], sqrt: ["t", "body", "index"], sup: ["t", "base", "exp"], sub: ["t", "base", "sub"],
-  pct: ["t", "arg"], deg: ["t", "arg"], fn: ["t", "name", "arg", "base"],
-};
-const OPTIONAL = new Set(["index", "base:fn"]);
-function assertNode(n: unknown): void {
-  const o = n as Record<string, unknown>;
-  const node = (x: unknown) => assertNode(x);
-  const allowed = KEYS[o.t as string];
-  if (!allowed) throw new Error(`unknown node ${String(o.t)}`);
-  for (const k of Object.keys(o)) expect(allowed, `extra key ${k} on ${String(o.t)}`).toContain(k);
-  for (const k of allowed) if (!(k in o)) expect(OPTIONAL.has(k) || OPTIONAL.has(`${k}:${String(o.t)}`), `missing ${k} on ${String(o.t)}`).toBe(true);
-  switch (o.t) {
-    case "num": expect(o.v).toMatch(/^(0|[1-9]\d{0,11})(\.\d{1,6})?$/); return;
-    case "var": expect(o.name).toMatch(/^[A-Za-z]$/); return;
-    case "greek": expect(["alpha", "beta", "theta", "pi"]).toContain(o.name); return;
-    case "ldots": return;
-    case "bin": expect(["+", "-", "pm", "times", "cdot", "div", "/"]).toContain(o.op); node(o.l); node(o.r); return;
-    case "imp": case "list": expect((o.items as unknown[]).length).toBeGreaterThanOrEqual(2); (o.items as unknown[]).forEach(node); return;
-    case "unary": expect(["-", "+", "pm"]).toContain(o.op); node(o.arg); return;
-    case "rel": node(o.first); expect((o.rest as unknown[]).length).toBeGreaterThanOrEqual(1);
-      for (const r of o.rest as { op: string; rhs: unknown }[]) {
-        expect(Object.keys(r).sort()).toEqual(["op", "rhs"]);
-        expect(["=", "<", ">", "le", "ge", "neq"]).toContain(r.op); node(r.rhs);
-      } return;
-    case "group": expect(["(", "["]).toContain(o.open); node(o.body); return;
-    case "abs": node(o.body); return;
-    case "frac": node(o.num); node(o.den); return;
-    case "sqrt": if (o.index !== undefined) node(o.index); node(o.body); return;
-    case "sup": node(o.base); node(o.exp); return;
-    case "sub": node(o.base); node(o.sub); return;
-    case "pct": case "deg": node(o.arg); return;
-    case "fn": expect(["sin", "cos", "tan", "log", "ln"]).toContain(o.name); if (o.base !== undefined) { expect(o.name).toBe("log"); node(o.base); } node(o.arg); return;
-  }
-}
+// Shape check for accepted ASTs: the runtime guard in src (src/lib/math-text/guard.ts) is the single strict validator.
 function assertDoc(r: ReturnType<typeof parseMathText>): void {
   if (!r.ok) return;
   expect(r.doc.v).toBe("mathtext/1");
+  expect(isMathTextDoc(r.doc)).toBe(true);
   r.doc.parts.forEach((p, i) => {
-    if (p.t === "math") assertNode(p.m);
-    else expect(i === 0 || r.doc.parts[i - 1]!.t !== "text").toBe(true);
+    if (p.t === "text") expect(i === 0 || r.doc.parts[i - 1]!.t !== "text").toBe(true);
   });
 }
 
@@ -149,11 +113,11 @@ describe("parseMathText over the fixtures", () => {
 });
 
 describe("shape validator", () => {
-  it("rejects a node with an extra property or a missing one", () => {
-    expect(() => assertNode({ t: "var", name: "x", extra: 1 })).toThrow();
-    expect(() => assertNode({ t: "rel", first: { t: "var", name: "x" }, rest: [{ op: "=", rhs: { t: "var", name: "y" }, z: 1 }] })).toThrow();
-    expect(() => assertNode({ t: "frac", num: { t: "var", name: "x" } })).toThrow();
-    expect(() => assertNode(ok(String.raw`\sqrt[3]{2}`))).not.toThrow();
+  it("is the src guard: it rejects extra or missing properties and accepts a real parse (more cases in math-text-guard.test.ts)", () => {
+    const wrap = (m: unknown) => ({ v: "mathtext/1", parts: [{ t: "math", m }] });
+    expect(isMathTextDoc(wrap({ t: "var", name: "x", extra: 1 }))).toBe(false);
+    expect(isMathTextDoc(wrap({ t: "frac", num: { t: "var", name: "x" } }))).toBe(false);
+    expect(isMathTextDoc(wrap(ok(String.raw`\sqrt[3]{2}`)))).toBe(true);
   });
 });
 

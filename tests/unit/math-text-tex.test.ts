@@ -5,6 +5,7 @@ import { genMathNode, rng } from "../fixtures/math-text/gen";
 import { MATHTEXT_LIMITS, type MathNode } from "@/lib/math-text/ast";
 import { MATH_TEX_COMMANDS, MATH_TEX_SYMBOLS } from "@/lib/math-text/commands";
 import { parseMath, parseMathText } from "@/lib/math-text/parse";
+import { parseMathText as publicParse } from "@/lib/math-text";
 import { mathTextToTex, mathToTex, serializeMathText } from "@/lib/math-text/to-tex";
 import { escapeText, escapeTextFragment, RenderError } from "@/lib/latex/escape";
 
@@ -87,9 +88,17 @@ describe("mathToTex and the canonical serializer", () => {
   });
 });
 
-describe("known canonical-form gaps (docs/mathtext.md)", () => {
-  it.todo("canonical form of a depth-8 source with an unbraced script re-parses (braced scripts cost one more depth level)");
-  it.todo("canonical form of a 300-character span stays within the 300-character span cap");
+describe("round-trip admission at the public entry point (docs/mathtext.md)", () => {
+  it("rejects a depth-8 source with an unbraced script: its canonical form needs one more depth level", () => {
+    const src = `\\(${"(".repeat(8)}x^2${")".repeat(8)}\\)`;
+    expect(parseMathText(src).ok).toBe(true);
+    expect(publicParse(src)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("rejects a 297-character span whose canonical form exceeds the 300-character span cap", () => {
+    const src = `\\(${"x^2".repeat(99)}\\)`;
+    expect(parseMathText(src).ok).toBe(true);
+    expect(publicParse(src)).toMatchObject({ ok: false, code: "span_too_long" });
+  });
 });
 
 describe("mathTextToTex", () => {
