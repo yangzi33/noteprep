@@ -592,5 +592,21 @@
     "ok": true,
     "canonical": "Łódź",
     "tex": "Łódź"
+  },
+  {
+    "in": "\\(2^{3^{4^{5}}}\\)",
+    "ok": true,
+    "canonical": "\\(2^{3^{4^{5}}}\\)",
+    "tex": "$2^{3^{4^{5}}}$"
+  },
+  {
+    "in": "\\(30^\\circ_2\\)",
+    "ok": false,
+    "code": "math_bad_script"
+  },
+  {
+    "in": "\\(50\\%^2\\)",
+    "ok": false,
+    "code": "math_bad_script"
   }
 ]

@@ -45,6 +45,9 @@ Greek: `\alpha \beta \theta \pi`. Functions: `\sin \cos \tan \log \ln`. Letters 
 - Exponent nesting 3, counted as nested `sup` nodes: a chain of 3 is accepted, a chain of 4 is `math_exponent_depth`.
 - Absolute value: `|x|`, `|x+1|` and `2|x|` are accepted; a bar directly at the start of a bar body or directly after a closing bar (`||x||`, `|a||b|`) is `math_unexpected_token`. Nested absolute values are not supported.
 - Scripts: a base takes at most one `^` and one `_`, in either order; a second of the same kind (`x^2^3`, `x_1_2`, `30^\circ^2`) is `math_bad_script`. Both `x^2_3` and `x_1^2` parse to `sup(sub(base, s), e)`.
+- A script after a degree or percent (`30^\circ_2`, `50\%^2`) is `math_bad_script`; `x_1^\circ` is accepted and means a degree of `x_1`. A `^` or `_` script is one digit, one letter or a braced group: `x^12` is `math_bad_script` (write `x^{12}`).
+- Braces: a `{` or `}` anywhere except as the delimiters of a `\frac`, `\sqrt` or script argument is `math_brace_misuse` (`{x}`, `x}`); an empty argument (`\sqrt{}`) is `math_unexpected_token`. A missing or wrong closer of `( )`, `[ ]` or `| |` is `math_unbalanced`.
+- Implicit products bind tighter than the explicit operators: `2\times 3x` is `2 \times (3x)`. The first item of an implicit product is a prefix-signed operand, so `-2x` is the product of `-2` and `x`. A function takes the next postfix operand as its argument (`\sin 30^\circ`, `\sin \cos x`).
 
 ## Canonical form
 
