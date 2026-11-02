@@ -20,6 +20,8 @@ const serverEnv = {
   FLOW_MODE: "draft",
   EXPORT_ENABLED: "1",
   DAILY_REFRESH_ENABLED: "0",
+  // Production builds default to invite-only sign-up; these servers run with it open so tests can create accounts.
+  SIGNUP_MODE: "open",
 };
 
 // Real browser, real local Supabase (Auth + Postgres), a production build of the app and, inside the

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIpHash } from "@/lib/server/auth/client-ip";
 import { webDal } from "@/lib/server/dal/instance";
+import { mayCreateAccount } from "@/lib/server/auth/signup-policy";
+import { signupPolicy } from "@/lib/server/env";
 import { publicEnv } from "@/lib/supabase/public-env";
 import { createStatelessSupabase } from "@/lib/supabase/server";
 import type { AuthEmailKind } from "@/lib/server/dal/auth-rate";
@@ -47,7 +49,8 @@ export async function requestPasswordReset(formData: FormData) {
 export async function resendConfirmation(formData: FormData) {
   const parsed = EmailOnly.safeParse({ email: formData.get("email") });
   if (!parsed.success) redirect("/login/resend?error=invalid");
-  if (await withinLimit("resend")) {
+  const policy = signupPolicy();
+  if (mayCreateAccount(policy, parsed.data.email) && (await withinLimit("resend"))) {
     try {
       const supabase = createStatelessSupabase();
       const { error } = await supabase.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` } });
@@ -56,5 +59,5 @@ export async function resendConfirmation(formData: FormData) {
       logFailure("auth_email_failed", "resend", error);
     }
   }
-  redirect("/login?notice=check-email");
+  redirect(policy.mode === "invite" ? "/login?notice=check-email-invite" : "/login?notice=check-email");
 }

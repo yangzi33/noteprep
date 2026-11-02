@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { parseSignupPolicy, type SignupPolicy } from "./auth/signup-policy";
 import { parseLimits, type Limits } from "./limits";
 
 // The only module (besides worker/env.ts) allowed to read process.env.
@@ -39,4 +40,12 @@ export function parseServerEnv(source: Record<string, string | undefined>): Serv
 export function serverEnv(): ServerEnv {
   cached ??= parseServerEnv(process.env);
   return cached;
+}
+
+let cachedSignup: SignupPolicy | undefined;
+
+/** Who may create an account (SIGNUP_MODE, SIGNUP_ALLOWLIST). Separate from serverEnv() so pages without a database need not parse DATABASE_URL. */
+export function signupPolicy(): SignupPolicy {
+  cachedSignup ??= parseSignupPolicy(process.env);
+  return cachedSignup;
 }

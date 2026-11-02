@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { mayCreateAccount } from "@/lib/server/auth/signup-policy";
+import { signupPolicy } from "@/lib/server/env";
 import { publicEnv } from "@/lib/supabase/public-env";
 
 const Credentials = z.object({
@@ -27,13 +29,16 @@ export async function signIn(formData: FormData) {
 export async function signUp(formData: FormData) {
   const parsed = parse(formData);
   if (!parsed.success) redirect("/login?error=invalid");
-  const supabase = await createServerSupabase();
-  await supabase.auth.signUp({
-    ...parsed.data,
-    options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` },
-  });
-  // Same response whether or not the address already exists, so this cannot be used to probe accounts.
-  redirect("/login?notice=check-email");
+  const policy = signupPolicy();
+  if (mayCreateAccount(policy, parsed.data.email)) {
+    const supabase = await createServerSupabase();
+    await supabase.auth.signUp({
+      ...parsed.data,
+      options: { emailRedirectTo: `${publicEnv().siteUrl}/auth/callback` },
+    });
+  }
+  // Same response whether or not the address already exists or is invited, so this cannot be used to probe accounts or the invite list.
+  redirect(policy.mode === "invite" ? "/login?notice=check-email-invite" : "/login?notice=check-email");
 }
 
 export async function signOut() {
