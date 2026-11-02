@@ -134,3 +134,21 @@ export function changeSelection(params: PrepareParams, key: FieldKey, value: str
 export function selectionHref(params: PrepareParams, key: FieldKey, value: string): string {
   return prepareHref(changeSelection(params, key, value));
 }
+
+/**
+ * Where to fall back when the URL names a curriculum, level or course that is no longer offered (hidden because
+ * nothing usable is below it). Returns the selection trimmed to the nearest valid step, or null when it is fine.
+ * `levelOptions` is null when the curriculum has no level step; the option lists are the ones the page offers.
+ */
+export function staleSelectionFallback(input: {
+  params: PrepareParams;
+  versionVisible: boolean;
+  levelOptions: Pick<SelectionOption, "id">[] | null;
+  courseOptions: Pick<SelectionOption, "id">[] | null;
+}): PrepareParams | null {
+  const { params } = input;
+  if (!input.versionVisible) return upTo(params, "country");
+  if (input.levelOptions && params.level && !input.levelOptions.some((o) => o.id === params.level)) return upTo(params, "v");
+  if (input.courseOptions && params.course && !input.courseOptions.some((o) => o.id === params.course)) return upTo(params, input.levelOptions ? "level" : "v");
+  return null;
+}

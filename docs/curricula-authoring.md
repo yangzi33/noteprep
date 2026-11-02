@@ -114,6 +114,10 @@ Add the course under the curriculum's `courses`, or edit the template to change 
 
 Use a new `regionCode` and `name` in a curriculum's `country`. Curricula that share a `regionCode` appear under one country in the Prepare page.
 
+## Which courses tutors see
+
+The Prepare page hides every country, curriculum, level and course that has no supported topic below it, so a tutor never opens a dead end. "Supported" is computed in `src/lib/server/dal/curriculum.ts` and is the same rule that refuses unsupported topics: a topic counts only when it links to a concept registered in `src/lib/curriculum/capabilities.ts`. Nothing is hard-coded per curriculum, so registering a new capability makes the items that depend on it appear without a data change. Inside a visible course, units and topics are all listed and the unsupported ones are greyed out ("not available yet"). `listCurricula()` and `getSelectionOptions()` still return the full catalog by default; the page passes `selectableOnly` and `hideUnusable`. A URL that names a hidden curriculum, level or course falls back to the nearest valid step, and the server still refuses an unsupported course or topic.
+
 ## 3. What the build checks
 
 `pnpm curricula:build` stops with a list of every problem before writing anything: unknown topic key, unknown concept id, partial coverage without note, duplicate curriculum ids, course codes, unit titles or topics, text over its length limit, a missing or inconsistent country, an unknown template, a curriculum without courses, mixed levels, misspelled field names. It then runs the real dataset validator on each generated dataset.
