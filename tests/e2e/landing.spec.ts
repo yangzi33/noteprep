@@ -31,5 +31,5 @@ test("the landing page shows the real sample previews and its section anchors wo
   await expect(open).toHaveAttribute("target", "_blank");
   await page.getByRole("banner").getByRole("link", { name: "Pricing" }).click();
   await expect(page).toHaveURL(/#pricing$/);
-  await expect(page.getByRole("heading", { name: "Start free, subscribe later" })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Free during the test" })).toBeInViewport();
 });
