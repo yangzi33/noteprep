@@ -51,9 +51,10 @@ describe("GET /lessons/[id]/documents/[doc]", () => {
       expect(res.status).toBe(303);
       expect(res.headers.get("location")).toBe("/login");
     });
-    it("is sent to the login page for a download link even without fetch metadata", async () => {
+    it("gets a plain 401 for a download URL requested without navigation headers", async () => {
       const res = await call(DOWN);
-      expect(res.headers.get("location")).toBe("/login");
+      expect(res.status).toBe(401);
+      expect(res.headers.get("location")).toBeNull();
     });
     it("keeps the 401 for the preview iframe", async () => {
       const res = await call(`rev=${R}`, iframe);
@@ -72,8 +73,11 @@ describe("GET /lessons/[id]/documents/[doc]", () => {
       expect(res.headers.get("location")).toBe(UNAVAILABLE);
       expect(res.headers.get("cache-control")).toBe("private, no-store");
     });
-    it("redirects a download link that carries no fetch metadata", async () => {
-      expect((await call(DOWN)).headers.get("location")).toBe(UNAVAILABLE);
+    it("gets a plain 404 for download=1 without navigation headers, as a scripted cross-account probe does", async () => {
+      const res = await call(DOWN);
+      expect(res.status).toBe(404);
+      expect(res.headers.get("location")).toBeNull();
+      expect((await call(DOWN, { accept: "*/*" })).status).toBe(404);
     });
     it("redirects when only Accept names HTML", async () => {
       expect((await call(`rev=${R}`, { accept: "text/html" })).headers.get("location")).toBe(UNAVAILABLE);

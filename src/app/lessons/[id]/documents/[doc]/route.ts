@@ -16,11 +16,15 @@ const Query = z.object({ rev: z.uuid(), download: z.enum(["1"]).optional() });
 
 const EMBEDDED_DESTINATIONS = new Set(["iframe", "frame", "embed", "object"]);
 
-/** A tutor following a link (a download, or "Open in a new tab") needs a page; the preview iframe and plain fetches keep plain status codes. */
-function isNavigation(request: Request, download: boolean): boolean {
+/**
+ * A tutor following a link (a download, or "Open in a new tab") needs a page; the preview iframe and plain fetches keep
+ * plain status codes. A real browser click sends Sec-Fetch-Dest: document and an Accept naming text/html; the query
+ * string alone never makes a request a navigation, so scripted clients see the same status codes as before.
+ */
+function isNavigation(request: Request): boolean {
   const destination = request.headers.get("sec-fetch-dest");
   if (destination && EMBEDDED_DESTINATIONS.has(destination)) return false;
-  return download || destination === "document" || (request.headers.get("accept") ?? "").includes("text/html");
+  return destination === "document" || (request.headers.get("accept") ?? "").includes("text/html");
 }
 
 const redirect = (location: string) => new Response(null, { status: 303, headers: { ...HEADERS, Location: location } });
@@ -37,7 +41,7 @@ const unavailable = (lessonId: string | undefined) => redirect(lessonId ? `/less
 export async function GET(request: Request, { params }: { params: Promise<{ id: string; doc: string }> }) {
   const p = Params.safeParse(await params);
   const q = Query.safeParse(Object.fromEntries(new URL(request.url).searchParams));
-  const navigation = isNavigation(request, q.success && q.data.download === "1");
+  const navigation = isNavigation(request);
   const lessonId = p.success ? p.data.id : undefined;
   const failed = (status: 404 | 502) =>
     navigation
