@@ -1,6 +1,6 @@
 # 测试计划
 
-> 状态:Phase 1 与 P2-T1/T2 的测试已实现并在 CI 通过(单元 164、集成 94、Supabase 边界 15、端到端 7;均含变异检查);本文其余部分仍是计划。下表中的"能证明什么"是该层测试在设计上的证明力。
+> 状态:Phase 1 与 P2-T1/T2 的测试已实现并在 CI 通过(当时的数量为 单元 164、集成 94、Supabase 边界 15、端到端 7,现已大幅增长;数量以 `pnpm exec vitest list` 与 `tests/` 目录为准,不再写死);本文其余部分仍是计划,**部分已过时**,以 [testing-guide](testing-guide.md) 与 [onboarding](onboarding.md) 为准。下表中的"能证明什么"是该层测试在设计上的证明力。
 > 相关:[architecture](architecture.md) · [implementation-plan](implementation-plan.md) · [security-and-privacy](security-and-privacy.md)
 > **方向调整(2026-10-19):** 产品改为**选择优先、课程感知**(见 [product-vision](product-vision.md)、[refactor-plan](refactor-plan.md))。本文中与之冲突的部分已按新方向修订,或标注为【已被取代】。**额度、任务、幂等、围栏、权益、认证与所有权、存储与沙箱的规则不变。**
 

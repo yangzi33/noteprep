@@ -1,7 +1,8 @@
 import { MATHTEXT_LIMITS, type MathTextDoc, type MathTextErrorCode } from "@/lib/math-text/ast";
 import { isMathTextDoc } from "@/lib/math-text/guard";
+import { admitMathText, sameJson } from "@/lib/math-text/strict";
 import { MATH_TEX_COMMANDS, MATH_TEX_SYMBOLS } from "@/lib/math-text/commands";
-import { mathTextToTex, mathToTex } from "@/lib/math-text/to-tex";
+import { mathTextToTex, mathToTex, serializeMathText } from "@/lib/math-text/to-tex";
 import { escapeTextFragment, RenderError } from "@/lib/latex/escape";
 import { firstDisallowedControlSequence, firstUnsafeTexConstruct } from "@/lib/latex/allowlist";
 import { ALLOWED_CONTROL_SYMBOLS, PDF_BODY_COMMANDS } from "@/lib/latex/templates";
@@ -15,6 +16,10 @@ export const MAX_SPAN_TEX = 500;
  */
 export const MAX_TOTAL_TEX = MATHTEXT_LIMITS.maxSpans * MAX_SPAN_TEX + 2000 * 15;
 
+// Pre-existing and out of scope here: the comment scan in `firstUnsafeTexConstruct` (src/lib/latex/allowlist.ts) uses a
+// lookbehind that can mistake `\\%` for an escaped percent. MathText output never contains a backslash before `%` that
+// is itself preceded by a backslash (`\%` is emitted only after a number or letter), so it is unreachable from here.
+// Shared deterministic code is deliberately left unchanged.
 // Same stance as `assertTexIsSafe` (src/lib/latex/render.ts), through the shared `firstUnsafeTexConstruct`: the
 // control-sequence scanner sees only backslash sequences, so comments, ^^ notation and parameter characters are
 // rejected separately. Control characters are an addition of this check.
@@ -35,6 +40,11 @@ export function checkMathTextRenders(doc: MathTextDoc): MathTextErrorCode | null
   // Runtime shape first: a hand-built value that is not a valid document never reaches `mathToTex`.
   if (!isMathTextDoc(doc)) return "render_tex_disallowed";
   try {
+    // The grammar is the admission rule for stored or hand-built documents too: the canonical string must be accepted
+    // by the public strict entry and give back this very document (this refuses what no parse could produce, such as
+    // a raw URL in text, `x+x^{2}` built as sup(bin), nested bars, a `[` root index, empty text or no parts).
+    const again = admitMathText(serializeMathText(doc));
+    if (!again.ok || !sameJson(again.doc, doc)) return "render_tex_disallowed";
     for (const p of doc.parts) {
       if (p.t === "text") {
         let tex: string;

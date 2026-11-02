@@ -3,7 +3,7 @@ import { parseMathText as rawParseMathText } from "@/lib/math-text/parse";
 import { serializeMathText } from "@/lib/math-text/to-tex";
 
 /** Deep structural equality of two parsed documents (plain JSON-like data only). */
-function sameJson(a: unknown, b: unknown): boolean {
+export function sameJson(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;

@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { parseSignupPolicy, readAllowlist, type SignupPolicy } from "./auth/signup-policy";
 import { parseLimits, type Limits } from "./limits";
 
 // The only module (besides worker/env.ts) allowed to read process.env.
@@ -39,4 +40,20 @@ export function parseServerEnv(source: Record<string, string | undefined>): Serv
 export function serverEnv(): ServerEnv {
   cached ??= parseServerEnv(process.env);
   return cached;
+}
+
+let cachedSignup: SignupPolicy | undefined;
+
+/** Who may create an account (SIGNUP_MODE, SIGNUP_ALLOWLIST). Separate from serverEnv() so pages without a database need not parse DATABASE_URL. */
+export function signupPolicy(): SignupPolicy {
+  if (!cachedSignup) {
+    cachedSignup = parseSignupPolicy(process.env);
+    const { invalid, duplicate, overCap } = readAllowlist(process.env.SIGNUP_ALLOWLIST);
+    if (invalid + duplicate + overCap > 0) {
+      console.warn(JSON.stringify({ event: "signup_allowlist_entries_ignored", invalid, duplicate, overCap, accepted: cachedSignup.allowlist.size }));
+    }
+    const mode = process.env.SIGNUP_MODE;
+    if (mode && mode !== "open" && mode !== "invite") console.warn(JSON.stringify({ event: "signup_mode_unrecognised", effective: cachedSignup.mode }));
+  }
+  return cachedSignup;
 }

@@ -1,6 +1,8 @@
-# Generation flow: preview first, export charges (design; decisions D-94 to D-101; **no implementation yet**)
+# Generation flow: preview first, export charges (design; decisions D-94 to D-101; **partly built: slice A is on main, the rest is not**)
 
-Status: direction chosen by the owner on 2026-10-22, replacing the verified-first content direction ([content-architecture](content-architecture.md), now legacy). Nothing here is built. Each slice needs its own go. Labels: **[D]** decided by the owner, **[P]** proposed, awaiting owner confirmation, **[I]** inference to confirm when building, **[F]** repo fact.
+Status: direction chosen by the owner on 2026-10-22, replacing the verified-first content direction ([content-architecture](content-architecture.md), now legacy). Nothing in slices B (except the MathText parser) and C is built. Each slice needs its own go.
+
+Status (2026-11-02, origin/main ca766b9): **slice A is built and merged** (Draft/DraftVersion tables, deterministic adjustments, confirm-export dialog, charge at export, `JobKind.export`, Export/ExportSnapshot; see `prisma/schema.prisma`, `src/lib/server/dal/export.ts`). **Slice B is only partly built:** the MathText parser and renderers are merged (`src/lib/math-text/`, PR #64) but nothing outside `src/lib/math-text` and the shared command allowlist in `src/lib/latex/templates.ts` imports them, so they are not wired into drafts, packages or the worker. NOT built: the OpenAI adapter (PR #65, not merged), the LLM item source, `ai_beta`/`draft_items`, item statuses, flagging, the question bank, spend caps, slice C. The sections below are the design, not a description of current behaviour. Labels: **[D]** decided by the owner, **[P]** proposed, awaiting owner confirmation, **[I]** inference to confirm when building, **[F]** repo fact.
 
 ## 1. Why the direction changed
 NotePrep is a simple tool for independent tutors, not for schools or exam bodies. Strict machine verification of every item limits topic breadth to what we can write validators for. The owner chose an LLM-first flow where correctness is a label, not a gate. The trade-off is accepted knowingly: wrong answers will appear sometimes, and the product's edge over a general chatbot becomes selection, a clean preview and print-ready PDFs.
@@ -12,8 +14,8 @@ NotePrep is a simple tool for independent tutors, not for schools or exam bodies
 4. **Export:** a confirmation dialog, then the LaTeX compile. **One generation is consumed only when the compile succeeds** and the PDFs are available to download (whether they are downloaded does not matter). A failed compile charges nothing.
 
 ## 3. Draft, preview and export mechanics
-- **Drafts [I]:** each preview is stored as an owner-scoped draft revision with a content hash and a time-to-live (the adjustment drafts planned in M6 slices S2 and S3 are the same concept, see [beta-roadmap](beta-roadmap.md#b2)). Previews, answers and downloads must use the same `revisionId` (CLAUDE.md section 4).
-- **Charge point [D]:** at export the system **reserves** one generation (a held slot, not a charge) and converts it to a charge in the same transaction that publishes the compiled revision. Failure, timeout or cancel releases it. Double clicks return the same job through the existing idempotency key [F: reservation, fencing and per-user idempotency already exist; job kinds generate and compile exist in the schema].
+- **Drafts [I]:** each preview is stored as an owner-scoped draft revision with a content hash and a time-to-live (the adjustment drafts of M6 slices S2 and S3, now built, are the same concept, see [beta-roadmap](beta-roadmap.md#b2)). Previews, answers and downloads must use the same `revisionId` (CLAUDE.md section 4).
+- **Charge point [D]:** at export the system **reserves** one generation (a held slot, not a charge) and converts it to a charge in the same transaction that publishes the compiled revision. Failure, timeout or cancel releases it. Double clicks return the same job through the existing idempotency key [F: reservation, fencing and per-user idempotency already exist; job kinds generate, compile and export exist in the schema].
 - **Confirmation [D]:** clicking Export opens a dialog ("This uses 1 of your N generations. Check your preview first.") with a "Don't show again today" checkbox. It is a per-browser convenience that expires at midnight; the server never relies on it.
 - **Re-export of the same draft [P]:** free (consistent with today's rule that existing files stay free to download); any content change creates a new draft whose export costs another generation. Awaiting owner confirmation.
 - **Flawless LaTeX [D, mechanism P]:** at preview time the pipeline parses all math into the restricted MathText tree (section 5), renders the TeX string as a dry run and runs the existing source safety check (`assertTexIsSafe`), so unsupported constructs are rejected before the tutor sees the preview. Rare layout failures can still happen at compile time; they release the reservation and show a clear message.
@@ -47,7 +49,7 @@ LLM output must never reach LaTeX or the web preview as raw text: LaTeX injectio
 
 ## 9. Build order [P]
 - **Slice A, preview/export split (no LLM needed):** draft storage, HTML preview, charge-at-export with the confirmation dialog, using today's linear generator as the item source. Fixes the flow for current tutors.
-- **Slice B, LLM item source:** OpenAI adapter, MathText parser and renderers (independent security review), item statuses, flagging, collect-from-day-one bank with the threshold switch, spend caps.
+- **Slice B, LLM item source:** OpenAI adapter (PR #65, unmerged), MathText parser and renderers (merged in #64, not yet wired in; independent security review), item statuses, flagging, collect-from-day-one bank with the threshold switch, spend caps.
 - **Slice C, free-text refinement:** budget, injection handling, privacy wording.
 
 ## 10. Legacy

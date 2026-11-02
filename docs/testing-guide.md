@@ -1,4 +1,4 @@
-# 测试指南(动手版,截至 M5)
+# 测试指南(动手版,截至 M5;2026-11-02 起部分已按 main 的代码更正,见文内 English 注)
 
 本文告诉你**怎么跑测试、怎么在应用里手动验证、每项测试能证明什么、哪些还没验证**。测试策略与证据层级见 [test-plan.md](./test-plan.md);本文只讲操作。所有数据均为虚构/样例数据。
 
@@ -17,24 +17,24 @@
 | --- | --- | --- |
 | `pnpm lint` | ESLint(含禁用 `process.env` 的规则) | — |
 | `pnpm typecheck` | `next typegen` + `tsc --noEmit` | — |
-| `pnpm test` | 单元测试(约 424 个):课包、文字规则、LLM 适配器、渲染、沙箱参数、清单 v2、表单 | — |
+| `pnpm test` | 单元测试(`tests/unit/`;数量见 `pnpm exec vitest list`,不在此写死):课包、文字规则、LLM 适配器、渲染、沙箱参数、清单 v2、表单 | — |
 | `pnpm test:integration` | 真实 Postgres:额度并发、幂等、课程、请求 v2、结算、旧路径;**草稿**(`tests/integration/drafts.test.ts`:免费、幂等、限流、过期清理、跨用户)与草稿表的触发器/授权(`schema.test.ts`) | `pnpm db:up` |
-| `pnpm test:supabase` | 登录、Storage(私有桶、签名 URL、仅 PDF)、RLS、Data API 边界(26 个) | `pnpm supabase:start`(Storage 已在 `config.toml` 启用;改配置后需 stop 再 start) |
-| `pnpm test:latex` | **真实容器**(40 个):OS 隔离、恶意 TeX、完整链路、可复现性 | `pnpm latex:image` |
-| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑。`draft-flow.spec.ts` 跑在第二个 project(`chromium-draft`),它连接另一个以 `FLOW_MODE=draft` 启动的服务器(端口 3101);其余 spec 仍连默认的 `legacy` 服务器(3100);`export-flow.spec.ts` 跑在 `chromium-export`,连接第三个以 `FLOW_MODE=draft EXPORT_ENABLED=1` 启动的服务器(3102) | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
+| `pnpm test:supabase` | 登录、Storage(私有桶、签名 URL、仅 PDF)、RLS、Data API 边界(`tests/supabase/`) | `pnpm supabase:start`(Storage 已在 `config.toml` 启用;改配置后需 stop 再 start) |
+| `pnpm test:latex` | **真实容器**(`tests/latex/`):OS 隔离、恶意 TeX、完整链路、可复现性 | `pnpm latex:image` |
+| `pnpm test:e2e` | Playwright 关键流程(含预览/下载);`E2E_COMPILER=docker` 用真实 PDF 跑。现为 4 个服务器、4 个 project(见下方 English 注与 `playwright.config.ts`) | 本地 Supabase;**先停掉自己的 `pnpm worker:dev`** |
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
-> English note (S6): `pnpm test:e2e` starts three servers from one build: 3100 `FLOW_MODE=draft`, `EXPORT_ENABLED=1` (project `chromium`, default), 3101 `legacy`/`0` (project `chromium-legacy`, `legacy-*.spec.ts`), 3102 `draft`/`0` (project `chromium-paused`, `*-paused.spec.ts`). The E2E row text above is outdated for the project names (`chromium-draft`, `chromium-export`) and the server flags; the document is not translated.
+> English note (S6): `pnpm test:e2e` starts four servers from one build (3100, 3101, 3102 and 3103; the first three are listed here, the fourth in the update below): 3100 `FLOW_MODE=draft`, `EXPORT_ENABLED=1` (project `chromium`, default), 3101 `legacy`/`0` (project `chromium-legacy`, `legacy-*.spec.ts`), 3102 `draft`/`0` (project `chromium-paused`, `*-paused.spec.ts`). Updated 2026-11-02 against `playwright.config.ts`: a fourth server, 3103 (`draft`, `EXPORT_ENABLED=1`, `DAILY_REFRESH_ENABLED=1`, project `chromium-daily`, `*-daily.spec.ts`), also exists. `chromium` (3100) runs every spec except the legacy, paused and daily ones. The defaults are now `FLOW_MODE=draft` and `EXPORT_ENABLED=1` (`src/lib/server/env.ts`). The document is not translated.
 
 注意:
-- 本地 E2E 与你正在运行的 worker 共用同一个数据库,会互相抢任务。要么停 worker,要么靠 PR 让 CI 在干净机器上跑(CI 的 5 个 job:static、integration、supabase、e2e、latex-sandbox)。
+- 本地 E2E 与你正在运行的 worker 共用同一个数据库,会互相抢任务。要么停 worker,要么靠 PR 让 CI 在干净机器上跑(CI 的 6 个 job:static、latex-sandbox、integration、worker-image、supabase、e2e,见 `.github/workflows/ci.yml`)。
 - 集成测试共用一个库,个别测试会故意损坏数据;全局漂移检查已限定到各自的 owner。
 
 ## 3. 在应用里手动验证(端到端)
 
 1. 启动:`pnpm db:up`,`pnpm supabase:start`,`pnpm dev`(绑定 127.0.0.1,WSL2 下务必用 `http://127.0.0.1:3000`)。
-2. 迁移与样例数据:`pnpm db:migrate:deploy`,然后 `pnpm curriculum:load`(仅样例数据集,开发/staging)。
+2. 迁移与样例数据:`pnpm db:migrate:deploy`,然后 `CURRICULUM_TARGET_ENV=development pnpm curriculum:load data/curricula/sample-math/sample-1 --allow-sample`(样例数据集仅限开发/staging;命令需要数据集目录,见 README)。
 3. 注册:打开 `/`,用任意虚构邮箱注册。本地验证邮件在 Supabase 的 Mailpit(`pnpm supabase:status` 里的 Inbucket/Mailpit 地址)里点确认链接。
 4. 选择:`/prepare` → 课程 → 级别 → 科目 → 主题 → 时长/难度/输出包 → 生成。选项必须是级联的,不支持的主题应被拒绝。
 5. 启动 worker(另一终端):`pnpm worker:dev`。**改过代码后要重启 worker。**
@@ -43,7 +43,7 @@
    | 目的 | 设置 |
    | --- | --- |
    | 无费用、确定性文字 | `LESSON_PROSE=template`,`COMPILER=skeleton` |
-   | 真实 PDF 编译(无模型) | `COMPILER=docker`,`LESSON_PROSE=template`,先 `pnpm latex:image`;**要在页面里预览还需** `OBJECT_STORE=supabase`、`SUPABASE_URL`、`SUPABASE_SECRET_KEY`(见 README M5) |
+   | 真实 PDF 编译(无模型) | `COMPILER=docker`,`LESSON_PROSE=template`,先 `pnpm latex:image`;**要在页面里预览还需** `OBJECT_STORE=supabase`、`SUPABASE_URL`、`SUPABASE_SECRET_KEY`(见 README 与 `.env.example`) |
    | 真实模型写文字 | `LESSON_PROSE=llm` + `LLM_*`(会产生费用) |
 
 7. 看结果:任务页依次显示排队 → 生成 → 验证 → 编译 → 保存 → 完成,**完成后自动跳转到 `/lessons/[id]` 预览页**(标签页切换三份文档、新标签页打开、下载 PDF、课程信息面板)。预览要求 worker 用 `OBJECT_STORE=supabase`;用默认的 `fs` 时页面能打开但文件取不到(会显示"暂时无法提供")。
@@ -51,12 +51,12 @@
 
 ### 草稿流程(`FLOW_MODE=draft`,免费预览)
 
-在 `.env` 设置 `FLOW_MODE=draft` 并重启 Web:`/prepare` 的按钮变为 "Create draft preview",提交后进入 `/drafts/[id]`(HTML 预览、三个文档标签页、"Draft expires …"、禁用的 "Export is coming next")。不预留额度、不入队、不需要 worker;"剩余生成次数"不变。默认(`legacy` 或不设置)行为与之前完全相同。所有阈值见 `src/lib/server/limits.ts`(环境变量,例如 `DRAFT_TTL_DAYS`);worker 的清扫循环会把过期草稿标记为 expired,宽限期(`DRAFT_PURGE_GRACE_DAYS`)后删除。
+`FLOW_MODE` 现默认为 `draft`(`legacy` 为旧流程开关),且导出默认开启(`EXPORT_ENABLED=1`);以下为早期(导出未开启时)的描述,导出流程见 [local-testing-s5](local-testing-s5.md)。原文:`/prepare` 的按钮变为 "Create draft preview",提交后进入 `/drafts/[id]`(HTML 预览、三个文档标签页、"Draft expires …"、(导出关闭时)禁用的 "Export is coming next")。不预留额度、不入队、不需要 worker;"剩余生成次数"不变。设为 `legacy` 时行为与旧流程相同。所有阈值见 `src/lib/server/limits.ts`(环境变量,例如 `DRAFT_TTL_DAYS`);worker 的清扫循环会把过期草稿标记为 expired,宽限期(`DRAFT_PURGE_GRACE_DAYS`)后删除。
 
 ## 4. 失败时看哪里
 
 - 任务页上的文字是给用户看的,已脱敏。技术原因看 **worker 终端日志**(带 job id、阶段、错误类型,不含课程正文)。
-- README 的 "why a job failed" 一节列出常见原因。
+- (README 目前没有 "why a job failed" 一节;以 worker 日志为准。)
 - `COMPILER=docker` 失败常见原因:镜像不存在(`pnpm latex:image`)、Docker 守护进程不可达、超时。
 - 已知缺口:`CompileError.detail` 目前**没有**写入任务记录。
 
@@ -76,7 +76,7 @@
 - 沙箱是 runc + Docker 默认 seccomp,**不是 gVisor**;生产主机未验证(D-03、D-20、D-44)。上线前必须在目标主机重跑 `pnpm test:latex`。
 - 没有教师/人工审阅模型写的文字;没有版面视觉回归;移动端 PDF 内嵌没有真机测试;CDN/框架缓存键没有在部署环境检查;下载的频率限制尚未接入。
 - Staging 没有 worker 主机,任务会一直排队;staging 尚未加载样例数据。
-- Stripe 订阅矩阵、孤儿对象清理、备份恢复演练尚未覆盖(Phase 3/4)。
+- Stripe 订阅矩阵、备份恢复演练尚未覆盖(孤儿对象对账已有 `worker/reconcile.ts`,默认关闭)(Phase 3/4)。
 - 假流程通过 ≠ 可以上线(CLAUDE.md §11)。
 
 ## 8. 变异检查(可选,用于怀疑测试是否真的有效)

@@ -12,10 +12,23 @@ const REL_TEX: Readonly<Record<RelOp, string>> = { "=": "=", "<": "<", ">": ">",
  */
 function cat(a: string, b: string): string {
   if (a === "" || b === "") return a + b;
-  const needsSpace = (/\\[A-Za-z]+$/.test(a) && /^[A-Za-z]/.test(b)) || (/[0-9]$/.test(a) && /^[0-9]/.test(b));
-  return needsSpace ? `${a} ${b}` : a + b;
+  const bc = b.charCodeAt(0);
+  const bLetter = (bc >= 65 && bc <= 90) || (bc >= 97 && bc <= 122);
+  const bDigit = bc >= 48 && bc <= 57;
+  if (!bLetter && !bDigit) return a + b;
+  const n = a.length;
+  const ac = a.charCodeAt(n - 1);
+  if (bDigit && ac >= 48 && ac <= 57) return `${a} ${b}`;
+  if (bLetter) {
+    // Ends with a control word? Look back over at most the longest control word (5 letters) plus the backslash.
+    for (let k = 1; k <= 6 && k <= n; k++) {
+      const c = a.charCodeAt(n - k);
+      if (c === 92) return k > 1 ? `${a} ${b}` : a + b;
+      if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) break;
+    }
+  }
+  return a + b;
 }
-
 /**
  * The ONLY producer of math TeX for model content, and at the same time the canonical MathText math serializer
  * (docs/mathtext.md, "Canonical form"): whatever it emits is accepted by `parseMath` and yields the same AST, for

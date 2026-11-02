@@ -1,6 +1,6 @@
 # 架构设计(Phase 0)
 
-> 状态:设计文档,**尚无实现**。文中"待验证"表示依赖尚未用真实运行证据确认的第三方能力。版本号来自 2026-10-18 的 npm registry 查询,仅作 Phase 1 选型起点,须在 Phase 1 重新核对后固定。
+> 状态:设计文档(最初写于 Phase 0);**文中描述的系统现已大部分实现**(web、worker、数据库角色、草稿与导出、课程数据、每日额度刷新均在 main 上)。以代码、`prisma/schema.prisma` 与 [onboarding](onboarding.md) 为准;下文个别"尚未实现"的句子已按代码修正。文中"待验证"表示依赖尚未用真实运行证据确认的第三方能力。版本号来自 2026-10-18 的 npm registry 查询,仅作 Phase 1 选型起点,须在 Phase 1 重新核对后固定。
 > 相关:[product](product.md) · [implementation-plan](implementation-plan.md) · [test-plan](test-plan.md) · [security-and-privacy](security-and-privacy.md) · [decisions](decisions.md)
 > **方向调整(2026-10-19):** 产品改为**选择优先、课程感知**(见 [product-vision](product-vision.md)、[refactor-plan](refactor-plan.md))。本文中与之冲突的部分已按新方向修订,或标注为【已被取代】。**额度、任务、幂等、围栏、权益、认证与所有权、存储与沙箱的规则不变。**
 
@@ -73,7 +73,7 @@ Web 不持有 LLM key,也不持有 Supabase secret key:下载 URL 用**用户自
 
 ## 3. 模块布局
 
-单仓库、单 Next.js 应用(Phase 1 创建,此处为设计目标;不创建空抽象):
+单仓库、单 Next.js 应用(已在 Phase 1 创建;不创建空抽象):
 
 ```
 src/app/                 路由、Server Actions、Route Handlers(薄,仅组装)
@@ -119,7 +119,7 @@ docs/
 
 ## 5. 数据模型
 
-下表只列关键字段、约束与索引;完整 Prisma schema 在 Phase 1 编写。时间一律 UTC(`timestamptz`);成本用整数微单位(`*_micros`,**内部成本核算单位**,不是向客户计费金额;Stripe 金额不入本地库,仅保留价格 ID)。
+下表只列关键字段、约束与索引;完整 Prisma schema 见 `prisma/schema.prisma`(已实现)。时间一律 UTC(`timestamptz`);成本用整数微单位(`*_micros`,**内部成本核算单位**,不是向客户计费金额;Stripe 金额不入本地库,仅保留价格 ID)。
 
 ### 5.1 表
 
@@ -154,7 +154,7 @@ With `FLOW_MODE=draft` the Prepare action calls `createDraft`: one transaction t
 
 Operational notes:
 - An unset `FLOW_MODE` means `draft` and an unset `EXPORT_ENABLED` means `1` (changed together in S6; both stay kill switches). A blank or invalid `FLOW_MODE`, or an invalid `DRAFT_*` / limit value, makes `serverEnv()` throw on every request, including the legacy flow (fail fast at configuration time, not at first use).
-- The per-IP draft limit is dormant: `createDraft` supports a hashed address, but no IP-hash helper exists yet (the same is true of legacy generation), so only the per-user and global limits are active.
+- The per-IP draft limit is dormant: `createDraft` supports a hashed address, and a hashing helper exists (`clientIpHash` in `src/lib/server/auth/client-ip.ts`, currently used only by auth-recovery), but no draft caller passes `ipHash` (the same is true of legacy generation), so only the per-user and global limits are active.
 - The `draft:global` counter row is locked from the first increment until commit, so concurrent draft creations queue briefly on it; the per-account profile lock is always taken first (a documented lock-order contract in `createDraft`).
 - The database also freezes expired drafts: the expiry of an expired or past-due draft cannot be changed, `draft.rev` moves by exactly one, and versions of an expired draft cannot be updated (migration `draft_guard_hardening`).
 
@@ -185,7 +185,7 @@ Limit keys (all in `src/lib/server/limits.ts`; every enforced one has an N+1 ref
 | `draftTtlDays`, `draftMaxLifetimeDays` | creation and every mutation (sliding, capped) | drafts.test.ts, drafts-versions.test.ts, drafts-locking.test.ts |
 | `draftLockTimeoutMs` | every draft transaction (`DRAFT_BUSY`) | drafts-locking.test.ts |
 | `purgeGraceDays`, `purgeBatchSize` | worker purge | drafts.test.ts |
-| `exportsPerUserPerHour`, `exportConcurrencyPerUser`, `exportDeadlineMinutes` | reserved for S4 and S5 | none yet |
+| `exportsPerUserPerHour`, `exportConcurrencyPerUser`, `exportDeadlineMinutes` | export confirm (`dal/export.ts`) and the export job sweeper (`dal/jobs.ts`); the values are defined in `src/lib/server/limits.ts` | export-confirm and export-locking tests |
 | `llmMaxCallsPerDraft`, `llmMaxTokensPerDraft`, `llmMaxCostMicrosPerDraft` | reserved for a future language-model item source | none yet |
 
 ### 5.2 按用户隔离的数据访问规则
@@ -383,7 +383,7 @@ tx(async (t) => {
 | 模型超时/限流/5xx | running/generating | 在预算内退避重试;耗尽 → `failed(llm_*)` | released |
 | 数学验证不通过 | running/validating | 至多 N 次有界修复(重新生成说明文字,**不**改数字);仍失败 → 保存 `rejected` 草稿供查看,`failed(validation_failed)` | released |
 | 编译失败(确定性) | running/compiling | 不重试(沙箱/基础设施类错误至多重试一次);`failed(compile_failed)`,返回脱敏的可操作信息 | released |
-| 上传中断 | running/storing | 重试使用新的 attemptId 前缀;耗尽 → `failed(storage_failed)`;失败的尝试会尽力删除自己的前缀;崩溃留下的残留对象需要定期对账(P3,尚未实现) | released |
+| 上传中断 | running/storing | 重试使用新的 attemptId 前缀;耗尽 → `failed(storage_failed)`;失败的尝试会尽力删除自己的前缀;崩溃留下的残留对象由 `worker/reconcile.ts` 对账(`RECONCILE_ENABLED`,默认关闭) | released |
 | 上传成功但 DB 提交失败 | 事务回滚,对象孤立 | worker 对提交做有界重试(幂等);仍失败或崩溃 → 租约过期 → 重新排队、新 attempt 重做;失败的尝试会尽力删除自己的前缀(提交被明确拒绝时);崩溃留下的孤立对象需要定期对账(P3,尚未实现) | 仍 reserved,直到成功或终态失败 |
 | DB 已提交但浏览器没收到响应 | succeeded 已成事实 | 页面刷新/轮询/历史页读取权威状态;幂等 POST 重放返回原 job | consumed(一次) |
 | worker 重启/崩溃 | running,租约不再续 | sweeper:`lease_expires_at<now()` 的 running 任务 → queued(attempt<max 且预算未尽)或 failed;启动时杀掉带 `noteprep-job` 标签的残留沙箱 | 沿用原预留 |
@@ -538,7 +538,7 @@ tx(async (t) => {
 ### 7.7 模板、引擎、语言
 
 - **推荐**:`pdfLaTeX` + 固定版本的 TeX Live 镜像,Letter(D-46、D-70;原写 A4 已更正),`article` 类自写小模板(无 `hyperref`,避免链接/JS 动作),字体 Latin Modern(`lmodern` + `T1`),`amsmath`。英文界面与课件。
-- **理由**:最小攻击面(无 Lua、无字体文件解析之外的外部程序)、编译快、产物确定。TeX Live 当前年份版本需在 Phase 1/2 对照 TUG 页面确认(TUG 的 known-issues 页面本次抓取被拒绝,**待验证**);镜像固定到摘要(digest),运行时不安装、不下载。
+- **理由**:最小攻击面(无 Lua、无字体文件解析之外的外部程序)、编译快、产物确定。TeX Live 当前年份版本须对照 TUG 页面确认(TUG 的 known-issues 页面本次抓取被拒绝,**待验证**);镜像固定到摘要(digest),运行时不安装、不下载。
 - **替代**:`XeLaTeX/LuaLaTeX` + `fontspec`。取舍:支持 Unicode 与 CJK,但攻击面更大(LuaTeX 内嵌 Lua)、字体与断行更复杂。**触发条件**:确定非拉丁语言市场。当前以 pdfLaTeX 为可逆默认;pdfLaTeX 下对输入字符集严格限制(超出 T1 可表示范围 → 拒绝,返回可操作错误)。
 - 可复现:`SOURCE_DATE_EPOCH` + `FORCE_SOURCE_DATE=1`;回归测试比较提取文本/版面度量/页数而非 PDF 二进制。
 
@@ -568,6 +568,44 @@ type StructuredResult =
 - 原始供应商输出**不当作可信内容存储**:`value` 必须通过应用 Zod 模式(含长度、禁止 URL/HTML/LaTeX 命令/控制字符)后,才进入 LessonDraft;日志不记录提示词与输出正文。
 - 首版:一个 `fake`(确定性,CI 默认)+ 一个真实适配器。**默认假设**真实适配器为 Anthropic Claude(可逆,所选模型 ID、超时、token 与成本上限均为配置;不在代码里写死价格);供应商作为子处理方须在隐私政策中披露,保留期与训练政策以其官方条款为准,不在文档中断言"零保留"。
 - 用户备注与模型输出都是数据:不能选择工具、读文件、改系统提示、访问 URL;生成流程没有浏览或外部工具执行。
+
+- `LLM_PROVIDER` accepts `fake | anthropic | openai`; the OpenAI adapter (`src/lib/llm/openai.ts`) is registered in `src/lib/llm/factory.ts` and is described by the contract in section 8.1. The default stays `fake`.
+
+### 8.1 OpenAI adapter contract (verified 2026-11-01)
+
+Verified against the official OpenAI documentation and the official `openai-node` / `openai-openapi` repositories on 2026-11-01. The adapter targets the Responses API. No model id or price is recorded here; both come from configuration. "doc" = developers.openai.com page; "sdk" = `github.com/openai/openai-node` source (type definitions, not prose docs).
+
+| Item | Verified value | Source |
+|---|---|---|
+| Recommended endpoint | "While Chat Completions remains supported, Responses is recommended for all new projects." Structured Outputs: "Instead of `response_format`, use `text.format` in Responses." Endpoint `POST /v1/responses`, base `https://api.openai.com`. | [migrate-to-responses](https://developers.openai.com/api/docs/guides/migrate-to-responses) |
+| Auth | `Authorization: Bearer <key>` (HTTP Bearer). | [API overview](https://developers.openai.com/api/reference/overview) |
+| Input | `input` is a string or an array of input items; a plain string is a user message. `instructions` is a top-level string separate from `input` for system-level guidance (SDK type `instructions?: string \| null`). | [migrate-to-responses](https://developers.openai.com/api/docs/guides/migrate-to-responses) ("use instructions for system-level guidance"); openai-node `src/resources/responses/responses.ts` |
+| Structured output | `text: { format: { type: "json_schema", name, schema, strict: true } }`. **Schema `name`:** the structured-outputs guide states no pattern or length (it appears only in examples); the openai-node type `ResponseFormatTextJSONSchemaConfig` documents a-z, A-Z, 0-9, underscores and dashes, max 64 characters. **Rules ([guide](https://developers.openai.com/api/docs/guides/structured-outputs)):** "the root level object of a schema must be an object, and not use `anyOf`"; all fields must be `required`; `additionalProperties: false` is required. **Supported:** string, number, boolean, integer, object, array, enum, anyOf; string `pattern`/`format`; number `multipleOf`/`maximum`/`exclusiveMaximum`/`minimum`/`exclusiveMinimum`; array `minItems`/`maxItems`. **Unsupported (guide, "Some type-specific keywords are not yet supported"):** "Composition: `allOf`, `not`, `dependentRequired`, `dependentSchemas`, `if`, `then`, `else`". **Limits (guide):** "A schema may have up to 5000 object properties total, with up to 10 levels of nesting."; "total string length of all property names, definition names, enum values, and const values cannot exceed 120,000 characters."; "A schema may have up to 1000 enum values across all enum properties." (and 15,000 characters of enum values for a single string enum above 250 values). The adapter must reject schemas using unsupported keywords before sending. | [structured-outputs](https://developers.openai.com/api/docs/guides/structured-outputs); openai-node SDK |
+| Output limit | `max_output_tokens` includes reasoning tokens: "you can limit the total number of tokens the model generates, including reasoning tokens, visible output tokens, and non-visible formatting tokens". The limit can be hit before any visible output, so input and reasoning tokens are billed for an `incomplete` response. Quote: "OpenAI recommends reserving at least 25,000 tokens for reasoning and outputs when you start experimenting with these models." **Adapter consequence:** with a reasoning model the configured default must leave reasoning headroom, otherwise `incomplete` (`max_output_tokens`) becomes common. | [reasoning](https://developers.openai.com/api/docs/guides/reasoning); openai-node `max_output_tokens` |
+| Data retention | `store?: boolean \| null`: "Defaults to true when omitted" (stored at least 30 days subject to the data retention exceptions); `store: false` is the documented opt-out of application state. It does not stop abuse-monitoring logs (see below). The your-data table row for `/v1/responses`: data used for training "No"; abuse monitoring retention "30 days"; application state retention "None, see below for exceptions"; Zero Data Retention eligible "Yes, see below for limitations". | [your-data](https://developers.openai.com/api/docs/guides/your-data) (table row `/v1/responses`); openai-node `store` |
+| Success shape | `status: "completed"`; `output[]` message item whose content holds `output_text` items with `text`. (`status` union in the SDK: completed, failed, in_progress, cancelled, queued, incomplete.) | sdk `Response`; [structured-outputs](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| Refusal | Content item `type: "refusal"` with string field `refusal`; check it before reading schema-conforming output. | [responses create](https://developers.openai.com/api/reference/resources/responses/methods/create) (`ResponseOutputRefusal`), structured-outputs |
+| Truncation | `status: "incomplete"`, `incomplete_details.reason`. The SDK union is `max_output_tokens`, `max_messages`, `content_filter`, `steered` (`steered` only after a WebSocket steer event). The adapter must treat any `incomplete` as non-success. | sdk `Response.IncompleteDetails`; structured-outputs |
+| Usage | `usage.input_tokens`, `usage.input_tokens_details.cached_tokens` (also `cache_write_tokens`), `usage.output_tokens` (includes reasoning tokens: reasoning is "billed as output tokens"), `usage.output_tokens_details.reasoning_tokens`, `usage.total_tokens`. | sdk `ResponseUsage`; [reasoning](https://developers.openai.com/api/docs/guides/reasoning) |
+| Request id | Response header `x-request-id`: "Unique identifier for this API request (used in troubleshooting)"; OpenAI recommends logging it in production. | [API overview](https://developers.openai.com/api/reference/overview); sdk README |
+| Error body | `{ "error": { "type", "message", "param", "code" } }`; all four keys required, `code` and `param` nullable. | `openai-openapi` `ErrorResponse` / `Error` schemas |
+| Error statuses | 401 (invalid auth / incorrect key / not in an organization / IP not authorized), 403 (country, region or territory not supported), 500 (server error), 503 (`type: service_unavailable_error`, `code: server_is_overloaded`). 429 temporary rate limit: message "Rate limit reached for requests"; the guide gives no `code` string for it. 429 quota or billing: `error.type` can be `insufficient_quota`; `error.code` is one of `credit_balance_exhausted`, `organization_spend_limit_exceeded`, `project_spend_limit_exceeded`, `organization_usage_limit_exceeded`. Another 429 entry: type `rate_limit_error`, code `slow_down`. 404 (model) and 400 `context_length_exceeded` are not in the error-codes guide; `context_length_exceeded` and `rate_limit_exceeded` appear as enum values in the OpenAPI spec. | [error-codes](https://developers.openai.com/api/docs/guides/error-codes); `openai-openapi` |
+| Retry hints | `Retry-After` (seconds, minimum wait, "when present") on temporary-rate-limit 429 and on 503 overload; not applicable to quota/billing errors (they need user action). Missing or invalid: exponential backoff with jitter. `x-ratelimit-{limit,remaining,reset}-{requests,tokens}` and `-project-tokens` variants are documented. `retry-after-ms` is honoured by the official SDK only; it is not in the prose docs. | [rate-limits](https://developers.openai.com/api/docs/guides/rate-limits); sdk `client.ts` |
+| Unsupported params | "When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs`." The docs say to remove them; they do not state the failure mode. Some models reject certain effort values with HTTP 400 (for example `none`). The adapter sends no sampling parameters. | [latest-model](https://developers.openai.com/api/docs/guides/latest-model), reasoning |
+| Open questions (unverified) | (1) Whether `usage.input_tokens` already includes `cached_tokens` (the docs and SDK types read here do not say; the adapter must not add them together without confirming). (2) The exact 404 (unknown model) and 400 `context_length_exceeded` response bodies, which are not in the error-codes guide. (3) No live API call was made; every value above comes from documentation and SDK/OpenAPI sources. | n/a |
+
+**Retention statement relevant to D-43 (quoted verbatim from [your-data](https://developers.openai.com/api/docs/guides/your-data), 2026-11-01; not an assertion of no retention):**
+
+- Training: "Your data is your data. As of March 1, 2023, data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in to share data with us)."
+- Abuse monitoring: "Abuse monitoring logs may contain certain customer content, such as prompts and responses, as well as metadata derived from that customer content, such as classifier outputs. By default, abuse monitoring logs are generated for all API feature usage and retained for up to 30 days, unless longer retention is required by law, or is reasonably necessary to protect our services or any third party from harm."
+- Exclusion needs approval: "Eligible customers may have their customer content excluded from these abuse monitoring logs, subject to the limitations below, by getting approved for the Zero Data Retention or Modified Abuse Monitoring controls. Currently, these controls are subject to prior approval by OpenAI and acceptance of additional requirements."
+- Responses application state: "Except as noted below, the Responses API has a 30 day Application State retention period by default, or when the `store` parameter is set to `true`. In those cases, response data will be stored for at least 30 days."
+- ZDR and `store`: "When Zero Data Retention is enabled for an organization, the `store` parameter will always be treated as `false`, even if the request attempts to set the value to `true`."
+- Table row `/v1/responses`: data used for training "No"; abuse monitoring retention "30 days"; application state retention "None, see below for exceptions"; Zero Data Retention eligible "Yes, see below for limitations".
+
+Sending `store: false` does not stop abuse-monitoring logs: per the table row above they are kept up to 30 days without Zero Data Retention approval and may contain prompts and responses. NotePrep has no Zero Data Retention approval and makes NO zero-retention or no-training claim (CLAUDE.md section 9; D-43); the privacy policy must disclose OpenAI as a subprocessor with these retention terms.
+
+Adapter consequences: send `store: false`; classify 429 by `error.type`/`error.code` (quota or billing codes are not retryable, other 429 and 503 are retryable honouring `Retry-After`); treat `refusal` content, any `status` other than `completed`, and a missing `output_text` as failures; read usage defensively (nested detail objects may be absent).
 
 ## 9. Stripe 权益
 
@@ -649,7 +687,7 @@ sequenceDiagram
 **推荐(首版):单台 Linux 主机(VM)运行 worker + 容器运行时 + gVisor(`runsc`)。**
 
 - 每个编译任务:`run --rm --network none --read-only --user <非root> --cap-drop ALL --security-opt no-new-privileges --pids-limit … --memory … --cpus … --tmpfs /work:rw,nosuid,size=<上限> --ulimit <fsize/nproc/cpu 等>`,`--runtime=runsc`(具体数值由 Phase 2 spike 实测后写入配置);输入通过 stdin 传 tar、输出通过 stdout 传 tar(**无绑定挂载,无 Docker socket**);镜像固定摘要,内含 TeX Live 与固定包/字体,运行时不安装/不下载。
-- Worker 通过**独立无秘密账户**的 runner 调用容器运行时(机制:受限 sudoers、systemd 单元或本地 socket 服务,**Phase 2 以带负面测试的 spike 决定**),这样即使发生容器逃逸,攻击者落在没有 DB/Storage/LLM 凭据的账户上。
+- Worker 通过**独立无秘密账户**的 runner 调用容器运行时(机制:受限 sudoers、systemd 单元或本地 socket 服务,**已决定:rootless Docker,见 D-52/D-56 与 `deploy/host/`**),这样即使发生容器逃逸,攻击者落在没有 DB/Storage/LLM 凭据的账户上。
 - 超时:对整个进程组/容器 `kill`,并以标签(`noteprep-job=<id>`)在 worker 启动与 sweeper 中清理残留。
 - **成本结构与运维责任**:一台常驻小型主机(规格与价格**待依据真实编译耗时和并发实测后确定**,不在此臆测);运维责任:OS/内核补丁、容器运行时与 gVisor 升级、TeX 镜像定期重建与重跑沙箱测试、日志与告警、磁盘清理。需要 gVisor 的平台兼容性(例如 systrap 平台是否可用、TeX 所需系统调用)**待实测**。
 

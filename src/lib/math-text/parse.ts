@@ -121,9 +121,20 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     return false;
   }
 
-  // A number, or a number with prefix signs (`-2`): two of these side by side are `2 3`, not a product.
-  function isNumLike(n: MathNode): boolean {
-    return n.t === "num" || (n.t === "unary" && isNumLike(n.arg));
+  // True when the last glyph the node emits is a bare number, so a number or a fraction written right after it would
+  // merge with it visually (`\sin 2 3` reads "sin 23", `3\frac{1}{2}` reads "three and a half"). Per node kind: a
+  // number is one; a prefix sign, a function (`\sin 2`, `\log_{2}8`), an implicit product, a binary operation, a relation
+  // and a comma list end with their last operand; everything else ends in a closer, a script, a percent sign or a
+  // letter-like glyph (`)`, `]`, `|`, `}`, `\%`, a variable, a Greek letter, `\ldots`) and is unambiguous.
+  function endsInNumber(n: MathNode): boolean {
+    switch (n.t) {
+      case "num": return true;
+      case "unary": case "fn": return endsInNumber(n.arg);
+      case "bin": return endsInNumber(n.r);
+      case "imp": case "list": return endsInNumber(n.items[n.items.length - 1] as MathNode);
+      case "rel": return endsInNumber((n.rest[n.rest.length - 1] as { rhs: MathNode }).rhs);
+      default: return false;
+    }
   }
 
   function parseOperand(): MathNode {
@@ -132,7 +143,7 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     while (startsImplicit(peek())) {
       const t = peek() as Token;
       const last = items[items.length - 1] as MathNode;
-      if (t.k === "num" && isNumLike(last)) fail("math_adjacent_numbers", t);
+      if ((t.k === "num" || isCmd(t, "frac")) && endsInNumber(last)) fail("math_adjacent_numbers", t);
       if (isOp(t, "|") && last.t === "abs") fail("math_unexpected_token", t);
       items.push(parsePostfix());
     }

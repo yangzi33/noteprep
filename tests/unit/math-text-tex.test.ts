@@ -67,7 +67,9 @@ describe("mathToTex and the canonical serializer", () => {
     expect([...MATH_TEX_SYMBOLS]).toEqual(["%"]);
   });
   it("separates control words from following letters and adjacent digits", () => {
-    expect(mathToTex(parseOk(String.raw`\sin 3 4`))).toBe(String.raw`\sin 3 4`);
+    // The parser now refuses `\sin 3 4` (math_adjacent_numbers); the serializer's digit separation is kept for hand-built trees.
+    const n = (v: string): MathNode => ({ t: "num", v });
+    expect(mathToTex({ t: "imp", items: [{ t: "fn", name: "sin", arg: n("3") }, n("4")] })).toBe(String.raw`\sin 3 4`);
     expect(mathToTex(parseOk(String.raw`a \times b`))).toBe(String.raw`a\times b`);
     expect(mathToTex(parseOk(String.raw`\pm \pm x`))).toBe(String.raw`\pm\pm x`);
     expect(mathToTex(parseOk(String.raw`\sin \cos x`))).toBe(String.raw`\sin \cos x`);

@@ -116,7 +116,20 @@ function genPostfix(c: Ctx): MathNode {
   return node;
 }
 
-const isNumLike = (n: MathNode): boolean => n.t === "num" || (n.t === "unary" && isNumLike(n.arg));
+// Mirrors the parser's `endsInNumber`: the last glyph emitted is a bare number.
+const isNumLike = (n: MathNode): boolean => {
+  switch (n.t) {
+    case "num": return true;
+    case "unary": case "fn": return isNumLike(n.arg);
+    case "bin": return isNumLike(n.r);
+    case "imp": case "list": return isNumLike(n.items[n.items.length - 1] as MathNode);
+    case "rel": return isNumLike((n.rest[n.rest.length - 1] as { rhs: MathNode }).rhs);
+    default: return false;
+  }
+};
+// The first token of the node is `\frac` (scripts and postfix signs keep it first).
+const startsWithFrac = (n: MathNode): boolean =>
+  n.t === "frac" || ((n.t === "sup" || n.t === "sub") && startsWithFrac(n.base)) || ((n.t === "deg" || n.t === "pct") && startsWithFrac(n.arg));
 const leadsWithAbs = (n: MathNode): boolean =>
   n.t === "abs" || ((n.t === "sup" || n.t === "sub") && leadsWithAbs(n.base)) || ((n.t === "deg" || n.t === "pct") && leadsWithAbs(n.arg));
 const endsWithAbs = (n: MathNode): boolean => n.t === "abs" || (n.t === "unary" && endsWithAbs(n.arg));
@@ -144,7 +157,7 @@ function genOperand(c: Ctx): MathNode {
     let item = genPostfix(c);
     const last = items[items.length - 1] as MathNode;
     // Parser refusals: two numbers side by side, and a bar directly after a bar.
-    if ((startsWithNum(item) && isNumLike(last)) || (leadsWithAbs(item) && endsWithAbs(last)) || leadsWithLdots(item)) item = { t: "var", name: "x" };
+    if (((startsWithNum(item) || startsWithFrac(item)) && isNumLike(last)) || (leadsWithAbs(item) && endsWithAbs(last)) || leadsWithLdots(item)) item = { t: "var", name: "x" };
     items.push(item);
   }
   return { t: "imp", items };
@@ -223,8 +236,16 @@ export function generatedDocs(next: () => number, count: number, opts: { nearLim
       if (next() < 0.7) {
         let text = "";
         const len = 1 + Math.floor(next() * 20);
-        for (let k = 0; k < len; k++) text += TEXT_CHARS[Math.floor(next() * TEXT_CHARS.length)];
-        parts.push({ t: "text", s: ` ${text} ` });
+        for (let k = 0; k < len; k++) {
+          const ch = TEXT_CHARS[Math.floor(next() * TEXT_CHARS.length)] as string;
+          // `--`, `''` and `,,` are refused in MathText text (T1 ligatures)
+          if (text.length > 0 && ch === text[text.length - 1] && "-',".includes(ch)) continue;
+          // normalized text: no space run, and the padding spaces below are the only edge spaces
+          if (ch === " " && (text.length === 0 || text.endsWith(" ") || k === len - 1)) continue;
+          text += ch;
+        }
+        text = text.replace(/ +$/, "");
+        parts.push({ t: "text", s: parts.length === 0 ? `${text || "a"} ` : ` ${text || "a"} ` }); // a document is trimmed, so no leading space first
       }
       parts.push({ t: "math", m: opts.nearLimit && next() < 0.25 ? nearLimitNode(next) : genMathNode(next) });
     }
