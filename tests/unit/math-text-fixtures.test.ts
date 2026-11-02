@@ -57,7 +57,7 @@ const NODE_PATTERNS: Record<string, RegExp> = {
   fn: /\\(sin|cos|tan|log|ln) |\\log_/,
 };
 it("every MathNode type appears in at least one accept row", () => {
-  const spans = golden.filter((r) => r.ok).flatMap((r) => [...(r.canonical as string).matchAll(/\\\((.*?)\\\)/g)].map((m) => m[1]));
+  const spans = golden.filter((r) => r.ok).flatMap((r) => [...(r.canonical as string).matchAll(/\\\((.*?)\\\)/g)].map((m) => m[1] ?? ""));
   for (const [node, re] of Object.entries(NODE_PATTERNS)) expect(spans.some((m) => re.test(m)), node).toBe(true);
   expect(Object.keys(NODE_PATTERNS)).toHaveLength(18);
 });
