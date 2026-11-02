@@ -1,5 +1,6 @@
 import { AnthropicProvider } from "./anthropic";
 import { FakeLlmProvider } from "./fake";
+import { realProviderConfigIssues } from "./real-provider-config";
 import type { LlmProvider } from "./types";
 
 export interface LlmSettings {
@@ -14,6 +15,8 @@ export interface LlmSettings {
 /** The one place that turns configuration into a provider. Throws if a real provider is under-configured. */
 export function createLlmProvider(settings: LlmSettings): LlmProvider {
   if (settings.LLM_PROVIDER === "fake") return new FakeLlmProvider();
+  const issues = realProviderConfigIssues(settings);
+  if (issues.length > 0) throw new Error(issues.join("; "));
   const { LLM_API_KEY, LLM_MODEL, LLM_PRICE_INPUT_MICROS_PER_MTOK, LLM_PRICE_OUTPUT_MICROS_PER_MTOK } = settings;
   if (!LLM_API_KEY || !LLM_MODEL || LLM_PRICE_INPUT_MICROS_PER_MTOK === undefined || LLM_PRICE_OUTPUT_MICROS_PER_MTOK === undefined) {
     throw new Error("the anthropic provider needs an API key, a model and both prices");
