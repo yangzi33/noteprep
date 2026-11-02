@@ -822,5 +822,36 @@
     "ok": true,
     "canonical": "\\(\\sin 2x\\)",
     "tex": "$\\sin 2x$"
+  },
+  {
+    "in": "a––b",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "a–––b",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "a-—b",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "a–—b",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "a’’b",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "A–B, C—D and it’s fine.",
+    "ok": true,
+    "canonical": "A–B, C—D and it’s fine.",
+    "tex": "A--B, C---D and it's fine."
   }
 ]

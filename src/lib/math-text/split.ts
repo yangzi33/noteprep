@@ -99,7 +99,8 @@ export function splitMathText(input: string): SplitResult {
     if (p.t !== "text") continue;
     for (const ch of p.s) if (!isAllowedTextChar(ch.codePointAt(0) as number)) return { ok: false, code: "text_bad_char" };
   }
-  // T1 font ligatures would print `--` as an en dash and `''` as a closing quote in the PDF but not in the preview.
-  for (const p of parts) if (p.t === "text" && /--|''|,,|[\u2013-]{2}(?<!\u2013\u2013)|[\u2019']{2}(?<!\u2019\u2019)/.test(p.s)) return { ok: false, code: "text_bad_char" };
+  // T1 font ligatures would print `--` as an en dash and `''` as a closing quote in the PDF but not in the preview; the
+  // escape table maps en dash to `--`, em dash to `---` and the right quote to `'`, so any two of a family are refused.
+  for (const p of parts) if (p.t === "text" && /[-\u2013\u2014]{2}|['\u2019]{2}|,,/.test(p.s)) return { ok: false, code: "text_bad_char" };
   return { ok: true, parts };
 }
