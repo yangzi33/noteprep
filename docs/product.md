@@ -1,6 +1,6 @@
 # 产品说明(Phase 0)
 
-> 状态:Phase 0 设计文档。其中没有任何已运行、已测试或已上线的内容;所有"验收场景"都是未来要用证据证明的目标。
+> 状态:Phase 0 设计文档,**已部分过时**:产品现已实现并有测试覆盖(见 [onboarding](onboarding.md))。额度默认在**确认导出**时预留(不是任务入队时),并有可选的每日额度桶(`DAILY_REFRESH_ENABLED`,D-112);以 `CLAUDE.md` §5 与代码为准。下文"验收场景"仍是需用证据证明的目标。
 > 相关文档:[architecture](architecture.md) · [implementation-plan](implementation-plan.md) · [test-plan](test-plan.md) · [security-and-privacy](security-and-privacy.md) · [decisions](decisions.md)
 > **方向调整(2026-10-19):** 产品改为**选择优先、课程感知**(见 [product-vision](product-vision.md)、[refactor-plan](refactor-plan.md))。本文中与之冲突的部分已按新方向修订,或标注为【已被取代】。**额度、任务、幂等、围栏、权益、认证与所有权、存储与沙箱的规则不变。**
 
@@ -56,7 +56,7 @@
 
 - **完整生成(complete generation)**:一次新的 AI 课包生成,通过结构与数学检查,所请求的每份文档(Notes、Worksheet、Solutions)的 PDF 均已保存并可通过授权下载获取。是否计费只看服务端事实,**与浏览器是否收到成功响应无关**。
 - **bucket**:额度桶。`trial`(每账户终身一个,limit=3)或 `paid`(每个已验证的 Stripe 订阅计费周期一个)。
-- **reservation**:任务入队时从某个 bucket 预留的 1 次额度;状态单向 `reserved → consumed | released`。
+- **reservation**:从某个 bucket 预留的 1 次额度(默认流程在确认导出时预留;旧的 legacy 流程在任务入队时预留);状态单向 `reserved → consumed | released`。
 
 ### 4.2 规则
 

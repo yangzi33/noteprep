@@ -39,7 +39,7 @@ Vercel 的变量类型:`DATABASE_URL` 选 **Secret**(保存后只能覆盖、不
 ## 3. GitHub
 
 - 创建环境 `staging`(和之后的 `production`),设置**必需审批人**;只在这些环境里放 `MIGRATION_DATABASE_URL`。
-- 分支保护(建议):`main` 要求 `CI` 工作流的三个作业通过。
+- 分支保护(建议):`main` 要求 `CI` 工作流的全部作业通过(当前 6 个:static、latex-sandbox、integration、worker-image、supabase、e2e,见 `.github/workflows/ci.yml`)。
 - `CI` 工作流在 pull request 上运行且**没有仓库秘密**;不要改成 `pull_request_target`。
 
 ## 4. Stripe(测试模式)

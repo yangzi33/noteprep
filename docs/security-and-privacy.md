@@ -1,6 +1,6 @@
 # 安全与隐私
 
-> 状态:设计层面的威胁模型与计划。**不声称任何防护已实现、已测试或已通过合规认证。** 每条"验证"都对应 [test-plan](test-plan.md) 中尚未执行的测试。
+> 状态:设计层面的威胁模型与计划。**不声称任何防护已通过合规认证或已达到上线就绪。** 许多控制现已实现并有测试(例如 `tests/latex/sandbox-negative.test.ts`、`tests/supabase/`、`tests/integration/export-security.test.ts`、`tests/integration/ownership.test.ts`),但本文每条"验证"是否都已有对应测试未逐条核对(UNVERIFIED);Stripe、CSP 等仍未实现。
 > 相关:[architecture](architecture.md) · [decisions](decisions.md)
 > **方向调整(2026-10-19):** 产品改为**选择优先、课程感知**(见 [product-vision](product-vision.md)、[refactor-plan](refactor-plan.md))。本文中与之冲突的部分已按新方向修订,或标注为【已被取代】。**额度、任务、幂等、围栏、权益、认证与所有权、存储与沙箱的规则不变。**
 
