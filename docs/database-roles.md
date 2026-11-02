@@ -18,6 +18,8 @@
 
 角色属性在 `CREATE ROLE` 时指定,**迁移不使用 `ALTER ROLE` 改属性**:Supabase 的 `postgres` 所有者不是真正的超级用户,`ALTER ROLE … NOBYPASSRLS` 会被拒绝(P1-T5 在真实 Supabase 上发现)。如果同名角色已存在,迁移会断言它没有任何提升属性,否则失败。
 
+> Note (2026-11-02, English): the export migration `20261024100100_export_tables` adds `export_snapshot` (app_runtime SELECT/INSERT, worker_runtime SELECT), `export` (app_runtime SELECT/INSERT/UPDATE, worker_runtime SELECT/UPDATE) and the view `export_state_drift` (worker_runtime SELECT), with no DELETE for either role. No later migration grants DELETE to `app_runtime`, so the "no DELETE for app_runtime" statement above still holds (checked by grepping migration GRANTs; the integration test `schema.test.ts` enforces it). The daily-bucket migrations add no new table. Whether production roles exist is UNVERIFIED (no production environment is documented).
+
 ## 登录用户
 
 带密码的登录用户**不写进迁移**,由各环境单独创建并加入组角色:

@@ -1,14 +1,15 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import golden from "../fixtures/math-text/golden.json";
 import { HOSTILE } from "../fixtures/math-text/hostile";
 import { acceptedFixtureDocs, generatedDocs, mutate, pickAccepted, rng } from "../fixtures/math-text/gen";
 import {
-  checkMathTextRenders, isMathTextDoc, MATH_TEXT_ERROR_CODES, mathTextToTex, parseMathText, serializeMathText,
+  checkMathTextRenders, isMathTextDoc, MATH_TEXT_ERROR_CODES, mathTextToTex, mathToTex, parseMathText, serializeMathText,
 } from "@/lib/math-text";
 import { admitMathText } from "@/lib/math-text/strict";
 import { parseMathText as rawParse } from "@/lib/math-text/parse";
 
+const LONG_MIN = 40; // measured 68 with the fixed seeds
 const FORBIDDEN_TEX = /\\(input|csname|catcode|def|href|url)\b|\^\^/;
 
 /** One fuzz step. Every failure message carries the seed, the iteration and the JSON-stringified input. */
@@ -64,6 +65,7 @@ describe("admission invariants", () => {
     const docs = [...acceptedFixtureDocs(), ...generatedDocs(rng(31), 300), ...generatedDocs(rng(32), 150, { nearLimit: true })];
     let accepted = 0;
     let rejected = 0;
+    let longAccepted = 0; // accepted math parts whose canonical TeX is 250 characters or more
     docs.forEach((doc, i) => {
       const src = serializeMathText(doc);
       const r = parseMathText(src);
@@ -72,12 +74,23 @@ describe("admission invariants", () => {
         return;
       }
       accepted++;
+      longAccepted += r.doc.parts.filter((p) => p.t === "math" && mathToTex(p.m).length >= 250).length;
       const where = `doc ${i} ${JSON.stringify(src)}`;
       expect(isMathTextDoc(r.doc), where).toBe(true);
       expect(parseMathText(serializeMathText(r.doc)), where).toEqual({ ok: true, doc: r.doc });
     });
     expect(accepted).toBeGreaterThan(200);
-    console.info(`admission property: ${accepted} accepted, ${rejected} rejected`);
+    expect(longAccepted).toBeGreaterThanOrEqual(LONG_MIN);
+    expect(rejected).toBeGreaterThanOrEqual(1); // generated canonical sources over the 300-character span cap (the "raw ok, canonical too long" kind is the fixed list below)
+    console.info(`admission property: ${accepted} accepted, ${rejected} rejected, ${longAccepted} long`);
+  });
+  it("every source that is fine raw but whose canonical form exceeds 300 characters is rejected publicly", () => {
+    for (let k = 61; k <= 99; k++) {
+      const src = `\\(${"x^2".repeat(k)}\\)`;
+      expect(rawParse(src).ok, `raw ${k}`).toBe(true);
+      expect(parseMathText(src), `public ${k}`).toMatchObject({ ok: false, code: "span_too_long" });
+    }
+    expect(parseMathText(`\\(${"x^2".repeat(60)}\\)`).ok).toBe(true); // canonical exactly 300
   });
   it("near-limit spans are generated and the 250-300 character region is exercised", () => {
     const lengths = generatedDocs(rng(32), 150, { nearLimit: true }).flatMap((d) =>
@@ -116,23 +129,25 @@ describe("public surface", () => {
       "mathTextToInlineParts", "mathTextToTex", "mathToTex", "parseMathText", "serializeMathText",
     ]);
   });
-  it("imports nothing server-only, React or database-related", () => {
+  it("imports nothing server-only, React, database, network or environment related", () => {
+    const banned = /(from|import\()\s*["'](server-only|react|next\/|@prisma|prisma|@\/lib\/(server|db)|node:|fs|child_process)|process\.env|\bfetch\(|require\(/;
     for (const file of readdirSync("src/lib/math-text")) {
-      expect(readFileSync(`src/lib/math-text/${file}`, "utf8"), file).not.toMatch(/from "(server-only|react|@prisma|@\/lib\/server)/);
+      expect(readFileSync(`src/lib/math-text/${file}`, "utf8"), file).not.toMatch(banned);
     }
   });
-  it("nothing outside src/lib/math-text imports the internals except the shared commands list", () => {
+  it("nothing outside src/lib/math-text reaches the internals (absolute, relative or dynamic) except the shared commands list", () => {
     const hits: string[] = [];
     const walk = (dir: string): void => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {
         const p = `${dir}/${e.name}`;
-        if (e.isDirectory()) walk(p);
-        else if (/\.(ts|tsx)$/.test(e.name) && !p.startsWith("src/lib/math-text/")) {
-          for (const m of readFileSync(p, "utf8").matchAll(/from "@\/lib\/math-text\/([a-z-]+)"/g)) hits.push(`${p} -> ${m[1]}`);
+        if (e.isDirectory()) {
+          if (e.name !== "node_modules" && e.name !== ".next") walk(p);
+        } else if (/\.(ts|tsx|mts|js|mjs)$/.test(e.name) && !p.startsWith("src/lib/math-text/")) {
+          for (const m of readFileSync(p, "utf8").matchAll(/["'`][^"'`\n]*math-text\/([A-Za-z0-9_./-]+)["'`]/g)) hits.push(`${p} -> ${m[1]}`);
         }
       }
     };
-    walk("src");
+    for (const root of ["src", "worker"]) if (existsSync(root)) walk(root);
     expect(hits).toEqual(["src/lib/latex/templates.ts -> commands"]);
   });
 });

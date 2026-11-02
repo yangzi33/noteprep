@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { AccountNotActive } from "@/lib/domain/errors";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { webDal } from "../dal/instance";
+import { signupPolicy } from "../env";
+import { mayCreateAccount } from "./signup-policy";
 import { makeAuthedCtx, type AuthedCtx } from "./context";
 import { isEmailConfirmed, verifyClaims } from "./verify";
 
@@ -25,7 +27,8 @@ export async function requireUser(): Promise<{ ctx: AuthedCtx; email: string }> 
 
 /**
  * requireUser plus the application account: creates the profile and its single trial bucket on first
- * use, but only after the Auth server confirms the email address.
+ * use, but only after the Auth server confirms the email address and, in invite mode, the address is on the allowlist
+ * (an existing profile keeps working; SIGNUP_ALLOWLIST gates creation only).
  */
 export async function requireAccount(): Promise<{ ctx: AuthedCtx; email: string }> {
   const { ctx, email } = await requireUser();
@@ -37,6 +40,8 @@ export async function requireAccount(): Promise<{ ctx: AuthedCtx; email: string 
   const supabase = await createServerSupabase();
   const { data } = await supabase.auth.getUser();
   if (!isEmailConfirmed(data.user, ctx.userId)) redirect("/login?error=unverified");
+  // Private test: a confirmed address that is not on the invite list gets no profile and no allowance.
+  if (!mayCreateAccount(signupPolicy(), email)) redirect("/not-invited");
   await dal.account.ensureAccount(ctx);
   return { ctx, email };
 }

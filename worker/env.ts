@@ -40,8 +40,8 @@ const WorkerEnv = z
     /** Wall-clock budget of one reconcile pass; after it no further storage call or delete starts. */
     RECONCILE_STEP_BUDGET_SECONDS: z.coerce.number().int().min(5).max(600).default(60),
     RECONCILE_GRACE_SECONDS: z.coerce.number().int().min(60).max(604_800).default(1_800),
-    /** "fake" needs no credentials. "anthropic" calls the real API and needs the four settings below. */
-    LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
+    /** "fake" needs no credentials. "anthropic" and "openai" call a real API and need the four settings below. */
+    LLM_PROVIDER: z.enum(["fake", "anthropic", "openai"]).default("fake"),
     /** "template" never calls a model; "llm" asks the provider for the wording of curriculum lessons. */
     LESSON_PROSE: z.enum(["template", "llm"]).default("template"),
     LLM_API_KEY: z.string().min(1).optional(),

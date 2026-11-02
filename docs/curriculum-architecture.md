@@ -1,6 +1,6 @@
 # 课程域架构(提案)
 
-> 状态:**提案;相关决定已批准(D-30:MVP 目标 Ontario Grade 9,真实数据集是之后的独立里程碑 CM;D-36 授权推迟到 CM)。** 没有任何代码或迁移已创建。**数据集内容尚未核实**(见 [refactor-audit](refactor-audit.md) §6):本文只定义结构与规则,不含任何课程条目。
+> 状态:**提案;相关决定已批准(D-30:MVP 目标 Ontario Grade 9,真实数据集是之后的独立里程碑 CM;D-36 授权推迟到 CM)。** **代码与迁移现已实现**(迁移 `20261019090849_curriculum_tables`、加载器 `src/lib/server/curriculum/load.ts`、`data/curricula/` 下的数据集)。**数据集内容尚未核实**(见 [refactor-audit](refactor-audit.md) §6):本文只定义结构与规则,不含任何课程条目。
 > 相关:[product-vision](product-vision.md) · [refactor-plan](refactor-plan.md) · [architecture](architecture.md)
 
 ## 1. 设计目标与刻意不做的事

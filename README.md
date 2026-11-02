@@ -90,6 +90,8 @@ Notes:
 | `ADMIN_REFRESH_ENABLED` | `0` | `1` enables `POST /api/admin/refresh-allowance` (bearer token, one call per minute, only while `DAILY_REFRESH_ENABLED=1`). Off, the route answers 404 with an empty body and never reads the token. Web scopes only. See docs/daily-refresh-rollout.md |
 | `ADMIN_REFRESH_TOKEN` | none | Bearer token for that route; at least 32 characters, required only when `ADMIN_REFRESH_ENABLED=1`. Server environment only |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | none | Optional public contact address shown to users. Inlined at build time, so set it in the build environment. Leave unset to show wording only |
+| `SIGNUP_MODE` | `invite` in production builds, `open` otherwise | `invite`: only addresses in `SIGNUP_ALLOWLIST` can sign up or get an account (fail closed: unset, empty or anything other than the exact strings `open` or `invite` means invite, and so does an unset `NODE_ENV`; only an explicit development or test run defaults to open). `open` must be set on purpose. A staging deployment needs its own `SIGNUP_ALLOWLIST` (or `open` with test data only), or nobody can create an account. An unrecognised value is logged as `signup_mode_unrecognised` (no value echoed). Web scopes only |
+| `SIGNUP_ALLOWLIST` | empty | Tester email addresses separated by commas, semicolons or spaces (max 500, case-insensitive, whole address). Changing it needs a redeploy. Removing an address does not revoke an existing account. Invalid, duplicate and over-cap entries are ignored and counted separately in a `signup_allowlist_entries_ignored` log line (counts only, never addresses). Mark the variable Sensitive in Vercel. See docs/auth-recovery.md for what the gate does and does not cover. Web scopes only |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
 | `AUTH_EMAIL_PER_IP_PER_HOUR` | `10` | Password-reset and confirmation-resend requests accepted per client IP and kind per hour (integer, 1 to 1000). Beyond it the request is ignored with the same response. See docs/auth-recovery.md |
 | `AUTH_EMAIL_GLOBAL_PER_HOUR` | `200` | The same limit across all addresses, per kind (integer, 1 to 100000) |
@@ -110,7 +112,7 @@ Rollback state "draft flow, export off": `FLOW_MODE=draft`, `EXPORT_ENABLED=0`. 
 | `OBJECT_STORE` | `fs` | `fs` (local `.data/objects`, refused in production) or `supabase` (private bucket; needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY`, worker only) |
 | `POLL_INTERVAL_MS`, `LEASE_SECONDS`, `SWEEP_INTERVAL_SECONDS` | `1000`, `30`, `15` | Claim polling, lease length, recovery sweep |
 | `RECONCILE_ENABLED` | `0` | Orphan-object reconciler, off by default (destructive); tuned by `RECONCILE_BATCH_LESSONS`, `RECONCILE_INTERVAL_SECONDS`, `RECONCILE_GRACE_SECONDS`, `RECONCILE_STEP_BUDGET_SECONDS` |
-| `LLM_PROVIDER` | `fake` | `fake` or `anthropic`; with `anthropic`, `LLM_API_KEY` and `LLM_MODEL` are required and held by the worker alone |
+| `LLM_PROVIDER` | `fake` | `fake` \| `anthropic` \| `openai`; with a real provider, `LLM_API_KEY` and `LLM_MODEL` are required and held by the worker alone |
 | `LESSON_PROSE` | `template` | `llm` asks the provider for prose wording |
 | `LLM_MAX_OUTPUT_TOKENS`, `LLM_PRICE_*`, `LLM_BASE_URL` | see file | Token, cost-accounting and endpoint settings |
 | `DOCKER_HOST`, `WORKER_LIVENESS_FILE` | unset | Set by the worker image on hosts; production requires the sandbox runner's unix socket, never the host's rootful `docker.sock` |

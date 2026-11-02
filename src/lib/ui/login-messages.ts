@@ -5,6 +5,7 @@ const MESSAGES: Record<string, string> = {
   recovery: "That password reset link is invalid or expired. Request a new one.",
   "reset-sent": "Check your inbox. If this address has an account, we have sent a link to reset your password. It can take a few minutes; check your spam folder too.",
   "check-email": "Check your inbox. If this address can be used, we have sent a confirmation link. It can take a few minutes; check your spam folder too.",
+  "check-email-invite": "Check your inbox. NotePrep is a private test: if this address is on the invite list, we have sent a confirmation link. It can take a few minutes; check your spam folder too. If nothing arrives, contact us.",
 };
 
 /** Looks up a login message by its own keys only (never inherited ones like __proto__). */
