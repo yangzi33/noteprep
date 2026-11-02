@@ -1,0 +1,170 @@
+[
+  {
+    "id": "s01",
+    "topic": "percent-of-quantity",
+    "field": "stem",
+    "input": "What is \\(15\\%\\) of \\(80\\)?",
+    "expect": "accept",
+    "note": "plain percent span"
+  },
+  {
+    "id": "s02",
+    "topic": "percent-change",
+    "field": "stem",
+    "input": "A price rises from \\(40\\) to \\(50\\). What is the percent increase?",
+    "expect": "accept",
+    "note": "two number spans in prose"
+  },
+  {
+    "id": "s03",
+    "topic": "percent-change",
+    "field": "step",
+    "input": "\\(\\frac{50 - 40}{40} \\times 100 = 25\\%\\)",
+    "expect": "accept",
+    "note": "fraction, times, percent in one relation"
+  },
+  {
+    "id": "s04",
+    "topic": "proportions",
+    "field": "stem",
+    "input": "Solve \\(\\frac{x}{12} = \\frac{5}{8}\\).",
+    "expect": "accept",
+    "note": "two fractions"
+  },
+  {
+    "id": "s05",
+    "topic": "exponent-laws",
+    "field": "stem",
+    "input": "Simplify \\(x^3 \\cdot x^4\\).",
+    "expect": "accept",
+    "note": "unbraced exponents"
+  },
+  {
+    "id": "s06",
+    "topic": "exponent-laws",
+    "field": "answer",
+    "input": "\\(x^{7}\\)",
+    "expect": "accept",
+    "note": "braced exponent"
+  },
+  {
+    "id": "s07",
+    "topic": "pythagorean-theorem",
+    "field": "stem",
+    "input": "A right triangle has legs \\(6\\) and \\(8\\). Find the hypotenuse.",
+    "expect": "accept",
+    "note": "numbers in prose"
+  },
+  {
+    "id": "s08",
+    "topic": "pythagorean-theorem",
+    "field": "step",
+    "input": "\\(c = \\sqrt{100} = 10\\)",
+    "expect": "accept",
+    "note": "sqrt in a chained relation"
+  },
+  {
+    "id": "s09",
+    "topic": "simple-probability",
+    "field": "stem",
+    "input": "A bag has \\(3\\) red and \\(5\\) blue marbles. What is the probability of drawing a red marble?",
+    "expect": "accept",
+    "note": "prose with numeric spans"
+  },
+  {
+    "id": "s10",
+    "topic": "simple-probability",
+    "field": "answer",
+    "input": "\\(\\frac{3}{8}\\)",
+    "expect": "accept",
+    "note": "fraction answer"
+  },
+  {
+    "id": "s11",
+    "topic": "equations-with-brackets",
+    "field": "stem",
+    "input": "Solve \\(2(x + 3) = 14\\).",
+    "expect": "accept",
+    "note": "implicit product with a group"
+  },
+  {
+    "id": "s12",
+    "topic": "systems-linear-equations",
+    "field": "stem",
+    "input": "Solve \\(x + y = 7\\) and \\(x - y = 1\\).",
+    "expect": "accept",
+    "note": "two equations"
+  },
+  {
+    "id": "s13",
+    "topic": "systems-linear-equations",
+    "field": "answer",
+    "input": "\\(x = 4, y = 3\\)",
+    "expect": "accept",
+    "note": "comma list of relations"
+  },
+  {
+    "id": "s14",
+    "topic": "quadratic-equations-factoring",
+    "field": "stem",
+    "input": "Solve \\(x^2 - 5x + 6 = 0\\) by factoring.",
+    "expect": "accept",
+    "note": "polynomial relation"
+  },
+  {
+    "id": "s15",
+    "topic": "quadratic-formula",
+    "field": "stem",
+    "input": "Use the quadratic formula to find \\(x = \\frac{-3 \\pm \\sqrt{25}}{2}\\).",
+    "expect": "accept",
+    "note": "unary minus and pm inside a fraction"
+  },
+  {
+    "id": "s16",
+    "topic": "equations-with-brackets",
+    "field": "stem",
+    "input": "Solve $2x+3=11$.",
+    "expect": "accept",
+    "note": "accepted as plain text; B-c decides whether `$` in an AI field is a gate failure"
+  },
+  {
+    "id": "s17",
+    "topic": "function-notation",
+    "field": "stem",
+    "input": "If \\(f(x) = −3x\\), find \\(f(2)\\).",
+    "expect": {
+      "reject": "math_bad_char"
+    },
+    "note": "Unicode minus U+2212 inside math"
+  },
+  {
+    "id": "s18",
+    "topic": "quadratic-formula",
+    "field": "answer",
+    "input": "\\(x = \\text{two}\\)",
+    "expect": {
+      "reject": "math_unknown_command"
+    },
+    "note": "\\text is not in the subset"
+  },
+  {
+    "id": "s19",
+    "topic": "sequences-series",
+    "field": "stem",
+    "input": "Find the sum \\[ 2 + 5 + 8 \\].",
+    "expect": {
+      "reject": "text_backslash"
+    },
+    "note": "display math is not supported"
+  },
+  {
+    "id": "s20",
+    "topic": "percent-of-quantity",
+    "field": "stem",
+    "input": "Round \\(1,500\\) to the nearest hundred.",
+    "expect": {
+      "reject": "math_digit_grouping"
+    },
+    "note": "thousands separator"
+  }
+]

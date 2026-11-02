@@ -1,4 +1,5 @@
 import type { DocumentKind } from "@/lib/package/schema";
+import { MATH_TEX_COMMANDS } from "@/lib/math-text/commands";
 import { escapeText, RenderError } from "./escape";
 
 /**
@@ -28,7 +29,16 @@ export const ALLOWED_BODY_COMMANDS: ReadonlySet<string> = new Set([
   "rule", "linewidth", "displaystyle", "frac", "writeline", "answerline",
   // escapes produced by escapeText
   "textbackslash", "textasciitilde", "textasciicircum", "textless", "textgreater", "textbar", "textquotedbl", "ldots",
+  // The MathText vocabulary is NOT listed here: see PDF_BODY_COMMANDS below.
 ]);
+
+/**
+ * What `assertTexIsSafe` accepts in a body: the deterministic renderer's set plus the shared MathText macros
+ * (src/lib/math-text/commands.ts is their single source). Kept apart from ALLOWED_BODY_COMMANDS so the "no unused
+ * permission" test in tests/unit/latex-render.test.ts keeps pinning the deterministic set exactly; the macros of
+ * MathText are pinned by tests/unit/math-text-allowlist.test.ts instead.
+ */
+export const PDF_BODY_COMMANDS: ReadonlySet<string> = new Set([...ALLOWED_BODY_COMMANDS, ...MATH_TEX_COMMANDS]);
 
 /** Control symbols (a backslash and one non-letter) that may appear. */
 export const ALLOWED_CONTROL_SYMBOLS: ReadonlySet<string> = new Set(["\\", "{", "}", "$", "&", "#", "_", "%", "[", "]", ";", ","]);

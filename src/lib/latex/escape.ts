@@ -39,7 +39,8 @@ const LATIN_LETTER = /^[À-ſ]$/u;
  * set up"), found by compiling the whole range in the real image (tests/latex/escape-chars.test.ts): H and T with stroke,
  * kra, the two Ls with middle dot, n with a leading apostrophe, long s.
  */
-const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
+/** Exported so the MathText text allowlist shares this one list. */
+export const UNPRINTABLE_LETTERS = new Set(["Ħ", "ħ", "ĸ", "Ŀ", "ŀ", "ŉ", "Ŧ", "ŧ", "ſ"]);
 
 const MAX_TEXT = 5000;
 
@@ -55,9 +56,10 @@ export function printsLiterally(ch: string): boolean {
  * Turns arbitrary text into text that LaTeX prints literally. Every character is either passed through from a short
  * safe list, replaced by a fixed escape sequence, or replaced by "?" when the pinned fonts cannot print it (emoji, other
  * scripts, control characters). Nothing in the input can start a command: a backslash, brace, dollar, percent, caret
- * and the like never reach the output unescaped.
+ * and the like never reach the output unescaped. Collapses runs of spaces; does not trim, so a fragment keeps the spaces
+ * that separate it from neighbouring math (MathText text parts).
  */
-export function escapeText(input: string): string {
+export function escapeTextFragment(input: string): string {
   const text = input.normalize("NFC").replace(/[\r\n\t\f\v]+/g, " ");
   if (text.length > MAX_TEXT) throw new RenderError("text_too_long");
   let out = "";
@@ -67,5 +69,10 @@ export function escapeText(input: string): string {
     else if (PLAIN.test(ch) || (LATIN_LETTER.test(ch) && !UNPRINTABLE_LETTERS.has(ch))) out += ch === "[" || ch === "]" ? `{${ch}}` : ch;
     else out += "?";
   }
-  return out.replace(/ {2,}/g, " ").trim();
+  return out.replace(/ {2,}/g, " ");
+}
+
+/** `escapeTextFragment` plus trimming: the escape for a whole standalone text field. */
+export function escapeText(input: string): string {
+  return escapeTextFragment(input).trim();
 }
