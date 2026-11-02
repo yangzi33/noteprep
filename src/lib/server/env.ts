@@ -46,6 +46,12 @@ let cachedSignup: SignupPolicy | undefined;
 
 /** Who may create an account (SIGNUP_MODE, SIGNUP_ALLOWLIST). Separate from serverEnv() so pages without a database need not parse DATABASE_URL. */
 export function signupPolicy(): SignupPolicy {
-  cachedSignup ??= parseSignupPolicy(process.env);
+  if (!cachedSignup) {
+    cachedSignup = parseSignupPolicy(process.env);
+    const listed = (process.env.SIGNUP_ALLOWLIST ?? "").split(/[\s,;]+/).filter(Boolean).length;
+    if (listed > cachedSignup.allowlist.size) {
+      console.warn(JSON.stringify({ event: "signup_allowlist_entries_ignored", listed, accepted: cachedSignup.allowlist.size }));
+    }
+  }
   return cachedSignup;
 }
