@@ -182,10 +182,10 @@ Rules:
 Use Superpowers skills and the mandatory review-implement loop (top of this file) for non-trivial tasks. Dynamically select appropriate Subagents and model tiers based on task complexity, risk, and cost efficiency:
 
 - **Haiku:** Routine, deterministic, low-complexity tasks.
-- **Sonnet:** Default for implementation, debugging, and standard reviews.
-- **Opus:** Complex architecture, difficult reasoning, critical debugging, and high-risk evaluations.
+- **Sonnet:** Default for implementation and debugging (never for review; see the mandatory review-implement loop).
+- **Opus:** All reviews in the review-implement loop, complex architecture, difficult reasoning, and critical debugging.
 
-Prefer the least expensive model capable of reliably completing the task. Escalate when necessary. Preserve independent evaluation and deterministic verification. Do not over-engineer trivial tasks.
+Prefer the least expensive model capable of reliably completing the task, except for reviews, which are always Opus. Escalate when necessary. Preserve independent evaluation and deterministic verification. Do not over-engineer trivial tasks.
 
 Project agents live in `.claude/agents/` (loaded when a session starts; restart or reload to pick up changes). Defaults are guidelines; the orchestrator overrides the model per delegation with the Agent tool's `model` parameter and always sets it explicitly:
 
@@ -201,7 +201,7 @@ Project agents live in `.claude/agents/` (loaded when a session starts; restart 
 | Lint, typecheck, test and build runs | `validator` | Haiku |
 
 - `planner`, `evaluator` and `validator` are read-only (no Edit/Write); only `implementer` changes files, and the evaluator must not be the agent that wrote the code under review.
-- Escalate one tier after a failed round, with a changed approach; never retry the same prompt on the same model. Never lower the model of a security, billing, concurrency or sandbox review to save cost.
+- Escalate one tier after a failed round, with a changed approach; never retry the same prompt on the same model. Never lower the model of any review to save cost.
 - If the installed Claude Code does not list a project agent, use a built-in agent type with an explicit `model` and the role's instructions; the rules above still apply.
 
 ## Official Documentation References
