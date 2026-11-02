@@ -110,7 +110,7 @@ Rollback state "draft flow, export off": `FLOW_MODE=draft`, `EXPORT_ENABLED=0`. 
 | `OBJECT_STORE` | `fs` | `fs` (local `.data/objects`, refused in production) or `supabase` (private bucket; needs `SUPABASE_URL` and `SUPABASE_SECRET_KEY`, worker only) |
 | `POLL_INTERVAL_MS`, `LEASE_SECONDS`, `SWEEP_INTERVAL_SECONDS` | `1000`, `30`, `15` | Claim polling, lease length, recovery sweep |
 | `RECONCILE_ENABLED` | `0` | Orphan-object reconciler, off by default (destructive); tuned by `RECONCILE_BATCH_LESSONS`, `RECONCILE_INTERVAL_SECONDS`, `RECONCILE_GRACE_SECONDS`, `RECONCILE_STEP_BUDGET_SECONDS` |
-| `LLM_PROVIDER` | `fake` | `fake` or `anthropic`; with `anthropic`, `LLM_API_KEY` and `LLM_MODEL` are required and held by the worker alone |
+| `LLM_PROVIDER` | `fake` | `fake` \| `anthropic` \| `openai`; with a real provider, `LLM_API_KEY` and `LLM_MODEL` are required and held by the worker alone |
 | `LESSON_PROSE` | `template` | `llm` asks the provider for prose wording |
 | `LLM_MAX_OUTPUT_TOKENS`, `LLM_PRICE_*`, `LLM_BASE_URL` | see file | Token, cost-accounting and endpoint settings |
 | `DOCKER_HOST`, `WORKER_LIVENESS_FILE` | unset | Set by the worker image on hosts; production requires the sandbox runner's unix socket, never the host's rootful `docker.sock` |

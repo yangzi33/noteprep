@@ -569,6 +569,8 @@ type StructuredResult =
 - 首版:一个 `fake`(确定性,CI 默认)+ 一个真实适配器。**默认假设**真实适配器为 Anthropic Claude(可逆,所选模型 ID、超时、token 与成本上限均为配置;不在代码里写死价格);供应商作为子处理方须在隐私政策中披露,保留期与训练政策以其官方条款为准,不在文档中断言"零保留"。
 - 用户备注与模型输出都是数据:不能选择工具、读文件、改系统提示、访问 URL;生成流程没有浏览或外部工具执行。
 
+- `LLM_PROVIDER` accepts `fake | anthropic | openai`; the OpenAI adapter (`src/lib/llm/openai.ts`) is registered in `src/lib/llm/factory.ts` and is described by the contract in section 8.1. The default stays `fake`.
+
 ### 8.1 OpenAI adapter contract (verified 2026-11-01)
 
 Verified against the official OpenAI documentation and the official `openai-node` / `openai-openapi` repositories on 2026-11-01. The adapter targets the Responses API. No model id or price is recorded here; both come from configuration. "doc" = developers.openai.com page; "sdk" = `github.com/openai/openai-node` source (type definitions, not prose docs).
