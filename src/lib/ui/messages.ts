@@ -68,6 +68,7 @@ export const FAILURE_REASONS: Record<string, string> = {
   llm_rate_limited: "The writing service was busy.",
   llm_overloaded: "The writing service was busy.",
   llm_invalid_output: "The writing service returned something we could not use.",
+  llm_quota_exhausted: "The writing service is temporarily unavailable.",
   llm_refused: "The writing service declined the request.",
   invalid_output: "The generated text did not pass our checks.",
   compile_failed: "The documents could not be built.",

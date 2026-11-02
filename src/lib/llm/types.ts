@@ -30,6 +30,8 @@ export type LlmErrorType =
   | "auth"
   | "server_error"
   | "bad_request"
+  /** Provider-side spend or quota limit reached; never retryable (retrying cannot help). */
+  | "quota_exhausted"
   | "unknown";
 
 export interface Usage {
@@ -44,7 +46,7 @@ export type StructuredResult =
   | {
       ok: false;
       /** `truncated`: the answer hit the output-token limit; asking again with the same limit would only repeat it. */
-      error: { type: LlmErrorType; retryable: boolean; truncated?: boolean };
+      error: { type: LlmErrorType; retryable: boolean; truncated?: boolean; /** Provider back-off hint in ms, already capped; absent when none. */ retryAfterMs?: number };
       /** What the call cost, as reported or (see usageEstimated) as a conservative ceiling. Absent only if unknown. */
       usage?: Usage;
       /** True when `usage` is a ceiling computed from the request's limits because the provider reported none. */

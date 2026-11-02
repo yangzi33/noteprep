@@ -3,6 +3,7 @@ import { AnthropicProvider, classifyHttpStatus, costMicros } from "@/lib/llm/ant
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FakeLlmProvider } from "@/lib/llm/fake";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest } from "@/lib/llm/types";
+import { FAILURE_REASONS } from "@/lib/ui/messages";
 import { workerEnv } from "../../worker/env";
 
 const SECRET = "sk-test-secret-value-1234567890";
@@ -262,5 +263,21 @@ describe("provider configuration", () => {
     expect(() => workerEnv({ ...base, LESSON_PROSE: "maybe" })).toThrow();
     expect(() => workerEnv({ ...base, LLM_BASE_URL: "http://insecure.example.test" })).toThrow();
     expect(() => workerEnv({ ...base, LLM_MAX_OUTPUT_TOKENS: "10" })).toThrow();
+  });
+});
+
+describe("quota_exhausted", () => {
+  it("is a known, non-retryable error type", () => {
+    expect(isRetryableLlmError("quota_exhausted")).toBe(false);
+  });
+  it("has a tutor-facing reason that blames no one and names no provider", () => {
+    expect(FAILURE_REASONS.llm_quota_exhausted).toBe("The writing service is temporarily unavailable.");
+  });
+  it("every error type that has a reason keeps it free of provider names", () => {
+    const types: LlmErrorType[] = ["timeout", "rate_limited", "overloaded", "invalid_output", "refused", "auth", "server_error", "bad_request", "quota_exhausted", "unknown"];
+    for (const t of types) {
+      const reason = FAILURE_REASONS[`llm_${t}`];
+      if (reason !== undefined) expect(reason).not.toMatch(/openai|anthropic|claude|gpt/i);
+    }
   });
 });
