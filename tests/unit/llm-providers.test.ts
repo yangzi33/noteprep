@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AnthropicProvider, classifyHttpStatus, costMicros } from "@/lib/llm/anthropic";
+import { OpenAiProvider } from "@/lib/llm/openai";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FakeLlmProvider } from "@/lib/llm/fake";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest } from "@/lib/llm/types";
@@ -213,11 +214,12 @@ describe("the same contract for every provider", () => {
   const makers: [string, () => LlmProvider][] = [
     ["fake", () => new FakeLlmProvider()],
     ["anthropic (mocked HTTP)", () => provider(mockFetch(() => json(message({ content: [{ type: "text", text: JSON.stringify({ objectives: ["x"] }) }] }))).fetchImpl)],
+    ["openai (mocked HTTP)", () => new OpenAiProvider({ apiKey: SECRET, model: "test-model-1", priceInputMicrosPerMTok: 3_000_000, priceOutputMicrosPerMTok: 15_000_000, fetch: mockFetch(() => json({ id: "r", status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ objectives: ["x"] }) }] }], usage: { input_tokens: 1_000, output_tokens: 200 } })).fetchImpl })],
   ];
   it.each(makers)("%s returns a well-formed result with usage", async (_name, make) => {
     const p = make();
     expect(p.id).toMatch(/^[a-z]+$/);
-    const result = await p.generateStructured(request({ task: "lesson_prose", responseSchema: undefined }));
+    const result = await p.generateStructured(request({ task: "lesson_prose", responseSchema: { type: "object", properties: { objectives: { type: "array", items: { type: "string" } } }, required: ["objectives"], additionalProperties: false } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.provider).toBe(p.id);
@@ -272,6 +274,12 @@ describe("quota_exhausted", () => {
   });
   it("has a tutor-facing reason that blames no one and names no provider", () => {
     expect(FAILURE_REASONS.llm_quota_exhausted).toBe("The writing service is temporarily unavailable.");
+  });
+  it("every real error type has a neutral reason (the fake and both providers can produce all of them)", () => {
+    for (const t of ["timeout", "rate_limited", "overloaded", "invalid_output", "refused", "auth", "server_error", "bad_request", "quota_exhausted", "unknown"] as const) {
+      expect(FAILURE_REASONS[`llm_${t}`], t).toBeTruthy();
+      expect(FAILURE_REASONS[`llm_${t}`], t).not.toMatch(/key|credential|you |your |openai|anthropic|claude|gpt/i);
+    }
   });
   it("every error type that has a reason keeps it free of provider names", () => {
     const types: LlmErrorType[] = ["timeout", "rate_limited", "overloaded", "invalid_output", "refused", "auth", "server_error", "bad_request", "quota_exhausted", "unknown"];

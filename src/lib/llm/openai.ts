@@ -1,5 +1,5 @@
 import { costMicros, usageCeiling } from "./anthropic";
-import { readTextCapped } from "./http";
+import { parseRetryAfterMs, readTextCapped } from "./http";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest, type StructuredResult, type Usage } from "./types";
 
 /**
@@ -18,8 +18,11 @@ import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type Structur
  * Local refusals (an oversized body, a schema strict mode would reject, a bad schema name, a missing schema) return
  * `bad_request` with no usage and without any network call: provably nothing was sent.
  *
- * Response failure modes and usage rules live in `interpretResponse`; HTTP error classification is still the
- * `failFromHttp` stub (B5).
+ * Response failure modes and usage rules live in `interpretResponse`; HTTP error classification lives in
+ * `classifyOpenAiError` and `failFromHttp`. An error body is read with a small cap and only a well-formed
+ * `error.type` / `error.code` is used; its message is never copied anywhere. Every HTTP error carries the usage
+ * ceiling with `usageEstimated: true` (a request that reached the server may have been billed: a conservative
+ * estimate, never a reported figure).
  */
 export interface OpenAiConfig {
   apiKey: string;
@@ -30,11 +33,43 @@ export interface OpenAiConfig {
   /** Optional proxy or test server root; `/v1/responses` is appended. https only (http allowed for localhost, 127.0.0.1, [::1]); no credentials, query or fragment. */
   baseUrl?: string;
   fetch?: typeof fetch;
-  /** Clock in ms, injectable for tests; B5 uses it to turn an HTTP-date Retry-After into a delay. */
+  /** Clock in ms (default Date.now), injectable for tests; turns an HTTP-date Retry-After into a delay. */
   now?: () => number;
 }
 
-export const OPENAI_LIMITS = { maxRequestBytes: 262_144, maxResponseBytes: 1_048_576 } as const;
+export const OPENAI_LIMITS = { maxRequestBytes: 262_144, maxResponseBytes: 1_048_576, maxErrorBodyBytes: 65_536, maxRetryAfterMs: 60_000 } as const;
+
+const ERROR_FIELD = /^[a-z0-9_.-]{1,64}$/;
+const QUOTA_CODES: ReadonlySet<string> = new Set(["credit_balance_exhausted", "organization_spend_limit_exceeded", "project_spend_limit_exceeded", "organization_usage_limit_exceeded"]);
+
+/**
+ * Pure HTTP error classification (docs/architecture.md section 8.1). 429 is quota exhaustion (not retryable) when
+ * `error.type` is `insufficient_quota` or `error.code` is one of the documented billing/spend codes; every other 429
+ * is a temporary rate limit. 503 is overload. 504 and 408 are timeouts (408 is plain HTTP semantics, not in 8.1;
+ * retries stay bounded by the caller's budget). 409 is NOT retried: 8.1 documents no transient 409, so it is a
+ * bad_request, like every other 4xx including 404 and 400.
+ */
+export function classifyOpenAiError(status: number, errorType?: string, errorCode?: string): LlmErrorType {
+  if (status === 401 || status === 403) return "auth";
+  if (status === 429) return errorType === "insufficient_quota" || (errorCode !== undefined && QUOTA_CODES.has(errorCode)) ? "quota_exhausted" : "rate_limited";
+  if (status === 503) return "overloaded";
+  if (status === 504 || status === 408) return "timeout";
+  if (status >= 500) return "server_error";
+  return "bad_request";
+}
+
+/** Only `error.type` and `error.code`, only when well formed; the message and everything else is ignored. */
+function errorFields(text: string): { type?: string; code?: string } {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    const error = isObject(parsed) ? parsed.error : undefined;
+    if (!isObject(error)) return {};
+    const pick = (v: unknown): string | undefined => (typeof v === "string" && ERROR_FIELD.test(v) ? v : undefined);
+    return { type: pick(error.type), code: pick(error.code) };
+  } catch {
+    return {};
+  }
+}
 
 const SCHEMA_LIMITS = { maxProperties: 5_000, maxDepth: 10, maxNameChars: 120_000, maxEnumValues: 1_000 } as const;
 const UNSUPPORTED_KEYWORDS = ["allOf", "not", "dependentRequired", "dependentSchemas", "if", "then", "else"] as const;
@@ -133,6 +168,7 @@ export class OpenAiProvider implements LlmProvider {
   readonly #apiKey: string;
   readonly #doFetch: typeof fetch;
   readonly #url: string;
+  readonly #now: () => number;
   readonly #config: Pick<OpenAiConfig, "model" | "priceInputMicrosPerMTok" | "priceOutputMicrosPerMTok">;
 
   constructor(config: OpenAiConfig) {
@@ -144,6 +180,7 @@ export class OpenAiProvider implements LlmProvider {
     }
     this.#apiKey = config.apiKey;
     this.#doFetch = config.fetch ?? fetch;
+    this.#now = config.now ?? Date.now;
     this.#url = `${validatedBaseUrl(config.baseUrl ?? "https://api.openai.com")}/v1/responses`;
     this.#config = { model: config.model, priceInputMicrosPerMTok: config.priceInputMicrosPerMTok, priceOutputMicrosPerMTok: config.priceOutputMicrosPerMTok };
   }
@@ -208,6 +245,7 @@ export class OpenAiProvider implements LlmProvider {
 
     const rawId = response.headers.get("x-request-id") ?? undefined;
     const providerRequestId = rawId && REQUEST_ID.test(rawId) ? rawId : undefined;
+    if (!response.ok) return this.failFromHttp(response, requestBody, request.limits.maxOutputTokens, providerRequestId);
     let body: Awaited<ReturnType<typeof readTextCapped>>;
     try {
       body = await readTextCapped(response, OPENAI_LIMITS.maxResponseBytes);
@@ -215,13 +253,30 @@ export class OpenAiProvider implements LlmProvider {
       return unknownUsage("invalid_output", providerRequestId); // the read failed: the request was sent, so assume spend
     }
     if (!body.ok) return unknownUsage("invalid_output", providerRequestId);
-    if (!response.ok) return this.failFromHttp(response.status, unknownUsage, providerRequestId);
     return this.interpretResponse(body.text, request, unknownUsage, providerRequestId);
   }
 
-  /** HTTP errors (B5 refines classification). Until then any error status is a non-retryable unknown. */
-  private failFromHttp(_status: number, unknownUsage: (type: LlmErrorType, id?: string) => StructuredResult, providerRequestId?: string): StructuredResult {
-    return unknownUsage("unknown", providerRequestId);
+  /**
+   * A non-2xx response. Classified by status, refined by the well-formed `error.type` / `error.code` of a capped
+   * body; an unreadable, oversized or malformed body classifies by status alone. Always the usage ceiling, estimated.
+   */
+  private async failFromHttp(response: Response, requestBody: string, maxOutputTokens: number, providerRequestId?: string): Promise<StructuredResult> {
+    let fields: { type?: string; code?: string } = {};
+    try {
+      const body = await readTextCapped(response, OPENAI_LIMITS.maxErrorBodyBytes);
+      if (body.ok) fields = errorFields(body.text);
+    } catch {
+      // readTextCapped never throws; belt and braces so classification cannot be lost
+    }
+    const type = classifyOpenAiError(response.status, fields.type, fields.code);
+    const retryAfterMs = type === "rate_limited" || type === "overloaded" ? parseRetryAfterMs(response.headers, this.#now(), OPENAI_LIMITS.maxRetryAfterMs) : undefined;
+    return {
+      ok: false,
+      error: { type, retryable: isRetryableLlmError(type), ...(retryAfterMs !== undefined ? { retryAfterMs } : {}) },
+      usage: this.#ceiling(requestBody, maxOutputTokens),
+      usageEstimated: true,
+      ...(providerRequestId ? { providerRequestId } : {}),
+    };
   }
 
   /**

@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
-import { describe, expect, it } from "vitest";
-import { OPENAI_LIMITS, OpenAiProvider, strictSchemaProblems } from "@/lib/llm/openai";
+import { describe, expect, it, vi } from "vitest";
+import { classifyOpenAiError, OPENAI_LIMITS, OpenAiProvider, strictSchemaProblems } from "@/lib/llm/openai";
 import type { StructuredRequest } from "@/lib/llm/types";
 import { PROSE_RESPONSE_SCHEMA } from "@/lib/package/prose";
 
@@ -438,6 +438,135 @@ describe("OpenAI constructor validation and cost hardening", () => {
       const u = !r.ok ? r.usage! : undefined;
       expect(Number.isSafeInteger(u!.costMicros) && u!.costMicros >= 1).toBe(true);
       expect(Number.isSafeInteger(u!.inputTokens) && u!.inputTokens >= 1).toBe(true);
+    }
+  });
+});
+
+describe("OpenAI HTTP error classification (architecture 8.1)", () => {
+  const body = (type: unknown, code: unknown) => ({ error: { type, code, message: `Incorrect API key provided: ${SECRET}`, param: null } });
+  const table: [number, string | undefined, string | undefined, string, boolean][] = [
+    [401, undefined, undefined, "auth", false],
+    [403, undefined, undefined, "auth", false],
+    [404, undefined, "model_not_found", "bad_request", false],
+    [400, undefined, "context_length_exceeded", "bad_request", false],
+    [408, undefined, undefined, "timeout", true],
+    [409, undefined, undefined, "bad_request", false],
+    [422, undefined, undefined, "bad_request", false],
+    [429, undefined, undefined, "rate_limited", true],
+    [429, "rate_limit_error", "slow_down", "rate_limited", true],
+    [429, undefined, "rate_limit_exceeded", "rate_limited", true],
+    [429, "insufficient_quota", undefined, "quota_exhausted", false],
+    [429, undefined, "credit_balance_exhausted", "quota_exhausted", false],
+    [429, undefined, "organization_spend_limit_exceeded", "quota_exhausted", false],
+    [429, undefined, "project_spend_limit_exceeded", "quota_exhausted", false],
+    [429, undefined, "organization_usage_limit_exceeded", "quota_exhausted", false],
+    [500, undefined, undefined, "server_error", true],
+    [502, undefined, undefined, "server_error", true],
+    [503, "service_unavailable_error", "server_is_overloaded", "overloaded", true],
+    [503, undefined, undefined, "overloaded", true],
+    [504, undefined, undefined, "timeout", true],
+  ];
+  it.each(table)("HTTP %i (type %s, code %s) -> %s, retryable %s", async (status, type, code, expected, retryable) => {
+    expect(classifyOpenAiError(status, type, code)).toBe(expected);
+    const { fetchImpl } = mockFetch(() => json(body(type, code), status, { "retry-after": "3", "x-request-id": "req_9" }));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: expected, retryable }, usageEstimated: true, usage: { outputTokens: 1_000 }, providerRequestId: "req_9" });
+    expect(!r.ok && r.error.retryAfterMs).toBe(expected === "rate_limited" || expected === "overloaded" ? 3_000 : undefined);
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+    expect(JSON.stringify(r)).not.toContain("Incorrect API key");
+  });
+  it("only a well-formed error.type / error.code is used, and the message never is", () => {
+    expect(classifyOpenAiError(429, "INSUFFICIENT_QUOTA", undefined)).toBe("rate_limited"); // not matching the pattern is not for the adapter to normalise
+    expect(classifyOpenAiError(500, undefined, undefined)).toBe("server_error");
+    expect(classifyOpenAiError(302, undefined, undefined)).toBe("bad_request");
+  });
+  it.each([
+    ["not JSON", "<html>bad gateway</html>"],
+    ["an array", "[1]"],
+    ["an error that is not an object", '{"error":"insufficient_quota"}'],
+    ["non-string fields", '{"error":{"type":5,"code":{"a":1}}}'],
+    ["fields failing the pattern", `{"error":{"type":"insufficient_quota ${SECRET}","code":"${"x".repeat(65)}"}}`],
+    ["an oversized body", "x".repeat(OPENAI_LIMITS.maxResponseBytes)],
+  ])("%s still classifies by status alone", async (_n, text) => {
+    const { fetchImpl } = mockFetch(() => new Response(text, { status: 429 }));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "rate_limited", retryable: true }, usageEstimated: true });
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+  });
+  it("a 429 whose body is only the quota type is quota exhaustion with no retry hint", async () => {
+    const { fetchImpl } = mockFetch(() => json({ error: { type: "insufficient_quota" } }, 429, { "retry-after": "3" }));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "quota_exhausted", retryable: false } });
+    expect(!r.ok && "retryAfterMs" in r.error).toBe(false);
+  });
+  it("a read of the error body that fails still classifies by status with the ceiling", async () => {
+    const broken = new Response(new ReadableStream({ pull() { throw new Error(`boom ${SECRET}`); } }), { status: 503 });
+    const r = await provider(mockFetch(() => broken).fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "overloaded", retryable: true }, usageEstimated: true });
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+  });
+  it("honours an HTTP-date Retry-After through the injected clock, capped", async () => {
+    const now = Date.parse("2026-11-01T00:00:00Z");
+    const { fetchImpl } = mockFetch(() => json({}, 429, { "retry-after": "Sun, 01 Nov 2026 00:00:07 GMT" }));
+    const r = await provider(fetchImpl, { now: () => now }).generateStructured(request());
+    expect(!r.ok && r.error.retryAfterMs).toBe(7_000);
+    const far = mockFetch(() => json({}, 429, { "retry-after": "86400" }));
+    const r2 = await provider(far.fetchImpl).generateStructured(request());
+    expect(!r2.ok && r2.error.retryAfterMs).toBe(60_000);
+  });
+});
+
+describe("OpenAI timeouts, network failures and cancellation", () => {
+  const hang = () => mockFetch(({ init }) => new Promise<Response>((_, reject) => {
+    if (init.signal!.aborted) reject(init.signal!.reason); // a real fetch rejects at once on an already-aborted signal
+    init.signal!.addEventListener("abort", () => reject(init.signal!.reason));
+  }));
+  it("times out as a retryable timeout carrying the ceiling", async () => {
+    const r = await provider(hang().fetchImpl).generateStructured(request({ limits: { timeoutMs: 20, maxOutputTokens: 100, maxCostMicros: 1 } }));
+    expect(r).toMatchObject({ ok: false, error: { type: "timeout", retryable: true }, usageEstimated: true, usage: { outputTokens: 100 } });
+    expect(!r.ok && "retryAfterMs" in r.error).toBe(false);
+  });
+  it("a network failure is a retryable server_error with the ceiling and never copies the thrown message", async () => {
+    const throwing = (async () => { throw new TypeError(`fetch failed for Bearer ${SECRET}`); }) as unknown as typeof fetch;
+    const r = await provider(throwing).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "server_error", retryable: true }, usageEstimated: true, usage: { outputTokens: 1_000 } });
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+  });
+  it("rethrows a cancel by the caller, and a signal aborted beforehand", async () => {
+    const controller = new AbortController();
+    const pending = provider(hang().fetchImpl).generateStructured(request({ signal: controller.signal }));
+    controller.abort();
+    await expect(pending).rejects.toThrow();
+    const done = AbortSignal.abort();
+    await expect(provider(hang().fetchImpl).generateStructured(request({ signal: done }))).rejects.toThrow();
+  });
+});
+
+describe("OpenAI secret hygiene on every path", () => {
+  it("never logs, and no result, enumeration or inspect output holds the key or the provider message", async () => {
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map((m) => vi.spyOn(console, m).mockImplementation(() => undefined));
+    try {
+      const secretMessage = `Incorrect API key provided: ${SECRET}`;
+      const responders: (() => Response | Promise<Response>)[] = [
+        () => json({ error: { type: "x", code: "y", message: secretMessage } }, 401),
+        () => json({ error: { type: "insufficient_quota", message: secretMessage } }, 429),
+        () => json({ error: { message: secretMessage } }, 500),
+        () => new Response(secretMessage, { status: 502 }),
+        () => json(responseOk({ status: "failed", error: { message: secretMessage } })),
+        () => { throw new Error(secretMessage); },
+      ];
+      for (const respond of responders) {
+        const p = provider(mockFetch(respond).fetchImpl);
+        const out = JSON.stringify(await p.generateStructured(request()));
+        expect(out).not.toContain(SECRET);
+        expect(out).not.toContain("Incorrect API key");
+        expect(JSON.stringify(p)).not.toContain(SECRET);
+        expect(inspect(p, { depth: 5, showHidden: true })).not.toContain(SECRET);
+      }
+      expect(() => new OpenAiProvider({ apiKey: "", model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1 })).toThrow(/^an API key without whitespace or control characters is required$/);
+      for (const s of spies) expect(s).not.toHaveBeenCalled();
+    } finally {
+      for (const s of spies) s.mockRestore();
     }
   });
 });
