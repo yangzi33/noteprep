@@ -75,7 +75,7 @@ Models: Profile, Lesson, LessonRevision, GenerationJob, IdempotencyKey, UsageBuc
 
 ## 9. Testing suites
 
-Unit (`tests/unit`, about 107 files), integration (`tests/integration`, 25 files, real Postgres), supabase boundary (`tests/supabase`, 4 files), latex sandbox (`tests/latex`, 10 files, real image), image (`tests/image`), E2E (`tests/e2e`, 18 spec files) and a staging smoke. File counts are as of 2026-11-02; for case counts run `pnpm exec vitest list` (unit) rather than trusting a number in a document. E2E starts four servers from one build with pinned flags: 3100 draft+export (project `chromium`), 3101 legacy, 3102 export paused, 3103 daily refresh (`playwright.config.ts`). CI runs integration and E2E on every PR, so a red CI is the evidence, not a missing local Docker.
+Unit (`tests/unit`, about 107 files), integration (`tests/integration`, 25 files, real Postgres), supabase boundary (`tests/supabase`, 4 files), latex sandbox (`tests/latex`, 10 files, real image), image (`tests/image`), E2E (`tests/e2e`, 18 spec files) and a staging smoke. Counts at 2026-11-02 (ca766b9), from `pnpm exec vitest list --config <config>` and `pnpm exec playwright test --list` (offline, nothing executed): unit 1334 cases, integration 475, supabase 27, latex 70, image 7, E2E 76 (18 files, 4 projects). They drift; re-run the commands rather than trusting these numbers. E2E starts four servers from one build with pinned flags: 3100 draft+export (project `chromium`), 3101 legacy, 3102 export paused, 3103 daily refresh (`playwright.config.ts`). CI runs integration and E2E on every PR, so a red CI is the evidence, not a missing local Docker.
 
 ## 10. What works and what does not (as of ca766b9)
 
