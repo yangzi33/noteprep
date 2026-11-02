@@ -1,5 +1,7 @@
 # UI 里程碑验证清单(给有 Docker 的人)
 
+> 2026-11-02 补注(English):U1-U7 已合并到 main,分支 `feat/ui-*` 已不存在,E2E 与集成测试现在在 CI 上运行(见 `.github/workflows/ci.yml`);本清单仅作历史记录。
+
 本清单面向在**有 Docker 的机器**上接手验证的人。开发 U1–U4 的环境(WSL2)**没有 Docker**,因此到目前为止,**没有任何 UI 里程碑的 E2E 或集成测试被实际运行过**;下文每一项"改过/新增但未运行"的测试,其结论都只来自阅读源码、类型检查和单元测试。合并前请先完成本清单。
 
 范围:`feat/ui-foundation`(U1)、`feat/ui-prepare`(U2)、`feat/ui-jobs`(U3)、`feat/ui-lesson`(U4)。背景见 [figma-ui-implementation 计划](superpowers/plans/2026-10-20-figma-ui-implementation.md) 与决定 D-58..D-64([decisions](decisions.md))。

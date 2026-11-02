@@ -30,10 +30,12 @@ Topics become declarative profiles (data) over the existing generator; a CI veri
 
 <a id="b2"></a>
 ## B2: Adjustment loop
+Status (2026-11-02): **built and merged** (drafts, deterministic adjustments, worker export; `src/lib/server/dal/draft-ops.ts`, `src/components/app/draft-adjust.tsx`).
 M6 S2 (drafts, migration) and S3 (worker), the adjustment screen: easier/harder, add exercises or examples, replace question, remove question (D-71), accept/discard, duplicate with new numbers. `change_duration` stays hidden (D-72). Text corrections and LLM adjustments are deferred.
 
 <a id="b3"></a>
 ## B3: Topic dataset and curriculum dropdown
+Status (2026-11-02): **built and merged** (53 `suggested-*` datasets under `data/curricula/`, the cascade on `/prepare`). Only linear equations in one variable is supported.
 A first-party "NotePrep topics" dataset (D-74). A curriculum dropdown with unofficial "suggested topics": live topics clickable, the rest greyed with a request button and a count (D-75). No alignment claims.
 
 <a id="b4"></a>

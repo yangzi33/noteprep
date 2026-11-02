@@ -1,6 +1,6 @@
 # 实施计划(Phase 1–4)
 
-> 状态:Phase 1 已完成并合并;P2-T1、P2-T2 已完成;**Phase 2 的其余部分已按新产品方向重组为 [refactor-plan](refactor-plan.md) 的里程碑**(见 §3)。Phase 3/4 基本不变,仅增补"调整"的计费(D-33)。每个任务的完成以"验收证据"为准;[refactor-plan](refactor-plan.md) §9 有工作量估计(估计,不是承诺)。
+> 状态(2026-11-02 补充:Phase 3 的 Stripe 部分仍未实现;里程碑 M1..M7 与草稿/导出切片 S1..S6 已在 main 上,见 [onboarding](onboarding.md));原状态:Phase 1 已完成并合并;P2-T1、P2-T2 已完成;**Phase 2 的其余部分已按新产品方向重组为 [refactor-plan](refactor-plan.md) 的里程碑**(见 §3)。Phase 3/4 基本不变,仅增补"调整"的计费(D-33)。每个任务的完成以"验收证据"为准;[refactor-plan](refactor-plan.md) §9 有工作量估计(估计,不是承诺)。
 > 相关:[architecture](architecture.md) · [test-plan](test-plan.md) · [security-and-privacy](security-and-privacy.md) · [decisions](decisions.md)
 
 ## 0. 依赖顺序总览
