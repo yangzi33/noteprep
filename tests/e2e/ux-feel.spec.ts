@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 test("landing page: links feel clickable, headings are not selectable, FAQ answers are", async ({ page }) => {
   await page.goto("/");
-  const getStarted = page.getByRole("link", { name: "Get started" }).first();
+  const getStarted = page.getByRole("link", { name: "Sign in" }).first();
   await expect(getStarted).toHaveCSS("cursor", "pointer");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("user-select", "none");
   const faq = page.locator("#faq details").first();

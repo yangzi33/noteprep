@@ -68,7 +68,7 @@ describe("landing content", () => {
   it("states that subscriptions are not available yet and has one subscription card", () => {
     expect(landingContent.pricing.subscription.note).toMatch(/not available yet/);
     expect(landingContent.pricing.free.title).toMatch(/free/i);
-    expect(landingContent.pricing.free.points.join(" ")).toMatch(/Free lesson packs to start/);
+    expect(landingContent.pricing.free.points.join(" ")).toMatch(/Free lesson packs while the test runs/);
     // true whether or not the daily beta perk is on: no lifetime or numeric allowance promise in marketing copy
     expect(JSON.stringify(landingContent)).not.toMatch(/lifetime|\b3 (free|complete)/i);
   });
@@ -99,3 +99,12 @@ describe("landing content", () => {
   });
 });
 
+
+describe("private test positioning", () => {
+  it("says the test is by invitation and does not invite open sign-up", () => {
+    const text = JSON.stringify(landingContent);
+    expect(landingContent.hero.note).toMatch(/invited tutors/);
+    expect(text).toMatch(/Only invited tutors can create an account/);
+    expect(text).not.toMatch(/Get started|Free to try|Start free/);
+  });
+});

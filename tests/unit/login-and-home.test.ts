@@ -55,13 +55,13 @@ describe("LoginForm", () => {
 });
 
 describe("home page branches", () => {
-  it("signed-out home has one h1, one main, a footer outside main and a Get started link", () => {
+  it("signed-out home has one h1, one main, a footer outside main and a Sign in link", () => {
     const html = renderToStaticMarkup(createElement(SignedOutHome));
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
     expect(html.match(/<main[ >]/g)).toHaveLength(1);
     expect(html.match(/<footer[ >]/g)).toHaveLength(1);
     expect(html.indexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
-    expect(html).toMatch(/href="\/login"[^>]*>Get started/);
+    expect(html).toMatch(/href="\/login"[^>]*>Sign in/);
   });
   it("sends signed-in visitors to the dashboard and everyone else to the landing page", () => {
     expect(homeTarget({ id: "u1" })).toBe("/dashboard");

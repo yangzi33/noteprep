@@ -370,6 +370,12 @@ export function LandingFooter() {
             <Link href="/login" className={link}>
               Sign in
             </Link>
+            <Link href="/privacy" className={link}>
+              Privacy
+            </Link>
+            <Link href="/terms" className={link}>
+              Terms
+            </Link>
             {support && (
               <a href={`mailto:${support}`} className={`${link} select-text`}>
                 Contact

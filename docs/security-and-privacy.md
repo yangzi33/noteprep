@@ -127,3 +127,13 @@ Supabase 官方 Prisma 指南为 `prisma` 角色授予 `bypassrls` 与 `createdb
 6. 数据地区与保留期、隐私政策文本。
 7. **课程文本的授权与使用方式**(D-36,与真实数据集同一里程碑决定)。
 8. **上传材料(输入模式 B,之后)**:版权、隐私、保留期与删除;MVP 不收集学生个人信息,也不接受文件上传。
+
+## 10. Tester-round privacy notice (D-117, D-115)
+
+The beta privacy notice (`/privacy`) and the test terms (`/terms`) are published by the app; the text lives in `src/components/app/legal-content.tsx` and the subprocessor list in `src/lib/ui/legal.ts`. This section records what they say and which facts the owner must confirm before the first real tester.
+
+- Subprocessors named: Vercel (web), Supabase (auth, database, private storage), DigitalOcean (PDF-building worker), Resend (sign-in emails), OpenAI (planned, switched off in the tester round, so nothing is sent). If another SMTP provider is used, edit `SUBPROCESSORS`. When the LLM item source is switched on, the OpenAI entry must say so before that change ships; the fields it may receive are listed in section 2 (concept names, objectives, difficulty, lesson length, approximate grade band; no account, billing or student data).
+- Retention stated: drafts expire after 14 days without use (`DRAFT_TTL_DAYS`, default 14); lesson packs and PDFs stay until deleted; the owner plans to delete all test accounts after the round; deletion on request by email (no self-service delete exists yet). Backups can lag.
+- Data region: stated as not fixed for the test. Replace with the real Supabase and DigitalOcean regions once confirmed.
+- No analytics or advertising cookies exist; only the Supabase session cookies.
+- Not reviewed by a lawyer; the notice says so. PIPEDA / Quebec Law 25 applicability (D-78) is unverified.

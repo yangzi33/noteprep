@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import { AppHeader } from "@/components/app/app-header";
+import { TestBanner } from "@/components/app/test-banner";
 import { WorkspaceNav } from "@/components/app/workspace-nav";
 import { getRequestUser } from "@/lib/server/auth/require-user";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
+        <TestBanner />
         {user ? (
           <>
             <AppHeader email={user.email} />

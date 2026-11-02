@@ -13,8 +13,8 @@ describe("landing page markup", () => {
     expect(html).not.toMatch(/<main[ >]/);
   });
 
-  it("has Get started to /login and the section ids the navigation targets", () => {
-    expect(html).toMatch(/<a [^>]*href="\/login"[^>]*>[^<]*Get started/);
+  it("has Sign in to /login and the section ids the navigation targets", () => {
+    expect(html).toMatch(/<a [^>]*href="\/login"[^>]*>[^<]*Sign in/);
     for (const id of ["features", "how-it-works", "pricing"]) expect(html).toContain(`id="${id}"`);
   });
 
@@ -23,11 +23,11 @@ describe("landing page markup", () => {
     expect(html.match(/<summary[ >]/g)).toHaveLength(landingContent.faq.items.length);
   });
 
-  it("only links to /, /login or in-page anchors that exist", () => {
+  it("only links to /, /login, the notice pages or in-page anchors that exist", () => {
     const hrefs = [...html.matchAll(/href="([^"]*)"/g)].map((m) => m[1] ?? "");
     expect(hrefs.length).toBeGreaterThan(0);
     for (const h of hrefs) {
-      expect(h === "/" || h === "/login" || /^#[a-z][a-z-]*$/.test(h) || /^\/samples\/[a-z]+(-1\.png|\.pdf)$/.test(h), h).toBe(true);
+      expect(h === "/" || h === "/login" || h === "/privacy" || h === "/terms" || /^#[a-z][a-z-]*$/.test(h) || /^\/samples\/[a-z]+(-1\.png|\.pdf)$/.test(h), h).toBe(true);
       if (h.startsWith("#")) expect(html).toContain(`id="${h.slice(1)}"`);
     }
     expect(html).not.toMatch(/(href|src|action)="https?:/);
@@ -58,21 +58,21 @@ describe("landing page markup", () => {
     expect(html).toMatch(/not a real curriculum/);
   });
 
-  it("has no footer links to missing pages and no role=status", () => {
-    expect(html).not.toMatch(/privacy|terms of/i);
+  it("links the privacy and terms notices and has no role=status", () => {
+    expect(html).toMatch(/<a [^>]*href="\/privacy"[^>]*>Privacy<\/a>/);
+    expect(html).toMatch(/<a [^>]*href="\/terms"[^>]*>Terms<\/a>/);
     expect(html).not.toMatch(/role="status"/);
   });
 });
 
 describe("landing header", () => {
   const header = renderToStaticMarkup(createElement(PublicHeader, { variant: "landing" }));
-  it("links the logo home, the three sections, Sign in and Get started", () => {
+  it("links the logo home, the three sections and Sign in", () => {
     expect(header).toMatch(/<a [^>]*href="\/"/);
     for (const [href, label] of [["#features", "Features"], ["#how-it-works", "How it works"], ["#pricing", "Pricing"]]) {
       expect(header).toMatch(new RegExp(`<a [^>]*href="${href}"[^>]*>${label}</a>`));
     }
     expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Sign in<\/a>/);
-    expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Get started<\/a>/);
     expect(header).not.toMatch(/<button/);
   });
   it("keeps the section anchors out of the small-screen header", () => {

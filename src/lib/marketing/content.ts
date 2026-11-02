@@ -39,8 +39,8 @@ export const landingContent = {
     title: "Better teaching materials. Less prep time.",
     subtitle:
       "Choose a topic, a lesson length and a difficulty, and NotePrep builds tutor lesson notes, a student worksheet and a separate answer key as typeset PDFs. You review the AI-assisted material before teaching.",
-    primaryCta: "Get started",
-    note: "Free to try. No credit card needed.",
+    primaryCta: "Sign in",
+    note: "Private test version for invited tutors. Free during the test.",
   },
   builder: {
     overline: "Real output · compiled by NotePrep",
@@ -53,7 +53,7 @@ export const landingContent = {
       { label: "Curriculum", value: "Sample Mathematics (not a real curriculum)" },
       { label: "Level", value: "Sample Level A" },
       { label: "Course", value: "Sample Course 1" },
-      { label: "Topic", value: "Sample topic: Unknown on both sides" },
+      { label: "Topic", value: "Sample topic: Solving equations with one unknown" },
       { label: "Lesson length", value: "60 minutes" },
       { label: "Difficulty", value: "Mixed (easy to hard)" },
     ],
@@ -141,13 +141,13 @@ export const landingContent = {
   },
   pricing: {
     eyebrow: "Plans",
-    title: "Start free, subscribe later",
-    subtitle: "Try the whole workflow before you decide anything.",
+    title: "Free during the test",
+    subtitle: "NotePrep is a private test for invited tutors. Nothing is charged while it runs.",
     free: {
       title: "Free",
-      label: "Available now",
-      points: ["Free lesson packs to start, then a monthly plan later", "No credit card required", "Full preview and PDF export"],
-      cta: "Get started",
+      label: "Invited testers",
+      points: ["Free lesson packs while the test runs", "No credit card required", "Full preview and PDF export"],
+      cta: "Sign in",
     },
     subscription: {
       title: "Monthly subscription",
@@ -179,6 +179,10 @@ export const landingContent = {
         answer: "Your earlier lessons stay available to view and download. Subscriptions are not available yet.",
       },
       {
+        question: "Who can create an account?",
+        answer: "NotePrep is a private test. Only invited tutors can create an account. If you were invited, use the email address we invited.",
+      },
+      {
         question: "What should I put in my account?",
         answer: "You need an email address and a password to create an account. Please do not enter student names or other personal details.",
       },
@@ -188,7 +192,7 @@ export const landingContent = {
     eyebrow: "For private tutors · Print-ready PDFs",
     title: "Bring your teaching expertise. Leave the typesetting to NotePrep.",
     body: "Start with a topic. Leave with three printable PDFs for your lesson, ready for your review.",
-    cta: "Get started",
+    cta: "Sign in",
   },
   footer: {
     tagline: "Lesson prep for private math tutors.",
