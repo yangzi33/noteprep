@@ -33,14 +33,14 @@ Node 24.13.1 (`.nvmrc`; `engines` ^24.11.0), pnpm 10.33.0, Next.js 16.4.2 (App R
 | `pnpm test:latex` | Sandbox and compile tests in the real image | Docker, `pnpm latex:image` |
 | `pnpm test:latex:host`, `test:image` | Host-image and worker-image tests | Docker and the worker images |
 | `pnpm test:e2e` | Playwright critical journeys | local Supabase, a build, optionally Docker for real PDFs |
-| `pnpm smoke:staging` | Playwright smoke config against a deployed site | a staging URL and credentials (UNVERIFIED how they are supplied) |
+| `pnpm smoke:staging` | Playwright smoke config against a deployed site | a staging URL and a throwaway user (`SMOKE_BASE_URL`, `SMOKE_EMAIL`, `SMOKE_PASSWORD`; see `docs/fresh-droplet-setup.md` section J) |
 | `pnpm db:up` / `db:down` | Local Postgres via `compose.yaml` | Docker |
 | `pnpm db:generate`, `db:migrate:dev`, `db:migrate:deploy`, `db:dev-roles` | Prisma client, migrations, dev login roles | Postgres |
 | `pnpm supabase:start` / `stop` / `status` | Local Supabase | Docker |
 | `pnpm worker:dev`, `worker:build`, `worker:start`, `worker:recover` | Run, bundle, start and recover the worker | `.env`, database; compile needs Docker |
 | `pnpm worker:image`, `worker:hosttest-image`, `latex:image` | Build images | Docker |
 | `pnpm curricula:build`, `curriculum:validate`, `curriculum:load <dir> [--allow-sample]` | Dataset tooling (load needs `CURRICULUM_TARGET_ENV`) | database for load |
-| `pnpm samples:build`, `pnpm eval:prose` | Marketing samples; prose evaluation | `eval:prose` may call a real provider (UNVERIFIED) |
+| `pnpm samples:build`, `pnpm eval:prose` | Marketing samples; prose evaluation | `eval:prose` calls a REAL provider and spends money: it needs `LLM_*` credentials and `--confirm-cost` (see `scripts/eval-prose.ts`); never run it in CI |
 
 `README.md` has the setup order. `docs/local-testing-s5.md` is a by-hand walkthrough of the export flow.
 

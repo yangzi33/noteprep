@@ -185,7 +185,7 @@ Limit keys (all in `src/lib/server/limits.ts`; every enforced one has an N+1 ref
 | `draftTtlDays`, `draftMaxLifetimeDays` | creation and every mutation (sliding, capped) | drafts.test.ts, drafts-versions.test.ts, drafts-locking.test.ts |
 | `draftLockTimeoutMs` | every draft transaction (`DRAFT_BUSY`) | drafts-locking.test.ts |
 | `purgeGraceDays`, `purgeBatchSize` | worker purge | drafts.test.ts |
-| `exportsPerUserPerHour`, `exportConcurrencyPerUser`, `exportDeadlineMinutes` | export confirm and the export job sweeper (implemented in `src/lib/server/limits.ts`) | export-confirm and export-locking tests |
+| `exportsPerUserPerHour`, `exportConcurrencyPerUser`, `exportDeadlineMinutes` | export confirm (`dal/export.ts`) and the export job sweeper (`dal/jobs.ts`); the values are defined in `src/lib/server/limits.ts` | export-confirm and export-locking tests |
 | `llmMaxCallsPerDraft`, `llmMaxTokensPerDraft`, `llmMaxCostMicrosPerDraft` | reserved for a future language-model item source | none yet |
 
 ### 5.2 按用户隔离的数据访问规则
