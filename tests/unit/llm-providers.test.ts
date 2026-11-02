@@ -252,6 +252,9 @@ describe("provider configuration", () => {
   it("refuses a real provider without a key, a model and both prices (nothing is guessed)", () => {
     expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic" })).toThrow(/LLM_API_KEY, LLM_MODEL, LLM_PRICE_INPUT_MICROS_PER_MTOK, LLM_PRICE_OUTPUT_MICROS_PER_MTOK/);
     expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1" })).toThrow(/LLM_PRICE_OUTPUT/);
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "0", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" })).toThrow(/LLM_PRICE_INPUT_MICROS_PER_MTOK must be above 0/);
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "0" })).toThrow(/LLM_PRICE_OUTPUT_MICROS_PER_MTOK must be above 0/);
+    expect(workerEnv({ ...base, LLM_PROVIDER: "fake", LLM_PRICE_INPUT_MICROS_PER_MTOK: "0", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "0" }).LLM_PROVIDER).toBe("fake");
   });
   it("builds the real provider from a complete configuration", () => {
     const config = workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" });

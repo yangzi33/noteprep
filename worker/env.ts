@@ -65,6 +65,8 @@ const WorkerEnv = z
     if (env.LLM_PROVIDER === "anthropic") {
       const missing = (["LLM_API_KEY", "LLM_MODEL", "LLM_PRICE_INPUT_MICROS_PER_MTOK", "LLM_PRICE_OUTPUT_MICROS_PER_MTOK"] as const).filter((k) => env[k] === undefined);
       if (missing.length > 0) ctx.addIssue({ code: "custom", message: `LLM_PROVIDER=anthropic also needs: ${missing.join(", ")}` });
+      const free = (["LLM_PRICE_INPUT_MICROS_PER_MTOK", "LLM_PRICE_OUTPUT_MICROS_PER_MTOK"] as const).filter((k) => env[k] === 0);
+      if (free.length > 0) ctx.addIssue({ code: "custom", message: `${free.join(", ")} must be above 0 for a real provider: a zero price makes every cost cap and spend alert blind` });
     }
     if (env.COMPILER === "skeleton" && env.ALLOW_FAKE_COMPILER !== "1") {
       ctx.addIssue({ code: "custom", message: 'set COMPILER=docker, or ALLOW_FAKE_COMPILER=1 for local placeholder runs' });
