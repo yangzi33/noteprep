@@ -281,3 +281,13 @@ describe("quota_exhausted", () => {
     }
   });
 });
+
+describe("usageCeiling input estimate", () => {
+  it("counts UTF-8 bytes, so non-ASCII text is never estimated lower than its byte length / 3", async () => {
+    const { usageCeiling } = await import("@/lib/llm/anthropic");
+    const prices = { priceInputMicrosPerMTok: 1_000_000, priceOutputMicrosPerMTok: 1_000_000 };
+    expect(usageCeiling("abc", 10, prices).inputTokens).toBe(1);
+    expect(usageCeiling("日本語", 10, prices).inputTokens).toBe(3); // 3 characters, 9 bytes
+    expect(usageCeiling("😀😀", 10, prices).inputTokens).toBe(3); // 2 characters, 8 bytes
+  });
+});

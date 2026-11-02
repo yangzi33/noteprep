@@ -136,11 +136,34 @@ export class OpenAiProvider implements LlmProvider {
   readonly #config: Pick<OpenAiConfig, "model" | "priceInputMicrosPerMTok" | "priceOutputMicrosPerMTok">;
 
   constructor(config: OpenAiConfig) {
-    if (!config.apiKey) throw new Error("an API key is required");
+    // Messages never include a value: the key is a secret and the others are not worth echoing.
+    if (typeof config.apiKey !== "string" || config.apiKey === "" || /[\s\u0000-\u001f\u007f]/.test(config.apiKey)) throw new Error("an API key without whitespace or control characters is required");
+    if (typeof config.model !== "string" || config.model.length === 0 || config.model.length > 200) throw new Error("a model id of 1 to 200 characters is required");
+    for (const price of [config.priceInputMicrosPerMTok, config.priceOutputMicrosPerMTok]) {
+      if (!Number.isSafeInteger(price) || price <= 0) throw new Error("both prices must be positive safe integers");
+    }
     this.#apiKey = config.apiKey;
     this.#doFetch = config.fetch ?? fetch;
     this.#url = `${validatedBaseUrl(config.baseUrl ?? "https://api.openai.com")}/v1/responses`;
     this.#config = { model: config.model, priceInputMicrosPerMTok: config.priceInputMicrosPerMTok, priceOutputMicrosPerMTok: config.priceOutputMicrosPerMTok };
+  }
+
+  /**
+   * Conservative usage for a call whose usage is unknown. Normally `usageCeiling`. If its cost is not a positive
+   * safe integer (a bad token limit, overflow), fall back to: input tokens = UTF-8 bytes of the body (one token per
+   * byte, stricter than the 3 bytes per token estimate), output tokens = maxOutputTokens (or 1 if unusable), cost =
+   * ceil((in * priceIn + out * priceOut) / 1e6), clamped into [1, MAX_SAFE_INTEGER]. The validated constructor
+   * prices are positive, so the record is never NaN, null, zero or negative.
+   */
+  #ceiling(requestBody: string, maxOutputTokens: number): Usage {
+    const base = usageCeiling(requestBody, maxOutputTokens, this.#config);
+    const ok = (x: number, min: number) => Number.isSafeInteger(x) && x >= min;
+    if (ok(base.inputTokens, 1) && ok(base.outputTokens, 0) && ok(base.costMicros, 1)) return base;
+    const inputTokens = Math.max(1, new TextEncoder().encode(requestBody).byteLength);
+    const outputTokens = ok(maxOutputTokens, 1) ? maxOutputTokens : 1;
+    const raw = Math.ceil((inputTokens * this.#config.priceInputMicrosPerMTok + outputTokens * this.#config.priceOutputMicrosPerMTok) / 1_000_000);
+    const costMicros = Number.isFinite(raw) ? Math.min(Math.max(raw, 1), Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+    return { inputTokens, outputTokens, costMicros };
   }
 
   async generateStructured(request: StructuredRequest): Promise<StructuredResult> {
@@ -167,7 +190,7 @@ export class OpenAiProvider implements LlmProvider {
     const timeout = AbortSignal.timeout(request.limits.timeoutMs);
     const signal = request.signal ? AbortSignal.any([request.signal, timeout]) : timeout;
     const unknownUsage = (type: LlmErrorType, providerRequestId?: string): StructuredResult =>
-      fail(type, usageCeiling(requestBody, request.limits.maxOutputTokens, this.#config), providerRequestId, true);
+      fail(type, this.#ceiling(requestBody, request.limits.maxOutputTokens), providerRequestId, true);
 
     let response: Response;
     try {
@@ -223,7 +246,8 @@ export class OpenAiProvider implements LlmProvider {
     const u = isObject(parsed.usage) ? parsed.usage : {};
     const known = (x: unknown): x is number => typeof x === "number" && Number.isSafeInteger(x) && x >= 0;
     let usage: Usage | undefined;
-    if (known(u.input_tokens) && known(u.output_tokens)) {
+    // A real call with a non-empty body cannot use zero input tokens, so 0 is not trusted as spend.
+    if (known(u.input_tokens) && u.input_tokens >= 1 && known(u.output_tokens)) {
       const cost = costMicros(u.input_tokens, u.output_tokens, this.#config);
       if (Number.isSafeInteger(cost)) usage = { inputTokens: u.input_tokens, outputTokens: u.output_tokens, costMicros: cost };
     }
@@ -271,7 +295,11 @@ export class OpenAiProvider implements LlmProvider {
     } catch {
       return failWith("invalid_output");
     }
-    if (!usage) return unknownUsage("invalid_output", providerRequestId); // an answer we cannot account for is not a success
+    // D-98: a call is never recorded as cheaper than it may have been. A completed answer with untrusted usage (missing,
+    // malformed, or zero output tokens for an answer that has text) is deliberately discarded as invalid_output with the
+    // ceiling, at the cost of one retry, rather than accepted with a guessed or zero cost.
+    if (!usage || usage.outputTokens < 1) return unknownUsage("invalid_output", providerRequestId);
+    if (!isObject(value)) return failWith("invalid_output"); // strict mode guarantees an object root
     return {
       ok: true, value, resultSchemaVersion: request.schemaVersion, provider: this.id,
       model: this.#config.model, usage, // the configured model, never the provider-supplied string (it flows into persisted provenance)

@@ -106,9 +106,9 @@ describe("OpenAI success path", () => {
     });
   });
   it("rounds cost up to a whole micro-unit", async () => {
-    const { fetchImpl } = mockFetch(() => json(responseOk({ usage: { input_tokens: 1, output_tokens: 0 } })));
+    const { fetchImpl } = mockFetch(() => json(responseOk({ usage: { input_tokens: 1, output_tokens: 1 } })));
     const r = await provider(fetchImpl).generateStructured(request());
-    expect(r.ok && r.usage.costMicros).toBe(3);
+    expect(r.ok && r.usage.costMicros).toBe(18);
   });
   it("never adds reasoning tokens on top of output_tokens", async () => {
     const usage = { input_tokens: 1_000, output_tokens: 200, output_tokens_details: { reasoning_tokens: 150 } };
@@ -326,13 +326,14 @@ describe("OpenAI response failure modes and usage accounting", () => {
       { input_tokens: -5, output_tokens: 1 }, { input_tokens: 5, output_tokens: -1 }, { input_tokens: 1.5, output_tokens: 1 },
       { input_tokens: NaN, output_tokens: 1 }, { input_tokens: 1, output_tokens: 1e300 }, { input_tokens: 10, output_tokens: 1e300 },
       { input_tokens: 2 ** 53, output_tokens: 1 }, { input_tokens: null, output_tokens: null },
+      { input_tokens: 0, output_tokens: 0 }, { input_tokens: 0, output_tokens: 50 }, { input_tokens: 5, output_tokens: 0 },
     ];
     for (const usage of bad) {
       const { fetchImpl } = mockFetch(() => json(responseOk({ usage })));
       const r = await provider(fetchImpl).generateStructured(request());
       expect(r).toMatchObject({ ok: false, error: { type: "invalid_output" }, usageEstimated: true });
       expect(!r.ok && r.usage!.outputTokens).toBe(1_000);
-      expect(!r.ok && r.usage!.costMicros).toBeGreaterThan(0);
+      expect(!r.ok && Number.isSafeInteger(r.usage!.costMicros) && r.usage!.costMicros > 0).toBe(true);
     }
   });
   it("an Infinity count (not expressible in JSON) also falls back via a non-JSON-safe route to the ceiling", async () => {
@@ -370,5 +371,73 @@ describe("OpenAI response failure modes and usage accounting", () => {
   it("finds the output text by type, not by position (reasoning items first)", async () => {
     const { fetchImpl } = mockFetch(() => json(responseOk({ output: [{ type: "reasoning", summary: [] }, { type: "message", content: [{ type: "reasoning_text" }, text('{"a":"hello"}')] }] })));
     expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: true, value: { a: "hello" } });
+  });
+  it("a refusal with 5 input and 0 output tokens is trusted as actual usage", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ output: msg([{ type: "refusal", refusal: "x" }]), usage: { input_tokens: 5, output_tokens: 0 } })));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "refused" }, usage: { inputTokens: 5, outputTokens: 0, costMicros: 15 } });
+    expect(r).not.toHaveProperty("usageEstimated");
+  });
+  it("a refusal with 0 input tokens is not trusted (ceiling)", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ output: msg([{ type: "refusal", refusal: "x" }]), usage: { input_tokens: 0, output_tokens: 0 } })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, usageEstimated: true, usage: { outputTokens: 1_000 } });
+  });
+  it.each([["null", "null"], ["an array", "[1]"], ["a number", "5"], ["a string", '"s"']])("a successful answer that parses to %s is invalid_output with the actual usage", async (_n, t) => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ output: msg([text(t)]) })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output", retryable: false }, usage: ACTUAL });
+  });
+  it.each([[42], [null], ["completed "]])("a status of %p is invalid_output", async (status) => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ status })));
+    expect(await provider(fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output", retryable: false }, usage: ACTUAL });
+  });
+  it("a refusal combined with text is refused, and its text is not returned", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ output: msg([text('{"a":"x"}'), { type: "refusal", refusal: "LEAK" }]) })));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r).toMatchObject({ ok: false, error: { type: "refused" } });
+    expect(JSON.stringify(r)).not.toContain("LEAK");
+  });
+  it("accepts one output_text spread over several message items, rejects two, ignores null and non-object output items", async () => {
+    const ok = [null, 5, "x", { type: "message", content: "not an array" }, { type: "message", content: [null, 1] }, ...msg([text('{"a":"hello"}')]), { type: "message", content: [] }];
+    let f = mockFetch(() => json(responseOk({ output: ok })));
+    expect(await provider(f.fetchImpl).generateStructured(request())).toMatchObject({ ok: true, value: { a: "hello" } });
+    f = mockFetch(() => json(responseOk({ output: [...msg([text('{"a":"1"}')]), ...msg([text('{"a":"2"}')])] })));
+    expect(await provider(f.fetchImpl).generateStructured(request())).toMatchObject({ ok: false, error: { type: "invalid_output" } });
+  });
+  it("ignores reasoning_tokens larger than output_tokens", async () => {
+    const { fetchImpl } = mockFetch(() => json(responseOk({ usage: { input_tokens: 1_000, output_tokens: 200, output_tokens_details: { reasoning_tokens: 5_000 } } })));
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(r.ok && r.usage).toEqual({ inputTokens: 1_000, outputTokens: 200, costMicros: 6_000 });
+  });
+});
+
+describe("OpenAI constructor validation and cost hardening", () => {
+  const make = (extra: Record<string, unknown>) => () => new OpenAiProvider({ apiKey: SECRET, model: "m", priceInputMicrosPerMTok: 1, priceOutputMicrosPerMTok: 1, fetch: (async () => json({})) as typeof fetch, ...extra } as ConstructorParameters<typeof OpenAiProvider>[0]);
+  it.each([0, -1, NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 2, 1e300, "3", null])("rejects the price %p without echoing secrets", (price) => {
+    for (const key of ["priceInputMicrosPerMTok", "priceOutputMicrosPerMTok"]) {
+      let message = "";
+      try { make({ [key]: price })(); } catch (e) { message = (e as Error).message; }
+      expect(message).not.toBe("");
+      expect(message).not.toContain(SECRET);
+    }
+  });
+  it.each([[""], ["m".repeat(201)], [5], [undefined]])("rejects the model %p", (model) => {
+    expect(make({ model })).toThrow();
+  });
+  it.each([[""], ["sk bad"], ["sk\nbad"], ["sk\u0000"], [undefined], [5]])("rejects the api key %p", (apiKey) => {
+    let message = "";
+    try { make({ apiKey })(); } catch (e) { message = (e as Error).message; }
+    expect(message).not.toBe("");
+    expect(message).not.toContain("sk-test");
+  });
+  it("accepts valid values and a ceiling stays a positive safe integer even with a huge price and a bad token limit", async () => {
+    const big = Number.MAX_SAFE_INTEGER;
+    for (const maxOutputTokens of [1_000, 0, -5, NaN, Infinity]) {
+      const { fetchImpl } = mockFetch(() => new Response("<html>"));
+      const r = await new OpenAiProvider({ apiKey: SECRET, model: "m", priceInputMicrosPerMTok: big, priceOutputMicrosPerMTok: big, fetch: fetchImpl }).generateStructured(request({ limits: { timeoutMs: 5_000, maxOutputTokens, maxCostMicros: 1 } }));
+      expect(r).toMatchObject({ ok: false, usageEstimated: true });
+      const u = !r.ok ? r.usage! : undefined;
+      expect(Number.isSafeInteger(u!.costMicros) && u!.costMicros >= 1).toBe(true);
+      expect(Number.isSafeInteger(u!.inputTokens) && u!.inputTokens >= 1).toBe(true);
+    }
   });
 });
