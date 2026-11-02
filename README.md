@@ -89,7 +89,9 @@ Notes:
 | `DAILY_REFRESH_LIMIT` | `5` | Exports per UTC day when `DAILY_REFRESH_ENABLED=1` (integer, 1 to 1000) |
 | `ADMIN_REFRESH_ENABLED` | `0` | `1` enables `POST /api/admin/refresh-allowance` (bearer token, one call per minute, only while `DAILY_REFRESH_ENABLED=1`). Off, the route answers 404 with an empty body and never reads the token. Web scopes only. See docs/daily-refresh-rollout.md |
 | `ADMIN_REFRESH_TOKEN` | none | Bearer token for that route; at least 32 characters, required only when `ADMIN_REFRESH_ENABLED=1`. Server environment only |
-| `NEXT_PUBLIC_SUPPORT_EMAIL` | none | Optional public contact address shown to users. Inlined at build time, so set it in the build environment. Leave unset to show wording only |
+| `NEXT_PUBLIC_SUPPORT_EMAIL` | none | Public contact address shown to users. Inlined at build time, so set it in the build environment. Required when `NOTEPREP_TESTER_DEPLOY=1`; otherwise the legal pages show a fallback sentence instead of an address |
+| `NOTEPREP_TESTER_DEPLOY` | unset | `1` marks a deploy that serves real testers. `next build` and `next start` then fail unless the contact address, `NOTEPREP_MAIL_SENDER` and an explicit `LLM_PROVIDER` are set |
+| `NOTEPREP_MAIL_SENDER` | none | Owner-confirmed name of the party that sends sign-in and password emails; named on `/privacy`. Unset or a placeholder shows "not yet confirmed" and blocks a tester deploy |
 | `CURRICULUM_ALLOW_SAMPLE` | `0` | `1` shows the labelled sample dataset (development/staging only) |
 | `AUTH_EMAIL_PER_IP_PER_HOUR` | `10` | Password-reset and confirmation-resend requests accepted per client IP and kind per hour (integer, 1 to 1000). Beyond it the request is ignored with the same response. See docs/auth-recovery.md |
 | `AUTH_EMAIL_GLOBAL_PER_HOUR` | `200` | The same limit across all addresses, per kind (integer, 1 to 100000) |

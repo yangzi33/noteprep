@@ -1,11 +1,18 @@
 import { ContactLink } from "@/components/app/contact-link";
-import { ANONYMOUS_NOTICE, REVIEW_NOTICE, SUBPROCESSORS } from "@/lib/ui/legal";
+import { ANONYMOUS_NOTICE, REVIEW_NOTICE, type PrivacyDisclosure } from "@/lib/ui/legal";
 
-export function PrivacyContent() {
+/** Shown instead of an address when a deployment has none; a tester deploy cannot build without one. */
+export const NO_CONTACT_FALLBACK = "(this copy of NotePrep has no contact address set up: ask the person who invited you)";
+
+function Contact({ words = "contact us" }: { words?: string }) {
+  return <ContactLink words={words} fallback={NO_CONTACT_FALLBACK} />;
+}
+
+export function PrivacyContent({ disclosure }: { disclosure: PrivacyDisclosure }) {
   return (
     <>
       <p>
-        This is a plain-language notice for a private test of NotePrep. It is not a legal policy and has not been reviewed by a lawyer. Questions, access and deletion requests: <ContactLink words="contact us" />.
+        This is a plain-language notice for a private test of NotePrep. It is not a legal policy and has not been reviewed by a lawyer. Questions, access and deletion requests: <Contact />.
       </p>
       <h2>What we store</h2>
       <ul>
@@ -20,8 +27,9 @@ export function PrivacyContent() {
       <p>{ANONYMOUS_NOTICE}</p>
       <h2>Who handles your data</h2>
       <p>These services process data for us. Where a provider keeps data, and for how long, follows that provider&apos;s own terms. We do not promise zero retention or that data is not used for training beyond what a provider states.</p>
+      <p>{disclosure.aiStatement}</p>
       <ul>
-        {SUBPROCESSORS.map((s) => (
+        {disclosure.subprocessors.map((s) => (
           <li key={s.name}>
             <strong>{s.name}.</strong> {s.purpose} {s.data}
           </li>
@@ -36,7 +44,7 @@ export function PrivacyContent() {
       </ul>
       <h2>Your choices</h2>
       <p>
-        You can ask us at any time to delete your account and everything stored with it. Deletion is manual during the test: <ContactLink words="contact us" />.
+        You can ask us at any time to delete your account and everything stored with it. Deletion is manual during the test: <Contact />.
       </p>
     </>
   );
@@ -64,7 +72,7 @@ export function TermsContent() {
       <p>You may use the PDFs you export for your own tutoring. Curriculum names, where shown, are an unofficial guide and are not endorsed by any curriculum authority.</p>
       <h2>Feedback</h2>
       <p>
-        We welcome it: <ContactLink words="contact us" />. We may use your feedback to improve NotePrep.
+        We welcome it: <Contact />. We may use your feedback to improve NotePrep.
       </p>
     </>
   );
