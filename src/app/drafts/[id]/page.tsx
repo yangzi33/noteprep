@@ -23,7 +23,12 @@ import { prepareHref } from "@/lib/ui/prepare-url";
 import { expiryPhrase } from "@/lib/ui/relative-time";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
-const Search = z.object({ v: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), error: z.string().regex(/^[A-Z_]{1,40}$/).optional() });
+// A malformed or unknown value is ignored, never a 404: the draft itself is real.
+const Search = z.object({
+  v: z.uuid().optional().catch(undefined),
+  doc: z.enum(DOCUMENT_KINDS).optional().catch(undefined),
+  error: z.string().regex(/^[A-Z_]{1,40}$/).optional().catch(undefined),
+});
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
@@ -37,9 +42,20 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   if (!z.uuid().safeParse(id).success || !parsed.success) notFound();
   const dal = webDal();
 
+  // A version the draft does not have is not a missing page: the draft opens on its active version instead.
+  const loadView = async (version: string | undefined) => {
+    try {
+      return { view: await dal.drafts.getDraftView(ctx, id, version), version };
+    } catch (error) {
+      if (domainErrorCode(error) !== "NOT_FOUND" || !version) throw error;
+      return { view: await dal.drafts.getDraftView(ctx, id, undefined), version: undefined };
+    }
+  };
+
   let view;
+  let requestedVersion;
   try {
-    view = await dal.drafts.getDraftView(ctx, id, parsed.data.v);
+    ({ view, version: requestedVersion } = await loadView(parsed.data.v));
   } catch (error) {
     const code = domainErrorCode(error);
     if (code === "NOT_FOUND") notFound();
@@ -68,7 +84,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   // The version is named in the URL only when it is not the one the draft opens on, so refresh keeps the selected version.
   const versionParam = view.versionId === view.activeVersionId ? "" : `v=${view.versionId}`;
   const tabUrl = (d: DocumentKind) => `/drafts/${view.draftId}?doc=${d}${versionParam ? `&${versionParam}` : ""}`;
-  const reloadQuery = [active === available[0] ? "" : `doc=${active}`, parsed.data.v ? `v=${parsed.data.v}` : ""].filter(Boolean).join("&");
+  const reloadQuery = [active === available[0] ? "" : `doc=${active}`, requestedVersion ? `v=${requestedVersion}` : ""].filter(Boolean).join("&");
   const reloadUrl = `/drafts/${view.draftId}${reloadQuery ? `?${reloadQuery}` : ""}`;
   const adjustCtx: AdjustContext = { draftId: view.draftId, versionId: view.versionId, rev: view.rev, doc: active, adjust: view.adjust, questionCount: view.adjust.slots.length, hasError: Boolean(parsed.data.error) };
   const slots =

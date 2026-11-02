@@ -34,9 +34,12 @@ export function ExportStatus({
   const router = useRouter();
 
   useEffect(() => {
-    setNow(Date.now());
+    const first = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), CLOCK_MS);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
   }, []);
 
   // On the transition to a settled state, ask the server again: it knows the documents of a finished export.
