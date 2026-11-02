@@ -21,6 +21,8 @@ const view = (over: Partial<ExportView> = {}, job: Partial<ExportView["job"]> = 
   lessonId: L,
   revisionId: null,
   deadlineAt: "2026-10-24T10:00:00.000Z",
+  createdAt: "2026-10-24T09:00:00.000Z",
+  draft: null,
   ...over,
 });
 
@@ -196,5 +198,45 @@ describe("failed export recovery wording", () => {
       expect(m).toContain("You can find your draft in My lesson packs, or start again.");
     }
     expect(html(failed)).toContain("No lesson pack was used.");
+  });
+});
+
+describe("ExportStatusView slow queue, recovery links and a deleted lesson", () => {
+  const D = "11111111-1111-4111-8111-111111111111";
+  const V = "22222222-2222-4222-8222-222222222222";
+  const withDraft = (v: ExportView): ExportView => ({ ...v, draft: { draftId: D, versionId: V } });
+
+  it("shows the slow-queue notice only for a queued export flagged slow, and keeps Cancel", () => {
+    const m = html(view(), { slow: true });
+    expect(m).toContain("Taking longer than usual. You can cancel; nothing is used.");
+    expect(m).toMatch(cancelForm);
+    expect(html(view())).not.toContain("Taking longer than usual");
+    expect(html(live, { slow: true })).not.toContain("Taking longer than usual");
+    expect(html(done, { slow: true })).not.toContain("Taking longer than usual");
+  });
+
+  it("a failed or canceled export links back to the draft and to the export confirmation", () => {
+    for (const v of [failed, canceled]) {
+      const m = html(withDraft(v));
+      expect(m).toContain(`href="/drafts/${D}?v=${V}"`);
+      expect(m).toContain(`href="/drafts/${D}/export?v=${V}"`);
+      expect(m).toContain("Back to the draft");
+      expect(m).toContain("Try again");
+    }
+  });
+
+  it("offers no draft links when the draft is gone, or when the export did not fail", () => {
+    expect(html(failed)).not.toMatch(/Back to the draft|Try again/);
+    expect(html(failed)).toContain("export-failed-back");
+    for (const v of [withDraft(view()), withDraft(live), withDraft(done)]) expect(html(v)).not.toMatch(/Back to the draft|Try again/);
+  });
+
+  it("a succeeded export whose lesson is gone says so instead of linking to a missing page", () => {
+    const m = html(done, { documents: docs, lessonGone: true });
+    expect(m).toContain("This lesson pack was deleted.");
+    expect(m).not.toContain("export-open-lesson");
+    expect(m).not.toContain("export-download");
+    expect(m).not.toContain("/lessons/" + L);
+    expect(html(done, { documents: docs })).toContain("export-open-lesson");
   });
 });

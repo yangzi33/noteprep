@@ -114,3 +114,31 @@ describe("getExportStatus owner isolation", () => {
     expect(JSON.stringify(dto)).not.toMatch(/snapshot|exportKey|jobId|path/i);
   });
 });
+
+describe("getExportStatus recovery fields", () => {
+  it("a pending export carries createdAt and no draft link", async () => {
+    const { ctx, exportId } = await newExport();
+    const dto = await h.web.exports.getExportStatus(ctx, exportId);
+    expect(dto.createdAt).toBeInstanceOf(Date);
+    expect(dto.draft).toBeNull();
+  });
+
+  it("a canceled (failed) export points back to its draft and version while they exist", async () => {
+    const { ctx, d, exportId } = await newExport();
+    await h.web.exports.cancelExport(ctx, exportId);
+    expect((await h.web.exports.getExportStatus(ctx, exportId)).draft).toEqual({ draftId: d.draftId, versionId: d.versionId });
+  });
+
+  it("is null once the draft (and so its versions) is gone", async () => {
+    const { ctx, d, exportId } = await newExport();
+    await h.web.exports.cancelExport(ctx, exportId);
+    await h.admin.query(`DELETE FROM draft WHERE id = $1`, [d.draftId]);
+    expect((await h.web.exports.getExportStatus(ctx, exportId)).draft).toBeNull();
+  });
+
+  it("never links another owner's draft", async () => {
+    const { exportId } = await newExport();
+    const mallory = await h.account();
+    expect(await code(h.web.exports.getExportStatus(mallory, exportId))).toBe("NOT_FOUND");
+  });
+});

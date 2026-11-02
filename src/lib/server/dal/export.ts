@@ -96,6 +96,14 @@ interface Prepared {
   prepared: ReturnType<typeof prepareExport>;
 }
 
+/** The owner's draft version a snapshot was frozen from, or null once the draft has been purged (versions go with their draft). Owner-filtered. */
+async function sourceDraftOf(db: Db, ownerId: string, snapshotId: string): Promise<{ draftId: string; versionId: string } | null> {
+  const snapshot = await db.exportSnapshot.findFirst({ where: { id: snapshotId, ownerId }, select: { draftId: true, draftVersionId: true } });
+  if (!snapshot) return null;
+  const version = await db.draftVersion.findFirst({ where: { id: snapshot.draftVersionId, draftId: snapshot.draftId, ownerId }, select: { id: true } });
+  return version ? { draftId: snapshot.draftId, versionId: version.id } : null;
+}
+
 export function createExportDal(db: Db, deps: ExportDeps = {}) {
   const enabled = deps.enabled ?? false;
   const limits = deps.limits ?? DEFAULT_LIMITS;
@@ -367,6 +375,8 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
         lessonId: row.lessonId,
         revisionId: row.revisionId,
         deadlineAt: job.deadlineAt,
+        createdAt: row.createdAt,
+        draft: row.state === "failed" ? await sourceDraftOf(db, ctx.userId, row.snapshotId) : null,
       };
     },
 

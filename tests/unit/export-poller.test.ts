@@ -3,7 +3,7 @@ import { startExportPoller } from "@/lib/ui/export-poller";
 import type { ExportNet, ExportView } from "@/lib/ui/export-view";
 
 const view = (state: ExportView["state"] = "pending", over: Partial<ExportView> = {}): ExportView => ({
-  exportId: "e1", state, job: { state: "queued", stage: null, attempt: 0, maxAttempts: 3, cancelRequested: false, errorCode: null }, charge: "held", lessonId: "l", revisionId: null, deadlineAt: "x", ...over,
+  exportId: "e1", state, job: { state: "queued", stage: null, attempt: 0, maxAttempts: 3, cancelRequested: false, errorCode: null }, charge: "held", lessonId: "l", revisionId: null, deadlineAt: "x", createdAt: "x", draft: null, ...over,
 });
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 

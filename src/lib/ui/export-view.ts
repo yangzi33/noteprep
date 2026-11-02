@@ -1,4 +1,5 @@
 import type { ExportStatusDto } from "@/lib/server/dal/dto";
+import { exportConfirmHref } from "./export-confirm";
 import { FAILURE_REASONS } from "./messages";
 
 /** What the browser may know about an export: no snapshot, export key, job id, reservation row, storage path or tex. */
@@ -18,6 +19,9 @@ export interface ExportView {
   lessonId: string;
   revisionId: string | null;
   deadlineAt: string;
+  createdAt: string;
+  /** Only for a failed export whose draft still exists. */
+  draft: { draftId: string; versionId: string } | null;
 }
 
 const CHARGE = { reserved: "held", consumed: "used", released: "not_used" } as const;
@@ -39,7 +43,27 @@ export function toExportView(dto: ExportStatusDto): ExportView {
     lessonId: dto.lessonId,
     revisionId: dto.revisionId,
     deadlineAt: dto.deadlineAt.toISOString(),
+    createdAt: dto.createdAt.toISOString(),
+    draft: dto.draft ? { draftId: dto.draft.draftId, versionId: dto.draft.versionId } : null,
   };
+}
+
+/** How long a never-started export may wait before we say so. */
+export const SLOW_QUEUE_MS = 90_000;
+export const SLOW_QUEUE_NOTICE = "Taking longer than usual. You can cancel; nothing is used.";
+
+/** True when the export has waited in the queue (never started) for longer than SLOW_QUEUE_MS. */
+export function isQueueSlow(view: Pick<ExportView, "createdAt">, phase: ExportPhase, nowMs: number): boolean {
+  if (phase !== "queued") return false;
+  const created = Date.parse(view.createdAt);
+  return Number.isFinite(created) && nowMs - created > SLOW_QUEUE_MS;
+}
+
+/** Where a failed or canceled export can go next: the draft it came from, and its export confirmation. Null when the draft is gone. */
+export function exportRecoveryLinks(view: Pick<ExportView, "draft">): { draft: string; retry: string } | null {
+  if (!view.draft) return null;
+  const { draftId, versionId } = view.draft;
+  return { draft: `/drafts/${draftId}?v=${versionId}`, retry: exportConfirmHref(draftId, versionId) };
 }
 
 export type ExportPhase =

@@ -18,6 +18,8 @@ const dto = {
   lessonId: "l",
   revisionId: null,
   deadlineAt: new Date("2026-10-24T10:00:00Z"),
+  createdAt: new Date("2026-10-24T09:00:00Z"),
+  draft: null,
   // never part of the DTO, but the route must not forward anything unexpected either
   snapshotId: "snap",
   exportKey: "key",

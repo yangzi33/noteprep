@@ -9,7 +9,7 @@ vi.mock("../../worker/export", () => ({ runExport: pipeline.run }));
 const { processJob } = await import("../../worker/runner");
 const { runOnce } = await import("../../worker/loop");
 
-let out: ReturnType<typeof vi.spyOn>;
+let out: { mock: { calls: unknown[][] } };
 beforeEach(() => {
   out = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   pipeline.run.mockReset();
