@@ -646,5 +646,17 @@
     "ok": true,
     "canonical": "\\(-2x\\)",
     "tex": "$-2x$"
+  },
+  {
+    "in": "\\(x\\)\\(x\\)",
+    "ok": true,
+    "canonical": "\\(x\\)\\(x\\)",
+    "tex": "$x${}$x$"
+  },
+  {
+    "in": "See [1] and \\(x\\)",
+    "ok": true,
+    "canonical": "See [1] and \\(x\\)",
+    "tex": "See {[}1{]} and $x$"
   }
 ]
