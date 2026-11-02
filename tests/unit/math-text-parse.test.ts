@@ -65,10 +65,21 @@ describe("parseMath", () => {
   });
 });
 
-// Shape check for accepted ASTs: every node is a known type with well-formed children.
+// Shape check for accepted ASTs: every node is a known type with exactly its documented keys and well-formed children.
+const KEYS: Record<string, string[]> = {
+  num: ["t", "v"], var: ["t", "name"], greek: ["t", "name"], ldots: ["t"], bin: ["t", "op", "l", "r"], imp: ["t", "items"],
+  list: ["t", "items"], unary: ["t", "op", "arg"], rel: ["t", "first", "rest"], group: ["t", "open", "body"], abs: ["t", "body"],
+  frac: ["t", "num", "den"], sqrt: ["t", "body", "index"], sup: ["t", "base", "exp"], sub: ["t", "base", "sub"],
+  pct: ["t", "arg"], deg: ["t", "arg"], fn: ["t", "name", "arg", "base"],
+};
+const OPTIONAL = new Set(["index", "base:fn"]);
 function assertNode(n: unknown): void {
   const o = n as Record<string, unknown>;
   const node = (x: unknown) => assertNode(x);
+  const allowed = KEYS[o.t as string];
+  if (!allowed) throw new Error(`unknown node ${String(o.t)}`);
+  for (const k of Object.keys(o)) expect(allowed, `extra key ${k} on ${String(o.t)}`).toContain(k);
+  for (const k of allowed) if (!(k in o)) expect(OPTIONAL.has(k) || OPTIONAL.has(`${k}:${String(o.t)}`), `missing ${k} on ${String(o.t)}`).toBe(true);
   switch (o.t) {
     case "num": expect(o.v).toMatch(/^(0|[1-9]\d{0,11})(\.\d{1,6})?$/); return;
     case "var": expect(o.name).toMatch(/^[A-Za-z]$/); return;
@@ -78,7 +89,10 @@ function assertNode(n: unknown): void {
     case "imp": case "list": expect((o.items as unknown[]).length).toBeGreaterThanOrEqual(2); (o.items as unknown[]).forEach(node); return;
     case "unary": expect(["-", "+", "pm"]).toContain(o.op); node(o.arg); return;
     case "rel": node(o.first); expect((o.rest as unknown[]).length).toBeGreaterThanOrEqual(1);
-      for (const r of o.rest as { op: string; rhs: unknown }[]) { expect(["=", "<", ">", "le", "ge", "neq"]).toContain(r.op); node(r.rhs); } return;
+      for (const r of o.rest as { op: string; rhs: unknown }[]) {
+        expect(Object.keys(r).sort()).toEqual(["op", "rhs"]);
+        expect(["=", "<", ">", "le", "ge", "neq"]).toContain(r.op); node(r.rhs);
+      } return;
     case "group": expect(["(", "["]).toContain(o.open); node(o.body); return;
     case "abs": node(o.body); return;
     case "frac": node(o.num); node(o.den); return;
@@ -87,7 +101,6 @@ function assertNode(n: unknown): void {
     case "sub": node(o.base); node(o.sub); return;
     case "pct": case "deg": node(o.arg); return;
     case "fn": expect(["sin", "cos", "tan", "log", "ln"]).toContain(o.name); if (o.base !== undefined) { expect(o.name).toBe("log"); node(o.base); } node(o.arg); return;
-    default: throw new Error(`unknown node ${String(o.t)}`);
   }
 }
 function assertDoc(r: ReturnType<typeof parseMathText>): void {
@@ -132,5 +145,80 @@ describe("parseMathText over the fixtures", () => {
       ok: true,
       doc: { v: "mathtext/1", parts: [{ t: "text", s: "Solve " }, { t: "math", m: { t: "rel", first: { t: "var", name: "x" }, rest: [{ op: "=", rhs: { t: "num", v: "1" } }] } }, { t: "text", s: "." }] },
     });
+  });
+});
+
+describe("shape validator", () => {
+  it("rejects a node with an extra property or a missing one", () => {
+    expect(() => assertNode({ t: "var", name: "x", extra: 1 })).toThrow();
+    expect(() => assertNode({ t: "rel", first: { t: "var", name: "x" }, rest: [{ op: "=", rhs: { t: "var", name: "y" }, z: 1 }] })).toThrow();
+    expect(() => assertNode({ t: "frac", num: { t: "var", name: "x" } })).toThrow();
+    expect(() => assertNode(ok(String.raw`\sqrt[3]{2}`))).not.toThrow();
+  });
+});
+
+describe("depth 8 accepted, 9 rejected, per construct kind", () => {
+  const chain = (n: number, wrap: (inner: string) => string, leaf = "x"): string => {
+    let s = leaf;
+    for (let i = 0; i < n; i++) s = wrap(s);
+    return s;
+  };
+  const kinds: [string, (inner: string) => string][] = [
+    ["frac numerator", (s) => String.raw`\frac{${s}}{1}`],
+    ["frac denominator", (s) => String.raw`\frac{1}{${s}}`],
+    ["subscript braces", (s) => `x_{${s}}`],
+    ["sqrt index", (s) => String.raw`\sqrt[${s}]{1}`],
+    ["sqrt body", (s) => String.raw`\sqrt{${s}}`],
+    ["parentheses", (s) => `(${s})`],
+    ["brackets", (s) => `[${s}]`],
+    ["abs bars (alternating with parens is the only legal nesting)", (s) => `(${s})`],
+  ];
+  it.each(kinds)("%s", (_name, wrap) => {
+    expect(parseMath(chain(8, wrap), 0)).toMatchObject({ ok: true });
+    expect(parseMath(chain(9, wrap), 0)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("mixed parentheses and brackets", () => {
+    const mixed = (n: number) => { let s = "x"; for (let i = 0; i < n; i++) s = i % 2 ? `[${s}]` : `(${s})`; return s; };
+    expect(parseMath(mixed(8), 0)).toMatchObject({ ok: true });
+    expect(parseMath(mixed(9), 0)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("mixed construct kinds including superscript braces", () => {
+    const wraps = [(s: string) => `x^{${s}}`, (s: string) => String.raw`\frac{${s}}{1}`, (s: string) => `(${s})`, (s: string) => `x_{${s}}`];
+    const mk = (n: number) => { let s = "y"; for (let i = 0; i < n; i++) s = (wraps[i % 4] as (s: string) => string)(s); return s; };
+    expect(parseMath(mk(8), 0)).toMatchObject({ ok: true });
+    expect(parseMath(mk(9), 0)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("superscript braces up to the exponent limit, at depth", () => {
+    expect(parseMath("(((x^{y^{z^{w}}})))", 0)).toMatchObject({ ok: true }); // 3 + 3 levels
+    expect(parseMath("((x^{y^{z^{w^{v}}}}))", 0)).toMatchObject({ ok: false, code: "math_exponent_depth" });
+    expect(parseMath("((((x^{(y^{(z)})}))))", 0)).toMatchObject({ ok: true }); // 4 + 4 levels = 8
+    expect(parseMath("(((((x^{(y^{(z)})})))))", 0)).toMatchObject({ ok: false, code: "math_depth" }); // 9
+  });
+  it("unary signs", () => {
+    expect(parseMath("-".repeat(8) + "x", 0)).toMatchObject({ ok: true });
+    expect(parseMath("-".repeat(9) + "x", 0)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("absolute value sits at depth like any construct", () => {
+    expect(parseMath("(".repeat(7) + "|x|" + ")".repeat(7), 0)).toMatchObject({ ok: true });
+    expect(parseMath("(".repeat(8) + "|x|" + ")".repeat(8), 0)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+});
+
+describe("absolute value nesting and signed adjacent numbers", () => {
+  it.each(["|(|x|)|", String.raw`|\frac{|x|}{2}|`, "|x+|y||", "|x^{|y|}|", String.raw`|\sqrt[|2|]{x}|`, "|[|x|]|"])("rejects nested bars in %s", (src) => {
+    expect(parseMath(src, 0)).toMatchObject({ ok: false, code: "math_unexpected_token" });
+  });
+  it.each(["|x|", "|x+1|", "2|x|", "|x|+|y|", "|x|(|y|)", "(|x|)(|y|)"])("accepts %s", (src) => {
+    expect(parseMath(src, 0)).toMatchObject({ ok: true });
+  });
+  it("rejects a signed number followed by a number but not a subtraction", () => {
+    expect(parseMath("-2 3", 0)).toMatchObject({ ok: false, code: "math_adjacent_numbers" });
+    expect(parseMath("2 -3", 0)).toMatchObject({ ok: true, node: { t: "bin", op: "-" } });
+    expect(ok("-2x")).toMatchObject({ t: "imp" });
+    expect(ok(String.raw`\pi 3`)).toMatchObject({ t: "imp" });
+    expect(ok("2^2 3")).toMatchObject({ t: "imp" });
+  });
+  it("tokenizer errors in a later span win over parser errors in an earlier span", () => {
+    expect(parseMathText(String.raw`\((x\) and \(\input\)`)).toMatchObject({ ok: false, code: "math_unknown_command" });
   });
 });

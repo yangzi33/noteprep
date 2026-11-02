@@ -60,7 +60,9 @@ export const HOSTILE_CASES: readonly HostileCase[] = [
   { in: "\\(" + "(".repeat(140) + "\\)", expect: "reject", code: "math_depth" },
   { in: "\\(" + "\\frac{".repeat(45) + "\\)", expect: "reject", code: "math_depth" },
   { in: "\\(" + "-".repeat(299) + "x\\)", expect: "reject", code: "math_depth" }, // each prefix sign is one level
-  { in: "\\(" + "(|".repeat(140) + "\\)", expect: "reject", code: "math_depth" },
+  // Nested absolute value is refused at the second bar, before the depth limit is reached.
+  { in: "\\(" + "(|".repeat(140) + "\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(" + "([".repeat(70) + "\\)", expect: "reject", code: "math_depth" },
   { in: "\\(2^{3^{4^{5}}}\\)", expect: "reject_or_safe" }, // three nested exponents are within the limit
   { in: "mail me at a@b.co", expect: "reject", code: "text_email" },
   { in: "see https://evil.test", expect: "reject", code: "text_url" },

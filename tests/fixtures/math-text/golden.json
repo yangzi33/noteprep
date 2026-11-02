@@ -608,5 +608,43 @@
     "in": "\\(50\\%^2\\)",
     "ok": false,
     "code": "math_bad_script"
+  },
+  {
+    "in": "\\(|x|+|y|\\)",
+    "ok": true,
+    "canonical": "\\(|x|+|y|\\)",
+    "tex": "$|x|+|y|$"
+  },
+  {
+    "in": "\\(|(|x|)|\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(|\\frac{|x|}{2}|\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(|x+|y||\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(-2 3\\)",
+    "ok": false,
+    "code": "math_adjacent_numbers"
+  },
+  {
+    "in": "\\(2 -3\\)",
+    "ok": true,
+    "canonical": "\\(2-3\\)",
+    "tex": "$2-3$"
+  },
+  {
+    "in": "\\(-2x\\)",
+    "ok": true,
+    "canonical": "\\(-2x\\)",
+    "tex": "$-2x$"
   }
 ]

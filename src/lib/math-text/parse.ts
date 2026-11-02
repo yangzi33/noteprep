@@ -28,6 +28,7 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
   let pos = 0;
   let depth = 0;
   let expDepth = 0;
+  let absDepth = 0; // number of enclosing absolute-value bars at any nesting
   const ctx: string[] = []; // open constructs, innermost last: "(" "[" "{" "|"
 
   const peek = (): Token | undefined => tokens[pos];
@@ -39,10 +40,11 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
   const open = (t: Token | undefined, c: string): void => {
     if (++depth > MAX_DEPTH) fail("math_depth", t);
     ctx.push(c);
+    if (c === "|") absDepth++;
   };
   const close = (): void => {
     depth--;
-    ctx.pop();
+    if (ctx.pop() === "|") absDepth--;
   };
   // A wrong or missing closer: braces are brace misuse everywhere, anything else is an unbalanced group.
   const closerFail = (t: Token | undefined): never => fail(isOp(t, "{") || isOp(t, "}") ? "math_brace_misuse" : "math_unbalanced", t);
@@ -119,13 +121,18 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     return false;
   }
 
+  // A number, or a number with prefix signs (`-2`): two of these side by side are `2 3`, not a product.
+  function isNumLike(n: MathNode): boolean {
+    return n.t === "num" || (n.t === "unary" && isNumLike(n.arg));
+  }
+
   function parseOperand(): MathNode {
     const first = parseUnary();
     const items = [first];
     while (startsImplicit(peek())) {
       const t = peek() as Token;
       const last = items[items.length - 1] as MathNode;
-      if (t.k === "num" && last.t === "num") fail("math_adjacent_numbers", t);
+      if (t.k === "num" && isNumLike(last)) fail("math_adjacent_numbers", t);
       if (isOp(t, "|") && last.t === "abs") fail("math_unexpected_token", t);
       items.push(parsePostfix());
     }
@@ -322,7 +329,7 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
         return { t: "group", open: t.v, body };
       }
       if (t.v === "|") {
-        if (ctx[ctx.length - 1] === "|") return fail("math_unexpected_token", t); // nested absolute value
+        if (absDepth > 0) return fail("math_unexpected_token", t); // nested absolute value, at any nesting
         open(t, "|");
         pos++;
         if (isOp(peek(), "|")) fail("math_unexpected_token", peek());
