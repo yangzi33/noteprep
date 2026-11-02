@@ -569,6 +569,38 @@ type StructuredResult =
 - 首版:一个 `fake`(确定性,CI 默认)+ 一个真实适配器。**默认假设**真实适配器为 Anthropic Claude(可逆,所选模型 ID、超时、token 与成本上限均为配置;不在代码里写死价格);供应商作为子处理方须在隐私政策中披露,保留期与训练政策以其官方条款为准,不在文档中断言"零保留"。
 - 用户备注与模型输出都是数据:不能选择工具、读文件、改系统提示、访问 URL;生成流程没有浏览或外部工具执行。
 
+### 8.1 OpenAI adapter contract (verified 2026-11-01)
+
+Verified against the official OpenAI documentation and the official `openai-node` / `openai-openapi` repositories on 2026-11-01. The adapter targets the Responses API. No model id or price is recorded here; both come from configuration. "doc" = developers.openai.com page; "sdk" = `github.com/openai/openai-node` source (type definitions, not prose docs).
+
+| Item | Verified value | Source |
+|---|---|---|
+| Recommended endpoint | "While Chat Completions remains supported, Responses is recommended for all new projects." Structured Outputs: "Instead of `response_format`, use `text.format` in Responses." Endpoint `POST /v1/responses`, base `https://api.openai.com`. | [migrate-to-responses](https://developers.openai.com/api/docs/guides/migrate-to-responses) |
+| Auth | `Authorization: Bearer <key>` (HTTP Bearer). | [API overview](https://developers.openai.com/api/reference/overview) |
+| Input | `input` is a string or an array of input items; a plain string is a user message. `instructions` carries the system text (field name taken from the SDK `ResponseCreateParams`; not visible in the truncated reference page). | [responses create](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| Structured output | `text: { format: { type: "json_schema", name, schema, strict: true } }`. `name`: a-z, A-Z, 0-9, underscores, dashes, max 64 chars (sdk `ResponseFormatTextJSONSchemaConfig`). Strict rules: root must be an object and not `anyOf`; all fields must be `required`; `additionalProperties: false` required; supported types string, number, boolean, integer, object, array, enum, anyOf; string `pattern`/`format`, number `multipleOf`/`minimum`/`maximum`/`exclusiveMinimum`/`exclusiveMaximum`, array `minItems`/`maxItems`; up to 5000 object properties and 10 nesting levels; total string length of property/definition/enum/const names <= 120,000 chars; up to 1000 enum values. | [structured-outputs](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| Output limit | `max_output_tokens` includes reasoning tokens: "limit the total number of tokens the model generates, including reasoning tokens". Hitting it can happen before any visible output; input and reasoning tokens are still billed. The guide suggests reserving at least 25,000 tokens for reasoning plus output on reasoning models. | [reasoning](https://developers.openai.com/api/docs/guides/reasoning), sdk `max_output_tokens` |
+| Data retention | `store?: boolean \| null`, "Defaults to true when omitted" (stored at least 30 days subject to retention exceptions); `store: false` is the documented way to opt out. See the D-43 statement below. | sdk `store`, [migrate-to-responses](https://developers.openai.com/api/docs/guides/migrate-to-responses) |
+| Success shape | `status: "completed"`; `output[]` message item whose content holds `output_text` items with `text`. (`status` union in the SDK: completed, failed, in_progress, cancelled, queued, incomplete.) | sdk `Response`; [structured-outputs](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| Refusal | Content item `type: "refusal"` with string field `refusal`; check it before reading schema-conforming output. | [responses create](https://developers.openai.com/api/reference/resources/responses/methods/create) (`ResponseOutputRefusal`), structured-outputs |
+| Truncation | `status: "incomplete"`, `incomplete_details.reason`. The SDK union is `max_output_tokens`, `max_messages`, `content_filter`, `steered` (`steered` only after a WebSocket steer event). The adapter must treat any `incomplete` as non-success. | sdk `Response.IncompleteDetails`; structured-outputs |
+| Usage | `usage.input_tokens`, `usage.input_tokens_details.cached_tokens` (also `cache_write_tokens`), `usage.output_tokens` (includes reasoning tokens: reasoning is "billed as output tokens"), `usage.output_tokens_details.reasoning_tokens`, `usage.total_tokens`. | sdk `ResponseUsage`; [reasoning](https://developers.openai.com/api/docs/guides/reasoning) |
+| Request id | Response header `x-request-id`: "Unique identifier for this API request (used in troubleshooting)"; OpenAI recommends logging it in production. | [API overview](https://developers.openai.com/api/reference/overview); sdk README |
+| Error body | `{ "error": { "type", "message", "param", "code" } }`; all four keys required, `code` and `param` nullable. | `openai-openapi` `ErrorResponse` / `Error` schemas |
+| Error statuses | 401 (invalid auth / incorrect key / not in an organization / IP not authorized), 403 (country, region or territory not supported), 500 (server error), 503 (`type: service_unavailable_error`, `code: server_is_overloaded`). 429 temporary rate limit: message "Rate limit reached for requests"; the guide gives no `code` string for it. 429 quota or billing: `error.type` can be `insufficient_quota`; `error.code` is one of `credit_balance_exhausted`, `organization_spend_limit_exceeded`, `project_spend_limit_exceeded`, `organization_usage_limit_exceeded`. Another 429 entry: type `rate_limit_error`, code `slow_down`. 404 (model) and 400 `context_length_exceeded` are not in the error-codes guide; `context_length_exceeded` and `rate_limit_exceeded` appear as enum values in the OpenAPI spec. | [error-codes](https://developers.openai.com/api/docs/guides/error-codes); `openai-openapi` |
+| Retry hints | `Retry-After` (seconds, minimum wait, "when present") on temporary-rate-limit 429 and on 503 overload; not applicable to quota/billing errors (they need user action). Missing or invalid: exponential backoff with jitter. `x-ratelimit-{limit,remaining,reset}-{requests,tokens}` and `-project-tokens` variants are documented. `retry-after-ms` is honoured by the official SDK only; it is not in the prose docs. | [rate-limits](https://developers.openai.com/api/docs/guides/rate-limits); sdk `client.ts` |
+| Unsupported params | "When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs`." The docs say to remove them; they do not state the failure mode. Some models reject certain effort values with HTTP 400 (for example `none`). The adapter sends no sampling parameters. | [latest-model](https://developers.openai.com/api/docs/guides/latest-model), reasoning |
+
+**Retention statement relevant to D-43 (quoted from [your-data](https://developers.openai.com/api/docs/guides/your-data), not an assertion of no retention):**
+
+- "abuse monitoring logs are generated for all API feature usage and retained for up to 30 days"
+- "the Responses API has a 30 day Application State retention period by default"
+- "the `store` parameter for `/v1/responses` and `v1/chat/completions` will always be treated as `false`" (this sentence appears in the page's Zero Data Retention context; its full condition was not read)
+- "Zero Data Retention excludes customer content from abuse monitoring logs in the same way as Modified Abuse Monitoring."
+- "data sent to the OpenAI API is not used to train or improve OpenAI models"
+
+Adapter consequences: send `store: false`; classify 429 by `error.type`/`error.code` (quota or billing codes are not retryable, other 429 and 503 are retryable honouring `Retry-After`); treat `refusal` content, any `status` other than `completed`, and a missing `output_text` as failures; read usage defensively (nested detail objects may be absent).
+
 ## 9. Stripe 权益
 
 ### 9.1 处理管线
