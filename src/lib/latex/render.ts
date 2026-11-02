@@ -5,8 +5,9 @@ import { effectiveSettings } from "@/lib/package/effective";
 import { documentView, type DocumentView } from "@/lib/package/views";
 import type { DocumentKind } from "@/lib/package/schema";
 import { equationTex, operationText, solutionText } from "./math";
+import { firstDisallowedControlSequence } from "./allowlist";
 import { escapeText, RenderError } from "./escape";
-import { ALLOWED_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, preamble, TEMPLATE_VERSION, type PageFormat } from "./templates";
+import { ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, PDF_BODY_COMMANDS, preamble, TEMPLATE_VERSION, type PageFormat } from "./templates";
 
 export { RenderError } from "./escape";
 export { TEMPLATE_VERSION, PAGE_FORMATS, type PageFormat } from "./templates";
@@ -119,11 +120,7 @@ export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitl
   const head = preamble(document, runningTitle, pageFormat);
   if (!tex.startsWith(head)) throw new RenderError("preamble_changed");
   const body = tex.slice(head.length);
-  for (const match of body.matchAll(/\\([A-Za-z@]+|.)/gs)) {
-    const name = match[1]!;
-    const ok = /^[A-Za-z@]+$/.test(name) ? ALLOWED_BODY_COMMANDS.has(name) : ALLOWED_CONTROL_SYMBOLS.has(name);
-    if (!ok) throw new RenderError("unexpected_control_sequence");
-  }
+  if (firstDisallowedControlSequence(body, PDF_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS) !== null) throw new RenderError("unexpected_control_sequence");
   if (/(?<!\\)%/.test(body)) throw new RenderError("unexpected_comment");
   if (/\^\^/.test(body)) throw new RenderError("unexpected_caret_notation");
   if (/(?<!\\)#/.test(body)) throw new RenderError("unexpected_parameter");

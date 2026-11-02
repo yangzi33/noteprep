@@ -658,5 +658,11 @@
     "ok": true,
     "canonical": "See [1] and \\(x\\)",
     "tex": "See {[}1{]} and $x$"
+  },
+  {
+    "in": "\\(\\tan 45^\\circ = 1\\)",
+    "ok": true,
+    "canonical": "\\(\\tan 45^{\\circ}=1\\)",
+    "tex": "$\\tan 45^{\\circ}=1$"
   }
 ]
