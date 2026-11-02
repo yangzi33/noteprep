@@ -14,17 +14,13 @@ const HEADERS = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-r
 const Params = z.object({ id: z.uuid(), doc: z.enum(DOCUMENT_KINDS) });
 const Query = z.object({ rev: z.uuid(), download: z.enum(["1"]).optional() });
 
-const EMBEDDED_DESTINATIONS = new Set(["iframe", "frame", "embed", "object"]);
-
 /**
  * A tutor following a link (a download, or "Open in a new tab") needs a page; the preview iframe and plain fetches keep
- * plain status codes. A real browser click sends Sec-Fetch-Dest: document and an Accept naming text/html; the query
- * string alone never makes a request a navigation, so scripted clients see the same status codes as before.
+ * plain status codes. Only Sec-Fetch-Dest: document marks a navigation: neither the query string nor an Accept header
+ * does, so scripted clients and browsers that send no fetch metadata (whose iframe also asks for text/html) keep status codes.
  */
 function isNavigation(request: Request): boolean {
-  const destination = request.headers.get("sec-fetch-dest");
-  if (destination && EMBEDDED_DESTINATIONS.has(destination)) return false;
-  return destination === "document" || (request.headers.get("accept") ?? "").includes("text/html");
+  return request.headers.get("sec-fetch-dest") === "document";
 }
 
 const redirect = (location: string) => new Response(null, { status: 303, headers: { ...HEADERS, Location: location } });

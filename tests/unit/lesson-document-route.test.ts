@@ -79,8 +79,10 @@ describe("GET /lessons/[id]/documents/[doc]", () => {
       expect(res.headers.get("location")).toBeNull();
       expect((await call(DOWN, { accept: "*/*" })).status).toBe(404);
     });
-    it("redirects when only Accept names HTML", async () => {
-      expect((await call(`rev=${R}`, { accept: "text/html" })).headers.get("location")).toBe(UNAVAILABLE);
+    it("keeps the 404 when only Accept names HTML: a browser without Sec-Fetch-Dest must not nest the lesson page in the preview frame", async () => {
+      const res = await call(`rev=${R}`, { accept: "text/html,application/xhtml+xml" });
+      expect(res.status).toBe(404);
+      expect(res.headers.get("location")).toBeNull();
     });
     it("keeps the 404 for the preview iframe", async () => {
       const res = await call(`rev=${R}`, iframe);
