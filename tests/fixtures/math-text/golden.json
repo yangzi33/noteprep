@@ -1,0 +1,362 @@
+[
+  {
+    "in": "Solve \\(2x + 3 = 11\\).",
+    "ok": true,
+    "canonical": "Solve \\(2x+3=11\\).",
+    "tex": "Solve $2x+3=11$."
+  },
+  {
+    "in": "\\(\\frac{1}{2} \\pi r^2\\)",
+    "ok": true,
+    "canonical": "\\(\\frac{1}{2}\\pi r^{2}\\)",
+    "tex": "$\\frac{1}{2}\\pi r^{2}$"
+  },
+  {
+    "in": "\\(a_{n+1} = a_n + 3\\)",
+    "ok": true,
+    "canonical": "\\(a_{n+1}=a_{n}+3\\)",
+    "tex": "$a_{n+1}=a_{n}+3$"
+  },
+  {
+    "in": "\\(\\sin 30^\\circ\\)",
+    "ok": true,
+    "canonical": "\\(\\sin 30^{\\circ}\\)",
+    "tex": "$\\sin 30^{\\circ}$"
+  },
+  {
+    "in": "Find   the value of x.",
+    "ok": true,
+    "canonical": "Find the value of x.",
+    "tex": "Find the value of x."
+  },
+  {
+    "in": "Pay $5 now.",
+    "ok": true,
+    "canonical": "Pay $5 now.",
+    "tex": "Pay \\$5 now."
+  },
+  {
+    "in": "\\(3 \\times 4 - 2 \\cdot 5 \\div 1 / 7\\)",
+    "ok": true,
+    "canonical": "\\(3\\times4-2\\cdot5\\div1/7\\)",
+    "tex": "$3\\times4-2\\cdot5\\div1/7$"
+  },
+  {
+    "in": "\\(5 \\pm 2\\)",
+    "ok": true,
+    "canonical": "\\(5\\pm2\\)",
+    "tex": "$5\\pm2$"
+  },
+  {
+    "in": "\\(-x\\)",
+    "ok": true,
+    "canonical": "\\(-x\\)",
+    "tex": "$-x$"
+  },
+  {
+    "in": "\\(\\pm 3\\)",
+    "ok": true,
+    "canonical": "\\(\\pm3\\)",
+    "tex": "$\\pm3$"
+  },
+  {
+    "in": "\\(+4\\)",
+    "ok": true,
+    "canonical": "\\(+4\\)",
+    "tex": "$+4$"
+  },
+  {
+    "in": "\\(1 < x \\le 5\\)",
+    "ok": true,
+    "canonical": "\\(1<x\\le5\\)",
+    "tex": "$1<x\\le5$"
+  },
+  {
+    "in": "\\(a \\ge b\\)",
+    "ok": true,
+    "canonical": "\\(a\\ge b\\)",
+    "tex": "$a\\ge b$"
+  },
+  {
+    "in": "\\(x \\neq 0\\)",
+    "ok": true,
+    "canonical": "\\(x\\neq0\\)",
+    "tex": "$x\\neq0$"
+  },
+  {
+    "in": "\\(x > 2\\)",
+    "ok": true,
+    "canonical": "\\(x>2\\)",
+    "tex": "$x>2$"
+  },
+  {
+    "in": "\\(x = 3, y = -2\\)",
+    "ok": true,
+    "canonical": "\\(x=3, y=-2\\)",
+    "tex": "$x=3, y=-2$"
+  },
+  {
+    "in": "\\(2,5,8,\\ldots\\)",
+    "ok": true,
+    "canonical": "\\(2, 5, 8, \\ldots\\)",
+    "tex": "$2, 5, 8, \\ldots$"
+  },
+  {
+    "in": "\\(2 (x + 1)\\)",
+    "ok": true,
+    "canonical": "\\(2(x+1)\\)",
+    "tex": "$2(x+1)$"
+  },
+  {
+    "in": "\\(3[x - 1]\\)",
+    "ok": true,
+    "canonical": "\\(3[x-1]\\)",
+    "tex": "$3[x-1]$"
+  },
+  {
+    "in": "\\(|x - 2|\\)",
+    "ok": true,
+    "canonical": "\\(|x-2|\\)",
+    "tex": "$|x-2|$"
+  },
+  {
+    "in": "\\(\\sqrt{16}\\)",
+    "ok": true,
+    "canonical": "\\(\\sqrt{16}\\)",
+    "tex": "$\\sqrt{16}$"
+  },
+  {
+    "in": "\\(\\sqrt[3]{27}\\)",
+    "ok": true,
+    "canonical": "\\(\\sqrt[3]{27}\\)",
+    "tex": "$\\sqrt[3]{27}$"
+  },
+  {
+    "in": "\\(x^2\\)",
+    "ok": true,
+    "canonical": "\\(x^{2}\\)",
+    "tex": "$x^{2}$"
+  },
+  {
+    "in": "\\(a_n\\)",
+    "ok": true,
+    "canonical": "\\(a_{n}\\)",
+    "tex": "$a_{n}$"
+  },
+  {
+    "in": "\\(x^{n+1}\\)",
+    "ok": true,
+    "canonical": "\\(x^{n+1}\\)",
+    "tex": "$x^{n+1}$"
+  },
+  {
+    "in": "\\(15\\%\\)",
+    "ok": true,
+    "canonical": "\\(15\\%\\)",
+    "tex": "$15\\%$"
+  },
+  {
+    "in": "\\(90^\\circ\\)",
+    "ok": true,
+    "canonical": "\\(90^{\\circ}\\)",
+    "tex": "$90^{\\circ}$"
+  },
+  {
+    "in": "\\(\\log_2 8\\)",
+    "ok": true,
+    "canonical": "\\(\\log_{2}8\\)",
+    "tex": "$\\log_{2}8$"
+  },
+  {
+    "in": "\\(\\ln x\\)",
+    "ok": true,
+    "canonical": "\\(\\ln x\\)",
+    "tex": "$\\ln x$"
+  },
+  {
+    "in": "\\(\\cos 60^\\circ\\)",
+    "ok": true,
+    "canonical": "\\(\\cos 60^{\\circ}\\)",
+    "tex": "$\\cos 60^{\\circ}$"
+  },
+  {
+    "in": "\\(2 \\alpha \\beta\\)",
+    "ok": true,
+    "canonical": "\\(2\\alpha\\beta\\)",
+    "tex": "$2\\alpha\\beta$"
+  },
+  {
+    "in": "\\(\\theta\\)",
+    "ok": true,
+    "canonical": "\\(\\theta\\)",
+    "tex": "$\\theta$"
+  },
+  {
+    "in": "\\(x y\\)",
+    "ok": true,
+    "canonical": "\\(xy\\)",
+    "tex": "$xy$"
+  },
+  {
+    "in": "\\(\\frac{x+1}{2} = 3\\)",
+    "ok": true,
+    "canonical": "\\(\\frac{x+1}{2}=3\\)",
+    "tex": "$\\frac{x+1}{2}=3$"
+  },
+  {
+    "in": "\\(0.5 + 12.25\\)",
+    "ok": true,
+    "canonical": "\\(0.5+12.25\\)",
+    "tex": "$0.5+12.25$"
+  },
+  {
+    "in": "",
+    "ok": false,
+    "code": "empty"
+  },
+  {
+    "in": "   ",
+    "ok": false,
+    "code": "empty"
+  },
+  {
+    "in": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "ok": false,
+    "code": "too_long"
+  },
+  {
+    "in": "5 − 3 = 2",
+    "ok": false,
+    "code": "text_bad_char"
+  },
+  {
+    "in": "a\u0000b",
+    "ok": false,
+    "code": "text_control_char"
+  },
+  {
+    "in": "a‮b",
+    "ok": false,
+    "code": "text_bidi_char"
+  },
+  {
+    "in": "Cost: $5 and 15\\% off? No: \\(15\\%\\) of \\(80\\)",
+    "ok": false,
+    "code": "text_backslash"
+  },
+  {
+    "in": "Sum \\[1 + 2\\]",
+    "ok": false,
+    "code": "text_backslash"
+  },
+  {
+    "in": "see https://evil.test",
+    "ok": false,
+    "code": "text_url"
+  },
+  {
+    "in": "mail me at a@b.co",
+    "ok": false,
+    "code": "text_email"
+  },
+  {
+    "in": "\\(x\\) and \\(",
+    "ok": false,
+    "code": "delim_unterminated"
+  },
+  {
+    "in": "x\\)",
+    "ok": false,
+    "code": "delim_unexpected_close"
+  },
+  {
+    "in": "\\(a \\( b \\) c\\)",
+    "ok": false,
+    "code": "delim_nested"
+  },
+  {
+    "in": "\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)\\(x\\)",
+    "ok": false,
+    "code": "too_many_spans"
+  },
+  {
+    "in": "\\(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\)",
+    "ok": false,
+    "code": "span_too_long"
+  },
+  {
+    "in": "\\(\\)",
+    "ok": false,
+    "code": "span_empty"
+  },
+  {
+    "in": "\\(5 − 3\\)",
+    "ok": false,
+    "code": "math_bad_char"
+  },
+  {
+    "in": "\\(x!\\)",
+    "ok": false,
+    "code": "math_bad_char"
+  },
+  {
+    "in": "\\(\\text{hi}\\)",
+    "ok": false,
+    "code": "math_unknown_command"
+  },
+  {
+    "in": "\\(\\input{x}\\)",
+    "ok": false,
+    "code": "math_unknown_command"
+  },
+  {
+    "in": "\\(1234567890123\\)",
+    "ok": false,
+    "code": "math_number_too_long"
+  },
+  {
+    "in": "\\(007\\)",
+    "ok": false,
+    "code": "math_leading_zero"
+  },
+  {
+    "in": "\\(1,500\\)",
+    "ok": false,
+    "code": "math_digit_grouping"
+  },
+  {
+    "in": "\\(2 3\\)",
+    "ok": false,
+    "code": "math_adjacent_numbers"
+  },
+  {
+    "in": "\\((x\\)",
+    "ok": false,
+    "code": "math_unbalanced"
+  },
+  {
+    "in": "\\(2 +\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(\\frac{1\\)",
+    "ok": false,
+    "code": "math_brace_misuse"
+  },
+  {
+    "in": "\\(x^+\\)",
+    "ok": false,
+    "code": "math_bad_script"
+  },
+  {
+    "in": "\\((((((((((x)))))))))\\)",
+    "ok": false,
+    "code": "math_depth"
+  },
+  {
+    "in": "\\(2^{3^{4^{5^{6}}}}\\)",
+    "ok": false,
+    "code": "math_exponent_depth"
+  }
+]
