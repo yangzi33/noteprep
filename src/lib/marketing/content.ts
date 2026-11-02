@@ -41,6 +41,7 @@ export const landingContent = {
       "Choose a topic, a lesson length and a difficulty, and NotePrep builds tutor lesson notes, a student worksheet and a separate answer key as typeset PDFs. You review the AI-assisted material before teaching.",
     primaryCta: "Sign in",
     note: "Private test version for invited tutors. Free during the test.",
+    requestInvite: "Not invited yet? Please contact us to ask for an invite.",
   },
   builder: {
     overline: "Real output · compiled by NotePrep",
@@ -180,7 +181,7 @@ export const landingContent = {
       },
       {
         question: "Who can create an account?",
-        answer: "NotePrep is a private test. Only invited tutors can create an account. If you were invited, use the email address we invited.",
+        answer: "NotePrep is a private test. Only invited tutors can create an account. If you were invited, use the email address we invited. Not invited yet? Please contact us to ask for an invite.",
       },
       {
         question: "What should I put in my account?",

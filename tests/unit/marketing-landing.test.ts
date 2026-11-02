@@ -1,11 +1,37 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LandingFooter, LandingPage } from "@/components/marketing/landing-page";
 import { PublicHeader } from "@/components/app/public-header";
 import { landingContent } from "@/lib/marketing/content";
 
 const html = renderToStaticMarkup(createElement(LandingPage)) + renderToStaticMarkup(createElement(LandingFooter));
+
+afterEach(() => vi.unstubAllEnvs());
+
+describe("invite request path", () => {
+  it("offers an uninvited visitor a mailto route in the hero note and the account FAQ when an address is configured", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_EMAIL", "help@example.test");
+    const withContact = renderToStaticMarkup(createElement(LandingPage));
+    expect(withContact).toMatch(/data-testid="request-invite"[^>]*>Not invited yet\? Please contact us at <a [^>]*href="mailto:help@example\.test"[^>]*>help@example\.test<\/a> to ask for an invite/);
+    expect(withContact.match(/href="mailto:help@example\.test"/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps the wording without a link when no address is configured", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_EMAIL", "");
+    const bare = renderToStaticMarkup(createElement(LandingPage));
+    expect(bare).toMatch(/Not invited yet\? Please contact us/);
+    expect(bare).not.toMatch(/mailto:/);
+  });
+});
+
+describe("pricing emphasis", () => {
+  it("emphasises the free card, not the unavailable subscription card", () => {
+    const cards = [...html.matchAll(/<div class="flex flex-col gap-5 rounded-card ([^"]*)"><p class="[^"]*">([^<]*)</g)].map((m) => [m[2], m[1]]);
+    expect(cards.find(([label]) => label === landingContent.pricing.free.label)?.[1]).toMatch(/border-primary/);
+    expect(cards.find(([label]) => label === landingContent.pricing.subscription.label)?.[1]).not.toMatch(/border-primary/);
+  });
+});
 
 describe("landing page markup", () => {
   it("has exactly one h1 and no main element of its own", () => {
