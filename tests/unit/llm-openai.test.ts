@@ -532,6 +532,24 @@ describe("OpenAI timeouts, network failures and cancellation", () => {
     expect(r).toMatchObject({ ok: false, error: { type: "server_error", retryable: true }, usageEstimated: true, usage: { outputTokens: 1_000 } });
     expect(JSON.stringify(r)).not.toContain(SECRET);
   });
+  it("never follows redirects, and a redirect rejection is a retryable server_error without its message", async () => {
+    const { fetchImpl, calls } = mockFetch(() => { throw new TypeError(`fetch failed: unexpected redirect to https://evil.test/?k=${SECRET}`); });
+    const r = await provider(fetchImpl).generateStructured(request());
+    expect(calls[0]!.init.redirect).toBe("error");
+    expect(r).toMatchObject({ ok: false, error: { type: "server_error", retryable: true }, usageEstimated: true });
+    expect(JSON.stringify(r)).not.toContain(SECRET);
+    expect(JSON.stringify(r)).not.toContain("evil.test");
+  });
+  it("a caller cancel during the error-body read rejects; a timeout during it stays a classified result", async () => {
+    // Like a real fetch body, the stream errors when the request signal aborts.
+    const stalled = (status: number, signal: AbortSignal) => new Response(new ReadableStream({ start(c) { signal.addEventListener("abort", () => c.error(signal.reason)); } }), { status });
+    const controller = new AbortController();
+    const cancelled = provider(mockFetch(({ init }) => stalled(503, init.signal!)).fetchImpl).generateStructured(request({ signal: controller.signal }));
+    setTimeout(() => controller.abort(), 20);
+    await expect(cancelled).rejects.toThrow();
+    const timed = await provider(mockFetch(({ init }) => stalled(503, init.signal!)).fetchImpl).generateStructured(request({ limits: { timeoutMs: 30, maxOutputTokens: 100, maxCostMicros: 1 } }));
+    expect(timed).toMatchObject({ ok: false, error: { type: "overloaded", retryable: true }, usageEstimated: true, usage: { outputTokens: 100 } });
+  });
   it("rethrows a cancel by the caller, and a signal aborted beforehand", async () => {
     const controller = new AbortController();
     const pending = provider(hang().fetchImpl).generateStructured(request({ signal: controller.signal }));

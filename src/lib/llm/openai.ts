@@ -236,6 +236,7 @@ export class OpenAiProvider implements LlmProvider {
         headers: { "content-type": "application/json", authorization: `Bearer ${this.#apiKey}` },
         body: requestBody,
         signal,
+        redirect: "error", // never follow a redirect: it would forward the body (and possibly the key); it rejects as a network failure
       });
     } catch (error) {
       if (request.signal?.aborted) throw error; // the caller canceled: let the pipeline's own abort handling see it
@@ -245,7 +246,7 @@ export class OpenAiProvider implements LlmProvider {
 
     const rawId = response.headers.get("x-request-id") ?? undefined;
     const providerRequestId = rawId && REQUEST_ID.test(rawId) ? rawId : undefined;
-    if (!response.ok) return this.failFromHttp(response, requestBody, request.limits.maxOutputTokens, providerRequestId);
+    if (!response.ok) return this.failFromHttp(response, requestBody, request.limits.maxOutputTokens, request.signal, providerRequestId);
     let body: Awaited<ReturnType<typeof readTextCapped>>;
     try {
       body = await readTextCapped(response, OPENAI_LIMITS.maxResponseBytes);
@@ -260,7 +261,7 @@ export class OpenAiProvider implements LlmProvider {
    * A non-2xx response. Classified by status, refined by the well-formed `error.type` / `error.code` of a capped
    * body; an unreadable, oversized or malformed body classifies by status alone. Always the usage ceiling, estimated.
    */
-  private async failFromHttp(response: Response, requestBody: string, maxOutputTokens: number, providerRequestId?: string): Promise<StructuredResult> {
+  private async failFromHttp(response: Response, requestBody: string, maxOutputTokens: number, callerSignal: AbortSignal | undefined, providerRequestId?: string): Promise<StructuredResult> {
     let fields: { type?: string; code?: string } = {};
     try {
       const body = await readTextCapped(response, OPENAI_LIMITS.maxErrorBodyBytes);
@@ -268,6 +269,7 @@ export class OpenAiProvider implements LlmProvider {
     } catch {
       // readTextCapped never throws; belt and braces so classification cannot be lost
     }
+    if (callerSignal?.aborted) throw callerSignal.reason ?? new DOMException("aborted", "AbortError"); // the caller canceled mid-read; a timeout stays a classified result
     const type = classifyOpenAiError(response.status, fields.type, fields.code);
     const retryAfterMs = type === "rate_limited" || type === "overloaded" ? parseRetryAfterMs(response.headers, this.#now(), OPENAI_LIMITS.maxRetryAfterMs) : undefined;
     return {
