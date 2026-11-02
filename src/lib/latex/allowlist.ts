@@ -12,3 +12,15 @@ export function firstDisallowedControlSequence(tex: string, commands: ReadonlySe
   }
   return null;
 }
+
+/**
+ * The non-backslash constructs `assertTexIsSafe` and the MathText static check both refuse (the scanner above sees only
+ * backslash sequences): an unescaped comment sign, `^^` notation and an unescaped parameter sign. Moved verbatim out of
+ * `assertTexIsSafe` so the two checks cannot drift.
+ */
+export function firstUnsafeTexConstruct(tex: string): "comment" | "caret_notation" | "parameter" | null {
+  if (/(?<!\\)%/.test(tex)) return "comment";
+  if (/\^\^/.test(tex)) return "caret_notation";
+  if (/(?<!\\)#/.test(tex)) return "parameter";
+  return null;
+}

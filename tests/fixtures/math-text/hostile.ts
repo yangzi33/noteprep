@@ -26,6 +26,8 @@ export const HOSTILE_CASES: readonly HostileCase[] = [
   { in: "\\(\\frac\\input x\\)", expect: "reject", code: "math_unknown_command" },
   { in: "\\(\\sqrt[\\csname]{2}\\)", expect: "reject", code: "math_unknown_command" },
   { in: "\\(x^\\input\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(\\sqrt[\\sqrt[3]{x}]{2}\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(\\sqrt[[1]]{2}\\)", expect: "reject", code: "math_unexpected_token" },
   { in: "\\(\\pin\\)", expect: "reject", code: "math_unknown_command" },
   { in: "\\(\\lefts\\)", expect: "reject", code: "math_unknown_command" },
   { in: "\\(x \\le\\def\\)", expect: "reject", code: "math_unknown_command" },

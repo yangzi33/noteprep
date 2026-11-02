@@ -310,6 +310,12 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
         if (isOp(b, "[")) {
           open(b, "[");
           pos++;
+          // TeX ends the optional argument at the first `]` outside braces: a bracket or a root inside the index would
+          // not mean what the AST says, so the index may hold neither (docs/mathtext.md, "Root index").
+          for (let k = pos; k < tokens.length && !isOp(tokens[k], "]"); k++) {
+            const it = tokens[k] as Token;
+            if (isOp(it, "[") || isCmd(it, "sqrt")) return fail("math_unexpected_token", it);
+          }
           index = parseList();
           expectCloser("]");
           close();

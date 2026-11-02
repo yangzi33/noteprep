@@ -2,7 +2,7 @@ import { MATHTEXT_LIMITS, type MathTextDoc, type MathTextErrorCode } from "@/lib
 import { MATH_TEX_COMMANDS, MATH_TEX_SYMBOLS } from "@/lib/math-text/commands";
 import { mathTextToTex, mathToTex } from "@/lib/math-text/to-tex";
 import { escapeTextFragment, RenderError } from "@/lib/latex/escape";
-import { firstDisallowedControlSequence } from "@/lib/latex/allowlist";
+import { firstDisallowedControlSequence, firstUnsafeTexConstruct } from "@/lib/latex/allowlist";
 import { ALLOWED_CONTROL_SYMBOLS, PDF_BODY_COMMANDS } from "@/lib/latex/templates";
 import { renderMathHtml } from "@/lib/ui/math-html";
 
@@ -14,11 +14,12 @@ export const MAX_SPAN_TEX = 500;
  */
 export const MAX_TOTAL_TEX = MATHTEXT_LIMITS.maxSpans * MAX_SPAN_TEX + 2000 * 15;
 
-// Same stance as `assertTexIsSafe` (src/lib/latex/render.ts): the control-sequence scanner sees only backslash
-// sequences, so comments, ^^ notation and parameter characters are rejected separately. Control characters are added.
+// Same stance as `assertTexIsSafe` (src/lib/latex/render.ts), through the shared `firstUnsafeTexConstruct`: the
+// control-sequence scanner sees only backslash sequences, so comments, ^^ notation and parameter characters are
+// rejected separately. Control characters are an addition of this check.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
-function hasUnsafeConstruct(tex: string): boolean {
-  return CONTROL_CHARS.test(tex) || /(?<!\\)%/.test(tex) || /\^\^/.test(tex) || /(?<!\\)#/.test(tex);
+export function hasUnsafeConstruct(tex: string): boolean {
+  return CONTROL_CHARS.test(tex) || firstUnsafeTexConstruct(tex) !== null;
 }
 
 /**

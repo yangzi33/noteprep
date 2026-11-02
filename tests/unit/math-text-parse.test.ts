@@ -157,6 +157,19 @@ describe("shape validator", () => {
   });
 });
 
+describe("root index", () => {
+  it("counts one depth level (7 nested parentheses inside accepted, 8 rejected)", () => {
+    expect(parseMathText(String.raw`\(\sqrt[(((((((x)))))))]{1}\)`).ok).toBe(true);
+    expect(parseMathText(String.raw`\(\sqrt[((((((((x))))))))]{1}\)`)).toMatchObject({ ok: false, code: "math_depth" });
+  });
+  it("accepts simple indexes and refuses brackets and roots inside, at the offending token", () => {
+    for (const ok of [String.raw`\sqrt[3]{27}`, String.raw`\sqrt[n]{x}`, String.raw`\sqrt[2x+1]{y}`]) expect(parseMathText(`\\(${ok}\\)`).ok, ok).toBe(true);
+    const bad = parseMathText(String.raw`\(\sqrt[2\sqrt{4}]{y}\)`);
+    expect(bad).toMatchObject({ ok: false, code: "math_unexpected_token" });
+    expect(parseMathText(String.raw`\(\sqrt[1[2]]{y}\)`)).toMatchObject({ ok: false, code: "math_unexpected_token" });
+  });
+});
+
 describe("depth 8 accepted, 9 rejected, per construct kind", () => {
   const chain = (n: number, wrap: (inner: string) => string, leaf = "x"): string => {
     let s = leaf;
@@ -167,7 +180,6 @@ describe("depth 8 accepted, 9 rejected, per construct kind", () => {
     ["frac numerator", (s) => String.raw`\frac{${s}}{1}`],
     ["frac denominator", (s) => String.raw`\frac{1}{${s}}`],
     ["subscript braces", (s) => `x_{${s}}`],
-    ["sqrt index", (s) => String.raw`\sqrt[${s}]{1}`],
     ["sqrt body", (s) => String.raw`\sqrt{${s}}`],
     ["parentheses", (s) => `(${s})`],
     ["brackets", (s) => `[${s}]`],

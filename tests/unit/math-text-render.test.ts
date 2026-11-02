@@ -6,11 +6,13 @@ import { acceptedFixtureDocs, generatedDocs, rng } from "../fixtures/math-text/g
 import { HOSTILE } from "../fixtures/math-text/hostile";
 import { Inlines } from "@/components/app/math";
 import { MATH_TEXT_ERROR_CODES, MATHTEXT_PARSER_VERSION, type MathTextDoc } from "@/lib/math-text/ast";
-import { checkMathTextRenders, MAX_TOTAL_TEX } from "@/lib/math-text/check";
+import { checkMathTextRenders, hasUnsafeConstruct, MAX_TOTAL_TEX } from "@/lib/math-text/check";
 import { parseMathText } from "@/lib/math-text/parse";
 import { mathTextToInlineParts } from "@/lib/math-text/to-html";
 import { mathToTex, mathTextToTex } from "@/lib/math-text/to-tex";
 import { firstDisallowedControlSequence } from "@/lib/latex/allowlist";
+import { assertTexIsSafe, renderDocument } from "@/lib/latex/render";
+import { testPackage, topicTitleOf } from "../fixtures/package";
 import { ALLOWED_CONTROL_SYMBOLS, PDF_BODY_COMMANDS } from "@/lib/latex/templates";
 
 const html = (doc: MathTextDoc) => renderToStaticMarkup(createElement(Inlines, { parts: mathTextToInlineParts(doc) }));
@@ -60,10 +62,10 @@ describe("static preview check and HTML parts", () => {
     const nullPart = { v: MATHTEXT_PARSER_VERSION, parts: [null] } as unknown as MathTextDoc;
     expect(checkMathTextRenders(nullPart)).not.toBeNull();
   });
-  it("a root inside a root index is a typed reject (its `]` ends the optional argument early in KaTeX and TeX)", () => {
-    const r = parseMathText("\\(\\sqrt[\\sqrt[3]{x}]{2}\\)");
-    if (!r.ok) throw new Error(r.code);
-    expect(checkMathTextRenders(r.doc)).toBe("render_katex_rejected");
+  it("second line of defence: a hand-built root inside a root index is still a typed reject (the parser refuses it first)", () => {
+    const inner = { t: "sqrt", index: { t: "num", v: "3" }, body: { t: "var", name: "x" } } as const;
+    const doc: MathTextDoc = { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "sqrt", index: inner, body: { t: "num", v: "2" } } }] };
+    expect(checkMathTextRenders(doc)).toBe("render_katex_rejected");
   });
   it("rejects TeX the scanner or the unsafe-construct checks refuse", () => {
     const withVar = (name: string): MathTextDoc => ({ v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "var", name } }] });
@@ -107,5 +109,38 @@ describe("string fuzz: parse then check", () => {
       expect(mathTextToTex(r.doc), ctx).not.toMatch(/\^\^/);
     }
     expect(accepted).toBeGreaterThan(500);
+  });
+});
+
+describe("the static check and assertTexIsSafe share their unsafe-construct verdicts", () => {
+  const pkg = testPackage();
+  const good = renderDocument(pkg, "notes").tex;
+  const asserts = (extra: string): boolean => {
+    try {
+      assertTexIsSafe(good.replace("\\end{document}", `${extra}\n\\end{document}`), "notes", topicTitleOf(pkg));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  // [label, tex, assertTexIsSafe accepts, hasUnsafeConstruct accepts]. The last two differ only where this check is
+  // deliberately stricter: control characters and a bare `$` (a math span must not contain one).
+  const rows: [string, string, boolean, boolean][] = [
+    ["bare %", "a % b", false, false],
+    ["escaped %", "a \\% b", true, true],
+    ["^^5c", "^^5c", false, false],
+    ["^^M", "^^M", false, false],
+    ["bare #", "a # b", false, false],
+    ["escaped #", "a \\# b", true, true],
+    ["bare $ (math delimiter)", "$x$", true, true],
+    ["escaped $", "a \\$ b", true, true],
+    ["control character", "a\u0007b", true, false],
+    ["NUL", "a\u0000b", true, false],
+    ["long clean string below the cap", "a".repeat(100_000), true, true],
+    ["long string at the cap boundary with a late %", "a".repeat(100_000) + "%", false, false],
+  ];
+  it.each(rows)("%s", (_label, tex, assertOk, checkOk) => {
+    expect(asserts(tex), "assertTexIsSafe").toBe(assertOk);
+    expect(!hasUnsafeConstruct(tex), "hasUnsafeConstruct").toBe(checkOk);
   });
 });

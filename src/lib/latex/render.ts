@@ -5,7 +5,7 @@ import { effectiveSettings } from "@/lib/package/effective";
 import { documentView, type DocumentView } from "@/lib/package/views";
 import type { DocumentKind } from "@/lib/package/schema";
 import { equationTex, operationText, solutionText } from "./math";
-import { firstDisallowedControlSequence } from "./allowlist";
+import { firstDisallowedControlSequence, firstUnsafeTexConstruct } from "./allowlist";
 import { escapeText, RenderError } from "./escape";
 import { ALLOWED_CONTROL_SYMBOLS, DOCUMENT_TITLES, PDF_BODY_COMMANDS, preamble, TEMPLATE_VERSION, type PageFormat } from "./templates";
 
@@ -121,9 +121,10 @@ export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitl
   if (!tex.startsWith(head)) throw new RenderError("preamble_changed");
   const body = tex.slice(head.length);
   if (firstDisallowedControlSequence(body, PDF_BODY_COMMANDS, ALLOWED_CONTROL_SYMBOLS) !== null) throw new RenderError("unexpected_control_sequence");
-  if (/(?<!\\)%/.test(body)) throw new RenderError("unexpected_comment");
-  if (/\^\^/.test(body)) throw new RenderError("unexpected_caret_notation");
-  if (/(?<!\\)#/.test(body)) throw new RenderError("unexpected_parameter");
+  const unsafe = firstUnsafeTexConstruct(body);
+  if (unsafe === "comment") throw new RenderError("unexpected_comment");
+  if (unsafe === "caret_notation") throw new RenderError("unexpected_caret_notation");
+  if (unsafe === "parameter") throw new RenderError("unexpected_parameter");
   if (/\\begin\{document\}/.test(body.slice(body.indexOf("\\begin{document}") + 1))) throw new RenderError("duplicate_document");
 }
 

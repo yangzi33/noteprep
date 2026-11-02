@@ -20,7 +20,7 @@ interface Ctx {
   d: number; // parser depth already used (open constructs and prefix signs)
   exp: number; // enclosing exponent scripts
   abs: boolean; // inside an absolute value: no further bars
-  idx?: boolean; // inside a root index: a nested root's `]` would end the optional argument early (KaTeX and TeX both refuse it)
+  idx?: boolean; // inside a root index: no `[` groups and no roots (the parser refuses both, docs/mathtext.md)
   budget: { left: number }; // shared node budget: keeps trees small enough for one math span
 }
 
@@ -64,7 +64,7 @@ function genPrimary(c: Ctx): MathNode {
   if (!compound(c)) return genAtom(c);
   const r = int(c, 6);
   const room = (n: number): boolean => c.d + n <= MAX_DEPTH;
-  if (r <= 1 && room(1)) return { t: "group", open: chance(c, 0.5) ? "(" : "[", body: genList(sub(c)) };
+  if (r <= 1 && room(1)) return { t: "group", open: c.idx || chance(c, 0.5) ? "(" : "[", body: genList(sub(c)) };
   if (r === 2 && room(1) && !c.abs) return { t: "abs", body: genExpr(sub(c, { abs: true })) };
   if (r === 3 && room(1)) return { t: "frac", num: genList(sub(c)), den: genList(sub(c)) };
   if (r === 4 && room(1) && !c.idx) {

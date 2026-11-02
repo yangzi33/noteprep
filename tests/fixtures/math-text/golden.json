@@ -664,5 +664,30 @@
     "ok": true,
     "canonical": "\\(\\tan 45^{\\circ}=1\\)",
     "tex": "$\\tan 45^{\\circ}=1$"
+  },
+  {
+    "in": "\\(\\sqrt[\\sqrt[3]{x}]{2}\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(\\sqrt[[1]]{2}\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(\\sqrt[\\sqrt{4}]{2}\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
+  },
+  {
+    "in": "\\(\\sqrt[(1]]{2}\\)",
+    "ok": false,
+    "code": "math_unbalanced"
+  },
+  {
+    "in": "\\(\\sqrt[2[x]]{y}\\)",
+    "ok": false,
+    "code": "math_unexpected_token"
   }
 ]
