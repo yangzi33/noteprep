@@ -3,6 +3,7 @@ import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
+import { ContactText } from "@/components/app/contact-link";
 import { LessonDraft } from "@/components/app/lesson-draft";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -12,10 +13,10 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice } from "@/lib/ui/lesson-view";
+import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice, lessonErrorNotice } from "@/lib/ui/lesson-view";
 
 const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
-const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional() });
+const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional(), error: z.string().max(40).optional() });
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const linkActive = "bg-foreground text-background";
@@ -57,6 +58,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   const fileUrl = (doc: DocumentKind, download = false) => `/lessons/${lesson.lessonId}/documents/${doc}?rev=${lesson.revisionId}${download ? "&download=1" : ""}`;
   const tabUrl = (doc: DocumentKind, view: "pdf" | "draft" = draftView ? "draft" : "pdf") => `/lessons/${lesson.lessonId}?rev=${lesson.revisionId}&doc=${doc}${view === "draft" ? "&view=draft" : ""}`;
   const notice = lesson.alignment ? alignmentNotice(lesson.alignment) : null;
+  const errorNotice = lessonErrorNotice(parsed.data.error);
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
@@ -74,6 +76,11 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
         <Badge tone={lesson.isCurrent ? "accent" : "neutral"}>{lesson.isCurrent ? `Version ${lesson.revisionNumber}` : "Earlier version"}</Badge>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">Created {utc.format(lesson.createdAt)} UTC</p>
+      {errorNotice && (
+        <Notice intent="error" className="mt-3" data-testid="lesson-error">
+          <ContactText text={errorNotice} />
+        </Notice>
+      )}
       <Notice intent="info" className="mt-3" data-testid="review-reminder">
         {REVIEW_REMINDER}
       </Notice>
