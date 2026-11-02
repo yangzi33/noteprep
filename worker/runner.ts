@@ -7,8 +7,8 @@ import { CancelRequested, LostLease, PipelineError, runPipeline, type PipelineDe
 
 const DETAIL_MAX = 200;
 
-/** Collapses whitespace and truncates; the text itself must already be redacted by whoever raised the error. */
-const trimDetail = (detail: string) => detail.replace(/\s+/g, " ").trim().slice(0, DETAIL_MAX);
+/** Keeps a small safe alphabet (no paths, URLs, '=', backslashes, quotes or braces), replaces the rest with "?", collapses whitespace and truncates. */
+const trimDetail = (detail: string) => detail.replace(/\s+/g, " ").trim().replace(/[^A-Za-z0-9 .,'()_:-]/g, "?").slice(0, DETAIL_MAX);
 
 const errorClassOf = (error: unknown) => (error instanceof Error && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(error.name) ? error.name : "unknown");
 

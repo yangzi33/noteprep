@@ -46,6 +46,17 @@ describe("job log lines", () => {
     expect(detail).not.toContain("\n");
   });
 
+  it("reduces the detail to a safe alphabet: no path, URL, '=', backslash or quoted lesson text survives", async () => {
+    const hostile = String.raw`! Undefined control sequence \foo at /work/job-1/notes.tex:12 see https://x.example/a?b=c token="secret" "Solve 3x+5=11" {a}[b]<c>;|$#%&~^*@`;
+    pipeline.run.mockRejectedValue(new PipelineError("compile_failed", false, undefined, hostile));
+    await processJob(job, deps());
+    const detail = logged().find((l) => l.event === "job_failed")!.detail as string;
+    expect(detail).toMatch(/^[A-Za-z0-9 .,'()_:?-]*$/);
+    for (const bad of ["\\", "/", "=", '"', "{", "[", "<", ";", "|", "$", "@", "+"]) expect(detail, bad).not.toContain(bad);
+    expect(detail).toContain("Undefined control sequence");
+    expect(detail.length).toBeLessThanOrEqual(200);
+  });
+
   it("an unexpected error logs its class only: never its message", async () => {
     const boom = new Error("connection to postgres://user:pw@host/db failed for tutor@example.com");
     boom.name = "PrismaClientInitializationError";
