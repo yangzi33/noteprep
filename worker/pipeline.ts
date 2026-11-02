@@ -26,6 +26,8 @@ export class PipelineError extends Error {
     readonly retryable: boolean,
     /** For storage_failed only: which storage call failed and what it reported (no path or key); logged, never shown to users. */
     readonly storage?: StorageErrorDetail,
+    /** A short reason that is already redacted (no paths, content, environment or provider messages); logged by the worker. */
+    readonly detail?: string,
   ) {
     super(code);
     this.name = "PipelineError";
@@ -228,10 +230,10 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     let rendered;
     try {
       rendered = renderPackage(builtPackage);
-    } catch {
+    } catch (error) {
       // Rendering is deterministic: whatever went wrong (a refused text, a RangeError from a view, a malformed block) will
-      // go wrong again, and a retry would repeat the paid model call first. Never retried.
-      throw new PipelineError("render_failed", false);
+      // go wrong again, and a retry would repeat the paid model call first. Never retried. Only the class name is kept.
+      throw new PipelineError("render_failed", false, undefined, `render threw ${error instanceof Error ? error.name : "a non-error"}`);
     }
     await compileStoreCommit({
       job,

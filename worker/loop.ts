@@ -29,7 +29,7 @@ export interface LoopOptions {
 export async function runOnce(deps: PipelineDeps, workerId: string): Promise<JobOutcome | null> {
   const job = await deps.jobs.claimNext(workerId, deps.leaseMs);
   if (!job) return null;
-  log("job_claimed", { jobId: job.id, attempt: job.attempt, worker: workerId });
+  log("job_claimed", { jobId: job.id, kind: job.kind, attempt: job.attempt, worker: workerId });
   return processJob(job, deps);
 }
 
