@@ -74,7 +74,7 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
   if (curricula.length === 0) {
     return frame(
       <Notice intent="info" data-testid="no-curricula">
-        No courses are available yet.
+        <ContactText text="No courses are available yet. This is a problem on our side. Please contact us." />
       </Notice>,
     );
   }
