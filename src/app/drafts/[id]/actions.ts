@@ -7,6 +7,7 @@ import { domainErrorCode, InvalidRequest } from "@/lib/domain/errors";
 import { DOCUMENT_KINDS } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { logActionFailure } from "@/lib/server/log-action";
 
 // Question-level adjustment of a draft version. Every action names the version and the revision the page showed
 // (`expectedRev`), so a second tab holding an older page gets a conflict instead of overwriting a newer state. The
@@ -62,6 +63,7 @@ async function run(formData: FormData, extra: (formData: FormData) => z.ZodType 
   try {
     await op(webDal().drafts, ctx, base.data, (x?.data ?? {}) as Record<string, string>);
   } catch (error) {
+    logActionFailure("draft_adjust_failed", error, { draftId, versionId: base.data.versionId });
     const code = domainErrorCode(error);
     if (!code) throw error;
     target = draftHref(draftId, doc, code, fragmentOf(formData), base.data.versionId);
@@ -120,6 +122,7 @@ async function runVersion(formData: FormData, op: (dal: Dal, ctx: Ctx, b: z.infe
     const done = await op(webDal().drafts, ctx, base.data);
     target = draftHref(draftId, doc, undefined, "#editing-version", done.versionId);
   } catch (error) {
+    logActionFailure("draft_version_failed", error, { draftId });
     const code = domainErrorCode(error);
     if (!code) throw error;
     target = draftHref(draftId, doc, code, "#draft-error", v); // the error notice is the redirect anchor, so it is on screen

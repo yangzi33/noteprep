@@ -9,6 +9,7 @@ import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
+import { logActionFailure } from "@/lib/server/log-action";
 import { confirmErrorTarget, confirmSuccessHref, exportAvailable, exportConfirmHref } from "@/lib/ui/export-confirm";
 
 const Input = z.object({
@@ -55,6 +56,7 @@ export async function confirmExportAction(formData: FormData) {
     const result = await webDal().exports.confirmExport(ctx, input, key);
     target = confirmSuccessHref(result);
   } catch (error) {
+    logActionFailure("export_confirm_failed", error, { draftId: input.draftId, versionId: input.versionId });
     const to = confirmErrorTarget(domainErrorCode(error), input.draftId, input.versionId);
     if (to.kind === "rethrow") throw error; // InvariantViolation and anything that is not a domain error: a 500
     if (to.kind === "notFound") notFound();

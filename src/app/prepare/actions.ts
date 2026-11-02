@@ -7,6 +7,7 @@ import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { serverEnv } from "@/lib/server/env";
+import { logActionFailure } from "@/lib/server/log-action";
 import { prepareHref, readPrepareParams } from "@/lib/ui/prepare-url";
 
 const field = (formData: FormData, name: string) => {
@@ -52,6 +53,7 @@ export async function prepareLesson(formData: FormData) {
       target = `/jobs/${job.id}`;
     }
   } catch (error) {
+    logActionFailure("prepare_failed", error);
     const code = domainErrorCode(error);
     if (code) redirect(prepareHref({ ...back, error: code }));
     throw error;
