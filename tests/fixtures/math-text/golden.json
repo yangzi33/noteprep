@@ -586,5 +586,11 @@
     "in": "\\(((((((((((x))))))))))\\)",
     "ok": false,
     "code": "math_depth"
+  },
+  {
+    "in": "Łódź",
+    "ok": true,
+    "canonical": "Łódź",
+    "tex": "Łódź"
   }
 ]
