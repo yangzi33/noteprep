@@ -25,7 +25,7 @@
 | `pnpm build` | 生产构建 | — |
 | `pnpm curriculum:validate` | 样例数据集校验 | — |
 
-> English note (S6): `pnpm test:e2e` starts three servers from one build: 3100 `FLOW_MODE=draft`, `EXPORT_ENABLED=1` (project `chromium`, default), 3101 `legacy`/`0` (project `chromium-legacy`, `legacy-*.spec.ts`), 3102 `draft`/`0` (project `chromium-paused`, `*-paused.spec.ts`). Updated 2026-11-02 against `playwright.config.ts`: a fourth server, 3103 (`draft`, `EXPORT_ENABLED=1`, `DAILY_REFRESH_ENABLED=1`, project `chromium-daily`, `*-daily.spec.ts`), also exists. `chromium` (3100) runs every spec except the legacy, paused and daily ones. The defaults are now `FLOW_MODE=draft` and `EXPORT_ENABLED=1` (`src/lib/server/env.ts`). The document is not translated.
+> English note (S6): `pnpm test:e2e` starts four servers from one build (3100, 3101, 3102 and 3103; the first three are listed here, the fourth in the update below): 3100 `FLOW_MODE=draft`, `EXPORT_ENABLED=1` (project `chromium`, default), 3101 `legacy`/`0` (project `chromium-legacy`, `legacy-*.spec.ts`), 3102 `draft`/`0` (project `chromium-paused`, `*-paused.spec.ts`). Updated 2026-11-02 against `playwright.config.ts`: a fourth server, 3103 (`draft`, `EXPORT_ENABLED=1`, `DAILY_REFRESH_ENABLED=1`, project `chromium-daily`, `*-daily.spec.ts`), also exists. `chromium` (3100) runs every spec except the legacy, paused and daily ones. The defaults are now `FLOW_MODE=draft` and `EXPORT_ENABLED=1` (`src/lib/server/env.ts`). The document is not translated.
 
 注意:
 - 本地 E2E 与你正在运行的 worker 共用同一个数据库,会互相抢任务。要么停 worker,要么靠 PR 让 CI 在干净机器上跑(CI 的 6 个 job:static、latex-sandbox、integration、worker-image、supabase、e2e,见 `.github/workflows/ci.yml`)。

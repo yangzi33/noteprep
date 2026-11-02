@@ -13,7 +13,7 @@ Node 24.13.1 (`.nvmrc`; `engines` ^24.11.0), pnpm 10.33.0, Next.js 16.4.2 (App R
 ## 3. Repository layout
 
 - `src/app`: routes (section 5). `src/proxy.ts`: request proxy (middleware). `src/components`: UI.
-- `src/lib`: `domain` (pure rules: allowance, manifests), `server` (env, limits, `dal/` data access, auth, curriculum loader), `curriculum`, `content` (legacy content design, decoupled), `package` (lesson package, HTML view), `math`, `math-text` (MathText parser, see `docs/mathtext.md`), `latex` (templates, escaping, allowlist), `llm` (fake and Anthropic adapters), `storage`, `supabase`, `marketing`.
+- `src/lib`: `auth`, `ui`, `domain` (pure rules: allowance, manifests), `server` (env, limits, `dal/` data access, auth, curriculum loader), `curriculum`, `content` (legacy content design, decoupled), `package` (lesson package, HTML view), `math`, `math-text` (MathText parser, see `docs/mathtext.md`), `latex` (templates, escaping, allowlist), `llm` (fake and Anthropic adapters), `storage`, `supabase`, `marketing`.
 - `worker`: the long-running worker (`main`, `loop`, `pipeline`, `export`, `reconcile`, `recover*`, `runner`, `compile-store`, `healthcheck`, `env`).
 - `prisma`: `schema.prisma` and `migrations/` (16 migration directories at this commit).
 - `data/curricula` (loadable datasets, many `suggested-*` plus one sample), `data/curricula-src` (generator input).
@@ -51,17 +51,17 @@ Route handlers: `/auth/callback`, `/healthz`, `/api/jobs/[id]`, `/api/exports/[i
 
 ## 6. Data model and jobs (`prisma/schema.prisma`)
 
-Models: Profile, Lesson, LessonRevision, GenerationJob, IdempotencyKey, UsageBucket, UsageReservation, Subscription, WebhookEvent, RateLimitWindow, Draft, DraftVersion, ExportSnapshot, Export, and the curriculum tables (EducationSystem, Curriculum, CurriculumVersion, CurriculumLevel, CurriculumCourse, CurriculumUnit, CurriculumTopic, CurriculumObjective, TopicObjective, TopicPrerequisite, Concept, TopicConcept). Subscription and WebhookEvent exist but no Stripe code uses them yet.
+Models: Profile, Lesson, LessonRevision, GenerationJob, IdempotencyKey, UsageBucket, UsageReservation, Subscription, WebhookEvent, RateLimitWindow, Draft, DraftVersion, ExportSnapshot, Export, and the curriculum tables (EducationSystem, Curriculum, CurriculumVersion, CurriculumLevel, CurriculumCourse, CurriculumUnit, CurriculumTopic, CurriculumObjective, TopicObjective, TopicPrerequisite, Concept, TopicConcept). Subscription and WebhookEvent exist but no Stripe code writes them; only `src/lib/server/dal/allowance-source.ts` reads Subscription (paid-bucket selection).
 
 - Job kinds: `generate`, `compile`, `export`. Job states: `queued`, `running`, `succeeded`, `failed`, `canceled`. Stages: `generating`, `validating`, `compiling`, `storing`.
 - Buckets: `trial` (lifetime 3), `paid`, `daily` (beta daily refresh, off unless `DAILY_REFRESH_ENABLED=1`). Reservations: `reserved` to `consumed` or `released`, one way.
 - Revision status `draft|finalized|rejected`; validation status `verified|failed|unverified`.
-- Export state is a string column (`pending`, `succeeded`, `failed`; full set UNVERIFIED); a partial unique index `export_live_key` enforces one live export per owner and identity.
+- Export state is a string column with CHECK `export_state_valid`: `pending`, `succeeded`, `failed`, `retired` (migration `20261024110000_export_retired`); the partial unique index `export_live_key` covers only `pending` and `succeeded`, so a retired or failed export frees its identity.
 - Roles: the web app and the worker use separate database roles (`docs/database-roles.md`); migrations use `MIGRATION_DATABASE_URL`.
 
 ## 7. Configuration (names only, no values here)
 
-- `.env.example`: all app and worker variables, placeholders only. Web env is parsed in `src/lib/server/env.ts` and `src/lib/server/limits.ts` (rate, draft, export and daily-refresh limits); worker env in `worker/env.ts`. `process.env` is banned by lint outside those modules.
+- `.env.example`: all app and worker variables, placeholders only. Web env is parsed in `src/lib/server/env.ts` and `src/lib/server/limits.ts` (rate, draft, export and daily-refresh limits); worker env in `worker/env.ts`. `process.env` is banned by lint outside `src/lib/server/env.ts`, `worker/env.ts` and `src/lib/supabase/public-env.ts` (`eslint.config.mjs`).
 - `deploy/host/worker.env.example` and `worker.image.example`: worker host configuration.
 - Notable switches: `FLOW_MODE` (default `draft`; `legacy` is the old generate flow), `EXPORT_ENABLED`, `DAILY_REFRESH_ENABLED`, `COMPILER` (`skeleton` or `docker`), `OBJECT_STORE` (`fs` or `supabase`), `LLM_PROVIDER` (`fake` or `anthropic`; no OpenAI adapter on main), `LESSON_PROSE` (`template` or `llm`), `RECONCILE_ENABLED`.
 - Real secrets live only in the hosting providers and GitHub environments; never commit them.
@@ -80,7 +80,7 @@ Unit (`tests/unit`, about 107 files), integration (`tests/integration`, 25 files
 ## 10. What works and what does not (as of ca766b9)
 
 Working (verified in code at this commit; runtime behaviour on staging UNVERIFIED):
-- Slice A flow: free drafts, HTML preview, deterministic adjustments, confirm-export (reserve and snapshot in one transaction), worker export job, compiled PDFs, history, re-download (`src/lib/server/dal/{drafts,draft-ops,export,reservation,settlement}.ts`, `worker/export.ts`).
+- Slice A flow: free drafts, HTML preview, deterministic adjustments, confirm-export (reserve and snapshot in one transaction), worker export job, compiled PDFs, history, re-download (`src/lib/server/dal/{drafts,export,reservation,settlement}.ts`, `src/lib/package/draft-ops.ts`, `worker/export.ts`).
 - Curriculum datasets: many `suggested-*` datasets plus a sample, a loader and validator, a cascading selection on `/prepare`. Only linear equations in one variable is a supported topic.
 - Beta daily refresh (opt-in), auth recovery, admin allowance refresh endpoint (off by default).
 - MathText parser and renderers are merged (PR #64) and tested but **not wired** into drafts, packages or the worker; only the shared macro allowlist is consumed by `src/lib/latex`.
