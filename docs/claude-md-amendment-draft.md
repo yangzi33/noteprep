@@ -1,6 +1,6 @@
-# CLAUDE.md amendment draft: free draft, charge at export (PROPOSAL, CLAUDE.md is NOT edited)
+# CLAUDE.md amendment draft: free draft, charge at export (historical proposal; superseded, see status)
 
-Status: proposal for the owner's approval. Covers only what the Preview -> Adjust -> Export slices (S1 to S6, decisions D-102 to D-110) change. It does **not** relax mathematical verification (section 7 stays as it is); the LLM-first "correctness as a label" idea from [generation-flow](generation-flow.md) is a later slice and needs its own amendment.
+Status (2026-11-02): **superseded.** CLAUDE.md was amended afterwards and now describes charge at export, the export snapshot and identity (D-105/D-109) and the beta daily bucket (D-112); this file is kept only as history. Original status: proposal for the owner's approval. Covers only what the Preview -> Adjust -> Export slices (S1 to S6, decisions D-102 to D-110) change. It does **not** relax mathematical verification (section 7 stays as it is); the LLM-first "correctness as a label" idea from [generation-flow](generation-flow.md) is a later slice and needs its own amendment.
 
 Why it is needed: the code (S4a) reserves an allowance when the tutor confirms an export, but CLAUDE.md sections 1, 4, 5 and 11 still describe reserving at generation start. A reviewer following CLAUDE.md would rightly flag the new flow.
 

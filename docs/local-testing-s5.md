@@ -8,20 +8,20 @@ Status: written from the README, `.env.example`, `package.json` and the E2E setu
 - Node 24.13.1 and pnpm 10.33.0 (`.nvmrc`, `packageManager`).
 - Docker running. WSL2 is fine.
 - Supabase CLI (`pnpm supabase:start` uses it).
-- The branch: `git checkout feat/export-s5 && pnpm install --frozen-lockfile`.
+- Up-to-date `main` (the S5 export flow is merged): `git checkout main && git pull && pnpm install --frozen-lockfile`.
 
 ## 1. One-time setup
 ```bash
 cp .env.example .env
 pnpm supabase:start          # first run downloads images; Storage must be enabled (it is, in supabase/config.toml)
 pnpm supabase:status         # copy the publishable key and the secret key
-pnpm db:migrate:deploy       # applies all migrations, including the two S5 ones
+pnpm db:migrate:deploy       # applies all migrations, including the export ones
 pnpm db:dev-roles            # creates web_login and worker_login (dev-only passwords)
 pnpm latex:image             # builds the sandbox image noteprep-latex:dev
 CURRICULUM_TARGET_ENV=development pnpm curriculum:load data/curricula/sample-math/sample-1 --allow-sample
 ```
 `CURRICULUM_TARGET_ENV` is deliberately not in `.env.example`: the loader refuses sample data unless you name a non-production target explicitly, so give it inline on this one command and do not put it in `.env`.
-Check: `SELECT migration_name FROM _prisma_migrations WHERE migration_name LIKE '202610241%';` returns 2 rows (`psql "$MIGRATION_DATABASE_URL"`).
+Check: `SELECT count(*) FROM _prisma_migrations;` equals the number of directories in `prisma/migrations/` (16 at the time of writing, 2026-11-02; `ls -d prisma/migrations/*/ | wc -l`), run with `psql "$MIGRATION_DATABASE_URL"`. The export migrations are `20261024100000_job_kind_export` and `20261024100100_export_tables`.
 
 ## 2. Edit `.env`
 Set these (the file already has the rest):
