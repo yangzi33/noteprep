@@ -1,8 +1,11 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { AnthropicProvider, classifyHttpStatus, costMicros } from "@/lib/llm/anthropic";
+import { OpenAiProvider } from "@/lib/llm/openai";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FakeLlmProvider } from "@/lib/llm/fake";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest } from "@/lib/llm/types";
+import { FAILURE_REASONS } from "@/lib/ui/messages";
 import { workerEnv } from "../../worker/env";
 
 const SECRET = "sk-test-secret-value-1234567890";
@@ -212,11 +215,12 @@ describe("the same contract for every provider", () => {
   const makers: [string, () => LlmProvider][] = [
     ["fake", () => new FakeLlmProvider()],
     ["anthropic (mocked HTTP)", () => provider(mockFetch(() => json(message({ content: [{ type: "text", text: JSON.stringify({ objectives: ["x"] }) }] }))).fetchImpl)],
+    ["openai (mocked HTTP)", () => new OpenAiProvider({ apiKey: SECRET, model: "test-model-1", priceInputMicrosPerMTok: 3_000_000, priceOutputMicrosPerMTok: 15_000_000, fetch: mockFetch(() => json({ id: "r", status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ objectives: ["x"] }) }] }], usage: { input_tokens: 1_000, output_tokens: 200 } })).fetchImpl })],
   ];
   it.each(makers)("%s returns a well-formed result with usage", async (_name, make) => {
     const p = make();
     expect(p.id).toMatch(/^[a-z]+$/);
-    const result = await p.generateStructured(request({ task: "lesson_prose", responseSchema: undefined }));
+    const result = await p.generateStructured(request({ task: "lesson_prose", responseSchema: { type: "object", properties: { objectives: { type: "array", items: { type: "string" } } }, required: ["objectives"], additionalProperties: false } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.provider).toBe(p.id);
@@ -257,10 +261,61 @@ describe("provider configuration", () => {
     const config = workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" });
     expect(createLlmProvider(config).id).toBe("anthropic");
   });
+  it("refuses openai without a key, a model and both prices (nothing is guessed)", () => {
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "openai" })).toThrow(/LLM_PROVIDER=openai also needs: LLM_API_KEY, LLM_MODEL, LLM_PRICE_INPUT_MICROS_PER_MTOK, LLM_PRICE_OUTPUT_MICROS_PER_MTOK/);
+  });
+  it("builds the openai provider from a complete configuration", () => {
+    const config = workerEnv({ ...base, LLM_PROVIDER: "openai", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" });
+    expect(createLlmProvider(config).id).toBe("openai");
+  });
+  it("the factory's under-configuration error names no configured value", () => {
+    const settings = { LLM_PROVIDER: "openai" as const, LLM_API_KEY: SECRET, LLM_MODEL: "model-xyz" };
+    try {
+      createLlmProvider(settings);
+      expect.unreachable();
+    } catch (e) {
+      expect(String((e as Error).message)).toBe("the openai provider needs an API key, a model and both prices");
+    }
+  });
+  it("ships no model id or price defaults", () => {
+    for (const f of ["src/lib/llm/openai.ts", "src/lib/llm/factory.ts", "worker/env.ts", ".env.example"]) expect(readFileSync(f, "utf8")).not.toMatch(/gpt-|LLM_MODEL="[^"]|PRICE_[A-Z_]+="[1-9]/);
+  });
   it("rejects bad values and a non-HTTPS endpoint override", () => {
-    expect(() => workerEnv({ ...base, LLM_PROVIDER: "openai" })).toThrow();
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "gemini" })).toThrow();
     expect(() => workerEnv({ ...base, LESSON_PROSE: "maybe" })).toThrow();
     expect(() => workerEnv({ ...base, LLM_BASE_URL: "http://insecure.example.test" })).toThrow();
     expect(() => workerEnv({ ...base, LLM_MAX_OUTPUT_TOKENS: "10" })).toThrow();
+  });
+});
+
+describe("quota_exhausted", () => {
+  it("is a known, non-retryable error type", () => {
+    expect(isRetryableLlmError("quota_exhausted")).toBe(false);
+  });
+  it("has a tutor-facing reason that blames no one and names no provider", () => {
+    expect(FAILURE_REASONS.llm_quota_exhausted).toBe("The writing service is temporarily unavailable.");
+  });
+  it("every real error type has a neutral reason (the fake and both providers can produce all of them)", () => {
+    for (const t of ["timeout", "rate_limited", "overloaded", "invalid_output", "refused", "auth", "server_error", "bad_request", "quota_exhausted", "unknown"] as const) {
+      expect(FAILURE_REASONS[`llm_${t}`], t).toBeTruthy();
+      expect(FAILURE_REASONS[`llm_${t}`], t).not.toMatch(/key|credential|you |your |openai|anthropic|claude|gpt/i);
+    }
+  });
+  it("every error type that has a reason keeps it free of provider names", () => {
+    const types: LlmErrorType[] = ["timeout", "rate_limited", "overloaded", "invalid_output", "refused", "auth", "server_error", "bad_request", "quota_exhausted", "unknown"];
+    for (const t of types) {
+      const reason = FAILURE_REASONS[`llm_${t}`];
+      if (reason !== undefined) expect(reason).not.toMatch(/openai|anthropic|claude|gpt/i);
+    }
+  });
+});
+
+describe("usageCeiling input estimate", () => {
+  it("counts UTF-8 bytes, so non-ASCII text is never estimated lower than its byte length / 3", async () => {
+    const { usageCeiling } = await import("@/lib/llm/anthropic");
+    const prices = { priceInputMicrosPerMTok: 1_000_000, priceOutputMicrosPerMTok: 1_000_000 };
+    expect(usageCeiling("abc", 10, prices).inputTokens).toBe(1);
+    expect(usageCeiling("日本語", 10, prices).inputTokens).toBe(3); // 3 characters, 9 bytes
+    expect(usageCeiling("😀😀", 10, prices).inputTokens).toBe(3); // 2 characters, 8 bytes
   });
 });

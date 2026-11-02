@@ -17,7 +17,7 @@ import { checkText, curriculumNames } from "../src/lib/package/prose-rules";
 // first accepted draft for a human spot check; --diagnose prints which sentence broke which rule when wording is
 // rejected (the content is fictional lesson wording, not user data); nothing is written to disk.
 const Env = z.object({
-  LLM_PROVIDER: z.enum(["fake", "anthropic"]).default("fake"),
+  LLM_PROVIDER: z.enum(["fake", "anthropic", "openai"]).default("fake"),
   LLM_API_KEY: z.string().optional(),
   LLM_MODEL: z.string().optional(),
   LLM_PRICE_INPUT_MICROS_PER_MTOK: z.coerce.number().int().min(0).optional(),

@@ -41,9 +41,12 @@ describe("static preview check and HTML parts", () => {
       { kind: "text", value: "Solve " }, { kind: "math", tex: "2x+3=11" }, { kind: "text", value: "." },
     ]);
   });
-  it("reports render_tex_too_long instead of failing open when TeX exceeds the HTML cap", () => {
+  // The span and total TeX caps in `checkMathTextRenders` are now second lines of defence behind the grammar
+  // admission (round-trip through the public parser): a document over them is outside the grammar, so it is
+  // refused with render_tex_disallowed before the caps are reached. Never null.
+  it("refuses, never fails open, when TeX exceeds the HTML cap (outside the grammar: render_tex_disallowed)", () => {
     const doc: MathTextDoc = { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "imp", items: Array.from({ length: 200 }, () => ({ t: "greek", name: "pi" }) as const) } }] };
-    expect(checkMathTextRenders(doc)).toBe("render_tex_too_long");
+    expect(checkMathTextRenders(doc)).toBe("render_tex_disallowed");
   });
   it("rejects a document whose total TeX exceeds the bound", () => {
     const text = "\"".repeat(2000);
@@ -52,7 +55,7 @@ describe("static preview check and HTML parts", () => {
     // each span is 300+ chars (under the span cap); with the text the whole exceeds nothing, so push it over with more text
     const big: MathTextDoc = { v: MATHTEXT_PARSER_VERSION, parts: [...parts, { t: "text", s: "\"".repeat(2000) }, { t: "text", s: "\"".repeat(2000) }] };
     expect(mathTextToTex(big).length).toBeGreaterThan(MAX_TOTAL_TEX);
-    expect(checkMathTextRenders(big)).toBe("render_tex_too_long");
+    expect(checkMathTextRenders(big)).toBe("render_tex_disallowed");
   });
   it("is total: a malformed AST maps to a typed code and never throws", () => {
     const bad = { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "nope" } }] } as unknown as MathTextDoc;
@@ -62,10 +65,10 @@ describe("static preview check and HTML parts", () => {
     const nullPart = { v: MATHTEXT_PARSER_VERSION, parts: [null] } as unknown as MathTextDoc;
     expect(checkMathTextRenders(nullPart)).not.toBeNull();
   });
-  it("second line of defence: a hand-built root inside a root index is still a typed reject (the parser refuses it first)", () => {
+  it("a hand-built root inside a root index is a typed reject (the round-trip through the parser refuses it)", () => {
     const inner = { t: "sqrt", index: { t: "num", v: "3" }, body: { t: "var", name: "x" } } as const;
     const doc: MathTextDoc = { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "sqrt", index: inner, body: { t: "num", v: "2" } } }] };
-    expect(checkMathTextRenders(doc)).toBe("render_katex_rejected");
+    expect(checkMathTextRenders(doc)).toBe("render_tex_disallowed");
   });
   it("rejects TeX the scanner or the unsafe-construct checks refuse", () => {
     const withVar = (name: string): MathTextDoc => ({ v: MATHTEXT_PARSER_VERSION, parts: [{ t: "math", m: { t: "var", name } }] });
