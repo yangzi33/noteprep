@@ -42,6 +42,11 @@ const TABLES = [
   "draft_version",
   "export_snapshot",
   "export",
+  "llm_call",
+  "llm_spend_month",
+  "llm_spend_user",
+  "llm_spend_user_day",
+  "ai_action",
   // curriculum reference data (public, read-only for the runtime roles)
   "education_system",
   "curriculum",

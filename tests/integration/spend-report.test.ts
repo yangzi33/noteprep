@@ -17,9 +17,12 @@ const spend = createLlmSpendDal(workerDb, LIMITS);
 const actions = createAiActionDal(workerDb, LIMITS);
 const report = createSpendReportDal(workerDb);
 
-const window = () => ({ since: new Date(Date.now() - 3_600_000), until: new Date(Date.now() + 3_600_000) });
+// Files run serially against one database: only what this file creates falls inside the window.
+let startedAt = new Date();
+const window = () => ({ since: startedAt, until: new Date(Date.now() + 3_600_000) });
 
 beforeAll(async () => {
+  startedAt = new Date(Date.now() - 50);
   await parkJobs(admin);
 });
 beforeEach(async () => {

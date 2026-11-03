@@ -1,5 +1,7 @@
 import "server-only";
 import type { Db } from "../db";
+import type { AuthedCtx } from "../auth/context";
+import type { TakeInput as AiActionTakeInput } from "./ai-action";
 import { DEFAULT_ALLOWANCE_POLICY, type AllowancePolicy } from "./allowance-source";
 import { createAccountDal } from "./account";
 import { createAiActionDal } from "./ai-action";
@@ -35,6 +37,12 @@ export type { CallEstimate, CallPurpose, RefusalReason, ReserveInput, ReserveRes
 export type { SpendReport, SpendReportDal, SpendReportWindow } from "./spend-report";
 export type { ClaimedJob, ExportInput, HeartbeatResult, JobsDal, SweepReport, UsageCharge } from "./jobs";
 
+function aiActionsFor(dal: ReturnType<typeof createAiActionDal>) {
+  return {
+    take: (ctx: AuthedCtx, input: Omit<AiActionTakeInput, "ownerId">) => dal.take({ ...input, ownerId: ctx.userId }),
+  };
+}
+
 /** Web runtime: account setup, enqueueing, owner-filtered reads. Use the `app_runtime` connection. */
 export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions; drafts?: Omit<DraftDeps, "resolveContext">; exports?: Omit<ExportDeps, "generationLimits">; allowancePolicy?: AllowancePolicy; aiLimits?: Limits }) {
   const allowancePolicy = deps?.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
@@ -48,8 +56,11 @@ export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: Curr
     lessonDelete: createLessonDeleteDal(db),
     drafts: createDraftsDal(db, { ...deps?.drafts, resolveContext: curriculum.resolveCurriculumContext }),
     exports: createExportDal(db, { clock: deps?.clock, allowancePolicy, ...deps?.exports, generationLimits: deps?.limits }),
-    /** User-initiated AI requests: the hourly limit, the kill switch and the global stop (spec 5.12). */
-    aiActions: createAiActionDal(db, deps?.aiLimits ?? DEFAULT_LIMITS),
+    /**
+     * User-initiated AI requests: the hourly limit, the kill switch and the global stop (spec 5.12). Only the caller's own slot can be
+     * taken; closing and finalizing belong to the worker, and the slice that enqueues AI jobs composes `takeIn` in its own transaction.
+     */
+    aiActions: aiActionsFor(createAiActionDal(db, deps?.aiLimits ?? DEFAULT_LIMITS)),
     curriculum,
   };
 }

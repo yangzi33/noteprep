@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from "vitest";
 import { AiActionLimited, AiStopped, AiUnavailable } from "@/lib/domain/errors";
+import { makeAuthedCtx } from "@/lib/server/auth/context";
+import { createWebDal } from "@/lib/server/dal";
 import { createAiActionDal } from "@/lib/server/dal/ai-action";
 import { createLlmSpendDal } from "@/lib/server/dal/llm-spend";
 import { createDb } from "@/lib/server/db";
@@ -191,6 +194,16 @@ describe("release and failure (C4-C8)", () => {
     expect(await work().completeForJob(job.jobId)).toBe(true);
     expect(await work().completeForJob(job.jobId)).toBe(false);
     expect(await actionRow(action.id)).toMatchObject({ state: "completed" });
+    expect(await slotsUsed(owner)).toBe(1);
+  });
+});
+
+describe("the web DAL", () => {
+  it("takes the slot for the verified caller only; the owner is never an input", async () => {
+    const owner = await seedOwner(admin);
+    const dal = createWebDal(appDb, { aiLimits: LIMITS });
+    const { action } = await dal.aiActions.take(makeAuthedCtx(owner), { requestKey: key(), kind: "initial", ...({ ownerId: randomUUID() } as object) });
+    expect(action.ownerId).toBe(owner);
     expect(await slotsUsed(owner)).toBe(1);
   });
 });
