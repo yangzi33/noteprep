@@ -49,7 +49,7 @@ async function labelledDraft(ctx: AuthedCtx, mutate: (pkg: LessonPackage) => Les
   const pkg = mutate(withAiItems(det, request, context, { examples: [it.example], exercises: [it.checked, it.unchecked, it.checkedToo] }));
   const { request: _r, context: _c, ...content } = pkg;
   const full = { ...content, request: rows[0].request, context: rows[0].context } as LessonPackage;
-  await h.admin.query(`UPDATE draft_version SET content = $2::jsonb, content_hash = $3 WHERE id = $1`, [base.versionId, JSON.stringify(content), packageContentHash(full)]);
+  await h.admin.query(`UPDATE draft_version SET content = $2::jsonb, content_hash = $3, rev = rev + 1 WHERE id = $1`, [base.versionId, JSON.stringify(content), packageContentHash(full)]);
   return { ref: await h.viewRef(ctx, base.draftId, base.versionId), pkg };
 }
 
