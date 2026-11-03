@@ -104,6 +104,8 @@ model Profile {
   idempotency     IdempotencyKey[]
   drafts          Draft[]
   exportSnapshots ExportSnapshot[]
+  llmCalls        LlmCall[]
+  aiActions       AiAction[]
 
   @@map("profile")
 }
@@ -207,6 +209,8 @@ model GenerationJob {
   revision    LessonRevision?   @relation(fields: [revisionId, ownerId], references: [id, ownerId], onDelete: Restrict)
   reservation UsageReservation?
   exports     Export[]
+  llmCalls    LlmCall[]
+  aiActions   AiAction[]
 
   // Partial indexes (queued by run_after, running by lease) are added in SQL.
   @@unique([id, ownerId])
@@ -679,4 +683,104 @@ model Export {
 
   @@index([ownerId, createdAt(sort: Desc)], map: "export_owner_created_idx")
   @@map("export")
+}
+
+/// Slice B-d. One provider call, reserved BEFORE the call and settled after (money in micro-units). Written only by the worker role.
+/// Partial index llm_call_stale_idx and the llm_call_guard trigger are SQL. No content bodies are stored.
+model LlmCall {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId              String    @map("owner_id") @db.Uuid
+  jobId                String    @map("job_id") @db.Uuid
+  jobAttempt           Int       @map("job_attempt")
+  fencingToken         BigInt    @map("fencing_token")
+  callSeq              Int       @map("call_seq")
+  /// items | prose | crosscheck (CHECK)
+  purpose              String
+  isRetry              Boolean   @default(false) @map("is_retry")
+  provider             String
+  model                String
+  configId             String?   @map("config_id")
+  promptVersion        String?   @map("prompt_version")
+  /// reserved | settled | released (CHECK, one-way trigger)
+  state                String    @default("reserved")
+  estimateMicros       BigInt    @map("estimate_micros")
+  estimateInputTokens  BigInt    @map("estimate_input_tokens")
+  estimateOutputTokens BigInt    @map("estimate_output_tokens")
+  inputTokens          BigInt?   @map("input_tokens")
+  outputTokens         BigInt?   @map("output_tokens")
+  costMicros           BigInt?   @map("cost_micros")
+  usageEstimated       Boolean   @default(false) @map("usage_estimated")
+  latencyMs            Int?      @map("latency_ms")
+  errorType            String?   @map("error_type")
+  /// settled: reported | estimated | recovered; released: why it provably was not sent
+  reason               String?
+  callMonth            DateTime  @map("call_month") @db.Date
+  callDay              DateTime  @map("call_day") @db.Date
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  settledAt            DateTime? @map("settled_at") @db.Timestamptz(6)
+
+  owner Profile       @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  job   GenerationJob @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict)
+
+  @@unique([jobId, jobAttempt, callSeq], map: "llm_call_attempt_seq_key")
+  @@index([ownerId, createdAt], map: "llm_call_owner_created_idx")
+  @@index([callMonth], map: "llm_call_month_idx")
+  @@map("llm_call")
+}
+
+/// Global monthly spend counter (UTC month). Foreign keys of the per-user counters are SQL.
+model LlmSpendMonth {
+  month          DateTime  @id @db.Date
+  reservedMicros BigInt    @default(0) @map("reserved_micros")
+  settledMicros  BigInt    @default(0) @map("settled_micros")
+  alerted70At    DateTime? @map("alerted_70_at") @db.Timestamptz(6)
+  alertEmittedAt DateTime? @map("alert_emitted_at") @db.Timestamptz(6)
+  stoppedAt      DateTime? @map("stopped_at") @db.Timestamptz(6)
+
+  @@map("llm_spend_month")
+}
+
+model LlmSpendUser {
+  ownerId                String @id @map("owner_id") @db.Uuid
+  lifetimeReservedMicros BigInt @default(0) @map("lifetime_reserved_micros")
+  lifetimeSettledMicros  BigInt @default(0) @map("lifetime_settled_micros")
+
+  @@map("llm_spend_user")
+}
+
+model LlmSpendUserDay {
+  ownerId        String   @map("owner_id") @db.Uuid
+  day            DateTime @db.Date
+  reservedMicros BigInt   @default(0) @map("reserved_micros")
+  settledMicros  BigInt   @default(0) @map("settled_micros")
+  calls          Int      @default(0)
+
+  @@id([ownerId, day])
+  @@map("llm_spend_user_day")
+}
+
+/// Slice B-d. One user-initiated AI request (the hourly slot). Partial index ai_action_open_idx and the guard triggers are SQL.
+/// draftId has no foreign key: drafts are purged, slots and statistics are not.
+model AiAction {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId        String    @map("owner_id") @db.Uuid
+  requestKey     String    @map("request_key")
+  /// initial | regenerate | replace | easier | harder (CHECK)
+  kind           String
+  draftId        String?   @map("draft_id") @db.Uuid
+  jobId          String?   @unique @map("job_id") @db.Uuid
+  slotHour       DateTime  @map("slot_hour") @db.Timestamptz(6)
+  /// accepted | completed | failed | released (CHECK, one-way trigger)
+  state          String    @default("accepted")
+  providerCalled Boolean   @default(false) @map("provider_called")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  finishedAt     DateTime? @map("finished_at") @db.Timestamptz(6)
+  failureCode    String?   @map("failure_code")
+
+  owner Profile        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  job   GenerationJob? @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict)
+
+  @@unique([ownerId, requestKey], map: "ai_action_owner_request_key")
+  @@index([ownerId, slotHour], map: "ai_action_owner_slot_idx")
+  @@map("ai_action")
 }
