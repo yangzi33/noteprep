@@ -20,6 +20,16 @@ describe("TeX for model items", () => {
     expect(count(texOf(pkg, "notes"), ITEM_MARK)).toBe(0);
   });
 
+  it("marks a worked example that is not checked by code in the Notes and the Solutions, with one legend line each", () => {
+    const { pkg, items } = aiTestPackage({ uncheckedExample: true });
+    expect(items.example.status).toBe("unchecked");
+    const notes = texOf(pkg, "notes");
+    expect(count(notes, ITEM_MARK)).toBe(1);
+    expect(count(notes, LEGEND)).toBe(1);
+    expect(texOf(pkg, "worksheet")).not.toContain(MARK);
+    expect(texOf(pkg, "worksheet")).not.toContain(LEGEND);
+  });
+
   it("puts a one-line legend in a document that has a marked item, never in the worksheet", () => {
     const { pkg } = aiTestPackage();
     expect(texOf(pkg, "solutions")).toContain(LEGEND);

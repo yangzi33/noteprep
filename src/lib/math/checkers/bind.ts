@@ -3,10 +3,13 @@
  * operand must be structurally equal to a math span the stem displays; a numeric operand must occur as a
  * number in the stem.
  *
- * Two deliberate limitations, both of which can leave a checker proving something other than the question's
- * actual task (the outcome is then a `pass` on an item whose stated answer is not the answer to the stem):
- * - numeric binding is presence only, not position or role: a claim about `25` and `80` binds to
- *   "What is 25% of 80?" and equally to "What is 80% of 25?";
+ * Numeric operands are signed: a negative operand must be displayed negated (a unary minus or a `-` before the
+ * digits). The operands of the sequence kinds (first term, step or ratio, count) must also occur in that order,
+ * each at its own position, because they are not interchangeable. Two deliberate limitations remain, both of which
+ * can leave a checker proving something other than the question's actual task (the outcome is then a `pass` on an
+ * item whose stated answer is not the answer to the stem):
+ * - for the commutative kinds (percent_of) and nCr/nPr numeric binding is presence only: a claim about `25` and
+ *   `80` binds to "What is 25% of 80?" and equally to "What is 80% of 25?";
  * - an expression operand must equal a whole math span (or one item of a comma-list span), so it cannot be a
  *   fragment of a displayed expression, but in a stem that displays several spans it may equal the wrong one.
  * Binding therefore rules out claims about content the stem never shows; it does not establish that the claim
@@ -48,43 +51,83 @@ function stemSpans(stem: MathTextDoc): MathNode[] {
   return spans;
 }
 
-function collectNumbers(node: MathNode, into: Set<string>, budget: { nodes: number }): void {
-  const stack: MathNode[] = [node];
-  while (stack.length > 0) {
-    if (++budget.nodes > MAX_STEM_NODES) return;
-    const current = stack.pop()!;
-    if (current.t === "num") {
-      const value = numLiteralToRational(current.v);
-      if (value !== null) into.add(value.toString());
-      continue;
-    }
-    for (const value of Object.values(current)) {
-      if (typeof value === "object" && value !== null) stack.push(...(Array.isArray(value) ? value : [value as MathNode]));
-    }
+/** Children in reading order. Key order is not used: stored documents round-trip through jsonb, which reorders keys. */
+function children(node: MathNode): MathNode[] {
+  switch (node.t) {
+    case "bin": return [node.l, node.r];
+    case "imp":
+    case "list": return node.items;
+    case "unary":
+    case "pct":
+    case "deg": return [node.arg];
+    case "rel": return [node.first, ...node.rest.map((r) => r.rhs)];
+    case "group":
+    case "abs": return [node.body];
+    case "frac": return [node.num, node.den];
+    case "sqrt": return node.index === undefined ? [node.body] : [node.index, node.body];
+    case "sup": return [node.base, node.exp];
+    case "sub": return [node.base, node.sub];
+    case "fn": return node.base === undefined ? [node.arg] : [node.base, node.arg];
+    default: return [];
   }
 }
 
-/** Every number the stem displays, as exact non-negative rationals: `num` nodes plus digit runs in text. */
-export function stemNumbers(stem: MathTextDoc): Set<string> {
-  const numbers = new Set<string>();
+function collectNumbers(root: MathNode, into: string[], budget: { nodes: number }): void {
+  const visit = (node: MathNode, negated: boolean): void => {
+    if (++budget.nodes > MAX_STEM_NODES) return;
+    if (node.t === "num") {
+      const value = numLiteralToRational(node.v);
+      if (value !== null) into.push((negated ? value.neg() : value).toString());
+      return;
+    }
+    if (node.t === "unary" && node.op === "-" && node.arg.t === "num") {
+      visit(node.arg, true);
+      return;
+    }
+    for (const child of children(node)) visit(child, false);
+  };
+  visit(root, false);
+}
+
+/** Every number the stem displays, in reading order, as exact signed rationals: `num` nodes (a unary minus negates) plus digit runs in text. */
+export function stemNumbers(stem: MathTextDoc): string[] {
+  const numbers: string[] = [];
   const budget = { nodes: 0 };
   for (const part of stem.parts) {
     if (part.t === "math") {
       collectNumbers(part.m, numbers, budget);
       continue;
     }
-    for (const match of part.s.matchAll(/\d+(?:\.\d+)?/g)) {
-      const value = numLiteralToRational(match[0]);
-      if (value !== null) numbers.add(value.toString());
+    for (const match of part.s.matchAll(/(-?)(\d+(?:\.\d+)?)/g)) {
+      const value = numLiteralToRational(match[2]!);
+      if (value !== null) numbers.push((match[1] === "-" ? value.neg() : value).toString());
     }
   }
   return numbers;
 }
 
-function hasNumber(numbers: Set<string>, operand: string | number): boolean {
+function operandKey(operand: string | number): string | null {
   const value = typeof operand === "number" ? Rational.of(BigInt(operand)) : numStrToRational(operand);
-  if (value === null) return false;
-  return numbers.has((value.num < 0n ? value.neg() : value).toString());
+  return value === null ? null : value.toString();
+}
+
+/** The operand occurs in the stem with its sign. */
+function hasNumber(numbers: readonly string[], operand: string | number): boolean {
+  const key = operandKey(operand);
+  return key !== null && numbers.includes(key);
+}
+
+/** The operands occur in the stem in this order, each at its own position, with their signs. */
+function hasNumbersInOrder(numbers: readonly string[], operands: readonly (string | number)[]): boolean {
+  let from = 0;
+  for (const operand of operands) {
+    const key = operandKey(operand);
+    if (key === null) return false;
+    const at = numbers.indexOf(key, from);
+    if (at < 0) return false;
+    from = at + 1;
+  }
+  return true;
 }
 
 /** Does the claim only speak about expressions and numbers the stem displays? */
@@ -119,6 +162,6 @@ export function bindsToStem(stem: MathTextDoc, claim: Claim): boolean {
     case "arithmetic_sum":
     case "geometric_term":
     case "geometric_sum":
-      return hasNumber(numbers, claim.first) && hasNumber(numbers, claim.step) && hasNumber(numbers, claim.n);
+      return hasNumbersInOrder(numbers, [claim.first, claim.step, claim.n]);
   }
 }

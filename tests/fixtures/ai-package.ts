@@ -52,9 +52,9 @@ export function admitted(raw: unknown, options: Partial<AdmitOptions> = {}): AiI
 }
 
 /** A `lesson-package/2` pack: one example, and two code-checked plus one unchecked exercise. */
-export function aiTestPackage(): { pkg: LessonPackage; items: { example: AiItem; checked: AiItem; checkedToo: AiItem; unchecked: AiItem } } {
+export function aiTestPackage(variant: { uncheckedExample?: boolean } = {}): { pkg: LessonPackage; items: { example: AiItem; checked: AiItem; checkedToo: AiItem; unchecked: AiItem } } {
   const items = {
-    example: admitted(RAW_ITEMS.example),
+    example: admitted(variant.uncheckedExample ? { ...RAW_ITEMS.example, check: undefined } : RAW_ITEMS.example),
     checked: admitted(RAW_ITEMS.checked),
     checkedToo: admitted(RAW_ITEMS.checkedToo),
     unchecked: admitted(RAW_ITEMS.unchecked),

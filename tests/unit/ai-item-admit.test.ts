@@ -23,6 +23,34 @@ const reason = (raw: unknown, o: Partial<AdmitOptions> = {}) => {
   return r.ok ? "ok" : r.reason;
 };
 
+describe("admitAiItem: a claim must be bound to the displayed stem", () => {
+  const sequence = {
+    role: "exercise",
+    difficulty: "basic",
+    stem: "An arithmetic sequence starts at \\(3\\) and increases by \\(5\\) each time. Find the \\(10\\)th term.",
+    answer: { kind: "number", value: "\\(48\\)" },
+    steps: ["Add the step nine times to the first term: \\(3+9\\cdot 5\\)."],
+  };
+  const status = (raw: unknown) => {
+    const r = admitAiItem(raw, options);
+    return r.ok ? r.item.status : r.reason;
+  };
+
+  it("a correctly bound sequence claim is code_checked", () => {
+    expect(status({ ...sequence, check: { kind: "arithmetic_term", first: "3", step: "5", n: 10 } })).toBe("code_checked");
+  });
+
+  it("a claim with permuted first term and step is not code_checked, even when the answer matches the claim", () => {
+    const raw = { ...sequence, answer: { kind: "number", value: "\\(32\\)" }, check: { kind: "arithmetic_term", first: "5", step: "3", n: 10 } };
+    expect(status(raw)).toBe("unchecked");
+  });
+
+  it("a claim whose step is sign-flipped relative to the stem is not code_checked", () => {
+    const raw = { ...sequence, answer: { kind: "number", value: "\\(-42\\)" }, check: { kind: "arithmetic_term", first: "3", step: "-5", n: 10 } };
+    expect(status(raw)).toBe("unchecked");
+  });
+});
+
 describe("admitAiItem: accepted items", () => {
   it("admits a bound, correct claim as code_checked with a stable hash and genConfig", () => {
     const r = admitAiItem(good, options);

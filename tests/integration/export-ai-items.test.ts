@@ -74,6 +74,10 @@ describe("a labelled draft", () => {
 
     await h.complete(r.jobId);
     expect(await h.bucket(ctx.userId)).toMatchObject({ used: 1, reserved: 0 });
+    const revision = (
+      await h.admin.query(`SELECT validation_status, acknowledgement->>'kind' AS ack FROM lesson_revision WHERE owner_id = $1`, [ctx.userId])
+    ).rows;
+    expect(revision).toEqual([{ validation_status: "unverified", ack: "labelled_items" }]);
     expect(await h.count(`SELECT count(*) AS n FROM usage_reservation WHERE owner_id = $1 AND state = 'consumed'`, [ctx.userId])).toBe(1);
   });
 

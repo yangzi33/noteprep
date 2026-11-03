@@ -243,9 +243,33 @@ describe("bindsToStem", () => {
     expect(bindsToStem(stem, claim({ kind: "percent_of", percent: "25", whole: "8" }))).toBe(false);
   });
 
-  it("ignores the sign of a numeric operand and reads decimals", () => {
-    const stem = doc("A sequence starts at \\(0.5\\) and decreases by \\(2\\) each step; find term \\(4\\).");
-    expect(bindsToStem(stem, claim({ kind: "arithmetic_term", first: "0.5", step: "-2", n: 4 }))).toBe(true);
+  it("reads decimals and requires a negative operand to be displayed negated", () => {
+    const stem = doc("A sequence starts at \\(0.5\\) and goes up by \\(2\\) each step; find term \\(4\\).");
+    expect(bindsToStem(stem, claim({ kind: "arithmetic_term", first: "0.5", step: "2", n: 4 }))).toBe(true);
+    expect(bindsToStem(stem, claim({ kind: "arithmetic_term", first: "0.5", step: "-2", n: 4 }))).toBe(false);
+    const negative = doc("A sequence starts at \\(0.5\\) and changes by \\(-2\\) each step; find term \\(4\\).");
+    expect(bindsToStem(negative, claim({ kind: "arithmetic_term", first: "0.5", step: "-2", n: 4 }))).toBe(true);
+    expect(bindsToStem(negative, claim({ kind: "arithmetic_term", first: "0.5", step: "2", n: 4 }))).toBe(false);
+  });
+
+  it("requires the operands of a sequence claim in stem order, not permuted", () => {
+    const stem = doc("An arithmetic sequence starts at \\(3\\) and increases by \\(5\\) each time. Find the \\(10\\)th term.");
+    for (const kind of ["arithmetic_term", "arithmetic_sum", "geometric_term", "geometric_sum"] as const) {
+      expect(bindsToStem(stem, claim({ kind, first: "3", step: "5", n: 10 }))).toBe(true);
+      expect(bindsToStem(stem, claim({ kind, first: "5", step: "3", n: 10 }))).toBe(false);
+      expect(bindsToStem(stem, claim({ kind, first: "3", step: "-5", n: 10 }))).toBe(false);
+    }
+  });
+
+  it("does not reuse one displayed number for two sequence operands", () => {
+    const stem = doc("A sequence starts at \\(3\\); find term \\(10\\).");
+    expect(bindsToStem(stem, claim({ kind: "arithmetic_term", first: "3", step: "3", n: 10 }))).toBe(false);
+  });
+
+  it("reads the evaluation point of a poly_value claim with its sign", () => {
+    const stem = doc("Given \\(f(x) = x^2 + 1\\), find \\(f(-3)\\).");
+    expect(bindsToStem(stem, claim({ kind: "poly_value", expr: "f(x) = x^2 + 1", at: "-3" }))).toBe(true);
+    expect(bindsToStem(stem, claim({ kind: "poly_value", expr: "f(x) = x^2 + 1", at: "3" }))).toBe(false);
   });
 
   it("binds a poly_value claim by span and by the evaluation point", () => {

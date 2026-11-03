@@ -52,6 +52,17 @@ describe("lesson-package/2 with model items", () => {
     expect(r.ai).toBeNull();
   });
 
+  it("fails when the answer key is in a different order from the worksheet", () => {
+    const { pkg } = aiTestPackage();
+    const copy = clone(pkg);
+    const solutions = copy.sections.find((s) => s.kind === "solutions")!;
+    solutions.blocks = [...solutions.blocks].reverse();
+    const reordered = rehashPackage(copy, LessonRequestV2.parse(copy.request), copy.context as CurriculumContext);
+    const r = codes(reordered);
+    expect(r.overall).toBe("failed");
+    expect(r.codes).toContain("EXERCISES_SOLUTIONS_MISMATCH");
+  });
+
   it("refuses model blocks in a /1 package", () => {
     const { pkg } = aiTestPackage();
     const v1 = rehashPackage({ ...clone(pkg), schemaVersion: "lesson-package/1" }, LessonRequestV2.parse(pkg.request), pkg.context as CurriculumContext);

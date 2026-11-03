@@ -161,8 +161,8 @@ function checkStructure(pkg: LessonPackage, context: CurriculumContext, request:
   // each exercise has exactly one solution, in the same order
   const exercises = pkg.sections.find((s) => s.kind === "exercises");
   const solutions = pkg.sections.find((s) => s.kind === "solutions");
-  const asked = exercises?.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : [])) ?? [];
-  const answered = solutions?.blocks.flatMap((b) => (b.type === "solution" ? [b.questionId] : [])) ?? [];
+  const asked = exercises?.blocks.flatMap((b) => (b.type === "question" || b.type === "ai_question" ? [b.questionId] : [])) ?? [];
+  const answered = solutions?.blocks.flatMap((b) => (b.type === "solution" || b.type === "ai_solution" ? [b.questionId] : [])) ?? [];
   if (JSON.stringify(asked) !== JSON.stringify(answered)) issues.push({ code: "EXERCISES_SOLUTIONS_MISMATCH" });
 
   return { overall: issues.length === 0 ? "pass" : "fail", issues };

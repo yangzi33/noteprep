@@ -159,7 +159,8 @@ describe("numeric checker: poly_value", () => {
   });
 
   it("evaluates at a negative point and with fractional coefficients", () => {
-    expect(check(functionStem, { kind: "poly_value", expr: "f(x) = x^2 + 1", at: "-1" }, numberAnswer("2"))).toEqual(pass);
+    const negativePoint = "Given \\(f(x) = x^2 + 1\\), find \\(f(-1)\\).";
+    expect(check(negativePoint, { kind: "poly_value", expr: "f(x) = x^2 + 1", at: "-1" }, numberAnswer("2"))).toEqual(pass);
     const half = "Given \\(g(t) = \\frac{1}{2}t + 1\\), find \\(g(3)\\).";
     expect(check(half, { kind: "poly_value", expr: "g(t) = \\frac{1}{2}t + 1", at: "3" }, numberAnswer("\\frac{5}{2}"))).toEqual(pass);
   });

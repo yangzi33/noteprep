@@ -38,4 +38,6 @@ Every character of an item reaches TeX and HTML through `mathTextToTex` / `mathT
 
 ## Not in this slice
 
+The export worker has no item gate yet. Flags and takedowns are checked once, in `confirmExport`; a takedown recorded after confirmation and before the compile still produces a stored, charged export of the withdrawn item. B-f owns the flag and takedown store and must add the second check in `worker/export.ts` next to the `validatePackage` call. The intended behaviour is to fail the job with a typed, non-retryable error so that the reservation is released and nothing is consumed.
+
 Draft creation, adjustment and correction (`drafts.ts`, `draft-ops.ts`, `correct.ts`) still require a `verified` package, so a labelled draft cannot yet be created or adjusted through the UI. That is part of the model item source (B-e).

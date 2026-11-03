@@ -6,16 +6,18 @@ import { compiler, pdfText } from "./helpers";
 const flat = (s: string) => s.replace(/-\s+/g, "").replace(/\s+/g, " ");
 
 describe("a lesson package with model items, compiled in the real sandbox", () => {
-  it("compiles all three PDFs; the legend is in Notes/Solutions, the worksheet has no marker, legend or AI answer", async () => {
-    const { pkg } = aiTestPackage();
+  it("compiles all three PDFs; the legend is in Notes and Solutions, the worksheet has no marker, legend or AI answer", async () => {
+    const { pkg } = aiTestPackage({ uncheckedExample: true });
     const result = Object.fromEntries(
       (await compiler().compile({ documents: renderPackage(pkg).map((d) => ({ id: d.id, tex: d.tex })) })).map((r) => [r.id, r]),
     );
     expect(Object.keys(result).sort()).toEqual(["notes", "solutions", "worksheet"]);
     for (const r of Object.values(result)) expect(Buffer.from(r.pdf.subarray(0, 5)).toString()).toBe("%PDF-");
 
+    const notes = flat(await pdfText(result.notes!.pdf));
     const solutions = flat(await pdfText(result.solutions!.pdf));
     const worksheet = flat(await pdfText(result.worksheet!.pdf));
+    expect(notes).toContain("Marked items are AI-generated and were not checked by code");
     expect(solutions).toContain("Marked items are AI-generated and were not checked by code");
     expect(solutions).toContain("Addition is commutative");
     expect(worksheet).toContain("Explain why");
