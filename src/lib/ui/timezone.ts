@@ -62,7 +62,7 @@ function zoneLabel(date: Date, timeZone: string): string {
   return f.formatToParts(date).find((p) => p.type === "timeZoneName")?.value ?? timeZone;
 }
 
-/** "Mar 5, 2026, 3:30 PM EST": the instant in the given zone with a short zone label. An invalid zone falls back to UTC. */
+/** "Mar 5, 2026, 3:30 PM EST" (or "GMT+9" where Intl has no short name): the instant in the given zone with a short zone label. An invalid zone falls back to UTC. */
 export function formatDateTime(date: Date, timeZone: string): string {
   const tz = isValidTimeZone(timeZone) ? timeZone : FALLBACK_TIME_ZONE;
   return `${plain(dateTimeFormat(tz).format(date))} ${zoneLabel(date, tz)}`;
@@ -88,15 +88,19 @@ export function calendarDaysBetween(from: Date, to: Date, timeZone: string): num
   return asUtcDay(to) - asUtcDay(from);
 }
 
-/** "Oct 28, EDT": a short date with the zone label, for expiry phrases. */
+/** "Oct 28, EDT": a short date (no year; for near-term expiry phrases) with the zone label. */
 export function formatShortDate(date: Date, timeZone: string): string {
   const tz = isValidTimeZone(timeZone) ? timeZone : FALLBACK_TIME_ZONE;
   return `${plain(new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: tz }).format(date))}, ${zoneLabel(date, tz)}`;
 }
 
-/** The canonical picker name for what the user typed (case-insensitive, spaces read as underscores), or null. */
+/** The canonical picker name for what the user typed (case-insensitive, spaces read as underscores; a bare city name works when it is unique), or null. */
 export function matchTimeZone(input: string): string | null {
   const wanted = input.trim().replace(/\s+/g, "_").toLowerCase();
   if (wanted === "") return null;
-  return supportedTimeZones().find((z) => z.toLowerCase() === wanted) ?? null;
+  const zones = supportedTimeZones();
+  const exact = zones.find((z) => z.toLowerCase() === wanted);
+  if (exact) return exact;
+  const byCity = zones.filter((z) => z.toLowerCase().split("/").pop() === wanted);
+  return byCity.length === 1 ? byCity[0]! : null;
 }

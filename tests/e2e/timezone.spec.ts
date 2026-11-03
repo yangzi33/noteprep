@@ -12,7 +12,7 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await createDraft(page);
 
   // Default: the browser's zone (the first load may render UTC for a moment until the zone cookie arrives).
-  await expect(page.getByTestId("saved-status")).toContainText(/JST$/);
+  await expect(page.getByTestId("saved-status")).toContainText(/GMT\+9$/);
   await expect(page.getByTestId("saved-status")).not.toContainText("UTC");
   const draftUrl = page.url();
 
@@ -41,5 +41,5 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await page.getByRole("button", { name: "Auto (detect)" }).click();
   await expect(page.getByTestId("timezone-current")).toContainText("Asia/Tokyo (detected from your browser)");
   await page.goto(draftUrl);
-  await expect(page.getByTestId("saved-status")).toContainText(/JST$/);
+  await expect(page.getByTestId("saved-status")).toContainText(/GMT\+9$/);
 });

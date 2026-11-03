@@ -40,6 +40,10 @@ describe("formatDateTime", () => {
     expect(formatDateTime(instant, "America/Toronto")).toBe("Mar 5, 2026, 3:30 PM EST");
     expect(formatDateTime(instant, "UTC")).toBe("Mar 5, 2026, 8:30 PM UTC");
   });
+  it("labels zones without a short English name by their GMT offset", () => {
+    expect(formatDateTime(instant, "Asia/Tokyo")).toBe("Mar 6, 2026, 5:30 AM GMT+9");
+    expect(formatDateTime(instant, "Asia/Kolkata")).toBe("Mar 6, 2026, 2:00 AM GMT+5:30");
+  });
   it("can move the calendar day", () => {
     expect(formatDateTime(new Date("2026-03-05T23:30:00Z"), "Asia/Tokyo")).toMatch(/^Mar 6, 2026, 8:30 AM /);
   });
@@ -92,6 +96,7 @@ describe("zone list", () => {
   it("matchTimeZone finds the canonical name case-insensitively", () => {
     expect(matchTimeZone("  europe/paris ")).toBe("Europe/Paris");
     expect(matchTimeZone("america/new york")).toBe("America/New_York");
+    expect(matchTimeZone("Toronto")).toBe("America/Toronto");
     expect(matchTimeZone("")).toBeNull();
     expect(matchTimeZone("Nowhere/Land")).toBeNull();
   });
