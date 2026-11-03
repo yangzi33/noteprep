@@ -1,6 +1,6 @@
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { isSupportedConcept } from "./capabilities";
-import { isValidId, LIMITS, ORDINAL_MAX, type Dataset } from "./dataset-schema";
+import { CONFIDENCE, isValidId, LIMITS, ORDINAL_MAX, type Dataset } from "./dataset-schema";
 
 export interface DatasetIssue {
   code:
@@ -32,7 +32,13 @@ export interface DatasetIssue {
     | "REAL_SOURCE_URL"
     | "REAL_REVIEW_BLANK"
     | "SUGGESTED_NO_OBJECTIVES"
-    | "SUGGESTED_CODE_PREFIX";
+    | "SUGGESTED_CODE_PREFIX"
+    | "SOURCE_URL"
+    | "SOURCE_INCOMPLETE"
+    | "SOURCE_REQUIRED"
+    | "CONFIDENCE_INVALID"
+    | "OFFICIAL_COURSE_CODE_DUPLICATE"
+    | "SUGGESTED_OFFICIAL_CODE";
   where: string;
   detail?: string;
 }
@@ -127,6 +133,47 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   });
   mappings.topicObjectives.forEach((m, i) => text(m.note, LIMITS.note, `topicObjectives[${i}].note`, false));
   mappings.topicConcepts.forEach((m, i) => text(m.note, LIMITS.note, `topicConcepts[${i}].note`, false));
+
+  // ---- per-record citation (sourceUrl, sourceSection, confidence, retrievedAt) -------------------------------------
+  // Optional for existing datasets; a record that carries any citation field must carry the required ones, and a
+  // version that sets requireSources needs a complete citation on every course, unit and topic.
+  const cited: [string, { sourceUrl?: string; sourceSection?: string; confidence?: string; retrievedAt?: string; officialCode?: string }, boolean][] = [
+    ...structure.levels.map((x, i) => [`levels[${i}]`, x, false] as [string, typeof x, boolean]),
+    ...structure.courses.map((x, i) => [`courses[${i}]`, x, true] as [string, typeof x, boolean]),
+    ...structure.units.map((x, i) => [`units[${i}]`, x, true] as [string, typeof x, boolean]),
+    ...structure.topics.map((x, i) => [`topics[${i}]`, x, true] as [string, typeof x, boolean]),
+  ];
+  for (const [where, r, requiredWhenAsked] of cited) {
+    const present = r.sourceUrl !== undefined || r.sourceSection !== undefined || r.confidence !== undefined || r.retrievedAt !== undefined;
+    if (present) {
+      const missing = (["sourceUrl", "confidence", "retrievedAt"] as const).filter((k) => (r[k] ?? "").trim() === "");
+      if (missing.length > 0) add("SOURCE_INCOMPLETE", where, `missing ${missing.join(", ")}`);
+    } else if (meta.version.requireSources && requiredWhenAsked) {
+      add("SOURCE_REQUIRED", where);
+    }
+    text(r.sourceUrl, LIMITS.sourceUrl, `${where}.sourceUrl`, false);
+    text(r.sourceSection, LIMITS.sourceSection, `${where}.sourceSection`, false);
+    if (r.sourceUrl !== undefined && r.sourceUrl.trim() !== "") {
+      let https = false;
+      try {
+        https = new URL(r.sourceUrl).protocol === "https:";
+      } catch {
+        https = false;
+      }
+      if (!https) add("SOURCE_URL", `${where}.sourceUrl`, "an https URL is required");
+    }
+    if (r.confidence !== undefined && !(CONFIDENCE as readonly string[]).includes(r.confidence)) add("CONFIDENCE_INVALID", `${where}.confidence`, `expected ${CONFIDENCE.join(", ")}`);
+    if (r.retrievedAt !== undefined && !isIsoDate(r.retrievedAt)) add("DATE_INVALID", `${where}.retrievedAt`, "expected an ISO-8601 date or date-time");
+  }
+  const officialCourseCodes = new Map<string, string>();
+  structure.courses.forEach((c, i) => {
+    if (c.officialCode === undefined) return;
+    text(c.officialCode, LIMITS.code, `courses[${i}].officialCode`);
+    if (meta.version.kind === "suggested") add("SUGGESTED_OFFICIAL_CODE", `courses[${i}].officialCode`, "a suggested dataset must not carry official codes (D-75)");
+    const key = c.officialCode.trim().toLowerCase();
+    if (key !== "" && officialCourseCodes.has(key)) add("OFFICIAL_COURSE_CODE_DUPLICATE", `courses[${i}].officialCode`, `${c.officialCode} (also ${officialCourseCodes.get(key)})`);
+    else officialCourseCodes.set(key, `courses[${i}]`);
+  });
 
   // ---- references -----------------------------------------------------------------------------------------
   const levelIds = new Set(structure.levels.map((l) => l.id));
