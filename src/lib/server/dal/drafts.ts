@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
-import { AccountNotActive, CandidateLimit, CandidateRateLimited, CandidateStale, DraftBusy, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, IdempotencyConflict, InvariantViolation, NotFound, VersionLimit, VersionRateLimited } from "@/lib/domain/errors";
+import { AccountNotActive, AddNotEnough, AddRateLimited, CandidateLimit, CandidateRateLimited, CandidateStale, DraftBusy, DraftConflict, DraftExpired, InvalidRequest, DraftLimit, DraftRateLimited, DrawExhausted, IdempotencyConflict, InvariantViolation, NotFound, VersionLimit, VersionRateLimited } from "@/lib/domain/errors";
 import { requestHash } from "@/lib/domain/hash";
 import { IdempotencyKeySchema } from "@/lib/domain/idempotency";
 import { LessonRequestV2 } from "@/lib/domain/lesson-request";
@@ -9,13 +9,15 @@ import { PackageBuildError } from "@/lib/content/errors";
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import { Prisma } from "@/generated/prisma/client";
 import { packageContentHash } from "@/lib/package/adjust";
-import { buildPackageWithMeta } from "@/lib/package/build";
+import { buildPackageWithMeta, planOutline } from "@/lib/package/build";
 import {
   acceptReplacement,
+  addQuestions as addQuestionsOp,
   BUILDER_MIN_EXERCISES,
   changeSummary,
   drawReplacement,
   exerciseIds,
+  MAX_ADD_PER_ACTION,
   questionSlots,
   removeQuestion as removeQuestionOp,
   undoLabel,
@@ -28,6 +30,7 @@ import {
   type PendingCandidate,
   type StoredChanges,
 } from "@/lib/package/draft-ops";
+import { estimatePractice } from "@/lib/package/practice-time";
 import { PackageSchema, type DocumentKind, type LessonPackage } from "@/lib/package/schema";
 import { validatePackage } from "@/lib/package/validate";
 import type { AuthedCtx } from "../auth/context";
@@ -105,7 +108,7 @@ function nextExerciseSeq(pkg: LessonPackage): number {
 const asMeta = (value: unknown): MetaMap => (value && typeof value === "object" ? (value as MetaMap) : {});
 function asChanges(value: unknown): StoredChanges {
   const c = (value && typeof value === "object" ? value : {}) as Partial<StoredChanges>;
-  return { replacedIds: c.replacedIds ?? [], removedIds: c.removedIds ?? [], modifiedIds: c.modifiedIds ?? [] };
+  return { replacedIds: c.replacedIds ?? [], removedIds: c.removedIds ?? [], modifiedIds: c.modifiedIds ?? [], addedIds: c.addedIds ?? [] };
 }
 
 /** The state of a version row (with its draft's request and context) for the pure operations; the stored hash must match. */
@@ -122,7 +125,16 @@ export function summaryOf(questionMeta: unknown, changes: unknown): ChangeSummar
   const replacedIds = Object.entries(asMeta(questionMeta))
     .filter(([, m]) => m.origin === "replacement")
     .map(([id]) => id);
-  return { replacedIds, removedIds: [...new Set(asChanges(changes).removedIds)], modifiedIds: [...replacedIds] };
+  const addedIds = Object.entries(asMeta(questionMeta))
+    .filter(([, m]) => m.origin === "added")
+    .map(([id]) => id);
+  return { replacedIds, removedIds: [...new Set(asChanges(changes).removedIds)], modifiedIds: [...replacedIds], addedIds };
+}
+
+/** Exercises in a stored version content (the question blocks of its exercises section). */
+function exerciseCountOf(content: unknown): number {
+  const sections = (content as { sections?: { kind?: string; blocks?: { type?: string }[] }[] } | null)?.sections ?? [];
+  return sections.filter((x) => x.kind === "exercises").reduce((n, x) => n + (x.blocks ?? []).filter((b) => b.type === "question").length, 0);
 }
 
 const asCandidate = (value: unknown): PendingCandidate | null => (value && typeof value === "object" ? (value as PendingCandidate) : null);
@@ -137,8 +149,8 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
   }
 
   /** Builds and verifies one package from the stored request and context. Only a fully verified, in-limit package is returned. */
-  function buildVerified(request: LessonRequestV2, context: CurriculumContext, seed: string) {
-    const { pkg, levels } = buildPackageWithMeta({ request, context, seed });
+  function buildVerified(request: LessonRequestV2, context: CurriculumContext, seed: string, exerciseCount?: number) {
+    const { pkg, levels } = buildPackageWithMeta({ request, context, seed, ...(exerciseCount !== undefined ? { exerciseCount } : {}) });
     const report = validatePackage(pkg);
     if (report.overall !== "verified") throw new PackageBuildError("the drafted package did not validate as verified");
     const content = split(pkg);
@@ -257,7 +269,7 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
 
   // --- question-level adjustment (S2) -----------------------------------------------------------------
 
-  const opsConfig = (): OpsConfig => ({ minExercises: limits.minExercises, undoDepth: limits.undoDepth });
+  const opsConfig = (): OpsConfig => ({ minExercises: limits.minExercises, undoDepth: limits.undoDepth, maxExercises: limits.maxExercises });
 
   interface Locked {
     draft: { request: unknown; context: unknown };
@@ -366,7 +378,13 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
 
       // A new seed every time (never reused); the same request and context as the draft's other versions.
       const seed = newSeed();
-      const { pkg, levels, report, content } = buildVerified(draft.request as LessonRequestV2, draft.context as CurriculumContext, seed);
+      // A new version keeps the questions a tutor added: the larger of the planned count and the active version's count (removals do
+      // not carry over). The request is not touched, so the stored request still describes every version.
+      const request = draft.request as LessonRequestV2;
+      const planned = planOutline(request.durationMinutes).exerciseCount;
+      const active = draft.activeVersionId ? await tx.draftVersion.findFirst({ where: { id: draft.activeVersionId, draftId, ownerId }, select: { content: true } }) : null;
+      const carried = Math.min(Math.max(planned, active ? exerciseCountOf(active.content) : 0), limits.maxExercises);
+      const { pkg, levels, report, content } = buildVerified(request, draft.context as CurriculumContext, seed, carried > planned ? carried : undefined);
       const ordinal = draft.versionCount + 1; // version_count never decreases: a monotonic allocator
       const version = await tx.draftVersion.create({
         data: {
@@ -477,6 +495,9 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
           undoLabel: undoLabel(state),
           candidate: asCandidate(version.pendingCandidate),
           minExercises: Math.max(limits.minExercises, BUILDER_MIN_EXERCISES),
+          maxExercises: limits.maxExercises,
+          addMax: MAX_ADD_PER_ACTION,
+          practice: estimatePractice(exerciseIds(pkg).length, request.durationMinutes),
         },
       };
     },
@@ -552,6 +573,23 @@ export function createDraftsDal(db: Db, deps: DraftDeps = {}) {
     /** Removes one exercise and its solution (configured minimum applies). A pending candidate is dropped (it was drawn against other content). */
     removeQuestion: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, questionId: string) =>
       mutate(ctx, draftId, versionId, expectedRev, async (locked) => ({ state: removeQuestionOp(locked.state, questionId, opsConfig(), clock()), candidate: null })),
+
+    /**
+     * Appends `count` (1-5) verified questions, with their solutions, to the end of the worksheet. Free like every draft
+     * operation: no allowance, reservation or job. Counted against the add rate limit only when it succeeds (a refusal rolls the
+     * counter back with the rest). Refused with WORKSHEET_FULL past the cap and ADD_NOT_ENOUGH when too few distinct
+     * questions exist; in both cases nothing changes. A pending candidate is dropped (its base content changed).
+     */
+    addQuestions: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number, count: number) =>
+      mutate(ctx, draftId, versionId, expectedRev, async (locked, tx) => {
+        if ((await incrementRateLimit(tx, `add:u:${ctx.userId}`)) > limits.addQuestionsPerUserPerHour) throw new AddRateLimited();
+        try {
+          return { state: await addQuestionsOp(locked.state, { count, versionSeed: locked.version.seed }, opsConfig(), clock()), candidate: null };
+        } catch (error) {
+          if (error instanceof DrawExhausted) throw new AddNotEnough();
+          throw error;
+        }
+      }),
 
     /** Undoes the most recent question-level change. A pending candidate is dropped. */
     undo: (ctx: AuthedCtx, draftId: string, versionId: string, expectedRev: number) =>

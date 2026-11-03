@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_EXERCISES } from "@/lib/package/adjust";
+import { MAX_WORKSHEET_QUESTIONS } from "@/lib/package/schema";
 
 // Every threshold of the draft workflow lives here (D-108), parsed from the environment with defaults.
 // The defaults are PLACEHOLDERS the owner tunes once there is cost and abuse data; none is a product rule.
@@ -29,8 +29,11 @@ const SHAPE = {
   candidatesPerUserPerHour: int("CANDIDATES_PER_USER_PER_HOUR", 120, 1, 100_000),
   candidatesPerSlot: int("CANDIDATES_PER_SLOT", 5, 1, 100),
   undoDepth: int("UNDO_DEPTH", 10, 1, 100),
-  minExercises: int("MIN_EXERCISES", 3, 1, MAX_EXERCISES),
-  maxExercises: int("MAX_EXERCISES_PER_DRAFT", MAX_EXERCISES, 1, MAX_EXERCISES),
+  minExercises: int("MIN_EXERCISES", 3, 1, MAX_WORKSHEET_QUESTIONS),
+  // The per-worksheet cap (shared constant; the exercises section schema is sized for it, so it cannot be raised by configuration)
+  maxExercises: int("MAX_EXERCISES_PER_DRAFT", MAX_WORKSHEET_QUESTIONS, 1, MAX_WORKSHEET_QUESTIONS),
+  // Add questions (key add:u:): actions per user per hour (placeholder)
+  addQuestionsPerUserPerHour: int("ADD_QUESTIONS_PER_USER_PER_HOUR", 60, 1, 10_000),
   maxDraftBytes: int("MAX_DRAFT_BYTES", 1_000_000, 10_000, MAX_DRAFT_BYTES_CEILING),
   // Export (S4): exports per user per hour (key exp:u:, counted only when a NEW export is created), active export jobs per
   // user, the deadline of one export job, attempts per job, how long past its deadline a running export job may stay before

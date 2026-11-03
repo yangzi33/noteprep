@@ -11,7 +11,7 @@ import { effectiveSettings } from "./effective";
 import { rehashPackage } from "./inputs";
 import type { ExercisesSection, LessonPackage, Section, SectionKind, SolutionsSection } from "./schema";
 
-/** Most exercises a package may hold (the block cap is 60 and each exercise takes two blocks: 1 + 2n <= 60). */
+/** Most exercises the legacy `add_exercises` adjustment may reach (the draft flow's cap is MAX_WORKSHEET_QUESTIONS). */
 export const MAX_EXERCISES = 20;
 /** Most unique-solution worked examples a package may hold. */
 export const MAX_EXAMPLES = 4;

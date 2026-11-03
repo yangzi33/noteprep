@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { acceptCandidate, keepOriginal, removeQuestion, requestCandidate, tryAnother, undoChange } from "@/app/drafts/[id]/actions";
+import { acceptCandidate, addQuestions, keepOriginal, removeQuestion, requestCandidate, tryAnother, undoChange } from "@/app/drafts/[id]/actions";
 import { PanelFocus } from "@/components/app/panel-focus";
 import { MathView } from "@/components/app/math";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SelectField } from "@/components/ui/select-field";
 import { equationTex } from "@/lib/latex/math";
 import { changesText } from "@/lib/ui/draft-changes";
 import type { DocumentKind } from "@/lib/package/schema";
@@ -125,7 +126,7 @@ export function QuestionControls({ ctx, questionId, number }: { ctx: AdjustConte
 export function ChangesIndicator({ adjust }: { adjust: DraftViewDto["adjust"] }) {
   return (
     <p id="changes-indicator" tabIndex={-1} role="status" aria-live="polite" className="scroll-mt-4 text-sm text-muted-foreground" data-testid="changes-indicator">
-      {changesText(adjust.changes.replacedIds.length, adjust.changes.removedIds.length)}
+      {changesText(adjust.changes.replacedIds.length, adjust.changes.removedIds.length, adjust.changes.addedIds.length)}
     </p>
   );
 }
@@ -144,5 +145,48 @@ export function UndoControl({ ctx }: { ctx: AdjustContext }) {
         </span>
       )}
     </form>
+  );
+}
+
+/** "N of 30 questions · about 50 min of practice", with a warning (never a block) when the practice is longer than the lesson. */
+export function CompositionSummary({ adjust }: { adjust: DraftViewDto["adjust"] }) {
+  const p = adjust.practice;
+  return (
+    <div className="text-sm" data-testid="composition-summary">
+      <p data-testid="question-count">
+        <strong>
+          {p.questions} of {adjust.maxExercises}
+        </strong>{" "}
+        questions · <span data-testid="practice-minutes">about {p.minutes} min</span> of practice
+      </p>
+      {p.exceedsLesson ? (
+        <p className="text-muted-foreground" role="status" data-testid="practice-warning">
+          This is about {p.overBy} min more than the {p.lessonMinutes}-minute lesson. You can still export, or remove some questions.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Appends questions at the end of the worksheet; disabled with the reason at the cap. */
+export function AddQuestions({ ctx }: { ctx: AdjustContext }) {
+  const { adjust } = ctx;
+  const room = adjust.maxExercises - ctx.questionCount;
+  const options = Array.from({ length: Math.max(0, Math.min(adjust.addMax, room)) }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+  return (
+    <div id="add-questions" tabIndex={-1} className="scroll-mt-4 space-y-2 print:hidden" data-testid="add-questions">
+      <form action={addQuestions} className="flex flex-wrap items-end gap-3">
+        <Hidden ctx={ctx} extra={{ at: "add" }} />
+        {room > 0 ? <SelectField label="Questions to add" name="count" options={options} defaultValue="1" testId="add-count" /> : null}
+        <Button type="submit" size="sm" variant="outline" disabled={room <= 0} aria-describedby={room > 0 ? undefined : "add-reason"} data-testid="add-btn">
+          Add questions
+        </Button>
+      </form>
+      {room > 0 ? null : (
+        <p id="add-reason" className="text-sm text-muted-foreground" data-testid="add-reason">
+          This worksheet has the maximum of {adjust.maxExercises} questions. Remove one to add another.
+        </p>
+      )}
+    </div>
   );
 }

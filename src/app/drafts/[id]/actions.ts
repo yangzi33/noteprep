@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { domainErrorCode, InvalidRequest } from "@/lib/domain/errors";
+import { MAX_ADD_PER_ACTION } from "@/lib/package/draft-ops";
 import { DOCUMENT_KINDS } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
@@ -31,6 +32,7 @@ const field = (formData: FormData, name: string) => {
 const fragmentOf = (formData: FormData) => {
   const at = field(formData, "at");
   if (at === "changes") return "#changes-indicator";
+  if (at === "add") return "#add-questions";
   return at && /^[1-9]\d?$/.test(at) ? `#question-${at}` : "";
 };
 
@@ -50,14 +52,14 @@ type Dal = ReturnType<typeof webDal>["drafts"];
 type Ctx = Awaited<ReturnType<typeof requireAccount>>["ctx"];
 type Parsed = z.infer<typeof Base>;
 
-async function run(formData: FormData, extra: (formData: FormData) => z.ZodType | null, op: (dal: Dal, ctx: Ctx, base: Parsed, x: Record<string, string>) => Promise<unknown>) {
+async function run(formData: FormData, extra: (formData: FormData) => z.ZodType | null, op: (dal: Dal, ctx: Ctx, base: Parsed, x: Record<string, string>) => Promise<unknown>, invalidCode = "QUESTION_NOT_FOUND") {
   const { ctx } = await requireAccount();
   const base = Base.safeParse({ draftId: field(formData, "draftId"), versionId: field(formData, "versionId"), expectedRev: field(formData, "expectedRev"), doc: field(formData, "doc") });
   if (!base.success) redirect(z.uuid().safeParse(field(formData, "draftId")).success ? `/drafts/${field(formData, "draftId")}` : "/prepare");
   const { draftId, doc } = base.data;
   const schema = extra(formData);
   const x = schema ? schema.safeParse(Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string"))) : null;
-  if (x && !x.success) redirect(draftHref(draftId, doc, "QUESTION_NOT_FOUND", fragmentOf(formData), base.data.versionId));
+  if (x && !x.success) redirect(draftHref(draftId, doc, invalidCode, fragmentOf(formData), base.data.versionId));
   // Normally success does not navigate (below). When the page still shows an earlier error notice, success returns to the clean URL.
   let target = draftHref(draftId, doc, undefined, "", base.data.versionId);
   try {
@@ -96,6 +98,16 @@ export async function acceptCandidate(formData: FormData) {
 
 export async function removeQuestion(formData: FormData) {
   await run(formData, forQuestion, (dal, ctx, b, x) => dal.removeQuestion(ctx, b.draftId, b.versionId, b.expectedRev, x.questionId!));
+}
+
+/** Appends 1-5 verified questions (and their solutions) to the end of the worksheet. The browser sends only the count. */
+export async function addQuestions(formData: FormData) {
+  await run(
+    formData,
+    () => z.object({ count: z.coerce.number().int().min(1).max(MAX_ADD_PER_ACTION) }),
+    (dal, ctx, b, x) => dal.addQuestions(ctx, b.draftId, b.versionId, b.expectedRev, Number(x.count)),
+    "INVALID_REQUEST",
+  );
 }
 
 export async function undoChange(formData: FormData) {

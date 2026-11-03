@@ -77,8 +77,14 @@ const common = {
   contentHash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
   edited: z.boolean().optional(),
 };
-const section = <K extends string, B extends z.ZodType>(kind: K, block: B) =>
-  z.strictObject({ ...common, kind: z.literal(kind), blocks: z.array(block).min(1).max(60) });
+/** The most questions one worksheet may hold; the one shared cap (limits and the add operation both read it). */
+export const MAX_WORKSHEET_QUESTIONS = 30;
+/** Blocks per section, except exercises. */
+export const SECTION_MAX_BLOCKS = 60;
+/** The exercises section: one intro paragraph, then a question and its writing space per exercise (1 + 2n). */
+export const EXERCISES_MAX_BLOCKS = 1 + 2 * MAX_WORKSHEET_QUESTIONS;
+const section = <K extends string, B extends z.ZodType>(kind: K, block: B, maxBlocks: number = SECTION_MAX_BLOCKS) =>
+  z.strictObject({ ...common, kind: z.literal(kind), blocks: z.array(block).min(1).max(maxBlocks) });
 
 const ProseBlocks = z.discriminatedUnion("type", [ParagraphBlock, ListBlock, NoteBlock, StepListBlock]);
 
@@ -89,7 +95,7 @@ export const DerivationSection = section("derivation", ProseBlocks);
 export const WorkedExamplesSection = section("worked_examples", z.discriminatedUnion("type", [ParagraphBlock, WorkedExampleBlock, NoteBlock]));
 export const TeachingSequenceSection = section("teaching_sequence", z.discriminatedUnion("type", [ListBlock, TimingBlock, ParagraphBlock]));
 export const CommonMistakesSection = section("common_mistakes", z.discriminatedUnion("type", [ListBlock, ParagraphBlock, NoteBlock]));
-export const ExercisesSection = section("exercises", z.discriminatedUnion("type", [ParagraphBlock, QuestionBlock, WritingSpaceBlock]));
+export const ExercisesSection = section("exercises", z.discriminatedUnion("type", [ParagraphBlock, QuestionBlock, WritingSpaceBlock]), EXERCISES_MAX_BLOCKS);
 export const SolutionsSection = section("solutions", z.discriminatedUnion("type", [ParagraphBlock, SolutionBlock]));
 export const AlignmentSection = section("alignment", AlignmentBlock);
 

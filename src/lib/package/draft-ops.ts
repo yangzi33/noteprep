@@ -1,12 +1,12 @@
 import { admitItem, deterministicLinearSource, type ItemSource, type VerifiedItem } from "@/lib/content/item-source";
 import type { CurriculumContext } from "@/lib/curriculum/context";
-import { CandidateStale, DrawExhausted, InvariantViolation, ItemRejected, MinQuestionCount, NothingToUndo, QuestionNotFound } from "@/lib/domain/errors";
+import { CandidateStale, DrawExhausted, InvalidRequest, InvariantViolation, ItemRejected, MinQuestionCount, NothingToUndo, QuestionNotFound, WorksheetFull } from "@/lib/domain/errors";
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { DRAW_EXHAUSTED, type Difficulty } from "@/lib/math/generator";
 import { packageContentHash, takenFingerprints } from "./adjust";
 import { rehashPackage } from "./inputs";
-import type { LessonPackage, Section } from "./schema";
+import { MAX_WORKSHEET_QUESTIONS, type LessonPackage, type Section } from "./schema";
 import { validatePackage } from "./validate";
 
 // Question-level adjustment of a draft version (S2): pure functions over a `DraftState`. No clock, no randomness (the
@@ -20,7 +20,12 @@ export const BUILDER_MIN_EXERCISES = 3;
  */
 export const HISTORY_MAX_BYTES = 1_500_000;
 
-export type QuestionOrigin = "initial" | "generated" | "replacement";
+/** Most questions one add action appends. */
+export const MAX_ADD_PER_ACTION = 5;
+/** The writing space under each exercise (the builder uses the same). */
+const WRITING_SPACE_LINES = 4;
+
+export type QuestionOrigin = "initial" | "generated" | "replacement" | "added";
 /** `slot` is the baseline question id this one descends from (set on replacements only; the question itself when absent). */
 export interface QuestionMeta {
   level: Difficulty;
@@ -35,16 +40,18 @@ export interface ChangeSummary {
   removedIds: string[];
   /** The ids (current ones) of questions whose content differs from the baseline: today the replacements. */
   modifiedIds: string[];
+  /** The ids (current ones) of questions appended after the baseline was generated. */
+  addedIds: string[];
 }
 
-/** What the stored `changes` column holds: the summary (removedIds is the authoritative part; the rest is derived). */
-export type StoredChanges = ChangeSummary;
+/** What the stored `changes` column holds: the summary (removedIds is the authoritative part; the rest is derived; rows from before adds have no addedIds). */
+export type StoredChanges = Omit<ChangeSummary, "addedIds"> & { addedIds?: string[] };
 
 type ExercisesSection = Extract<Section, { kind: "exercises" }>;
 type SolutionsSection = Extract<Section, { kind: "solutions" }>;
 
 export interface HistoryEntry {
-  op: "replace" | "remove";
+  op: "replace" | "remove" | "add";
   /** ISO timestamp. */
   at: string;
   before: {
@@ -75,6 +82,8 @@ export interface DraftState {
 export interface OpsConfig {
   minExercises: number;
   undoDepth: number;
+  /** Most questions a worksheet may hold; defaults to (and never exceeds) MAX_WORKSHEET_QUESTIONS. */
+  maxExercises?: number;
   /** Test seam; defaults to HISTORY_MAX_BYTES. */
   historyMaxBytes?: number;
 }
@@ -123,13 +132,15 @@ export function questionSlots(pkg: LessonPackage, meta: MetaMap): Slot[] {
   });
 }
 
-const isBaseline = (m: QuestionMeta | undefined) => m !== undefined && m.origin !== "replacement";
+const isReplacement = (m: QuestionMeta | undefined) => m !== undefined && m.origin === "replacement";
 
-/** Replaced / removed / modified relative to the generated baseline. */
+/** Replaced / removed / modified / added relative to the generated baseline. */
 export function changeSummary(state: Pick<DraftState, "pkg" | "meta" | "changes">): ChangeSummary {
-  const replacedIds = exerciseIds(state.pkg).filter((id) => state.meta[id] && !isBaseline(state.meta[id]));
+  const ids = exerciseIds(state.pkg);
+  const replacedIds = ids.filter((id) => isReplacement(state.meta[id]));
+  const addedIds = ids.filter((id) => state.meta[id]?.origin === "added");
   const removedIds = [...new Set(state.changes.removedIds)];
-  return { replacedIds, removedIds, modifiedIds: [...replacedIds] };
+  return { replacedIds, removedIds, modifiedIds: [...replacedIds], addedIds };
 }
 
 /** The seed of one candidate: another attempt, another question or other content gives other questions. */
@@ -287,12 +298,87 @@ export function removeQuestion(state: DraftState, questionId: string, cfg: OpsCo
   return after;
 }
 
+export interface AddOptions {
+  /** 1..MAX_ADD_PER_ACTION. */
+  count: number;
+  versionSeed: string;
+  source?: ItemSource;
+}
+
+/** The seed of one add: the content it is drawn against and the next free id decide it, so a retry of the same state repeats and any other state differs. */
+export function addSeed(versionSeed: string, baseHash: string, nextSeq: number, count: number): string {
+  return `${versionSeed}:add:${sha256Hex(canonicalJson({ baseHash, nextSeq, count })).slice(0, 16)}`;
+}
+
+/**
+ * Appends `count` verified questions (and their solutions, in the same order) to the end of the worksheet. Existing blocks
+ * are untouched. Every question passes the item gate, repeats nothing in the version (nor another one drawn in this call)
+ * and is drawn at the request's difficulty without the ramp. All or nothing: if the source cannot supply `count` distinct
+ * questions, DrawExhausted is thrown and nothing changes. Refused with WorksheetFull past the cap.
+ */
+export async function addQuestions(state: DraftState, opts: AddOptions, cfg: OpsConfig, now: Date): Promise<DraftState> {
+  const { count } = opts;
+  if (!Number.isInteger(count) || count < 1 || count > MAX_ADD_PER_ACTION) throw new InvalidRequest(`count must be an integer from 1 to ${MAX_ADD_PER_ACTION}`);
+  const max = Math.min(cfg.maxExercises ?? MAX_WORKSHEET_QUESTIONS, MAX_WORKSHEET_QUESTIONS);
+  const current = exerciseIds(state.pkg).length;
+  if (current + count > max) throw new WorksheetFull(max, current);
+
+  const level = (state.pkg.request as Pick<LessonRequestV2, "difficulty">).difficulty;
+  const baseHash = packageContentHash(state.pkg);
+  const seed = addSeed(opts.versionSeed, baseHash, state.nextSeq, count);
+  const source = opts.source ?? deterministicLinearSource;
+  const exclude = new Set<string>(takenFingerprints(state.pkg));
+  const items: VerifiedItem[] = [];
+  for (let i = 0; i < count; i++) {
+    let raw;
+    try {
+      raw = await source.draw({ role: "exercise", index: state.nextSeq + i, level, seed, exclude });
+    } catch (error) {
+      if (error instanceof Error && error.message === DRAW_EXHAUSTED) throw new DrawExhausted();
+      throw error;
+    }
+    if (raw.id !== `ex-${state.nextSeq + i}`) throw new ItemRejected("unexpected_id");
+    const item = admitItem(raw, level);
+    if (exclude.has(item.fingerprint)) throw new DrawExhausted(); // a source that ignores the exclusion set has nothing new
+    exclude.add(item.fingerprint);
+    items.push(item);
+  }
+
+  const exercises = structuredClone(exercisesOf(state.pkg)!);
+  const solutions = structuredClone(solutionsOf(state.pkg)!);
+  let lastQuestion = -1;
+  exercises.blocks.forEach((b, i) => {
+    if (b.type === "question") lastQuestion = i;
+  });
+  if (lastQuestion < 0) throw new InvariantViolation("the worksheet has no questions to append to");
+  const insertAt = lastQuestion + (exercises.blocks[lastQuestion + 1]?.type === "writing_space" ? 2 : 1);
+  exercises.blocks.splice(insertAt, 0, ...items.flatMap((item) => [{ type: "question" as const, questionId: item.id, problem: item.question.problem }, { type: "writing_space" as const, lines: WRITING_SPACE_LINES }]));
+  let lastSolution = -1;
+  solutions.blocks.forEach((b, i) => {
+    if (b.type === "solution") lastSolution = i;
+  });
+  if (lastSolution < 0) throw new InvariantViolation("the answer key has no solutions to append to");
+  solutions.blocks.splice(lastSolution + 1, 0, ...items.map((item) => ({ type: "solution" as const, questionId: item.id, solution: item.question.solution, steps: item.question.steps })));
+
+  const next = finish(state.pkg, exercises, solutions);
+  const meta: MetaMap = { ...state.meta };
+  for (const item of items) meta[item.id] = { level, origin: "added" };
+  const after: DraftState = { pkg: next, meta, nextSeq: state.nextSeq + count, history: state.history, changes: state.changes };
+  after.changes = changeSummary(after);
+  after.history = boundHistory([...state.history, entry("add", now, state, packageContentHash(next), items[0]!.id, `Added ${count} question${count === 1 ? "" : "s"}`)], cfg);
+  return after;
+}
+
 /** What undo would revert, for the button label; null when the history is empty. */
 export function undoLabel(state: Pick<DraftState, "history" | "pkg">): string | null {
   const last = state.history.at(-1);
   if (!last) return null;
   if (!last.questionId) return last.summary; // an entry written before the id was recorded
   const before = last.before.exercises.blocks.flatMap((b) => (b.type === "question" ? [b.questionId] : []));
+  if (last.op === "add") {
+    const added = exerciseIds(state.pkg).length - before.length;
+    return added > 0 ? `Added ${added} question${added === 1 ? "" : "s"}` : last.summary;
+  }
   const position = last.op === "replace" ? exerciseIds(state.pkg).indexOf(last.questionId) : before.indexOf(last.questionId);
   const where = position >= 0 ? ` question ${position + 1}` : " a question";
   return `${last.op === "replace" ? "Replaced" : "Removed"}${where}`;
