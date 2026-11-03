@@ -13,9 +13,10 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { getDisplayTimeZone } from "@/lib/server/timezone";
+import { formatDateTime } from "@/lib/ui/timezone";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER, alignmentNotice, lessonErrorNotice } from "@/lib/ui/lesson-view";
 
-const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const Search = z.object({ rev: z.uuid().optional(), doc: z.enum(DOCUMENT_KINDS).optional(), view: z.enum(["pdf", "draft"]).optional(), error: z.string().max(40).optional().catch(undefined) });
 
 const linkBase = "inline-flex min-h-11 items-center rounded-tag border border-border px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -38,6 +39,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
     throw error;
   }
 
+  const tz = await getDisplayTimeZone(ctx);
   const available = lesson.documents.map((d) => d.document);
   const active: DocumentKind = parsed.data.doc && available.includes(parsed.data.doc) ? parsed.data.doc : available[0]!;
   const activeDoc = lesson.documents.find((d) => d.document === active)!;
@@ -75,7 +77,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
         </h1>
         <Badge tone={lesson.isCurrent ? "accent" : "neutral"}>{lesson.isCurrent ? `Version ${lesson.revisionNumber}` : "Earlier version"}</Badge>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">Created {utc.format(lesson.createdAt)} UTC</p>
+      <p className="mt-1 text-sm text-muted-foreground">Created {formatDateTime(lesson.createdAt, tz)}</p>
       {errorNotice && (
         <Notice intent="error" className="mt-3" data-testid="lesson-error">
           <ContactText text={errorNotice} />

@@ -19,7 +19,12 @@ const PASSWORD_MESSAGES: Record<string, string> = {
   mismatch: "The two passwords do not match.",
   failed: "We could not update your password. Check that it has at least 10 characters, or request a new reset link.",
 };
-const ACCOUNT_NOTICES: Record<string, string> = { "password-updated": "Your password has been updated." };
+const ACCOUNT_NOTICES: Record<string, string> = {
+  "password-updated": "Your password has been updated.",
+  "timezone-saved": "Your time zone has been saved.",
+  "timezone-reset": "Time zone reset. Times now follow your browser.",
+};
+const ACCOUNT_ERRORS: Record<string, string> = { "timezone-invalid": "Pick a time zone from the list, for example America/Toronto." };
 
 /** Error text of the set-a-new-password page, by its own allowlisted keys only. */
 export function passwordMessage(key: string | undefined): string | undefined {
@@ -31,4 +36,10 @@ export function passwordMessage(key: string | undefined): string | undefined {
 export function accountNotice(key: string | undefined): string | undefined {
   if (key === undefined || !Object.hasOwn(ACCOUNT_NOTICES, key)) return undefined;
   return ACCOUNT_NOTICES[key];
+}
+
+/** Error shown on the account page, by its own allowlisted keys only. */
+export function accountError(key: string | undefined): string | undefined {
+  if (key === undefined || !Object.hasOwn(ACCOUNT_ERRORS, key)) return undefined;
+  return ACCOUNT_ERRORS[key];
 }

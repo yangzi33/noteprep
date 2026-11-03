@@ -1,5 +1,6 @@
 import { stateLabel } from "./messages";
 import { expiryPhrase } from "@/lib/ui/relative-time";
+import { formatDateTime } from "@/lib/ui/timezone";
 
 export interface HistoryLike {
   jobId: string;
@@ -21,13 +22,6 @@ export interface MaterialCardModel {
   date: string;
   href: string;
   action: "Open" | "View status";
-}
-
-const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
-
-/** "Mar 5, 2026, 2:30 PM UTC" with plain spaces (newer ICU uses a narrow no-break space before AM/PM). */
-export function formatUtc(date: Date): string {
-  return `${utc.format(date).replace(/\s/g, " ")} UTC`;
 }
 
 /** Where a history item's status lives: an unfinished or failed export has its own page, everything else the job page. */
@@ -64,7 +58,7 @@ export function exportAfterSentence(allowance: AllowanceLike | null): string | n
   return `After this export you will have ${after} left today.${after === 0 ? " They come back at 00:00 UTC." : ""}`;
 }
 
-export function recentCards(items: readonly HistoryLike[], max: number): MaterialCardModel[] {
+export function recentCards(items: readonly HistoryLike[], max: number, timeZone: string): MaterialCardModel[] {
   return items.slice(0, max).map((item) => {
     const open = item.state === "succeeded" && item.revisionId !== null;
     return {
@@ -72,7 +66,7 @@ export function recentCards(items: readonly HistoryLike[], max: number): Materia
       state: item.state,
       title: item.title,
       label: stateLabel(item.state),
-      date: formatUtc(item.createdAt),
+      date: formatDateTime(item.createdAt, timeZone),
       href: open ? `/lessons/${item.lessonId}?rev=${item.revisionId}` : statusHref(item),
       action: open ? "Open" : "View status",
     };
@@ -98,13 +92,13 @@ export interface DraftCardModel {
 export const UNTITLED_DRAFT = "Untitled draft";
 
 /** Cards for the caller's own active drafts (the DAL already filters by owner and expiry). Keeps the given order. */
-export function draftCards(items: readonly DraftSummaryLike[], max: number, now?: Date): DraftCardModel[] {
+export function draftCards(items: readonly DraftSummaryLike[], max: number, timeZone: string, now?: Date): DraftCardModel[] {
   return items.slice(0, max).map((d) => ({
     draftId: d.draftId,
     title: d.title?.trim() ? d.title : UNTITLED_DRAFT, // the DAL reads it from JSON and it can be NULL
     href: `/drafts/${d.draftId}`,
-    updated: formatUtc(d.updatedAt),
-    expires: now ? `expires ${expiryPhrase(d.expiresAt, now)}` : `expires ${formatUtc(d.expiresAt)}`,
+    updated: formatDateTime(d.updatedAt, timeZone),
+    expires: now ? `expires ${expiryPhrase(d.expiresAt, now, timeZone)}` : `expires ${formatDateTime(d.expiresAt, timeZone)}`,
   }));
 }
 

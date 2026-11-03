@@ -15,6 +15,8 @@ import { htmlDocument } from "@/lib/package/html-view";
 import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/package/schema";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { getDisplayTimeZone } from "@/lib/server/timezone";
+import { formatDateTime } from "@/lib/ui/timezone";
 import { serverEnv } from "@/lib/server/env";
 import { generationErrorMessage } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE, REVIEW_REMINDER } from "@/lib/ui/lesson-view";
@@ -22,7 +24,6 @@ import { versionLabel } from "@/lib/ui/draft-versions";
 import { prepareHref } from "@/lib/ui/prepare-url";
 import { expiryPhrase } from "@/lib/ui/relative-time";
 
-const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 // A malformed or unknown value is ignored, never a 404: the draft itself is real.
 const Search = z.object({
   v: z.uuid().optional().catch(undefined),
@@ -41,6 +42,7 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
   const parsed = Search.safeParse(Object.fromEntries(Object.entries(await searchParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])));
   if (!z.uuid().safeParse(id).success || !parsed.success) notFound();
   const dal = webDal();
+  const tz = await getDisplayTimeZone(ctx);
 
   // A version the draft does not have is not a missing page: the draft opens on its active version instead.
   const loadView = async (version: string | undefined) => {
@@ -118,10 +120,10 @@ export default async function DraftPage({ params, searchParams }: { params: Prom
         You are editing {versionLabel(view.ordinal)}
       </p>
       <p className="mt-1 text-sm text-muted-foreground" role="status" aria-live="polite" data-testid="saved-status">
-        Last saved {utc.format(view.updatedAt)} UTC
+        Last saved {formatDateTime(view.updatedAt, tz)}
       </p>
       <p className="mt-1 text-sm text-muted-foreground" data-testid="draft-expiry">
-        Draft expires {expiryPhrase(view.expiresAt, new Date())}
+        Draft expires {expiryPhrase(view.expiresAt, new Date(), tz)}
       </p>
       <div className="mt-3">
         <StepIndicator steps={FLOW_STEPS} current={adjusting ? 2 : 1} />

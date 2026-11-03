@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   },
 }));
+vi.mock("@/lib/server/timezone", () => ({ getDisplayTimeZone: async () => "UTC" }));
 vi.mock("@/lib/server/auth/require-user", () => ({ requireAccount: async () => ({ ctx: { userId: "u1" } }) }));
 vi.mock("@/lib/server/dal/instance", () => ({ webDal: () => ({ drafts: { getDraftView: m.getDraftView, getDraftSelection: m.getDraftSelection } }) }));
 vi.mock("@/lib/server/env", () => ({ serverEnv: () => ({ FLOW_MODE: "draft", EXPORT_ENABLED: "1" }) }));

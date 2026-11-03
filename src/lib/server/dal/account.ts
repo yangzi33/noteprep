@@ -12,6 +12,17 @@ export function createAccountDal(db: Db, trialLimit: number = DEV_DEFAULT_LIMITS
       return profile?.status ?? null;
     },
 
+    /** The saved display time zone, or null for Auto (and for an unknown account). */
+    async getTimeZone(ctx: AuthedCtx): Promise<string | null> {
+      const profile = await db.profile.findUnique({ where: { id: ctx.userId }, select: { timezone: true } });
+      return profile?.timezone ?? null;
+    },
+
+    /** Saves the caller's own display time zone; null resets to Auto. The caller validates the name. */
+    async setTimeZone(ctx: AuthedCtx, timeZone: string | null): Promise<void> {
+      await db.profile.updateMany({ where: { id: ctx.userId, status: "active" }, data: { timezone: timeZone } });
+    },
+
     /**
      * Idempotent: creates the profile and its single lifetime trial bucket. Duplicate signup
      * callbacks, retries and races all converge on one profile and one bucket (partial unique index).

@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   },
 }));
+vi.mock("@/lib/server/timezone", () => ({ getDisplayTimeZone: async () => "UTC" }));
 vi.mock("@/lib/server/auth/require-user", () => ({ requireAccount: async () => ({ ctx: { userId: "u1" } }) }));
 vi.mock("@/lib/server/dal/instance", () => ({ webDal: () => ({ lessons: { getLessonView: m.getLessonView } }) }));
 vi.mock("katex/dist/katex.min.css", () => ({}));

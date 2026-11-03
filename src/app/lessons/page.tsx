@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { DraftCard, MaterialRow } from "@/components/app/material-card";
 import { Card } from "@/components/ui/card";
 import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
-import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, formatUtc, statusHref } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, dailyRefreshReminder, draftCards, emptyExportsText, statusHref } from "@/lib/ui/dashboard-view";
+import { getDisplayTimeZone } from "@/lib/server/timezone";
+import { formatDateTime } from "@/lib/ui/timezone";
 import { describeOutcome, stateLabel } from "@/lib/ui/messages";
 
 export const metadata: Metadata = { title: "History" };
@@ -13,7 +16,8 @@ export default async function HistoryPage() {
   const { ctx } = await requireAccount();
   const dal = webDal();
   const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx)]);
-  const draftList = draftCards(drafts, 50, new Date());
+  const tz = await getDisplayTimeZone(ctx);
+  const draftList = draftCards(drafts, 50, tz, new Date());
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -23,7 +27,9 @@ export default async function HistoryPage() {
         <p className="text-sm" data-testid="allowance">
           {dailyRefreshReminder(allowance) ? <span data-testid="refresh-reminder">{dailyRefreshReminder(allowance)}</span> : allowanceSentence(allowance)}
         </p>
-        <p className="text-sm text-muted-foreground">Times are shown in UTC.</p>
+        <p className="text-sm text-muted-foreground">
+          Times are shown in {tz}. <Link href="/account" className="underline underline-offset-4">Change time zone</Link>
+        </p>
       </header>
 
       {draftList.length > 0 && (
@@ -58,7 +64,7 @@ export default async function HistoryPage() {
                 title={item.title}
                 state={item.state}
                 label={stateLabel(item.state)}
-                date={formatUtc(item.createdAt)}
+                date={formatDateTime(item.createdAt, tz)}
                 // An export's page states exactly what happened to the lesson pack; this list never guesses it.
                 outcome={item.kind === "export" ? null : describeOutcome(item.state, item.errorCode)}
               />
