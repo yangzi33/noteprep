@@ -3,14 +3,17 @@ import { splitAtContact } from "@/lib/ui/support";
 
 const linkClass = "underline rounded-control focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none";
 
-/** The address as a mailto link, or the plain words "contact us" when no address is configured. */
-export function ContactLink({ words = "contact us", email = supportEmail() }: { words?: string; email?: string | null }) {
+/** The address as a mailto link, or the plain words "contact us" (plus an optional fallback) when no address is configured. */
+export function ContactLink({ words = "contact us", email = supportEmail(), fallback }: { words?: string; email?: string | null; fallback?: string }) {
   return email ? (
     <a href={`mailto:${email}`} className={linkClass}>
       {email}
     </a>
   ) : (
-    <>{words}</>
+    <>
+      {words}
+      {fallback ? ` ${fallback}` : null}
+    </>
   );
 }
 

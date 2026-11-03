@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, BookOpenCheck, Check, ChevronDown, Clock, FileText, Info, Minus, Plus, Printer } from "lucide-react";
+import { ArrowRight, BookOpen, BookOpenCheck, Check, ChevronDown, Clock, FileText, Minus, Plus, Printer } from "lucide-react";
 import { Logo } from "@/components/app/logo";
 import { Button } from "@/components/ui/button";
 import { landingContent as c } from "@/lib/marketing/content";
 import { supportEmail } from "@/lib/supabase/public-env";
+import { ContactText } from "@/components/app/contact-link";
 import { SamplePreview } from "./sample-preview";
 
 const wrap = "mx-auto w-full max-w-[1440px] px-4 md:px-10 lg:px-24";
@@ -60,6 +61,9 @@ export function HeroSection() {
           </Link>
         </Button>
         <p className="-mt-1 text-[13px] text-muted-foreground">{hero.note}</p>
+        <p className="-mt-3 text-[13px] text-muted-foreground" data-testid="request-invite">
+          <ContactText text={hero.requestInvite} />
+        </p>
       </div>
 
       <div className={`${wrap} mt-14 md:mt-[52px]`}>
@@ -261,12 +265,8 @@ export function PricingSection() {
           <SectionHead id="pricing-title" eyebrow={pricing.eyebrow} title={pricing.title} />
           <p className={`${body} max-w-[720px]`}>{pricing.subtitle}</p>
         </div>
-        <div className="flex items-center gap-3 rounded-notice bg-accent px-4 py-3.5 text-sm text-text-accent">
-          <Info aria-hidden="true" className="size-4 shrink-0" />
-          {pricing.subscription.note}
-        </div>
         <div className="grid gap-5 md:grid-cols-2 md:gap-6">
-          <div className="flex flex-col gap-5 rounded-card border border-border bg-card p-6 md:p-8">
+          <div className="flex flex-col gap-5 rounded-card border-2 border-primary bg-card p-6 md:p-8">
             <p className="text-[11px] tracking-[0.08em] text-text-accent uppercase">{pricing.free.label}</p>
             <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.free.title}</h3>
             <ul className="flex flex-col gap-3">
@@ -284,7 +284,7 @@ export function PricingSection() {
               </Link>
             </Button>
           </div>
-          <div className="flex flex-col gap-5 rounded-card border-2 border-primary bg-card p-6 md:p-8">
+          <div className="flex flex-col gap-5 rounded-card border border-border bg-card p-6 md:p-8">
             <p className="text-[11px] tracking-[0.08em] text-text-accent uppercase">{pricing.subscription.label}</p>
             <h3 className="select-none font-heading text-[28px] leading-9 font-normal text-foreground">{pricing.subscription.title}</h3>
             <ul className="flex flex-col gap-3">
@@ -320,7 +320,9 @@ export function FaqSection() {
                 <Plus aria-hidden="true" className="size-4 shrink-0 text-text-accent group-open:hidden" />
                 <Minus aria-hidden="true" className="hidden size-4 shrink-0 text-text-accent group-open:block" />
               </summary>
-              <p className="pb-5 text-[15px] leading-[26px] text-muted-foreground select-text">{item.answer}</p>
+              <p className="pb-5 text-[15px] leading-[26px] text-muted-foreground select-text">
+                <ContactText text={item.answer} />
+              </p>
             </details>
           ))}
         </div>
@@ -369,6 +371,12 @@ export function LandingFooter() {
             ))}
             <Link href="/login" className={link}>
               Sign in
+            </Link>
+            <Link href="/privacy" className={link}>
+              Privacy
+            </Link>
+            <Link href="/terms" className={link}>
+              Terms
             </Link>
             {support && (
               <a href={`mailto:${support}`} className={`${link} select-text`}>

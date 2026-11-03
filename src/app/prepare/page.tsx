@@ -19,6 +19,7 @@ import { serverEnv } from "@/lib/server/env";
 import type { SelectionOption, SelectionPath, SelectionStep } from "@/lib/server/dal/curriculum";
 import { allowanceSentence, dailyRefreshReminder } from "@/lib/ui/dashboard-view";
 import { ContactText } from "@/components/app/contact-link";
+import { ANONYMOUS_NOTICE } from "@/lib/ui/legal";
 import { exhaustedNotice, generationErrorMessage, type AllowanceSourceKind } from "@/lib/ui/messages";
 import { DOCUMENT_LABELS, DOCUMENT_PURPOSE } from "@/lib/ui/lesson-view";
 import { buildSelectFields, datasetBanner, resolveCountry, staleSelectionFallback } from "@/lib/ui/prepare-view";
@@ -176,6 +177,9 @@ export default async function PreparePage({ searchParams }: { searchParams: Prom
       <Card className="flex flex-col gap-6 p-6">
         <PreparePendingProvider>
         <h2 className="select-none font-heading text-xl">Start with your teaching context</h2>
+        <p className="text-sm text-muted-foreground" data-testid="anonymous-note">
+          {ANONYMOUS_NOTICE}
+        </p>
         {sample && (
           <Notice intent="info" data-testid="sample-banner">
             Sample data, not a real curriculum. No curriculum alignment is claimed for lessons made from it.

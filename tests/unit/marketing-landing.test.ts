@@ -1,11 +1,37 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LandingFooter, LandingPage } from "@/components/marketing/landing-page";
 import { PublicHeader } from "@/components/app/public-header";
 import { landingContent } from "@/lib/marketing/content";
 
 const html = renderToStaticMarkup(createElement(LandingPage)) + renderToStaticMarkup(createElement(LandingFooter));
+
+afterEach(() => vi.unstubAllEnvs());
+
+describe("invite request path", () => {
+  it("offers an uninvited visitor a mailto route in the hero note and the account FAQ when an address is configured", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_EMAIL", "help@example.test");
+    const withContact = renderToStaticMarkup(createElement(LandingPage));
+    expect(withContact).toMatch(/data-testid="request-invite"[^>]*>Not invited yet\? Please contact us at <a [^>]*href="mailto:help@example\.test"[^>]*>help@example\.test<\/a> to ask for an invite/);
+    expect(withContact.match(/href="mailto:help@example\.test"/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps the wording without a link when no address is configured", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPPORT_EMAIL", "");
+    const bare = renderToStaticMarkup(createElement(LandingPage));
+    expect(bare).toMatch(/Not invited yet\? Please contact us/);
+    expect(bare).not.toMatch(/mailto:/);
+  });
+});
+
+describe("pricing emphasis", () => {
+  it("emphasises the free card, not the unavailable subscription card", () => {
+    const cards = [...html.matchAll(/<div class="flex flex-col gap-5 rounded-card ([^"]*)"><p class="[^"]*">([^<]*)</g)].map((m) => [m[2], m[1]]);
+    expect(cards.find(([label]) => label === landingContent.pricing.free.label)?.[1]).toMatch(/border-primary/);
+    expect(cards.find(([label]) => label === landingContent.pricing.subscription.label)?.[1]).not.toMatch(/border-primary/);
+  });
+});
 
 describe("landing page markup", () => {
   it("has exactly one h1 and no main element of its own", () => {
@@ -13,8 +39,8 @@ describe("landing page markup", () => {
     expect(html).not.toMatch(/<main[ >]/);
   });
 
-  it("has Get started to /login and the section ids the navigation targets", () => {
-    expect(html).toMatch(/<a [^>]*href="\/login"[^>]*>[^<]*Get started/);
+  it("has Sign in to /login and the section ids the navigation targets", () => {
+    expect(html).toMatch(/<a [^>]*href="\/login"[^>]*>[^<]*Sign in/);
     for (const id of ["features", "how-it-works", "pricing"]) expect(html).toContain(`id="${id}"`);
   });
 
@@ -23,11 +49,11 @@ describe("landing page markup", () => {
     expect(html.match(/<summary[ >]/g)).toHaveLength(landingContent.faq.items.length);
   });
 
-  it("only links to /, /login or in-page anchors that exist", () => {
+  it("only links to /, /login, the notice pages or in-page anchors that exist", () => {
     const hrefs = [...html.matchAll(/href="([^"]*)"/g)].map((m) => m[1] ?? "");
     expect(hrefs.length).toBeGreaterThan(0);
     for (const h of hrefs) {
-      expect(h === "/" || h === "/login" || /^#[a-z][a-z-]*$/.test(h) || /^\/samples\/[a-z]+(-1\.png|\.pdf)$/.test(h), h).toBe(true);
+      expect(h === "/" || h === "/login" || h === "/privacy" || h === "/terms" || /^#[a-z][a-z-]*$/.test(h) || /^\/samples\/[a-z]+(-1\.png|\.pdf)$/.test(h), h).toBe(true);
       if (h.startsWith("#")) expect(html).toContain(`id="${h.slice(1)}"`);
     }
     expect(html).not.toMatch(/(href|src|action)="https?:/);
@@ -58,21 +84,21 @@ describe("landing page markup", () => {
     expect(html).toMatch(/not a real curriculum/);
   });
 
-  it("has no footer links to missing pages and no role=status", () => {
-    expect(html).not.toMatch(/privacy|terms of/i);
+  it("links the privacy and terms notices and has no role=status", () => {
+    expect(html).toMatch(/<a [^>]*href="\/privacy"[^>]*>Privacy<\/a>/);
+    expect(html).toMatch(/<a [^>]*href="\/terms"[^>]*>Terms<\/a>/);
     expect(html).not.toMatch(/role="status"/);
   });
 });
 
 describe("landing header", () => {
   const header = renderToStaticMarkup(createElement(PublicHeader, { variant: "landing" }));
-  it("links the logo home, the three sections, Sign in and Get started", () => {
+  it("links the logo home, the three sections and Sign in", () => {
     expect(header).toMatch(/<a [^>]*href="\/"/);
     for (const [href, label] of [["#features", "Features"], ["#how-it-works", "How it works"], ["#pricing", "Pricing"]]) {
       expect(header).toMatch(new RegExp(`<a [^>]*href="${href}"[^>]*>${label}</a>`));
     }
     expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Sign in<\/a>/);
-    expect(header).toMatch(/<a [^>]*href="\/login"[^>]*>Get started<\/a>/);
     expect(header).not.toMatch(/<button/);
   });
   it("keeps the section anchors out of the small-screen header", () => {

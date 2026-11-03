@@ -6,7 +6,7 @@ import nextTs from "eslint-config-next/typescript";
 // - only the data access layer may import the database client;
 // - process.env is read only in the env modules.
 const DAL_GLOB = "src/lib/server/dal/**";
-const ENV_FILES = ["src/lib/server/env.ts", "worker/env.ts", "src/lib/supabase/public-env.ts"];
+const ENV_FILES = ["src/lib/server/env.ts", "worker/env.ts", "src/lib/supabase/public-env.ts", "src/lib/server/notice-env.ts"];
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -41,7 +41,7 @@ const eslintConfig = defineConfig([
   },
   {
     // Tooling and tests configure themselves from the environment.
-    files: ["tests/**", "scripts/**", "prisma7.config.ts", "*.config.mts", "playwright.config.ts", "playwright.smoke.config.ts"],
+    files: ["tests/**", "scripts/**", "prisma7.config.ts", "*.config.mts", "next.config.ts", "playwright.config.ts", "playwright.smoke.config.ts"],
     rules: { "no-restricted-properties": "off" },
   },
   {

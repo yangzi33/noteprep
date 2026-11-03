@@ -17,7 +17,7 @@ import { documentView } from "../src/lib/package/views";
 // Only PDFs and PNGs are written; no .tex file ever leaves the pipeline (decision D-31).
 const OUT = path.join("public", "samples");
 const DATASET = "data/curricula/sample-math/sample-1";
-const TOPIC_TITLE = "Sample topic: Unknown on both sides";
+const TOPIC_TITLE = "Sample topic: Solving equations with one unknown";
 const SEED = "marketing-samples-v1";
 const IMAGE = process.env.LATEX_IMAGE ?? DEFAULT_SANDBOX.image;
 
