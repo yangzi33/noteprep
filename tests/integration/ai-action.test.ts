@@ -310,20 +310,42 @@ describe("separation from the generation allowance (S1-S4)", () => {
 });
 
 describe("close races", () => {
-  it("never closes the request of a running job, and a close racing the first reservation never releases a called slot", async () => {
+  it("never closes the request of a running job, even when it races the job's first reservation", async () => {
     const owner = await seedOwner(admin);
-    const running = await seedAiJob(admin, owner);
-    const a = await take(owner, { jobId: running.jobId });
-    expect(await work().closeFailed({ actionId: a.action.id, code: "x" })).toBe("noop");
-    expect(await actionRow(a.action.id)).toMatchObject({ state: "accepted" });
-
-    for (let i = 0; i < 6; i++) {
-      const job = await seedAiJob(admin, owner, { state: "queued" });
+    for (let i = 0; i < 8; i++) {
+      const job = await seedAiJob(admin, owner);
       const { action } = await take(owner, { jobId: job.jobId }, { aiOpsPerUserPerHour: 1000 });
-      await admin.query(`UPDATE generation_job SET state = 'failed', finished_at = now() WHERE id = $1`, [job.jobId]);
-      await work().closeFailed({ actionId: action.id, code: "x" });
+      const [reserved, closed] = await Promise.all([
+        spend().reserve({ jobId: job.jobId, attempt: job.attempt, fencingToken: job.token, callSeq: 1, purpose: "items", isRetry: false, provider: "fake", model: "m", estimate: EST }),
+        work().closeFailed({ actionId: action.id, code: "x" }),
+      ]);
+      expect(reserved.status).toBe("reserved");
+      expect(closed).toBe("noop");
+      expect(await actionRow(action.id)).toMatchObject({ state: "accepted", provider_called: true });
     }
-    const rows = (await admin.query(`SELECT a.state, a.provider_called, EXISTS (SELECT 1 FROM llm_call c WHERE c.job_id = a.job_id) AS called FROM ai_action a WHERE a.owner_id = $1`, [owner])).rows;
-    for (const r of rows) expect(r.state === "released" ? !r.called && !r.provider_called : true).toBe(true);
+  });
+
+  it("a close after the job ended never releases a slot whose job had a provider call", async () => {
+    const owner = await seedOwner(admin);
+    const job = await seedAiJob(admin, owner);
+    const { action } = await take(owner, { jobId: job.jobId });
+    await spend().reserve({ jobId: job.jobId, attempt: job.attempt, fencingToken: job.token, callSeq: 1, purpose: "items", isRetry: false, provider: "fake", model: "m", estimate: EST });
+    await admin.query(`UPDATE generation_job SET state = 'failed', stage = NULL, lease_owner = NULL, lease_expires_at = NULL, error_code = 'x', finished_at = now() WHERE id = $1`, [job.jobId]);
+    expect(await work().closeFailed({ actionId: action.id, code: "x" })).toBe("failed");
+    expect(await actionRow(action.id)).toMatchObject({ state: "failed", provider_called: true });
+  });
+
+  it("releases the slot of a request that never got a job, after the stale window, and leaves fresh ones alone", async () => {
+    const owner = await seedOwner(admin);
+    const insertOld = async (k: string, jobId: string | null) =>
+      (await admin.query(`INSERT INTO ai_action (owner_id, request_key, kind, job_id, slot_hour, created_at) VALUES ($1,$2,'initial',$3, date_trunc('hour', now()), now() - interval '1 hour') RETURNING id`, [owner, k, jobId])).rows[0].id as string;
+    const stale = { id: await insertOld(key(), null) };
+    const fresh = (await take(owner)).action;
+    const withJob = { id: await insertOld(key(), (await seedAiJob(admin, owner)).jobId) };
+    expect(await work().releaseOrphans(50)).toBe(1);
+    expect(await work().releaseOrphans(50)).toBe(0);
+    expect(await actionRow(stale.id)).toMatchObject({ state: "released", failure_code: "orphaned" });
+    expect(await actionRow(fresh.id)).toMatchObject({ state: "accepted" });
+    expect(await actionRow(withJob.id)).toMatchObject({ state: "accepted" });
   });
 });

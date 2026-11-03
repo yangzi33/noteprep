@@ -70,6 +70,7 @@ export const FAILURE_REASONS: Record<string, string> = {
   llm_invalid_output: "The writing service returned something we could not use.",
   llm_quota_exhausted: "The writing service is temporarily unavailable.",
   llm_refused: "The writing service declined the request.",
+  llm_disabled: "AI-written questions are switched off at the moment.",
   llm_auth: "The writing service is temporarily unavailable.",
   llm_server_error: "The writing service is temporarily unavailable.",
   llm_bad_request: "The writing service could not process this request.",

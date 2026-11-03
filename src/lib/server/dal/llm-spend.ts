@@ -207,6 +207,13 @@ export function createLlmSpendDal(db: Db, limits: Limits) {
     return rows[0];
   }
 
+  async function settleCall(input: SettleInput): Promise<{ settled: boolean; costMicros: number }> {
+    const call = await readCall(input.callId);
+    if (!call) return { settled: false, costMicros: 0 };
+    const res = await inTransaction(db, (tx) => finish(tx, call, { kind: "settle", input }));
+    return { settled: res.done, costMicros: res.costMicros };
+  }
+
   return {
     /**
      * Checks every cap and records the reservation for one call in ONE row-locked transaction (check 8). A refusal is returned,
@@ -292,12 +299,7 @@ export function createLlmSpendDal(db: Db, limits: Limits) {
     },
 
     /** reserved -> settled, once: at the reported usage, or at the estimate when none was reported. False when it was no longer reserved. */
-    async settle(input: SettleInput): Promise<{ settled: boolean; costMicros: number }> {
-      const call = await readCall(input.callId);
-      if (!call) return { settled: false, costMicros: 0 };
-      const res = await inTransaction(db, (tx) => finish(tx, call, { kind: "settle", input }));
-      return { settled: res.done, costMicros: res.costMicros };
-    },
+    settle: settleCall,
 
     /** reserved -> released, only for a call that provably was not sent. False when it was no longer reserved. */
     async release(input: { callId: string; reason: string }): Promise<boolean> {
@@ -316,7 +318,7 @@ export function createLlmSpendDal(db: Db, limits: Limits) {
       let errors = 0;
       for (const { id } of rows) {
         try {
-          const r = await this.settle({ callId: id, usage: null, usageEstimated: true, reason: "recovered" });
+          const r = await settleCall({ callId: id, usage: null, usageEstimated: true, reason: "recovered" });
           if (r.settled) recovered += 1;
         } catch {
           errors += 1;

@@ -179,6 +179,23 @@ export function createAiActionDal(db: Db, limits: Limits) {
     },
 
     /**
+     * Requests whose job was never attached (the caller died between taking the slot and enqueueing) can never reach a provider:
+     * after the stale window their slot is released. Rows with a job are left to finalizeTerminal. Returns the number released.
+     */
+    async releaseOrphans(limit = 100): Promise<number> {
+      const rows = await db.$queryRaw<{ id: string }[]>`
+        SELECT id FROM ai_action
+         WHERE state = 'accepted' AND job_id IS NULL AND created_at < now() - make_interval(secs => ${limits.llmStaleReservationSeconds}::int)
+         ORDER BY created_at LIMIT ${limit}::int`;
+      let released = 0;
+      for (const row of rows) {
+        const outcome = await inTransaction(db, (tx) => closeLocked(tx, row.id, "orphaned"));
+        if (outcome === "released") released += 1;
+      }
+      return released;
+    },
+
+    /**
      * With the kill switch off, queued AI jobs fail with `llm_disabled` and their slots are released (nothing was sent). Works through
      * ai_action.job_id, so it covers every kind of AI job, and leaves running jobs to be refused at their next reservation.
      * Returns the number of jobs failed.

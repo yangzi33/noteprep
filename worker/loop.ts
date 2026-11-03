@@ -18,7 +18,7 @@ export interface LoopOptions {
   /** Expired-draft purge, run as a second step of each sweep (its failure never affects job recovery or liveness). */
   drafts?: { purge: DraftsPurgeDal; batchSize: number };
   /** Spend upkeep, a step of each sweep: settle stale reservations, close AI Actions, apply the kill switch, raise the 70 percent alert once. */
-  spend?: { spend: Pick<LlmSpendDal, "recoverStale" | "claimAlerts" | "drift">; aiActions: Pick<AiActionDal, "finalizeTerminal" | "failQueuedWhenDisabled">; batchSize: number };
+  spend?: { spend: Pick<LlmSpendDal, "recoverStale" | "claimAlerts" | "drift">; aiActions: Pick<AiActionDal, "finalizeTerminal" | "failQueuedWhenDisabled" | "releaseOrphans">; batchSize: number };
   /**
    * Orphan-object reconcile in its OWN loop, once per `intervalMs`: it never runs inside the sweep, so a slow or hung storage
    * call cannot delay recovery, purge or liveness. The step itself carries a wall-clock budget; shutdown waits for it at most
@@ -60,6 +60,10 @@ export async function spendUpkeep(spend: NonNullable<LoopOptions["spend"]>): Pro
   await step("ai_action_finalize", async () => {
     const r = await spend.aiActions.finalizeTerminal(spend.batchSize);
     if (r.completed || r.released || r.failed) log("ai_action_finalize", { ...r });
+  });
+  await step("ai_action_orphans", async () => {
+    const released = await spend.aiActions.releaseOrphans(spend.batchSize);
+    if (released) log("ai_action_orphans", { released });
   });
   await step("ai_kill_switch", async () => {
     const failed = await spend.aiActions.failQueuedWhenDisabled(spend.batchSize);
