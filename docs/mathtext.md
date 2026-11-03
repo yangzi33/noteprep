@@ -2,7 +2,7 @@
 
 MathText is intended to be the only way model-written math reaches a document. Our own hand-written parser turns a string into one typed AST (`src/lib/math-text/ast.ts`); the PDF (TeX) and the preview (HTML) are both rendered from that AST. Errors are codes, never text. Fixtures: `tests/fixtures/math-text/`.
 
-Current wiring (2026-11-02, origin/main ca766b9): the module is merged (PR #64) and tested, but **not yet wired into drafts, packages or the worker**. Evidence: `git grep "math-text" src worker` finds no importer outside `src/lib/math-text/` except `src/lib/latex/templates.ts`, which imports only `MATH_TEX_COMMANDS` (the shared macro allowlist) from `src/lib/math-text/commands.ts`. No model-written text flows through it yet because no LLM item source exists; the plan wires it in later (B-c/B-e).
+Current wiring (slice B-c): the module is merged (PR #64) and tested. Model-written items reach documents only through it: `admitAiItem` (`src/lib/content/ai-item.ts`) parses every field, `lesson-package/2` stores the ASTs, and the TeX and HTML renderers print from them (see `docs/ai-items.md`). No LLM item source calls it yet (B-e), so production drafts still hold deterministic items only.
 
 ## String form
 
