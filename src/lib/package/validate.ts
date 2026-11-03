@@ -5,8 +5,10 @@ import { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import { ALIGNMENT_TITLE, EDGES, sectionId } from "./build";
 import { sectionContentHash } from "./hash";
 import { expectedInputsHash } from "./inputs";
+import { aiReport, type AiReport } from "./ai-check";
+import { packageHasAiBlocks } from "./ai-blocks";
 import { checkText, curriculumNames } from "./prose-rules";
-import { DOCUMENT_SECTION_KINDS, PackageSchema, StoredContextShape, type LessonPackage, type Section, type SectionKind } from "./schema";
+import { DOCUMENT_SECTION_KINDS, PACKAGE_SCHEMA_VERSION, PackageSchema, StoredContextShape, type LessonPackage, type Section, type SectionKind } from "./schema";
 
 export const PACKAGE_VALIDATOR_VERSION = `package/2+${VALIDATOR_VERSION}`;
 
@@ -24,9 +26,12 @@ export interface StructureReport {
   issues: Issue[];
 }
 export interface PackageReport {
-  overall: "verified" | "failed" | "unverified";
+  /** `labelled`: every check that can run passed and the package carries model-written items that are shown with their labels. */
+  overall: "verified" | "labelled" | "failed" | "unverified";
   structure: StructureReport;
   math: LessonMathReport | null;
+  /** The model items (`lesson-package/2`); null for a deterministic package. */
+  ai: AiReport | null;
   prose: ProseCheckReport;
   validatorVersion: string;
 }
@@ -97,6 +102,9 @@ function checkStructure(pkg: LessonPackage, context: CurriculumContext, request:
   if (new Set(ids).size !== ids.length) issues.push({ code: "SECTION_ID_DUPLICATE" });
   const byId = new Map(pkg.sections.map((s) => [s.id, s]));
 
+  // model-written blocks exist only in /2: a /1 package that carries one was not made by the deterministic builder
+  if (pkg.schemaVersion === PACKAGE_SCHEMA_VERSION && packageHasAiBlocks(pkg)) issues.push({ code: "AI_BLOCK_IN_V1" });
+
   if (!verifyContextHash(context)) issues.push({ code: "CONTEXT_HASH_MISMATCH" });
 
   // outline minutes add up to the requested duration
@@ -144,9 +152,9 @@ function checkStructure(pkg: LessonPackage, context: CurriculumContext, request:
   }
 
   // a section that exists must carry its questions: an empty exercise set or answer key is not a lesson
-  for (const [kind, type] of [["exercises", "question"], ["solutions", "solution"], ["worked_examples", "worked_example"]] as const) {
+  for (const [kind, types] of [["exercises", ["question", "ai_question"]], ["solutions", ["solution", "ai_solution"]], ["worked_examples", ["worked_example", "ai_worked_example"]]] as const) {
     for (const section of pkg.sections) {
-      if (section.kind === kind && !section.blocks.some((b) => b.type === type)) issues.push({ code: "SECTION_EMPTY", where: section.id });
+      if (section.kind === kind && !section.blocks.some((b) => (types as readonly string[]).includes(b.type))) issues.push({ code: "SECTION_EMPTY", where: section.id });
     }
   }
 
@@ -184,6 +192,7 @@ export function validatePackage(raw: unknown): PackageReport {
       overall: "failed",
       structure: { overall: "fail", issues: [{ code: "SCHEMA_INVALID", detail: parsed.error.issues[0]?.path.join(".") }] },
       math: null,
+      ai: null,
       prose: { overall: "fail", issues: [] },
       validatorVersion: PACKAGE_VALIDATOR_VERSION,
     };
@@ -193,6 +202,7 @@ export function validatePackage(raw: unknown): PackageReport {
     overall: "failed",
     structure: { overall: "fail", issues: [{ code, ...(detail ? { detail } : {}) }] },
     math: null,
+    ai: null,
     prose: { overall: "fail", issues: [] },
     validatorVersion: PACKAGE_VALIDATOR_VERSION,
   });
@@ -216,7 +226,16 @@ function validateParsed(pkg: LessonPackage, context: CurriculumContext, request:
   const answerKey = pkg.sections.flatMap((s) => (s.kind === "solutions" ? s.blocks.flatMap((b) => (b.type === "solution" ? [{ questionId: b.questionId, solution: b.solution, steps: b.steps }] : [])) : []));
   const math = validateLessonMath({ workedExamples: examples, exercises, answerKey });
   const prose = checkProse(pkg, context);
+  const hasAi = packageHasAiBlocks(pkg);
+  const ai = hasAi ? aiReport(pkg, context) : null;
+  const deterministicItems = examples.length + exercises.length + answerKey.length;
 
-  const overall = structure.overall === "fail" || prose.overall === "fail" || math.overall === "failed" ? "failed" : math.overall;
-  return { overall, structure, math, prose, validatorVersion: PACKAGE_VALIDATOR_VERSION };
+  const failed = structure.overall === "fail" || prose.overall === "fail" || math.overall === "failed" || ai?.overall === "fail";
+  let overall: PackageReport["overall"];
+  if (failed) overall = "failed";
+  else if (!hasAi) overall = math.overall;
+  // the deterministic part of a mixed package must still verify; a package of model items alone has none to verify
+  else if (deterministicItems > 0 && math.overall !== "verified") overall = "unverified";
+  else overall = "labelled";
+  return { overall, structure, math: deterministicItems === 0 && hasAi ? null : math, ai, prose, validatorVersion: PACKAGE_VALIDATOR_VERSION };
 }

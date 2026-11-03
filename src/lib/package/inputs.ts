@@ -15,12 +15,12 @@ export function expectedInputsHash(pkg: LessonPackage, section: Section, request
   const upstreamKinds = EDGES.filter((e) => e.to === section.kind).map((e) => e.from);
   const upstream = upstreamKinds.map((kind) => pkg.sections.find((s) => s.kind === kind)?.contentHash);
   if (minutes === undefined || upstream.some((h) => h === undefined)) return null;
-  const countBlocks = (kind: SectionKind, type: string) => pkg.sections.filter((s) => s.kind === kind).reduce((n, s) => n + s.blocks.filter((b) => b.type === type).length, 0);
+  const countBlocks = (kind: SectionKind, ...types: string[]) => pkg.sections.filter((s) => s.kind === kind).reduce((n, s) => n + s.blocks.filter((b) => types.includes(b.type)).length, 0);
   const params = sectionInputsParams(section.kind, {
     seed: section.provenance.seed ?? pkg.seed,
     difficulty: section.provenance.difficulty ?? request.difficulty,
-    exampleCount: countBlocks("worked_examples", "worked_example"),
-    exerciseCount: countBlocks("exercises", "question"),
+    exampleCount: countBlocks("worked_examples", "worked_example", "ai_worked_example"),
+    exerciseCount: countBlocks("exercises", "question", "ai_question"),
     llm: section.provenance.method === "llm" ? { promptVersion: PROSE_PROMPT_VERSION, model: section.provenance.model ?? null } : null,
   });
   return sectionInputsHash({ kind: section.kind, params: { ...params, contextHash: context.contextHash, minutes }, upstreamContentHashes: upstream as string[] });
