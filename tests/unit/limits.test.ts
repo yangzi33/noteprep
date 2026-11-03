@@ -16,8 +16,54 @@ describe("limits", () => {
     expect(DEFAULT_LIMITS.minExercises).toBeLessThanOrEqual(DEFAULT_LIMITS.maxExercises);
     expect(DEFAULT_LIMITS.maxDraftBytes).toBeLessThanOrEqual(MAX_DRAFT_BYTES_CEILING);
     expect(MAX_DRAFT_BYTES_CEILING).toBeLessThan(DB_CONTENT_BACKSTOP_BYTES);
-    // reserved model budgets are off until a model source exists
-    expect([DEFAULT_LIMITS.llmMaxCallsPerDraft, DEFAULT_LIMITS.llmMaxTokensPerDraft, DEFAULT_LIMITS.llmMaxCostMicrosPerDraft]).toEqual([0, 0, 0]);
+  });
+
+  it("has no per-draft model budget anywhere (Option A, spec S3)", () => {
+    const names = Object.values(LIMIT_ENV_NAMES);
+    expect(names.filter((n) => /^LLM_.*PER_DRAFT$/.test(n))).toEqual([]);
+    expect(Object.keys(DEFAULT_LIMITS).filter((k) => /^llm.*PerDraft$/.test(k))).toEqual([]);
+  });
+
+  it("has the spend and AI-action limits with the spec defaults and bounds", () => {
+    expect(DEFAULT_LIMITS).toMatchObject({
+      aiOpsPerUserPerHour: 10,
+      llmItemsEnabled: 0,
+      llmCallsPerUserPerHour: 60,
+      llmMaxCallsPerJob: 8,
+      llmMaxTokensPerJob: 200_000,
+      llmMaxRetriesPerJob: 4,
+      llmSpendPerCallMicros: 100_000,
+      llmSpendPerPreviewMicros: 150_000,
+      llmSpendDailyMicrosPerUser: 3_000_000,
+      llmSpendLifetimeMicrosPerUser: 25_000_000,
+      llmSpendGlobalMonthlyMicros: 100_000_000,
+      llmSpendAlertPercent: 70,
+      llmStaleReservationSeconds: 300,
+    });
+    expect(LIMIT_ENV_NAMES).toMatchObject({
+      aiOpsPerUserPerHour: "AI_OPS_PER_USER_PER_HOUR",
+      llmItemsEnabled: "LLM_ITEMS_ENABLED",
+      llmCallsPerUserPerHour: "LLM_CALLS_PER_USER_PER_HOUR",
+      llmMaxCallsPerJob: "LLM_MAX_CALLS_PER_JOB",
+      llmMaxTokensPerJob: "LLM_MAX_TOKENS_PER_JOB",
+      llmMaxRetriesPerJob: "LLM_MAX_RETRIES_PER_JOB",
+      llmSpendPerCallMicros: "LLM_SPEND_PER_CALL_MICROS",
+      llmSpendPerPreviewMicros: "LLM_SPEND_PER_PREVIEW_MICROS",
+      llmSpendDailyMicrosPerUser: "LLM_SPEND_DAILY_MICROS_PER_USER",
+      llmSpendLifetimeMicrosPerUser: "LLM_SPEND_LIFETIME_MICROS_PER_USER",
+      llmSpendGlobalMonthlyMicros: "LLM_SPEND_GLOBAL_MONTHLY_MICROS",
+      llmSpendAlertPercent: "LLM_SPEND_ALERT_PERCENT",
+      llmStaleReservationSeconds: "LLM_STALE_RESERVATION_SECONDS",
+    });
+    expect(parseLimits({ AI_OPS_PER_USER_PER_HOUR: "3", LLM_ITEMS_ENABLED: "1", LLM_SPEND_ALERT_PERCENT: "50" })).toMatchObject({ aiOpsPerUserPerHour: 3, llmItemsEnabled: 1, llmSpendAlertPercent: 50 });
+    for (const bad of [{ AI_OPS_PER_USER_PER_HOUR: "0" }, { LLM_ITEMS_ENABLED: "2" }, { LLM_SPEND_ALERT_PERCENT: "100" }, { LLM_SPEND_ALERT_PERCENT: "0" }, { LLM_SPEND_PER_CALL_MICROS: "0" }, { LLM_MAX_CALLS_PER_JOB: "0" }]) {
+      expect(() => parseLimits(bad)).toThrow();
+    }
+  });
+
+  it("refuses a per-call cap above the per-preview cap, and a per-preview cap above the daily cap", () => {
+    expect(() => parseLimits({ LLM_SPEND_PER_CALL_MICROS: "200000", LLM_SPEND_PER_PREVIEW_MICROS: "150000" })).toThrow(/LLM_SPEND_PER_CALL_MICROS/);
+    expect(() => parseLimits({ LLM_SPEND_PER_PREVIEW_MICROS: "4000000" })).toThrow(/LLM_SPEND_PER_PREVIEW_MICROS/);
   });
 
   it("has the confirm-attempt limit with its own variable, default and bounds", () => {

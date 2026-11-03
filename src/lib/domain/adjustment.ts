@@ -57,7 +57,6 @@ export interface AdjustmentLimits {
   job: { maxAttempts: number; deadlineMinutes: number };
   llm: {
     enabled: boolean;
-    budgetPerLesson: number;
     job: { maxCalls: number; maxTokens: number; maxCostMicros: number };
   };
 }
@@ -72,7 +71,6 @@ export const DEV_DEFAULT_ADJUSTMENT_LIMITS: AdjustmentLimits = {
   job: { maxAttempts: 3, deadlineMinutes: 10 }, // TEST VALUE
   llm: {
     enabled: false,
-    budgetPerLesson: 5, // TEST VALUE
     job: { maxCalls: 2, maxTokens: 20_000, maxCostMicros: 100_000 }, // TEST VALUE
   },
 };

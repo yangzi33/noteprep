@@ -9,7 +9,6 @@ import {
   methodOf,
 } from "@/lib/domain/adjustment";
 import {
-  AdjustmentBudgetExhausted,
   AdjustmentInProgress,
   AdjustmentNotApplicable,
   AdjustmentUnavailable,
@@ -114,7 +113,7 @@ describe("DEV_DEFAULT_ADJUSTMENT_LIMITS", () => {
       maxActivePerLesson: 1,
       maxActivePerUser: 2,
       job: { maxAttempts: 3, deadlineMinutes: 10 },
-      llm: { enabled: false, budgetPerLesson: 5, job: { maxCalls: 2, maxTokens: 20_000, maxCostMicros: 100_000 } },
+      llm: { enabled: false, job: { maxCalls: 2, maxTokens: 20_000, maxCostMicros: 100_000 } },
     });
   });
 });
@@ -125,7 +124,6 @@ describe("adjustment domain errors", () => {
     [new AdjustmentNotApplicable("already_basic"), "ADJUSTMENT_NOT_APPLICABLE"],
     [new SourceSuperseded(), "SOURCE_SUPERSEDED"],
     [new AdjustmentInProgress(), "ADJUSTMENT_IN_PROGRESS"],
-    [new AdjustmentBudgetExhausted(), "ADJUSTMENT_BUDGET_EXHAUSTED"],
     [new AdjustmentUnavailable(), "ADJUSTMENT_UNAVAILABLE"],
     [new CorrectionRejected(["contains_digit", "contains_url"]), "CORRECTION_REJECTED"],
   ];
@@ -146,7 +144,7 @@ describe("adjustment domain errors", () => {
   });
   it("expose reason and codes but keep messages free of content", () => {
     expect((cases[0]![0] as AdjustmentNotApplicable).reason).toBe("already_basic");
-    expect((cases[5]![0] as CorrectionRejected).codes).toEqual(["contains_digit", "contains_url"]);
+    expect((cases[4]![0] as CorrectionRejected).codes).toEqual(["contains_digit", "contains_url"]);
     for (const e of [new AdjustmentNotApplicable(secret), new CorrectionRejected([secret])]) {
       // reason/codes are machine codes supplied by the caller; the message itself must not echo them
       expect(e.message).not.toContain(secret);
