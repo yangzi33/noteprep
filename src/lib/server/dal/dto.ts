@@ -152,4 +152,7 @@ export interface ExportStatusDto {
   lessonId: string;
   revisionId: string | null;
   deadlineAt: Date;
+  createdAt: Date;
+  /** Where the frozen snapshot came from, only for a failed export and only while the owner's draft still exists. */
+  draft: { draftId: string; versionId: string } | null;
 }

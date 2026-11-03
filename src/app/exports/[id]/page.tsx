@@ -29,18 +29,20 @@ export default async function ExportPage({ params, searchParams }: { params: Pro
   }
 
   let documents: { document: "notes" | "worksheet" | "solutions"; pages: number }[] = [];
+  let lessonGone = false;
   if (view.state === "succeeded" && view.revisionId) {
     const lesson = await dal.lessons.getLessonView(ctx, view.lessonId, view.revisionId).catch((error: unknown) => {
       if (domainErrorCode(error) === "NOT_FOUND") return null;
       throw error;
     });
     documents = lesson ? lesson.documents.map((d) => ({ document: d.document, pages: d.pages })) : [];
+    lessonGone = lesson === null;
   }
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-2xl p-4 sm:p-8">
       {/* key: re-mount when the server-side state changes (for example after canceling) */}
-      <ExportStatus key={`${view.state}-${view.job.state}-${view.job.attempt}-${view.job.cancelRequested}-${view.charge}`} initial={view} documents={documents} outcome={outcome} />
+      <ExportStatus key={`${view.state}-${view.job.state}-${view.job.attempt}-${view.job.cancelRequested}-${view.charge}`} initial={view} documents={documents} outcome={outcome} lessonGone={lessonGone} />
     </main>
   );
 }

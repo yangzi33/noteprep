@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeExportOutcome, exportPhase, isFinalPhase, isSettledExport, toExportView, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
+import { describeExportOutcome, exportPhase, exportRecoveryLinks, isFinalPhase, isQueueSlow, isSettledExport, SLOW_QUEUE_NOTICE, toExportView, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
 
 const dto = (over: Record<string, unknown> = {}, job: Record<string, unknown> = {}, reservation: string | null = "reserved") =>
   ({
@@ -10,6 +10,8 @@ const dto = (over: Record<string, unknown> = {}, job: Record<string, unknown> = 
     lessonId: "l-1",
     revisionId: null,
     deadlineAt: new Date("2026-10-24T10:00:00Z"),
+    createdAt: new Date("2026-10-24T09:00:00Z"),
+    draft: null,
     ...over,
   }) as Parameters<typeof toExportView>[0];
 
@@ -228,5 +230,44 @@ describe("confirm outcomes (created, joined, reused, replayed) on the result pag
   it("reused never rewrites a failed or canceled export's wording", () => {
     const failed = view({ state: "failed" }, { state: "failed", errorCode: "compile_failed" }, "released");
     expect(describeExportOutcome(failed, "failed", "reused").charge).toBe("No lesson pack was used.");
+  });
+});
+
+describe("slow queue (the worker may be offline)", () => {
+  const created = Date.parse("2026-10-24T09:00:00Z");
+  const queued = () => view();
+  it("maps createdAt to an ISO string", () => {
+    expect(queued().createdAt).toBe("2026-10-24T09:00:00.000Z");
+  });
+  it("is slow only for a queued export older than 90 seconds", () => {
+    expect(isQueueSlow(queued(), "queued", created + 89_000)).toBe(false);
+    expect(isQueueSlow(queued(), "queued", created + 90_001)).toBe(true);
+  });
+  it("is never slow for any other phase, so a running or settled export never shows the notice", () => {
+    const later = created + 3_600_000;
+    for (const p of ["retrying", "running:compiling", "running:storing", "stopping", "succeeded", "failed", "canceled", "retired", "confirming", "stalled", "unknown", "session_expired", "not_found"] as const) {
+      expect(isQueueSlow(queued(), p, later), p).toBe(false);
+    }
+  });
+  it("is not slow when the creation time is unreadable", () => {
+    expect(isQueueSlow({ ...queued(), createdAt: "not a date" }, "queued", created + 999_999)).toBe(false);
+  });
+  it("says how to leave and that nothing is used, without a charge claim", () => {
+    expect(SLOW_QUEUE_NOTICE).toBe("Taking longer than usual. You can cancel; nothing is used.");
+  });
+});
+
+describe("exportRecoveryLinks (a failed export has a way back)", () => {
+  const D = "11111111-1111-4111-8111-111111111111";
+  const V = "22222222-2222-4222-8222-222222222222";
+  const failed = (draft: { draftId: string; versionId: string } | null) => view({ state: "failed", draft }, { state: "failed", errorCode: "compile_failed" }, "released");
+  it("maps the draft ids", () => {
+    expect(failed({ draftId: D, versionId: V }).draft).toEqual({ draftId: D, versionId: V });
+  });
+  it("links back to the draft version and to the export confirmation", () => {
+    expect(exportRecoveryLinks(failed({ draftId: D, versionId: V }))).toEqual({ draft: `/drafts/${D}?v=${V}`, retry: `/drafts/${D}/export?v=${V}` });
+  });
+  it("offers nothing when the draft no longer exists", () => {
+    expect(exportRecoveryLinks(failed(null))).toBeNull();
   });
 });

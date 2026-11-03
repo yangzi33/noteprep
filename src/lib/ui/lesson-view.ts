@@ -10,6 +10,11 @@ export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
 /** The review reminder shown on the draft, export confirmation and lesson pages. Never claims zero errors. */
 export const REVIEW_REMINDER = "AI-assisted material can contain mistakes. Read everything before you use it with a student.";
 
+/** The message for the lesson page's `?error=` value, or null for anything unknown (a hand-edited URL shows nothing). */
+export function lessonErrorNotice(code: string | undefined): string | null {
+  return code === "file_unavailable" ? "That file could not be opened. Try again in a moment; if it keeps happening, contact us." : null;
+}
+
 export const DOCUMENT_PURPOSE: Record<DocumentKind, string> = {
   notes: "For you: explanations, worked examples and a teaching sequence",
   worksheet: "For the student: practice questions with space to write, no answers",

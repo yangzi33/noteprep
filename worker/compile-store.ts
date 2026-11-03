@@ -72,8 +72,8 @@ export async function compileStoreCommit<R, M = ManifestV2>(args: {
     if (signal?.aborted) throw error; // cancellation and lease loss are handled by the runner
     // Only an unavailable sandbox is transient. The same source times out or fails again, so those (and anything the
     // compiler did not classify) are final instead of repeating the model call.
-    if (error instanceof CompileError) throw new PipelineError(error.code, error.code === "sandbox_unavailable" && error.retryable);
-    throw new PipelineError("compile_failed", false);
+    if (error instanceof CompileError) throw new PipelineError(error.code, error.code === "sandbox_unavailable" && error.retryable, undefined, error.detail);
+    throw new PipelineError("compile_failed", false, undefined, `compiler threw ${error instanceof Error ? error.name : "a non-error"}`);
   }
   // Compile everything or nothing: the compiler must return exactly the documents asked for.
   if (compiledDocs.length !== rendered.length || !rendered.every((d) => compiledDocs.some((c) => c.id === d.id))) {

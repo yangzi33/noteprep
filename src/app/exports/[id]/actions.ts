@@ -5,6 +5,7 @@ import { z } from "zod";
 import { domainErrorCode } from "@/lib/domain/errors";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
+import { logActionFailure } from "@/lib/server/log-action";
 
 /** Cancel works whatever EXPORT_ENABLED says: the rollback procedure needs it. The DAL filters by owner. */
 export async function cancelExportAction(formData: FormData) {
@@ -15,6 +16,7 @@ export async function cancelExportAction(formData: FormData) {
   try {
     await webDal().exports.cancelExport(ctx, exportId);
   } catch (error) {
+    logActionFailure("export_cancel_failed", error, { exportId });
     if (!domainErrorCode(error)) throw error; // NotFound looks the same as "nothing to cancel"
   }
   redirect(`/exports/${exportId}`);

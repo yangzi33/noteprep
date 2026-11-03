@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { artifactPathV2, parseManifest, parseManifestV2 } from "@/lib/domain/manifest";
-import { alignmentNotice, DOCUMENT_LABELS, succeededPanel } from "@/lib/ui/lesson-view";
+import { alignmentNotice, DOCUMENT_LABELS, lessonErrorNotice, succeededPanel } from "@/lib/ui/lesson-view";
+
+describe("lessonErrorNotice", () => {
+  it("explains the file_unavailable redirect without promising a cause", () => {
+    expect(lessonErrorNotice("file_unavailable")).toBe("That file could not be opened. Try again in a moment; if it keeps happening, contact us.");
+  });
+  it("ignores any other value, so a hand-edited URL shows nothing", () => {
+    expect(lessonErrorNotice("<script>")).toBeNull();
+    expect(lessonErrorNotice(undefined)).toBeNull();
+  });
+});
 
 const file = (n: number) => ({ path: `o/l/r/a/${n}`, sha256: "a".repeat(64), bytes: 10 });
 const manifest = (over: Record<string, unknown> = {}) => ({

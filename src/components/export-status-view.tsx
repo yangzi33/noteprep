@@ -5,7 +5,7 @@ import { Notice } from "@/components/ui/notice";
 import { TextAction } from "@/components/ui/text-action";
 import { cn } from "cn";
 import type { DocumentKind } from "@/lib/package/schema";
-import { describeExportOutcome, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
+import { describeExportOutcome, exportRecoveryLinks, SLOW_QUEUE_NOTICE, type ExportPhase, type ExportView } from "@/lib/ui/export-view";
 import { DOCUMENT_LABELS } from "@/lib/ui/lesson-view";
 
 export type ExportOutcomeNote = "reused" | "joined";
@@ -18,6 +18,10 @@ export interface ExportStatusViewProps {
   /** The finished documents (only used once the export has succeeded). */
   documents: ReadonlyArray<{ document: DocumentKind; pages: number }>;
   cancelAction: (formData: FormData) => void | Promise<void>;
+  /** A queued export that has waited longer than usual (the clock lives in the caller, so this component stays pure). */
+  slow?: boolean;
+  /** The export succeeded but its lesson can no longer be opened. */
+  lessonGone?: boolean;
 }
 
 const OUTCOME_NOTES: Record<ExportOutcomeNote, string> = {
@@ -74,13 +78,16 @@ function noteApplies(note: ExportOutcomeNote | null, phase: ExportPhase): note i
   return false;
 }
 
-export function ExportStatusView({ view, phase, outcome, documents, cancelAction }: ExportStatusViewProps) {
+export function ExportStatusView({ view, phase, outcome, documents, cancelAction, slow = false, lessonGone = false }: ExportStatusViewProps) {
   const description = describeExportOutcome(view, phase, noteApplies(outcome, phase) ? outcome : null);
   const steps = stepStates(phase);
   const terminalJob = view.job.state === "succeeded" || view.job.state === "failed" || view.job.state === "canceled";
   const canCancel = phase !== "not_found" && phase !== "session_expired" && !terminalJob && !view.job.cancelRequested && view.state === "pending";
-  const showFiles = phase === "succeeded" && view.revisionId !== null;
-  const live = [description.heading, description.detail, description.charge].filter(Boolean).join(" ");
+  const showFiles = phase === "succeeded" && view.revisionId !== null && !lessonGone;
+  const showLessonGone = phase === "succeeded" && lessonGone;
+  const showSlow = slow && phase === "queued";
+  const recovery = phase === "failed" || phase === "canceled" ? exportRecoveryLinks(view) : null;
+  const live = [description.heading, description.detail, showSlow ? SLOW_QUEUE_NOTICE : null, description.charge].filter(Boolean).join(" ");
 
   return (
     <section className="rounded-card border border-border bg-card p-6 sm:p-8" data-testid="export-status" data-phase={phase}>
@@ -100,6 +107,12 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
       {noteApplies(outcome, phase) && (
         <Notice intent="info" className="mt-4" data-testid="export-outcome-note">
           {OUTCOME_NOTES[outcome]}
+        </Notice>
+      )}
+
+      {showSlow && (
+        <Notice intent="info" className="mt-4" data-testid="export-slow">
+          {SLOW_QUEUE_NOTICE}
         </Notice>
       )}
 
@@ -138,6 +151,21 @@ export function ExportStatusView({ view, phase, outcome, documents, cancelAction
           <Link href="/lessons" className="inline-flex min-h-11 items-center font-semibold underline" data-testid="export-failed-back">
             Back to My lesson packs
           </Link>
+        </p>
+      )}
+      {recovery && (
+        <p className="mt-3 flex flex-wrap gap-x-6 text-sm font-semibold">
+          <Link href={recovery.draft} className="inline-flex min-h-11 items-center underline" data-testid="export-back-to-draft">
+            Back to the draft
+          </Link>
+          <Link href={recovery.retry} className="inline-flex min-h-11 items-center underline" data-testid="export-try-again">
+            Try again
+          </Link>
+        </p>
+      )}
+      {showLessonGone && (
+        <p className="mt-6 text-base" data-testid="export-lesson-gone">
+          This lesson pack was deleted.
         </p>
       )}
 

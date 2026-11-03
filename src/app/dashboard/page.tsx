@@ -66,7 +66,10 @@ export default async function DashboardPage() {
           {cards.length > 0 && <TextAction href="/lessons">See all lesson packs</TextAction>}
         </div>
         {cards.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">Your exported lesson packs will appear here.</p>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground">Your exported lesson packs will appear here.</p>
+            <TextAction href="/prepare">Create your first lesson pack</TextAction>
+          </div>
         ) : (
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((card) => (

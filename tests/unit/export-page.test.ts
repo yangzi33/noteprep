@@ -19,7 +19,7 @@ vi.mock("@/components/export-status", () => ({ ExportStatus: () => null }));
 import ExportPage from "@/app/exports/[id]/page";
 
 const dto = (over: Record<string, unknown> = {}, job: Record<string, unknown> = {}, reservation = "reserved") => ({
-  exportId: E, state: "pending", job: { state: "queued", stage: null, attempt: 0, maxAttempts: 3, cancelRequested: false, errorCode: null, ...job }, reservation: { state: reservation }, lessonId: L, revisionId: null, deadlineAt: new Date("2026-10-24T10:00:00Z"), ...over,
+  exportId: E, state: "pending", job: { state: "queued", stage: null, attempt: 0, maxAttempts: 3, cancelRequested: false, errorCode: null, ...job }, reservation: { state: reservation }, lessonId: L, revisionId: null, deadlineAt: new Date("2026-10-24T10:00:00Z"), createdAt: new Date("2026-10-24T09:00:00Z"), draft: null, ...over,
 });
 
 async function render(search: Record<string, string | string[] | undefined> = {}) {
@@ -67,7 +67,14 @@ describe("/exports/[id] page", () => {
   it("a succeeded export whose lesson view is NOT_FOUND still renders, with no documents", async () => {
     m.getExportStatus.mockResolvedValueOnce(dto({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "consumed"));
     m.getLessonView.mockRejectedValueOnce(new NotFound());
-    expect((await render()).props.documents).toEqual([]);
+    const { props } = await render();
+    expect(props.documents).toEqual([]);
+    expect(props.lessonGone).toBe(true);
+  });
+  it("a succeeded export with a readable lesson is not marked gone", async () => {
+    m.getExportStatus.mockResolvedValueOnce(dto({ state: "succeeded", revisionId: R }, { state: "succeeded" }, "consumed"));
+    m.getLessonView.mockResolvedValueOnce({ documents: [] });
+    expect((await render()).props.lessonGone).toBe(false);
   });
   it("the component key changes with every server-side state change, so the client re-mounts", async () => {
     m.getExportStatus.mockResolvedValueOnce(dto());

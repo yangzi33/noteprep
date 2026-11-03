@@ -71,8 +71,8 @@ export function verifyExportInput(input: ExportInput, env: VerifyEnv & { jobId?:
     let out: RenderedDocument;
     try {
       out = env.render(pkg, doc, spec.pageFormat);
-    } catch {
-      throw new PipelineError("render_failed", false); // deterministic: it will fail the same way again
+    } catch (error) {
+      throw new PipelineError("render_failed", false, undefined, `render threw ${error instanceof Error ? error.name : "a non-error"}`); // deterministic: it will fail the same way again
     }
     if (sha256Hex(out.tex) !== shaMap[doc]) {
       log("render_mismatch", { jobId: env.jobId, document: doc }); // no content, only which document
