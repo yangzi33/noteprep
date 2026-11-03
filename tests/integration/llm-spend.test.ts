@@ -237,6 +237,31 @@ describe("settle, release and recovery", () => {
     expect(await drift()).toEqual([]);
   });
 
+  it("settles against the month and day of the reservation, also when the clock has moved on", async () => {
+    const job = await freshJob();
+    const r = await dal().reserve(reserveInput(job));
+    if (r.status !== "reserved") throw new Error("expected reserved");
+    // Move the reservation, and the counters it created, into a past month (triggers off: identity columns are immutable).
+    const client = await admin.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SET LOCAL session_replication_role = replica");
+      await client.query(`UPDATE llm_call SET call_month = date '2020-01-01', call_day = date '2020-01-31' WHERE id = $1`, [r.callId]);
+      await client.query(`UPDATE llm_spend_month SET month = date '2020-01-01'`);
+      await client.query(`UPDATE llm_spend_user_day SET day = date '2020-01-31' WHERE owner_id = $1`, [job.ownerId]);
+      await client.query("COMMIT");
+    } finally {
+      client.release();
+    }
+    expect(await drift()).toEqual([]);
+    await dal().settle({ callId: r.callId, usage: { inputTokens: 1, outputTokens: 1, costMicros: 777 }, usageEstimated: false, reason: "reported" });
+    const months = (await admin.query(`SELECT to_char(month, 'YYYY-MM') m, reserved_micros::text r, settled_micros::text s FROM llm_spend_month`)).rows;
+    expect(months).toEqual([{ m: "2020-01", r: "0", s: "777" }]);
+    const day = (await admin.query(`SELECT to_char(day, 'YYYY-MM-DD') d, reserved_micros::text r, settled_micros::text s FROM llm_spend_user_day WHERE owner_id = $1`, [job.ownerId])).rows;
+    expect(day).toEqual([{ d: "2020-01-31", r: "0", s: "777" }]);
+    expect(await drift()).toEqual([]);
+  });
+
   it("settles at the estimate, never zero, when no usage was reported (C6)", async () => {
     const job = await freshJob();
     const r = await dal().reserve(reserveInput(job));
