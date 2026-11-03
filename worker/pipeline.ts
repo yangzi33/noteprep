@@ -9,7 +9,10 @@ import type { createSettlementDal } from "@/lib/server/dal/settlement";
 import { CompileError, type Compiler, type DocumentCompiler } from "@/lib/latex/compiler";
 import { renderPackage, TEMPLATE_VERSION } from "@/lib/latex/render";
 import { renderSkeletonSource } from "@/lib/latex/skeleton";
+import type { Prices } from "@/lib/llm/estimate";
+import { createMeteredProvider, type SpendPort } from "@/lib/llm/metered";
 import type { LlmProvider } from "@/lib/llm/types";
+import { log } from "./log";
 import { sha256Of, StorageError, type ObjectStore, type StorageErrorDetail } from "@/lib/storage/store";
 import { compileStoreCommit, withAttemptCleanup } from "./compile-store";
 import { buildPackage } from "@/lib/package/build";
@@ -54,6 +57,12 @@ export interface PipelineDeps {
   jobs: JobsDal;
   settlement: ReturnType<typeof createSettlementDal>;
   llm: LlmProvider;
+  /**
+   * The spend ledger (spec 5.5). When set, every provider call of a job is reserved in the ledger before it is sent and
+   * settled after it, and the job-level usage counters are maintained by the ledger. The worker's entry point always sets it;
+   * only tests of unrelated behaviour leave it out.
+   */
+  spend?: { port: SpendPort; prices: Prices; model: string; configId?: string | null };
   compiler: Compiler;
   store: ObjectStore;
   leaseMs: number;
@@ -90,7 +99,7 @@ const SkeletonProse = z.object({ objectives: z.array(z.string().max(300)).min(1)
  * settlement are the real ones.
  */
 export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: AbortSignal): Promise<void> {
-  const { jobs, settlement, llm, compiler, store, leaseMs } = deps;
+  const { jobs, settlement, compiler, store, leaseMs } = deps;
 
   const checkpoint = async (stage: "generating" | "validating" | "compiling" | "storing") => {
     signal.throwIfAborted();
@@ -98,6 +107,21 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
     if (state === "lost") throw new LostLease();
     if (state === "cancel_requested") throw new CancelRequested();
   };
+
+  const metered = deps.spend !== undefined;
+  const llm: LlmProvider = deps.spend
+    ? createMeteredProvider({
+        inner: deps.llm,
+        spend: deps.spend.port,
+        job: { id: job.id, attempt: job.attempt, fencingToken: job.fencingToken },
+        prices: deps.spend.prices,
+        model: deps.spend.model,
+        configId: deps.spend.configId ?? null,
+        promptVersion: PROSE_PROMPT_VERSION,
+        beforeSend: () => checkpoint("generating"),
+        onEvent: (event, fields) => log(event, fields),
+      })
+    : deps.llm;
 
   // --- generating ---------------------------------------------------------------------------
   await checkpoint("generating");
@@ -131,6 +155,7 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
           maxOutputTokens: deps.proseMaxOutputTokens ?? 4_000,
           requestId: randomUUID,
           charge: async (usage) => {
+            if (metered) return; // the ledger settles every call and keeps the job counters
             const { exceeded } = await jobs.chargeUsage(job.id, job.fencingToken, {
               calls: 1,
               tokens: usage.inputTokens + usage.outputTokens,
@@ -196,7 +221,7 @@ export async function runPipeline(job: ClaimedJob, deps: PipelineDeps, signal: A
       signal,
     });
     const usage = result.usage;
-    if (usage) {
+    if (usage && !metered) {
       const { exceeded } = await jobs.chargeUsage(job.id, job.fencingToken, {
         calls: 1,
         tokens: usage.inputTokens + usage.outputTokens,

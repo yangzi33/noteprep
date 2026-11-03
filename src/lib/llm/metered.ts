@@ -24,7 +24,7 @@ export interface MeteredOptions {
    */
   beforeSend?: () => Promise<void>;
   /** Structured event sink (names and counts only, never prompts or answers). */
-  onEvent?: (event: string, fields: Record<string, unknown>) => void;
+  onEvent?: (event: string, fields: Record<string, string | number | boolean | null>) => void;
 }
 
 const PURPOSE_OF_TASK: Record<StructuredRequest["task"], CallPurpose> = {

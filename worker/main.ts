@@ -4,6 +4,7 @@ import { createWorkerDal } from "@/lib/server/dal";
 import { CompileError, SkeletonCompiler, SkeletonDocumentCompiler, type Compiler, type DocumentCompiler } from "@/lib/latex/compiler";
 import { DockerLatexCompiler } from "@/lib/latex/docker-compiler";
 import { DEFAULT_SANDBOX } from "@/lib/latex/sandbox";
+import { FAKE_PROVIDER_PRICES } from "@/lib/llm/estimate";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FsObjectStore, type ObjectStore } from "@/lib/storage/store";
 import { SupabaseObjectStore } from "@/lib/storage/supabase-store";
@@ -25,7 +26,7 @@ const refusingLegacyCompiler: Compiler = {
 async function main() {
   const config = workerEnv();
   const db = createDb(config.WORKER_DATABASE_URL);
-  const dal = createWorkerDal(db, { purgeGraceDays: config.limits.purgeGraceDays, exportDeadlineGraceSeconds: config.limits.exportDeadlineGraceSeconds });
+  const dal = createWorkerDal(db, { purgeGraceDays: config.limits.purgeGraceDays, exportDeadlineGraceSeconds: config.limits.exportDeadlineGraceSeconds, limits: config.limits });
   const stop = new AbortController();
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.once(signal, () => {
@@ -53,6 +54,17 @@ async function main() {
       jobs: dal.jobs,
       settlement: dal.settlement,
       llm,
+      // Every provider call is reserved in the spend ledger before it is sent and settled after it. A real provider cannot start
+      // without both prices (the factory refuses), so the fake provider's stand-in prices are never applied to real calls.
+      spend: {
+        port: dal.spend,
+        prices:
+          config.LLM_PRICE_INPUT_MICROS_PER_MTOK !== undefined && config.LLM_PRICE_OUTPUT_MICROS_PER_MTOK !== undefined
+            ? { inputMicrosPerMTok: config.LLM_PRICE_INPUT_MICROS_PER_MTOK, outputMicrosPerMTok: config.LLM_PRICE_OUTPUT_MICROS_PER_MTOK }
+            : FAKE_PROVIDER_PRICES,
+        model: config.LLM_MODEL ?? "fake-model",
+        configId: config.LLM_PROVIDER,
+      },
       proseMode: config.LESSON_PROSE,
       // The legacy quick form's prompt only suits the fake provider; with a real one it uses the tutor's own objectives.
       legacyProse: legacyProseFor(llm),
@@ -69,6 +81,7 @@ async function main() {
     sweepMs: config.SWEEP_INTERVAL_SECONDS * 1000,
     signal: stop.signal,
     drafts: { purge: dal.drafts, batchSize: config.limits.purgeBatchSize },
+    spend: { spend: dal.spend, aiActions: dal.aiActions, batchSize: config.limits.purgeBatchSize },
     reconcile:
       config.RECONCILE_ENABLED === "1"
         ? { step: createReconciler({ jobs: dal.jobs, store, batchSize: config.RECONCILE_BATCH_LESSONS, budgetMs: config.RECONCILE_STEP_BUDGET_SECONDS * 1000, graceMs: config.RECONCILE_GRACE_SECONDS * 1000 }).step, intervalMs: config.RECONCILE_INTERVAL_SECONDS * 1000 }
