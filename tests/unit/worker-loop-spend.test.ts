@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { spendUpkeep } from "../../worker/loop";
+import { assertSpendWired, spendUpkeep } from "../../worker/loop";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -34,5 +34,20 @@ describe("spendUpkeep", () => {
     const names = out().map((e) => e.event);
     expect(names).toEqual(["spend_recover_error", "ai_action_finalize_error", "ai_action_orphans_error", "llm_spend_alert", "llm_spend_drift"]);
     expect(JSON.stringify(out())).not.toContain("db down");
+  });
+});
+
+describe("assertSpendWired", () => {
+  const upkeep = {} as NonNullable<Parameters<typeof spendUpkeep>[0]>;
+  const deps = (id: string, spend?: object) => ({ llm: { id }, spend }) as unknown as Parameters<typeof assertSpendWired>[0]["deps"];
+
+  it("lets the fake provider run without the ledger", () => {
+    expect(() => assertSpendWired({ deps: deps("fake") })).not.toThrow();
+  });
+
+  it("refuses a real provider that is not metered or has no upkeep", () => {
+    expect(() => assertSpendWired({ deps: deps("openai"), spend: upkeep })).toThrow(/requires the spend ledger/);
+    expect(() => assertSpendWired({ deps: deps("openai", {}) })).toThrow(/requires the spend ledger/);
+    expect(() => assertSpendWired({ deps: deps("openai", {}), spend: upkeep })).not.toThrow();
   });
 });

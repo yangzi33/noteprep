@@ -3,7 +3,7 @@ import { runWorkerLoop } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 
 const empty = { requeued: 0, failed: 0, canceled: 0, drift: [] };
-const stubDeps = (sweep: () => Promise<unknown>) => ({ jobs: { sweep, claimNext: async () => null }, leaseMs: 1000 }) as unknown as PipelineDeps;
+const stubDeps = (sweep: () => Promise<unknown>) => ({ jobs: { sweep, claimNext: async () => null }, llm: { id: "fake" }, leaseMs: 1000 }) as unknown as PipelineDeps;
 
 beforeEach(() => {
   vi.useFakeTimers();

@@ -40,6 +40,9 @@ const PURPOSE_OF_TASK: Record<StructuredRequest["task"], CallPurpose> = {
  */
 export function createMeteredProvider(options: MeteredOptions): LlmProvider {
   const { inner, spend, job, prices, onEvent } = options;
+  for (const price of [prices.inputMicrosPerMTok, prices.outputMicrosPerMTok]) {
+    if (!Number.isSafeInteger(price) || price <= 0) throw new Error("prices must be positive safe integers: a zero price would blind every cost cap");
+  }
   let seq = 0;
   const lastFailed = new Map<CallPurpose, boolean>();
 

@@ -122,9 +122,16 @@ function settleWithin(work: Promise<void>, ms: number): Promise<void> {
   });
 }
 
+/** A real provider must never run unmetered or without the spend upkeep: refuse to start rather than spend outside the caps. */
+export function assertSpendWired(options: Pick<LoopOptions, "deps" | "spend">): void {
+  if (options.deps.llm.id === "fake") return;
+  if (!options.deps.spend || !options.spend) throw new Error(`provider ${options.deps.llm.id} requires the spend ledger (deps.spend) and the spend upkeep (options.spend)`);
+}
+
 /** Polls for work until `signal` aborts; an in-flight job is allowed to finish (graceful shutdown). */
 export async function runWorkerLoop(options: LoopOptions): Promise<void> {
   const { deps, workerId, pollMs, sweepMs, signal } = options;
+  assertSpendWired(options);
   const step = options.runOnce ?? runOnce;
   const sweeper = sweepForever(deps.jobs, sweepMs, signal, options.onAlive, options.drafts, options.spend);
   const reconciler = options.reconcile ? reconcileForever(options.reconcile, signal) : Promise.resolve();

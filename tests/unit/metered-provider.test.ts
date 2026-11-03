@@ -155,4 +155,11 @@ describe("createMeteredProvider", () => {
     expect(res.ok).toBe(true);
     expect(events).toEqual(["llm_ledger_write_failed"]);
   });
+
+  it("refuses zero, negative or fractional prices (a free price would blind every cost cap)", () => {
+    const port = {} as SpendPort;
+    for (const bad of [0, -1, 1.5, Number.NaN]) {
+      expect(() => meter(new FakeLlmProvider(), port, { prices: { inputMicrosPerMTok: bad, outputMicrosPerMTok: 1 } })).toThrow(/positive safe integers/);
+    }
+  });
 });
