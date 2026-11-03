@@ -17,6 +17,7 @@ import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const flags = vi.hoisted(() => ({ forceInvalid: false }));
 // Lets one test make the (real) package validator refuse, to prove nothing is stored for an unverified package.
@@ -38,7 +39,7 @@ const TOPIC = `${base}/equations/both-sides`;
 const UNSUPPORTED_TOPIC = `${base}/shapes/areas`;
 
 const limitsWith = (over: Partial<Limits> = {}): Limits => ({ ...DEFAULT_LIMITS, ...over });
-const dal = (over: Partial<Limits> = {}) => createWebDal(appDb, { curriculum: { allowSample: true }, drafts: { limits: limitsWith(over) } });
+const dal = (over: Partial<Limits> = {}) => createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, curriculum: { allowSample: true }, drafts: { limits: limitsWith(over) } });
 const web = dal();
 const purger = createWorkerDal(workerDb, { purgeGraceDays: 7 }).drafts;
 

@@ -18,6 +18,7 @@ import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pools } from "../integration/helpers";
 import { compiler, leftoverContainers, pdfText } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
@@ -25,7 +26,7 @@ const ownerDb = createDb(info.adminUrl);
 const appDb = createDb(info.appUrl);
 const workerDb = createDb(info.workerUrl);
 const SAMPLE: Dataset = readDatasetDir(path.join(__dirname, "../../data/curricula/sample-math/sample-1"));
-const web = createWebDal(appDb, { limits: DEFAULT_LIMITS_FOR_TESTS, curriculum: { allowSample: true } });
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: DEFAULT_LIMITS_FOR_TESTS, curriculum: { allowSample: true } });
 const worker = createWorkerDal(workerDb, { backoff: { baseMs: 1, capMs: 5 } });
 let storeDir: string;
 let deps: PipelineDeps;

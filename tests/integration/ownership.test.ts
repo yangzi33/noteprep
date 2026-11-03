@@ -7,11 +7,12 @@ import { createDb } from "@/lib/server/db";
 import { createWebDal } from "@/lib/server/dal";
 import { inject } from "vitest";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin, app, worker } = pools();
 const db = createDb(info.appUrl);
-const dal = createWebDal(db, { limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 50, rateLimitPerHourPerUser: 500 } });
+const dal = createWebDal(db, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 50, rateLimitPerHourPerUser: 500 } });
 
 afterAll(async () => {
   await Promise.all([admin.end(), app.end(), worker.end(), db.$disconnect()]);

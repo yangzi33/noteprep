@@ -106,6 +106,8 @@ model Profile {
   exportSnapshots ExportSnapshot[]
   llmCalls        LlmCall[]
   aiActions       AiAction[]
+  llmSpendUser    LlmSpendUser?
+  llmSpendDays    LlmSpendUserDay[]
 
   @@map("profile")
 }
@@ -719,8 +721,8 @@ model LlmCall {
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   settledAt            DateTime? @map("settled_at") @db.Timestamptz(6)
 
-  owner Profile       @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  job   GenerationJob @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  owner Profile       @relation(fields: [ownerId], references: [id], onDelete: Restrict, map: "llm_call_owner_fkey")
+  job   GenerationJob @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict, map: "llm_call_job_owner_fkey")
 
   @@unique([jobId, jobAttempt, callSeq], map: "llm_call_attempt_seq_key")
   @@index([ownerId, createdAt], map: "llm_call_owner_created_idx")
@@ -728,7 +730,7 @@ model LlmCall {
   @@map("llm_call")
 }
 
-/// Global monthly spend counter (UTC month). Foreign keys of the per-user counters are SQL.
+/// Global monthly spend counter (UTC month).
 model LlmSpendMonth {
   month          DateTime  @id @db.Date
   reservedMicros BigInt    @default(0) @map("reserved_micros")
@@ -745,6 +747,8 @@ model LlmSpendUser {
   lifetimeReservedMicros BigInt @default(0) @map("lifetime_reserved_micros")
   lifetimeSettledMicros  BigInt @default(0) @map("lifetime_settled_micros")
 
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Restrict, map: "llm_spend_user_owner_fkey")
+
   @@map("llm_spend_user")
 }
 
@@ -754,6 +758,8 @@ model LlmSpendUserDay {
   reservedMicros BigInt   @default(0) @map("reserved_micros")
   settledMicros  BigInt   @default(0) @map("settled_micros")
   calls          Int      @default(0)
+
+  owner Profile @relation(fields: [ownerId], references: [id], onDelete: Restrict, map: "llm_spend_user_day_owner_fkey")
 
   @@id([ownerId, day])
   @@map("llm_spend_user_day")
@@ -777,8 +783,8 @@ model AiAction {
   finishedAt     DateTime? @map("finished_at") @db.Timestamptz(6)
   failureCode    String?   @map("failure_code")
 
-  owner Profile        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  job   GenerationJob? @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict)
+  owner Profile        @relation(fields: [ownerId], references: [id], onDelete: Restrict, map: "ai_action_owner_fkey")
+  job   GenerationJob? @relation(fields: [jobId, ownerId], references: [id, ownerId], onDelete: Restrict, map: "ai_action_job_owner_fkey")
 
   @@unique([ownerId, requestKey], map: "ai_action_owner_request_key")
   @@index([ownerId, slotHour], map: "ai_action_owner_slot_idx")

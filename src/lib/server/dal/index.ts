@@ -44,7 +44,7 @@ function aiActionsFor(dal: ReturnType<typeof createAiActionDal>) {
 }
 
 /** Web runtime: account setup, enqueueing, owner-filtered reads. Use the `app_runtime` connection. */
-export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: CurriculumDalOptions; drafts?: Omit<DraftDeps, "resolveContext">; exports?: Omit<ExportDeps, "generationLimits">; allowancePolicy?: AllowancePolicy; aiLimits?: Limits }) {
+export function createWebDal(db: Db, deps: GenerationDeps & { curriculum?: CurriculumDalOptions; drafts?: Omit<DraftDeps, "resolveContext">; exports?: Omit<ExportDeps, "generationLimits">; allowancePolicy?: AllowancePolicy; aiLimits: Limits }) {
   const allowancePolicy = deps?.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
   const curriculum = createCurriculumDal(db, deps?.curriculum);
   return {
@@ -60,7 +60,7 @@ export function createWebDal(db: Db, deps?: GenerationDeps & { curriculum?: Curr
      * User-initiated AI requests: the hourly limit, the kill switch and the global stop (spec 5.12). Only the caller's own slot can be
      * taken; closing and finalizing belong to the worker, and the slice that enqueues AI jobs composes `takeIn` in its own transaction.
      */
-    aiActions: aiActionsFor(createAiActionDal(db, deps?.aiLimits ?? DEFAULT_LIMITS)),
+    aiActions: aiActionsFor(createAiActionDal(db, deps.aiLimits)),
     curriculum,
   };
 }

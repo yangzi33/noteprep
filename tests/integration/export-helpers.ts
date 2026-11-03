@@ -14,6 +14,7 @@ import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // Shared by the export-*.test.ts suites. Everything here talks to the real database.
 
@@ -73,7 +74,7 @@ export async function createHarness(options: HarnessOptions = {}) {
 
   const limits: Limits = { ...OPEN_LIMITS, ...options.limits };
   const gen: GenerationLimits = { ...OPEN_GEN, ...options.gen };
-  const web = createWebDal(appDb, {
+  const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS,
     limits: gen,
     ...(options.clock ? { clock: options.clock } : {}),
     curriculum: { allowSample: true },

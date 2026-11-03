@@ -11,6 +11,7 @@ import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
 import { pgErrorCode, pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // Lock order, lock timeouts, database-clock expiry, the lifetime cap and the freeze guard (S3 review fixes).
 // Global order of every draft write: profile (createDraft) -> draft row -> counter rows -> version row(s).
@@ -24,7 +25,7 @@ const SAMPLE: Dataset = readDatasetDir(path.join(__dirname, "../../data/curricul
 const versionId = SAMPLE.meta.version.id;
 const TOPIC = `${versionId}/level-a/course-1/equations/both-sides`;
 
-const dalWith = (over: Partial<Limits> = {}, clock?: () => Date) => createWebDal(appDb, { curriculum: { allowSample: true }, drafts: { limits: { ...DEFAULT_LIMITS, ...over }, ...(clock ? { clock } : {}) } });
+const dalWith = (over: Partial<Limits> = {}, clock?: () => Date) => createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, curriculum: { allowSample: true }, drafts: { limits: { ...DEFAULT_LIMITS, ...over }, ...(clock ? { clock } : {}) } });
 const web = dalWith();
 
 beforeAll(async () => {

@@ -6,6 +6,7 @@ import type { AllowancePolicy } from "@/lib/server/dal/allowance-source";
 import { refreshTodayForAll } from "@/lib/server/dal/allowance-admin";
 import { inTransaction } from "@/lib/server/dal/tx";
 import { code, createHarness, freshKey, OPEN_GEN, OPEN_LIMITS, type Harness } from "./export-helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // The operator top-up (D-113): limit_count = used + reserved + limit for today's daily buckets; counters are never edited.
 let h: Harness;
@@ -15,7 +16,7 @@ const OFF: AllowancePolicy = { dailyRefresh: { enabled: false, limit: 5 } };
 const TOKEN = "k".repeat(48);
 
 function dalWith(policy: AllowancePolicy) {
-  return createWebDal(h.appDb, { limits: OPEN_GEN, clock: () => clk.now, curriculum: { allowSample: true }, drafts: { limits: OPEN_LIMITS }, exports: { enabled: true, limits: OPEN_LIMITS }, allowancePolicy: policy });
+  return createWebDal(h.appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: OPEN_GEN, clock: () => clk.now, curriculum: { allowSample: true }, drafts: { limits: OPEN_LIMITS }, exports: { enabled: true, limits: OPEN_LIMITS }, allowancePolicy: policy });
 }
 let on: ReturnType<typeof dalWith>;
 

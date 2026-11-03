@@ -6,6 +6,7 @@ import { makeAuthedCtx, type AuthedCtx } from "@/lib/server/auth/context";
 import { createWebDal } from "@/lib/server/dal";
 import type { AllowancePolicy } from "@/lib/server/dal/allowance-source";
 import { code, createHarness, freshKey, OPEN_GEN, OPEN_LIMITS, type Harness } from "./export-helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // The beta daily refresh (D-112): 5 exports per UTC day while the perk is on, the lifetime 3 (counting beta use) when it is off.
 let h: Harness;
@@ -14,7 +15,7 @@ const ON: AllowancePolicy = { dailyRefresh: { enabled: true, limit: 5 } };
 const OFF: AllowancePolicy = { dailyRefresh: { enabled: false, limit: 5 } };
 
 function dalWith(policy: AllowancePolicy) {
-  return createWebDal(h.appDb, {
+  return createWebDal(h.appDb, { aiLimits: DEFAULT_AI_LIMITS,
     limits: OPEN_GEN,
     clock: () => clk.now,
     curriculum: { allowSample: true },

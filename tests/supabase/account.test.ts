@@ -4,9 +4,10 @@ import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createDb } from "@/lib/server/db";
 import { createWebDal } from "@/lib/server/dal";
 import { createConfirmedUser, deleteCreatedUsers, env } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const db = createDb(env().appUrl);
-const dal = createWebDal(db);
+const dal = createWebDal(db, { aiLimits: DEFAULT_AI_LIMITS });
 const owner = new pg.Pool({ connectionString: env().dbUrl, max: 2 });
 
 afterAll(async () => {

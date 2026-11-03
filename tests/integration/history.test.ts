@@ -5,12 +5,13 @@ import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createDb } from "@/lib/server/db";
 import { createWebDal } from "@/lib/server/dal";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin } = pools();
 const appDb = createDb(info.appUrl);
 const NOW = new Date("2026-03-15T00:00:00Z");
-const web = createWebDal(appDb, {
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS,
   clock: () => NOW,
   limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000 },
 });

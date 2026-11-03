@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { code, createHarness, type Harness } from "./export-helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 let h: Harness;
 let off: Harness["web"]; // the same database, EXPORT_ENABLED off
 beforeAll(async () => {
   h = await createHarness();
   const { createWebDal } = await import("@/lib/server/dal");
-  off = createWebDal(h.appDb, { curriculum: { allowSample: true }, exports: { enabled: false, limits: h.limits } });
+  off = createWebDal(h.appDb, { aiLimits: DEFAULT_AI_LIMITS, curriculum: { allowSample: true }, exports: { enabled: false, limits: h.limits } });
 });
 afterEach(async () => {
   await h.expectNoDrift();

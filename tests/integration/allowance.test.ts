@@ -20,6 +20,7 @@ import { createWebDal, createWorkerDal, type CommitSuccessInput } from "@/lib/se
 import { isRetryableDbError } from "@/lib/server/dal/tx";
 import { inject } from "vitest";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // The database is shared by every test file, and other files corrupt a bucket's counters on purpose (to test the
 // constraints and the drift view). Drift is therefore checked only for the accounts THIS file created.
@@ -49,7 +50,7 @@ const OPEN: GenerationLimits = {
   rateLimitPerHourPerIp: 1000,
 };
 
-const web = createWebDal(appDb, { limits: OPEN });
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: OPEN });
 const settle = createWorkerDal(workerDb).settlement;
 
 function input(n = 5, notes?: string) {
@@ -431,7 +432,7 @@ describe("cancellation and ownership", () => {
 
 describe("limits that failures do not refund", () => {
   it("counts every accepted request against the hourly limit, even when the jobs fail", async () => {
-    const limited = createWebDal(appDb, { limits: { ...OPEN, rateLimitPerHourPerUser: 3 } });
+    const limited = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...OPEN, rateLimitPerHourPerUser: 3 } });
     const ctx = makeAuthedCtx(randomUUID());
     await limited.account.ensureAccount(ctx);
     await admin.query(`UPDATE usage_bucket SET limit_count = 50 WHERE owner_id = $1`, [ctx.userId]);
@@ -447,7 +448,7 @@ describe("limits that failures do not refund", () => {
   });
 
   it("limits the IP independently of the account", async () => {
-    const limited = createWebDal(appDb, { limits: { ...OPEN, rateLimitPerHourPerIp: 2 } });
+    const limited = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...OPEN, rateLimitPerHourPerIp: 2 } });
     const ipHash = `ip-${randomUUID()}`;
     for (let i = 0; i < 2; i++) {
       const ctx = await newAccount();
@@ -458,13 +459,13 @@ describe("limits that failures do not refund", () => {
   });
 
   it("caps concurrent jobs per account and queued jobs globally", async () => {
-    const capped = createWebDal(appDb, { limits: { ...OPEN, maxActiveJobsPerUser: 1 } });
+    const capped = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...OPEN, maxActiveJobsPerUser: 1 } });
     const ctx = await newAccount();
     await capped.generation.createGeneration(ctx, input(5, "one"), key());
     await expect(capped.generation.createGeneration(ctx, input(5, "two"), key())).rejects.toBeInstanceOf(TooManyActiveJobs);
 
     // The cap is count-then-insert, so it only holds if requests for one account are serialized.
-    const racing = createWebDal(appDb, { limits: { ...OPEN, maxActiveJobsPerUser: 1 } });
+    const racing = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...OPEN, maxActiveJobsPerUser: 1 } });
     const racer = await newAccount();
     const raced = await Promise.allSettled(
       Array.from({ length: 8 }, (_, i) => racing.generation.createGeneration(racer, input(5, `race${i}`), key())),
@@ -473,7 +474,7 @@ describe("limits that failures do not refund", () => {
     for (const r of raced) if (r.status === "rejected") expect(r.reason).toBeInstanceOf(TooManyActiveJobs);
 
     const queued = await admin.query(`SELECT count(*)::int AS n FROM generation_job WHERE state = 'queued'`);
-    const busy = createWebDal(appDb, { limits: { ...OPEN, maxQueuedJobsGlobal: queued.rows[0].n } });
+    const busy = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...OPEN, maxQueuedJobsGlobal: queued.rows[0].n } });
     await expect(busy.generation.createGeneration(await newAccount(), input(), key())).rejects.toBeInstanceOf(QueueBusy);
   });
 });
@@ -482,7 +483,7 @@ describe("paid period buckets", () => {
   const NOW = new Date("2026-03-15T00:00:00Z");
   const START = new Date("2026-03-01T00:00:00Z");
   const END = new Date("2026-04-01T00:00:00Z");
-  const dal = createWebDal(appDb, { limits: OPEN, clock: () => NOW });
+  const dal = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: OPEN, clock: () => NOW });
 
   async function subscribe(ownerId: string, patch: { status?: string; invoicePaid?: boolean; start?: Date; end?: Date } = {}) {
     const start = patch.start ?? START;

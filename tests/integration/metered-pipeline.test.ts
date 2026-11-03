@@ -17,12 +17,13 @@ import { runOnce, spendUpkeep } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pools } from "./helpers";
 import { parkJobs, resetSpend } from "./spend-helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin, worker: workerPg } = pools();
 const appDb = createDb(info.appUrl);
 const workerDb = createDb(info.workerUrl);
-const web = createWebDal(appDb, { limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000 } });
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000 } });
 const worker = createWorkerDal(workerDb, { backoff: { baseMs: 1, capMs: 5 }, limits: DEFAULT_LIMITS });
 
 let storeDir: string;
