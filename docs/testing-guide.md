@@ -86,6 +86,7 @@
 ## 8b. Export suites (S4b, English)
 - Unit (`pnpm test`): `export-confirm-ui`, `export-confirm-action`, `export-cancel-action`, `export-view`, `export-status-view`, `export-poller`, `export-page`, `export-status-route`, `job-page-export-redirect`, `export-errors`, `export-spec`, `export-verify`.
 - Integration (`pnpm test:integration`, real Postgres): `export-confirm` (including the 10-parallel same-key proof), `export-worker` (`runExport`), `export-cancel`, `export-settlement`, `export-locking`, `export-security`.
+- Spend ledger and AI Actions (slice B-d, real Postgres, fake provider, fictional data, no spend): `llm-spend` (reservation state machine, idempotent keys, fencing, every cap under concurrency, settle/release/stale recovery, 70 percent alert and 100 percent stop, triggers, grants, drift view), `ai-action` (10 per user per hour, replay, release-once, kill switch, separation from allowance reservations), `metered-pipeline` (the worker pipeline reserves and settles every call), `spend-report` (observability without content). Unit: `metered-provider`, `worker-loop-spend`.
 - Real compiler (`pnpm test:latex`): `tests/latex/export-pipeline.test.ts`.
 - E2E (`pnpm test:e2e`): `tests/e2e/export-flow.spec.ts` on the default server (3100, `chromium` project; since S6 the draft and export server): full flow with free re-export, double submit, failed export releases, stale tab, cancel while queued, isolation, flag off (that case now lives in `draft-paused.spec.ts` on 3102). `E2E_COMPILER=docker` asserts real `%PDF-` bytes in the full-flow case.
 
