@@ -122,6 +122,22 @@ The Prepare page hides every country, curriculum, level and course that has no s
 
 `pnpm curricula:build` stops with a list of every problem before writing anything: unknown topic key, unknown concept id, partial coverage without note, duplicate curriculum ids, course codes, unit titles or topics, text over its length limit, a missing or inconsistent country, an unknown template, a curriculum without courses, mixed levels, misspelled field names. It then runs the real dataset validator on each generated dataset.
 
+## 3a. Subject, sources and confidence (schema additions, RIS-60)
+
+All additions are optional, so every existing dataset and its hash stay valid and unchanged.
+
+- `meta.curriculum.subject`: `math` (default and stored id), `physics`, `chemistry`, `biology` or `science`. `mathematics` is accepted and read as `math`. Only `math` is offered to tutors (D-116): the picker ignores curricula of any other subject, so such data can be loaded and validated without becoming visible.
+- On levels, courses, units and topics: `sourceUrl` (https only, at most 500 characters), `sourceSection` (at most 200), `confidence` (`high`, `medium` or `low`) and `retrievedAt` (ISO date). If any of them is present, `sourceUrl`, `confidence` and `retrievedAt` must all be present (`SOURCE_INCOMPLETE`).
+- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version and is refused for `suggested` datasets, which carry no official codes (D-75).
+- `meta.version.requireSources: true` makes a complete citation mandatory on every course, unit and topic of that version (`SOURCE_REQUIRED`). Use it for researched datasets; leave it off for generic suggested ones.
+- The `pnpm curricula:build` generator does not emit these fields; they are written by hand or by the future research pipeline into dataset files.
+
+## 3b. Checks across datasets and the citation report
+
+- `pnpm curriculum:validate` (CI) also runs `validateCatalogue`: duplicate version ids, one curriculum id described differently, the same education system, subject and name under two curriculum ids, and the size budget (see `docs/curriculum-scale.md`). These fail the run.
+- Courses that appear with the same title and unit list in more than one curriculum are only a warning, because jurisdictions do share courses and today's suggested lists are generic. `pnpm curriculum:report --list-duplicates` names them.
+- `pnpm curriculum:report` counts cited and uncited records and lists low-confidence ones (`--json` for tooling, `--fail-on-low` to exit non-zero when any low-confidence record exists). Today every record is unsourced.
+
 ## 4. Changing a curriculum that is already loaded: new version required
 
 A published dataset version is immutable. The loader refuses different content under an existing version id (`VERSION_CHANGED`). So:
