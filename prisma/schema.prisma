@@ -92,6 +92,8 @@ model Profile {
   status              ProfileStatus @default(active)
   stripeCustomerId    String?       @unique @map("stripe_customer_id")
   deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)
+  /// IANA display zone; NULL = Auto (browser-detected). Display only, timestamps stay UTC.
+  timezone            String?
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
   lessons         Lesson[]
