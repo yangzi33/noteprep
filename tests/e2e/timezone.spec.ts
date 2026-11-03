@@ -34,7 +34,7 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await page.goto("/account");
   await page.getByLabel("Time zone").fill("Mars/Olympus");
   await page.getByRole("button", { name: "Save time zone" }).click();
-  await expect(page.getByRole("alert")).toContainText("Pick a time zone from the list");
+  await expect(page.getByRole("alert").filter({ hasText: "Pick a time zone from the list" })).toBeVisible();
   await expect(page.getByTestId("timezone-current")).toContainText("America/Toronto (your setting)");
 
   // Reset to Auto.
