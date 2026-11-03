@@ -52,6 +52,8 @@ export type StructuredResult =
       /** True when `usage` is a ceiling computed from the request's limits because the provider reported none. */
       usageEstimated?: boolean;
       providerRequestId?: string;
+      /** Set by the metering wrapper when a spend cap refused the call before anything was sent (error type quota_exhausted). */
+      spendRefusal?: string;
     };
 
 export interface LlmProvider {
