@@ -66,6 +66,24 @@ export const HOSTILE_CASES: readonly HostileCase[] = [
   { in: "\\(" + "(|".repeat(140) + "\\)", expect: "reject", code: "math_unexpected_token" },
   { in: "\\(" + "([".repeat(70) + "\\)", expect: "reject", code: "math_depth" },
   { in: "\\(2^{3^{4^{5}}}\\)", expect: "reject_or_safe" }, // three nested exponents are within the limit
+  // mathtext/2 additions: macro smuggling through the new argument slots, stray thin spaces and over-long runs.
+  { in: "\\(\\sum_{\\input}x\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(\\int_{0}^{1}x\\,d\\input\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(\\bar{\\input}\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(\\bar{x\\input}\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(\\lim_{x\\to\\def}x\\)", expect: "reject", code: "math_unknown_command" },
+  { in: "\\(x\\,y\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(\\int x\\,dx\\,\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(\\hat{x}}\\)", expect: "reject", code: "math_brace_misuse" },
+  { in: "\\(\\binom{n}{k\\)", expect: "reject", code: "math_brace_misuse" },
+  { in: "\\(f'''''(x)\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(x!!\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(" + "\\int ".repeat(40) + "x\\)", expect: "reject", code: "math_depth" },
+  { in: "\\(" + "\\sum ".repeat(40) + "x\\)", expect: "reject", code: "math_depth" },
+  { in: "\\(" + "\\lim_{x\\to0}".repeat(20) + "x\\)", expect: "reject", code: "math_depth" },
+  { in: "\\(" + "'".repeat(299) + "\\)", expect: "reject", code: "math_unexpected_token" },
+  { in: "\\(" + "x!".repeat(100) + "\\)", expect: "reject_or_safe" }, // a long product of factorials is legal and must round-trip
+  { in: "\\(" + "\\infty".repeat(40) + "\\)", expect: "reject", code: "math_unexpected_token" },
   { in: "mail me at a@b.co", expect: "reject", code: "text_email" },
   { in: "see https://evil.test", expect: "reject", code: "text_url" },
 ];

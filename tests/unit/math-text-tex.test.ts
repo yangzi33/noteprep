@@ -48,7 +48,8 @@ describe("mathToTex and the canonical serializer", () => {
       }
     };
     for (let i = 0; i < 5000; i++) walk(genMathNode(next));
-    for (const k of ["num", "var", "greek", "ldots", "bin", "imp", "unary", "rel", "list", "group", "abs", "frac", "sqrt", "sup", "sub", "pct", "deg", "fn"]) {
+    for (const k of ["num", "var", "greek", "ldots", "bin", "imp", "unary", "rel", "list", "group", "abs", "frac", "sqrt", "sup", "sub", "pct", "deg", "fn",
+      "infty", "prime", "fact", "binom", "accent", "lim", "sum", "int"]) {
       expect(kinds.has(k), k).toBe(true);
     }
   });
@@ -62,9 +63,10 @@ describe("mathToTex and the canonical serializer", () => {
   });
   it("allowlist is exactly the documented set", () => {
     expect([...MATH_TEX_COMMANDS].sort()).toEqual(
-      "alpha beta theta pi le ge neq pm times cdot div frac sqrt circ sin cos tan log ln ldots".split(" ").sort(),
+      ("alpha beta theta pi le ge neq pm times cdot div frac sqrt circ sin cos tan log ln ldots " +
+        "mu sigma lambda sec csc cot arcsin arccos arctan to approx in mid cup cap infty binom bar hat lim sum int").split(" ").sort(),
     );
-    expect([...MATH_TEX_SYMBOLS]).toEqual(["%"]);
+    expect([...MATH_TEX_SYMBOLS].sort()).toEqual(["%", ","]);
   });
   it("separates control words from following letters and adjacent digits", () => {
     // The parser now refuses `\sin 3 4` (math_adjacent_numbers); the serializer's digit separation is kept for hand-built trees.
@@ -120,7 +122,7 @@ describe("mathTextToTex", () => {
     expect(mathTextToTex(r.doc)).toBe(String.raw`See {[}1{]} and $x$`);
   });
   it("throws text_too_long like escapeText", () => {
-    expect(() => mathTextToTex({ v: "mathtext/1", parts: [{ t: "text", s: "a".repeat(5001) }] })).toThrow(RenderError);
+    expect(() => mathTextToTex({ v: "mathtext/2", parts: [{ t: "text", s: "a".repeat(5001) }] })).toThrow(RenderError);
   });
 });
 
