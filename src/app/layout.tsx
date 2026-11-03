@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import { AppHeader } from "@/components/app/app-header";
+import { TimezoneDetector } from "@/components/app/timezone-detector";
 import { TestBanner } from "@/components/app/test-banner";
 import { WorkspaceNav } from "@/components/app/workspace-nav";
 import { getRequestUser } from "@/lib/server/auth/require-user";
@@ -34,6 +35,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <TestBanner />
         {user ? (
           <>
+            <TimezoneDetector />
             <AppHeader email={user.email} />
             <div className="md:grid md:grid-cols-[208px_1fr]">
               <aside className="border-b border-sidebar-border bg-sidebar md:border-r md:border-b-0">

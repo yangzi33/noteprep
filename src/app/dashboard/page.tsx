@@ -6,6 +6,7 @@ import { TextAction } from "@/components/ui/text-action";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { allowanceSentence, dailyRefreshReminder, draftCards, recentCards } from "@/lib/ui/dashboard-view";
+import { getDisplayTimeZone } from "@/lib/server/timezone";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -14,8 +15,9 @@ export default async function DashboardPage() {
   const { ctx } = await requireAccount();
   const dal = webDal();
   const [allowance, items, drafts] = await Promise.all([dal.history.getAllowance(ctx), dal.history.listJobs(ctx), dal.drafts.listDrafts(ctx, 6)]);
-  const cards = recentCards(items, 6);
-  const draftList = draftCards(drafts, 6, new Date());
+  const tz = await getDisplayTimeZone(ctx);
+  const cards = recentCards(items, 6, tz);
+  const draftList = draftCards(drafts, 6, tz, new Date());
 
   return (
     <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6">

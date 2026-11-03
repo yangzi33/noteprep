@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DraftCard, MaterialCard, MaterialRow } from "@/components/app/material-card";
-import { allowanceSentence, dailyRefreshReminder, exportAfterSentence, draftCards, emptyExportsText, formatUtc, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
+import { allowanceSentence, dailyRefreshReminder, exportAfterSentence, draftCards, emptyExportsText, recentCards, statusHref, type DraftSummaryLike, type HistoryLike } from "@/lib/ui/dashboard-view";
 import { exhaustedMessage, generationErrorMessage, stateLabel } from "@/lib/ui/messages";
 
 const item = (over: Partial<HistoryLike> = {}): HistoryLike => ({
@@ -23,15 +23,9 @@ describe("allowanceSentence", () => {
   });
 });
 
-describe("formatUtc", () => {
-  it("formats in UTC regardless of host zone", () => {
-    expect(formatUtc(new Date("2026-03-05T23:30:00Z"))).toBe("Mar 5, 2026, 11:30 PM UTC");
-  });
-});
-
 describe("recentCards", () => {
   it("opens a finished lesson on its revision", () => {
-    const [c] = recentCards([item()], 6);
+    const [c] = recentCards([item()], 6, "UTC");
     expect(c).toMatchObject({
       href: "/lessons/les-1?rev=rev-1",
       action: "Open",
@@ -41,23 +35,31 @@ describe("recentCards", () => {
   });
   it("links everything else to the job status", () => {
     for (const state of ["queued", "running", "failed", "canceled"] as const) {
-      expect(recentCards([item({ state, revisionId: null })], 6)[0]).toMatchObject({ href: "/jobs/job-1", action: "View status" });
+      expect(recentCards([item({ state, revisionId: null })], 6, "UTC")[0]).toMatchObject({ href: "/jobs/job-1", action: "View status" });
     }
-    expect(recentCards([item({ revisionId: null })], 6)[0]!.href).toBe("/jobs/job-1");
+    expect(recentCards([item({ revisionId: null })], 6, "UTC")[0]!.href).toBe("/jobs/job-1");
   });
   it("links failed and canceled jobs to the status page even with a revision", () => {
     for (const state of ["failed", "canceled"] as const) {
-      expect(recentCards([item({ state, revisionId: "rev-1" })], 6)[0]).toMatchObject({ href: "/jobs/job-1", action: "View status" });
+      expect(recentCards([item({ state, revisionId: "rev-1" })], 6, "UTC")[0]).toMatchObject({ href: "/jobs/job-1", action: "View status" });
     }
   });
   it("caps the list", () => {
     const many = Array.from({ length: 9 }, (_, i) => item({ jobId: `j${i}` }));
-    expect(recentCards(many, 6)).toHaveLength(6);
+    expect(recentCards(many, 6, "UTC")).toHaveLength(6);
+  });
+});
+
+describe("card dates follow the zone", () => {
+  it("history and draft cards show the zone's time with its label", () => {
+    expect(recentCards([item()], 6, "America/Toronto")[0]!.date).toBe("Mar 5, 2026, 9:30 AM EST");
+    const d = { draftId: "d", title: "T", updatedAt: new Date("2026-03-05T14:30:00Z"), expiresAt: new Date("2026-03-19T23:30:00Z") };
+    expect(draftCards([d], 1, "America/Toronto")[0]).toMatchObject({ updated: "Mar 5, 2026, 9:30 AM EST", expires: "expires Mar 19, 2026, 7:30 PM EDT" });
   });
 });
 
 describe("MaterialCard", () => {
-  const card = recentCards([item()], 6)[0]!;
+  const card = recentCards([item()], 6, "UTC")[0]!;
   const html = renderToStaticMarkup(createElement(MaterialCard, { card }));
   it("has exactly one link with the card href", () => {
     expect(html.match(/<a /g)).toHaveLength(1);
@@ -72,7 +74,7 @@ describe("MaterialCard", () => {
 
 describe("MaterialCard link name", () => {
   const render = (title: string, jobId: string) =>
-    renderToStaticMarkup(createElement(MaterialCard, { card: recentCards([item({ title, jobId })], 6)[0]! }));
+    renderToStaticMarkup(createElement(MaterialCard, { card: recentCards([item({ title, jobId })], 6, "UTC")[0]! }));
   it("is unique per title and keeps the visible text", () => {
     const a = render("Linear equations", "j1");
     const b = render("Quadratics", "j2");
@@ -98,12 +100,12 @@ describe("export items", () => {
   const exp = (over: Partial<HistoryLike> = {}) => item({ kind: "export", exportId: "exp-1", ...over });
   it("link non-succeeded exports to their own status page", () => {
     for (const state of ["queued", "running", "failed", "canceled"] as const) {
-      expect(recentCards([exp({ state, revisionId: null })], 6)[0]).toMatchObject({ href: "/exports/exp-1", action: "View status" });
+      expect(recentCards([exp({ state, revisionId: null })], 6, "UTC")[0]).toMatchObject({ href: "/exports/exp-1", action: "View status" });
       expect(statusHref(exp({ state }))).toBe("/exports/exp-1");
     }
   });
   it("keep a succeeded export linking to its lesson", () => {
-    expect(recentCards([exp()], 6)[0]).toMatchObject({ href: "/lessons/les-1?rev=rev-1", action: "Open" });
+    expect(recentCards([exp()], 6, "UTC")[0]).toMatchObject({ href: "/lessons/les-1?rev=rev-1", action: "Open" });
     expect(statusHref(exp({ state: "succeeded" }))).toBe("/jobs/job-1");
   });
   it("leave legacy jobs and an export without a row on the job page", () => {
@@ -128,7 +130,7 @@ describe("draftCards", () => {
   });
 
   it("links to /drafts/[id] and states the UTC expiry", () => {
-    const [card] = draftCards([draft()], 6);
+    const [card] = draftCards([draft()], 6, "UTC");
     expect(card).toEqual({
       draftId: "11111111-1111-4111-8111-111111111111",
       title: "Linear equations",
@@ -140,12 +142,12 @@ describe("draftCards", () => {
 
   it("keeps the given order and caps the count", () => {
     const list = [1, 2, 3, 4].map((n) => draft({ draftId: `d${n}`, title: `T${n}` }));
-    expect(draftCards(list, 2).map((c) => c.title)).toEqual(["T1", "T2"]);
-    expect(draftCards([], 3)).toEqual([]);
+    expect(draftCards(list, 2, "UTC").map((c) => c.title)).toEqual(["T1", "T2"]);
+    expect(draftCards([], 3, "UTC")).toEqual([]);
   });
 
   it("renders one link and the expiry, and escapes the title", () => {
-    const html = renderToStaticMarkup(createElement(DraftCard, { card: draftCards([draft({ title: "<b>x</b>" })], 1)[0]! }));
+    const html = renderToStaticMarkup(createElement(DraftCard, { card: draftCards([draft({ title: "<b>x</b>" })], 1, "UTC")[0]! }));
     expect(html).toContain('href="/drafts/11111111-1111-4111-8111-111111111111"');
     expect(html).toContain("expires Mar 19, 2026, 11:30 PM UTC");
     expect(html).not.toContain("<b>x</b>");
@@ -165,8 +167,8 @@ describe("emptyExportsText", () => {
 describe("draftCards title fallback", () => {
   const draft = (title: unknown) => ({ draftId: "d-1", title: title as string, updatedAt: new Date("2026-03-05T14:30:00Z"), expiresAt: new Date("2026-03-12T14:30:00Z") });
   it("labels a draft without a topic title instead of showing null", () => {
-    for (const bad of [null, undefined, "", "   "]) expect(draftCards([draft(bad)], 6)[0]!.title).toBe("Untitled draft");
-    expect(draftCards([draft("Linear equations")], 6)[0]!.title).toBe("Linear equations");
+    for (const bad of [null, undefined, "", "   "]) expect(draftCards([draft(bad)], 6, "UTC")[0]!.title).toBe("Untitled draft");
+    expect(draftCards([draft("Linear equations")], 6, "UTC")[0]!.title).toBe("Linear equations");
   });
 });
 
