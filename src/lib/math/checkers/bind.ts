@@ -3,10 +3,14 @@
  * operand must be structurally equal to a math span the stem displays; a numeric operand must occur as a
  * number in the stem.
  *
- * Limitation, deliberate: numeric binding is presence only, not position or role. A claim about `25` and `80`
- * binds to "What is 25% of 80?" and equally to "What is 80% of 25?", so the numeric checkers are protected
- * against invented numbers but not against a swapped reading of the stem. Expression operands carry the full
- * structure and are therefore the strong case.
+ * Two deliberate limitations, both of which can leave a checker proving something other than the question's
+ * actual task (the outcome is then a `pass` on an item whose stated answer is not the answer to the stem):
+ * - numeric binding is presence only, not position or role: a claim about `25` and `80` binds to
+ *   "What is 25% of 80?" and equally to "What is 80% of 25?";
+ * - an expression operand must equal a whole math span (or one item of a comma-list span), so it cannot be a
+ *   fragment of a displayed expression, but in a stem that displays several spans it may equal the wrong one.
+ * Binding therefore rules out claims about content the stem never shows; it does not establish that the claim
+ * is the question. What it does guarantee is that a wrong answer to a bound, readable claim always fails.
  */
 import { Rational } from "@/lib/math/rational";
 import type { MathNode, MathTextDoc } from "@/lib/math-text";

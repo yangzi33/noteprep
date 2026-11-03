@@ -154,6 +154,17 @@ export function numStrToRational(literal: string): Rational | null {
   return r === null ? null : negative ? r.neg() : r;
 }
 
+/** A two-sided relation with exactly one of the accepted operators; a chain (`1 < x < 3`) is refused. */
+export function splitRelation<O extends string>(
+  node: MathNode,
+  ops: readonly O[],
+): { op: O; lhs: MathNode; rhs: MathNode } | null {
+  if (node.t !== "rel" || node.rest.length !== 1) return null;
+  const only = node.rest[0]!;
+  const op = ops.find((candidate) => (candidate as string) === only.op);
+  return op === undefined ? null : { op, lhs: node.first, rhs: only.rhs };
+}
+
 interface Budget {
   nodes: number;
 }
