@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { ContactLink } from "@/components/app/contact-link";
+import { TimeZonePicker } from "@/components/app/timezone-picker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
-import { TextField } from "@/components/ui/text-field";
 import { requireAccount } from "@/lib/server/auth/require-user";
 import { webDal } from "@/lib/server/dal/instance";
 import { accountError, accountNotice } from "@/lib/ui/login-messages";
@@ -60,12 +60,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           Times are shown in {tz.effective} {tz.saved ? "(your setting)" : "(detected from your browser)"}.
         </p>
         <form action={saveTimeZone} className="flex flex-col gap-3">
-          <TextField label="Time zone" name="timezone" list="timezone-options" defaultValue={tz.saved ?? ""} placeholder="Start typing, for example Toronto" autoComplete="off" required maxLength={100} hint="Search by city or region. Stored times stay in UTC; only how they are shown changes." />
-          <datalist id="timezone-options">
-            {supportedTimeZones().map((z) => (
-              <option key={z} value={z} />
-            ))}
-          </datalist>
+          <TimeZonePicker label="Time zone" name="timezone" zones={supportedTimeZones()} defaultValue={tz.saved ?? ""} placeholder="Start typing, for example Toronto" hint="Search by city or region. Stored times stay in UTC; only how they are shown changes." />
           <div className="flex flex-wrap gap-3">
             <Button type="submit">Save time zone</Button>
             <Button type="submit" variant="outline" formAction={resetTimeZone} formNoValidate>

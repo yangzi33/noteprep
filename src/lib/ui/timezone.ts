@@ -104,3 +104,13 @@ export function matchTimeZone(input: string): string | null {
   const byCity = zones.filter((z) => z.toLowerCase().split("/").pop() === wanted);
   return byCity.length === 1 ? byCity[0]! : null;
 }
+
+/** Zones whose name contains every word typed (case-insensitive, spaces read as underscores); all zones for an empty query. */
+export function filterTimeZones(query: string, zones: readonly string[] = supportedTimeZones()): string[] {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [...zones];
+  return zones.filter((z) => {
+    const name = z.toLowerCase();
+    return words.every((w) => name.includes(w.replace(/\s+/g, "_")) || name.replace(/_/g, " ").includes(w));
+  });
+}

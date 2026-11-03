@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calendarDaysBetween,
+  filterTimeZones,
   formatDateTime,
   formatShortDate,
   isSelectableTimeZone,
@@ -99,5 +100,28 @@ describe("zone list", () => {
     expect(matchTimeZone("Toronto")).toBe("America/Toronto");
     expect(matchTimeZone("")).toBeNull();
     expect(matchTimeZone("Nowhere/Land")).toBeNull();
+  });
+});
+
+describe("filterTimeZones", () => {
+  const zones = ["America/New_York", "America/Toronto", "Asia/Tokyo", "Europe/London", "UTC"];
+  it("returns every zone for an empty or blank query", () => {
+    expect(filterTimeZones("", zones)).toEqual(zones);
+    expect(filterTimeZones("   ", zones)).toEqual(zones);
+  });
+  it("matches case-insensitively on any part of the name", () => {
+    expect(filterTimeZones("toron", zones)).toEqual(["America/Toronto"]);
+    expect(filterTimeZones("ASIA", zones)).toEqual(["Asia/Tokyo"]);
+  });
+  it("reads a space as an underscore and requires every word", () => {
+    expect(filterTimeZones("new york", zones)).toEqual(["America/New_York"]);
+    expect(filterTimeZones("america new", zones)).toEqual(["America/New_York"]);
+    expect(filterTimeZones("america tokyo", zones)).toEqual([]);
+  });
+  it("returns nothing for an unknown name", () => {
+    expect(filterTimeZones("Mars", zones)).toEqual([]);
+  });
+  it("searches the real list", () => {
+    expect(filterTimeZones("toronto")).toContain("America/Toronto");
   });
 });

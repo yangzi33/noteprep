@@ -19,7 +19,16 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   // Override in Account.
   await page.goto("/account");
   await expect(page.getByTestId("timezone-current")).toContainText("Asia/Tokyo (detected from your browser)");
-  await page.getByLabel("Time zone").fill("america/toronto");
+  // Our own dropdown, not the browser's datalist.
+  await expect(page.locator("datalist")).toHaveCount(0);
+  const picker = page.getByRole("combobox", { name: "Time zone" });
+  await picker.click();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await picker.fill("toronto");
+  await expect(page.getByRole("option")).toHaveCount(1);
+  await page.getByRole("option", { name: "America/Toronto" }).click();
+  await expect(page.getByRole("listbox")).toBeHidden();
+  await expect(picker).toHaveValue("America/Toronto");
   await page.getByRole("button", { name: "Save time zone" }).click();
   await expect(page).toHaveURL(/\/account\?notice=timezone-saved$/);
   await expect(page.getByTestId("timezone-current")).toContainText("America/Toronto (your setting)");
@@ -30,9 +39,22 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await page.reload();
   await expect(page.getByTestId("saved-status")).toContainText(/E[SD]T$/);
 
+  // Keyboard: arrows move, Enter picks, Escape closes.
+  await page.goto("/account");
+  const keyboard = page.getByRole("combobox", { name: "Time zone" });
+  await keyboard.fill("tokyo");
+  await keyboard.press("ArrowDown");
+  await keyboard.press("Enter");
+  await expect(keyboard).toHaveValue("Asia/Tokyo");
+  await keyboard.press("ArrowDown");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await keyboard.press("Escape");
+  await expect(page.getByRole("listbox")).toBeHidden();
+
   // A name that is not in the list is refused and changes nothing.
   await page.goto("/account");
-  await page.getByLabel("Time zone").fill("Mars/Olympus");
+  await page.getByRole("combobox", { name: "Time zone" }).fill("Mars/Olympus");
+  await expect(page.getByText("No matching time zone")).toBeVisible();
   await page.getByRole("button", { name: "Save time zone" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Pick a time zone from the list" })).toBeVisible();
   await expect(page.getByTestId("timezone-current")).toContainText("America/Toronto (your setting)");
