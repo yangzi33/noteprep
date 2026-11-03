@@ -4,6 +4,7 @@ import { AnthropicProvider, classifyHttpStatus, costMicros } from "@/lib/llm/ant
 import { OpenAiProvider } from "@/lib/llm/openai";
 import { createLlmProvider, legacyProseFor } from "@/lib/llm/factory";
 import { FakeLlmProvider } from "@/lib/llm/fake";
+import { realProviderConfigIssues } from "@/lib/llm/real-provider-config";
 import { isRetryableLlmError, type LlmErrorType, type LlmProvider, type StructuredRequest } from "@/lib/llm/types";
 import { FAILURE_REASONS } from "@/lib/ui/messages";
 import { workerEnv } from "../../worker/env";
@@ -256,6 +257,26 @@ describe("provider configuration", () => {
   it("refuses a real provider without a key, a model and both prices (nothing is guessed)", () => {
     expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic" })).toThrow(/LLM_API_KEY, LLM_MODEL, LLM_PRICE_INPUT_MICROS_PER_MTOK, LLM_PRICE_OUTPUT_MICROS_PER_MTOK/);
     expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1" })).toThrow(/LLM_PRICE_OUTPUT/);
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "0", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" })).toThrow(/LLM_PRICE_INPUT_MICROS_PER_MTOK must be above 0/);
+    expect(() => workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "0" })).toThrow(/LLM_PRICE_OUTPUT_MICROS_PER_MTOK must be above 0/);
+    expect(workerEnv({ ...base, LLM_PROVIDER: "fake", LLM_PRICE_INPUT_MICROS_PER_MTOK: "0", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "0" }).LLM_PROVIDER).toBe("fake");
+  });
+  it("refuses every spelling of a zero price, including the empty placeholder", () => {
+    const real = { ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m" };
+    for (const zero of ["", "0.0", " ", "-0"]) {
+      expect(() => workerEnv({ ...real, LLM_PRICE_INPUT_MICROS_PER_MTOK: zero, LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" })).toThrow(/LLM_PRICE_INPUT_MICROS_PER_MTOK must be above 0/);
+      expect(() => workerEnv({ ...real, LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: zero })).toThrow(/LLM_PRICE_OUTPUT_MICROS_PER_MTOK must be above 0/);
+    }
+  });
+  it("applies the same rules wherever a provider is built, and to any provider but the fake one", () => {
+    const settings = { LLM_PROVIDER: "anthropic" as const, LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: 1, LLM_PRICE_OUTPUT_MICROS_PER_MTOK: 2 };
+    expect(createLlmProvider(settings).id).toBe("anthropic");
+    expect(() => createLlmProvider({ ...settings, LLM_PRICE_INPUT_MICROS_PER_MTOK: 0 })).toThrow(/LLM_PRICE_INPUT_MICROS_PER_MTOK must be above 0/);
+    expect(() => createLlmProvider({ ...settings, LLM_PRICE_OUTPUT_MICROS_PER_MTOK: 0 })).toThrow(/LLM_PRICE_OUTPUT_MICROS_PER_MTOK must be above 0/);
+    expect(realProviderConfigIssues({ ...settings, LLM_PROVIDER: "openai", LLM_PRICE_INPUT_MICROS_PER_MTOK: 0 })).toEqual([
+      expect.stringMatching(/LLM_PRICE_INPUT_MICROS_PER_MTOK must be above 0/),
+    ]);
+    expect(realProviderConfigIssues({ LLM_PROVIDER: "fake", LLM_PRICE_INPUT_MICROS_PER_MTOK: 0, LLM_PRICE_OUTPUT_MICROS_PER_MTOK: 0 })).toEqual([]);
   });
   it("builds the real provider from a complete configuration", () => {
     const config = workerEnv({ ...base, LLM_PROVIDER: "anthropic", LLM_API_KEY: "k", LLM_MODEL: "m", LLM_PRICE_INPUT_MICROS_PER_MTOK: "1", LLM_PRICE_OUTPUT_MICROS_PER_MTOK: "2" });
@@ -274,7 +295,10 @@ describe("provider configuration", () => {
       createLlmProvider(settings);
       expect.unreachable();
     } catch (e) {
-      expect(String((e as Error).message)).toBe("the openai provider needs an API key, a model and both prices");
+      const message = String((e as Error).message);
+      expect(message).toBe("LLM_PROVIDER=openai also needs: LLM_PRICE_INPUT_MICROS_PER_MTOK, LLM_PRICE_OUTPUT_MICROS_PER_MTOK");
+      expect(message).not.toContain(SECRET);
+      expect(message).not.toContain("model-xyz");
     }
   });
   it("ships no model id or price defaults", () => {

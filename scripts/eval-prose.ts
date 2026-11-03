@@ -3,6 +3,7 @@ import { CAPABILITIES } from "../src/lib/curriculum/capabilities";
 import { withContextHash } from "../src/lib/curriculum/context";
 import type { LessonRequestV2 } from "../src/lib/domain/lesson-request";
 import { createLlmProvider } from "../src/lib/llm/factory";
+import { realProviderConfigIssues } from "../src/lib/llm/real-provider-config";
 import { LINEAR_CONCEPT_ID } from "../src/lib/package/build";
 import type { LlmProvider } from "../src/lib/llm/types";
 import { ProseDraft } from "../src/lib/package/prose";
@@ -24,6 +25,8 @@ const Env = z.object({
   LLM_PRICE_OUTPUT_MICROS_PER_MTOK: z.coerce.number().int().min(0).optional(),
   LLM_BASE_URL: z.string().optional(),
   LLM_MAX_OUTPUT_TOKENS: z.coerce.number().int().min(500).max(16_000).default(4_000),
+}).superRefine((env, ctx) => {
+  for (const message of realProviderConfigIssues(env)) ctx.addIssue({ code: "custom", message });
 });
 
 const arg = (name: string) => process.argv.includes(name);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { realProviderConfigIssues } from "@/lib/llm/real-provider-config";
 import { parseLimits, type Limits } from "@/lib/server/limits";
 
 // With src/lib/server/env.ts, the only place that reads process.env (enforced by lint).
@@ -62,10 +63,7 @@ const WorkerEnv = z
     if (env.NODE_ENV === "production" && env.ALLOW_FAKE_COMPILER === "1") {
       ctx.addIssue({ code: "custom", message: "ALLOW_FAKE_COMPILER must not be set in production" });
     }
-    if (env.LLM_PROVIDER === "anthropic" || env.LLM_PROVIDER === "openai") {
-      const missing = (["LLM_API_KEY", "LLM_MODEL", "LLM_PRICE_INPUT_MICROS_PER_MTOK", "LLM_PRICE_OUTPUT_MICROS_PER_MTOK"] as const).filter((k) => env[k] === undefined);
-      if (missing.length > 0) ctx.addIssue({ code: "custom", message: `LLM_PROVIDER=${env.LLM_PROVIDER} also needs: ${missing.join(", ")}` });
-    }
+    for (const message of realProviderConfigIssues(env)) ctx.addIssue({ code: "custom", message });
     if (env.COMPILER === "skeleton" && env.ALLOW_FAKE_COMPILER !== "1") {
       ctx.addIssue({ code: "custom", message: 'set COMPILER=docker, or ALLOW_FAKE_COMPILER=1 for local placeholder runs' });
     }
