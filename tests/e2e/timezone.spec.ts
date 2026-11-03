@@ -50,6 +50,22 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await expect(page.getByRole("listbox")).toBeVisible();
   await keyboard.press("Escape");
   await expect(page.getByRole("listbox")).toBeHidden();
+  // Reopening with a chosen zone shows the whole list, and the active option exists.
+  await keyboard.press("ArrowDown");
+  expect(await page.getByRole("option").count()).toBeGreaterThan(100);
+  const activeId = await keyboard.getAttribute("aria-activedescendant");
+  await expect(page.locator(`[id="${activeId}"]`)).toHaveText("Asia/Tokyo");
+  await keyboard.press("End");
+  await expect(page.getByRole("option").last()).toHaveAttribute("id", (await keyboard.getAttribute("aria-activedescendant"))!);
+  await keyboard.press("Home");
+  await keyboard.press("Escape");
+  // Enter with no highlighted option submits the form as typed.
+  await keyboard.fill("Europe/London");
+  await page.getByRole("listbox").waitFor();
+  await keyboard.press("Enter");
+  await expect(page).toHaveURL(/notice=timezone-saved$/);
+  await expect(page.getByTestId("timezone-current")).toContainText("Europe/London (your setting)");
+  await page.goto("/account");
 
   // A name that is not in the list is refused and changes nothing.
   await page.goto("/account");
@@ -57,7 +73,7 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   await expect(page.getByText("No matching time zone")).toBeVisible();
   await page.getByRole("button", { name: "Save time zone" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Pick a time zone from the list" })).toBeVisible();
-  await expect(page.getByTestId("timezone-current")).toContainText("America/Toronto (your setting)");
+  await expect(page.getByTestId("timezone-current")).toContainText("Europe/London (your setting)");
 
   // Reset to Auto.
   await page.getByRole("button", { name: "Auto (detect)" }).click();

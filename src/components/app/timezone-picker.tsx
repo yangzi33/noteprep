@@ -47,7 +47,13 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
 
   const openList = () => {
     if (open) return;
-    setActive(current ? zones.indexOf(current) : -1);
+    // Read the DOM value: text typed before hydration is not in state. A chosen zone opens the full list; other text filters it.
+    const value = inputRef.current?.value ?? "";
+    const exact = zones.includes(value);
+    const list = exact || value.trim() === "" ? [...zones] : filterTimeZones(value, zones);
+    setCurrent(value);
+    setQuery(exact || value.trim() === "" ? null : value);
+    setActive(exact ? list.indexOf(value) : -1);
     setOpen(true);
   };
 
@@ -109,7 +115,7 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
           }}
           onClick={openList}
           onKeyDown={onKeyDown}
-          className="min-h-11 w-full rounded-control border border-input bg-card py-0 pr-10 pl-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="min-h-11 w-full rounded-control border border-input bg-card py-0 pr-11 pl-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         />
         <button
           type="button"
@@ -123,7 +129,7 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
               openList();
             }
           }}
-          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground"
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground"
         >
           <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" className={cn("transition-transform", open && "rotate-180")}>
             <path d="M2 4.25 6 8l4-3.75" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -149,9 +155,8 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
                   role="option"
                   aria-selected={zone === current}
                   onMouseDown={(e) => e.preventDefault()}
-                  onMouseMove={() => active !== i && setActive(i)}
                   onClick={() => choose(zone)}
-                  className={cn("min-h-9 cursor-pointer px-3 py-2", i === active && "bg-accent text-accent-foreground", zone === current && "font-medium")}
+                  className={cn("flex min-h-11 cursor-pointer items-center px-3 hover:bg-accent hover:text-accent-foreground", i === active && "bg-accent text-accent-foreground", zone === current && "font-medium")}
                 >
                   {zone}
                 </li>

@@ -111,6 +111,6 @@ export function filterTimeZones(query: string, zones: readonly string[] = suppor
   if (words.length === 0) return [...zones];
   return zones.filter((z) => {
     const name = z.toLowerCase();
-    return words.every((w) => name.includes(w.replace(/\s+/g, "_")) || name.replace(/_/g, " ").includes(w));
+    return words.every((w) => name.includes(w) || name.replace(/_/g, " ").includes(w));
   });
 }

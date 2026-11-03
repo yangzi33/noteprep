@@ -252,7 +252,7 @@ test("axe (wcag2a, wcag2aa): no serious or critical violations on any page", asy
   const { context, page } = await mobile(browser);
   try {
     const confirmPath = await confirmPathOf(page);
-    const paths = ["/dashboard", "/lessons", "/prepare", fixture.lessonPath, fixture.exportPath, confirmPath, `/drafts/${fixture.draftId}?doc=worksheet`, `/drafts/${fixture.draftId}?doc=notes`, `/drafts/${fixture.draftId}?doc=solutions`];
+    const paths = ["/dashboard", "/account", "/lessons", "/prepare", fixture.lessonPath, fixture.exportPath, confirmPath, `/drafts/${fixture.draftId}?doc=worksheet`, `/drafts/${fixture.draftId}?doc=notes`, `/drafts/${fixture.draftId}?doc=solutions`];
     const failures: string[] = [];
     for (const path of paths) {
       await page.goto(path);
