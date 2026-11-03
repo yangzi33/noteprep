@@ -92,7 +92,7 @@ describe("R2: replace updates the exercise and its solution together", () => {
     expect(state.history).toHaveLength(1);
     expect(state.history[0]).toMatchObject({ op: "replace", summary: "Replaced question 1", beforeHash: packageContentHash(s0.pkg), afterHash: packageContentHash(state.pkg) });
     expect(state.pkg.adjustments).toBeUndefined(); // drafts do not append to adjustments[]
-    expect(changeSummary(state)).toEqual({ replacedIds: [expect.stringMatching(/^ex-/)], removedIds: [], modifiedIds: [expect.stringMatching(/^ex-/)] });
+    expect(changeSummary(state)).toEqual({ replacedIds: [expect.stringMatching(/^ex-/)], removedIds: [], modifiedIds: [expect.stringMatching(/^ex-/)], addedIds: [] });
     expect(undoLabel(state)).toBe("Replaced question 1");
   });
 
@@ -198,7 +198,7 @@ describe("R3: remove", () => {
     expect(validatePackage(s1.pkg).overall).toBe("verified");
     expect(s1.meta[ids0[1]!]).toBeUndefined();
     expect(s1.nextSeq).toBe(s0.nextSeq);
-    expect(changeSummary(s1)).toEqual({ replacedIds: [], removedIds: [ids0[1]], modifiedIds: [] });
+    expect(changeSummary(s1)).toEqual({ replacedIds: [], removedIds: [ids0[1]], modifiedIds: [], addedIds: [] });
     expect(s1.history[0]!.summary).toBe("Removed question 2");
   });
 
@@ -229,7 +229,7 @@ describe("R4: undo", () => {
     expect(packageContentHash(u2.pkg)).toBe(h0);
     expect(u2.meta).toEqual(s0.meta);
     expect(u2.history).toEqual([]);
-    expect(changeSummary(u2)).toEqual({ replacedIds: [], removedIds: [], modifiedIds: [] });
+    expect(changeSummary(u2)).toEqual({ replacedIds: [], removedIds: [], modifiedIds: [], addedIds: [] });
     expect(validatePackage(u2.pkg).overall).toBe("verified");
     expect(() => undoLast(u2)).toThrowError(expect.objectContaining({ code: "NOTHING_TO_UNDO" }));
   });
@@ -266,7 +266,7 @@ describe("R4: undo", () => {
     const { state: b } = await replace(a, newId);
     expect(changeSummary(b).replacedIds).toHaveLength(1);
     const c = removeQuestion(b, exerciseIds(b.pkg)[0]!, CFG, NOW);
-    expect(changeSummary(c)).toEqual({ replacedIds: [], removedIds: [ids[0]], modifiedIds: [] });
+    expect(changeSummary(c)).toEqual({ replacedIds: [], removedIds: [ids[0]], modifiedIds: [], addedIds: [] });
   });
 
   it("a corrupted before-image is a hard error and changes nothing", async () => {

@@ -37,7 +37,7 @@ const view = (versionId = V1) => ({
   title: "Linear equations",
   selection: { v: V1, topic: "t" },
   package: {},
-  adjust: { slots: [], changes: { replacedIds: [], removedIds: [] }, undoLabel: null, candidate: null, minExercises: 3 },
+  adjust: { slots: [], changes: { replacedIds: [], removedIds: [], addedIds: [] }, undoLabel: null, candidate: null, minExercises: 3, maxExercises: 30, addMax: 5, practice: { questions: 0, minutes: 0, lessonMinutes: 60, overBy: 0, exceedsLesson: false } },
 });
 
 const render = (search: Record<string, string | string[] | undefined>) => DraftPage({ params: Promise.resolve({ id: D }), searchParams: Promise.resolve(search) });

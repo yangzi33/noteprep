@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_EXERCISES } from "@/lib/package/adjust";
+import { MAX_WORKSHEET_QUESTIONS } from "@/lib/package/schema";
 import { DB_CONTENT_BACKSTOP_BYTES, DEFAULT_LIMITS, LIMIT_ENV_NAMES, MAX_DRAFT_BYTES_CEILING, parseLimits } from "@/lib/server/limits";
 import { parseServerEnv } from "@/lib/server/env";
 import { workerEnv } from "../../worker/env";
@@ -12,7 +12,7 @@ describe("limits", () => {
 
   it("has the documented defaults (placeholders) and stays inside the hard bounds", () => {
     expect(DEFAULT_LIMITS.draftTtlDays).toBe(14);
-    expect(DEFAULT_LIMITS.maxExercises).toBeLessThanOrEqual(MAX_EXERCISES);
+    expect(DEFAULT_LIMITS.maxExercises).toBeLessThanOrEqual(MAX_WORKSHEET_QUESTIONS);
     expect(DEFAULT_LIMITS.minExercises).toBeLessThanOrEqual(DEFAULT_LIMITS.maxExercises);
     expect(DEFAULT_LIMITS.maxDraftBytes).toBeLessThanOrEqual(MAX_DRAFT_BYTES_CEILING);
     expect(MAX_DRAFT_BYTES_CEILING).toBeLessThan(DB_CONTENT_BACKSTOP_BYTES);
@@ -26,6 +26,17 @@ describe("limits", () => {
     expect(parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "5" }).exportConfirmAttemptsPerUserPerHour).toBe(5);
     expect(() => parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "0" })).toThrow();
     expect(() => parseLimits({ EXPORT_CONFIRM_ATTEMPTS_PER_USER_PER_HOUR: "100001" })).toThrow();
+  });
+
+  it("has the add-questions limit with its own variable, default and bounds, and a question cap of 30", () => {
+    expect(MAX_WORKSHEET_QUESTIONS).toBe(30);
+    expect(DEFAULT_LIMITS.maxExercises).toBe(MAX_WORKSHEET_QUESTIONS);
+    expect(DEFAULT_LIMITS.addQuestionsPerUserPerHour).toBe(60);
+    expect(LIMIT_ENV_NAMES.addQuestionsPerUserPerHour).toBe("ADD_QUESTIONS_PER_USER_PER_HOUR");
+    expect(parseLimits({ ADD_QUESTIONS_PER_USER_PER_HOUR: "5" }).addQuestionsPerUserPerHour).toBe(5);
+    expect(parseLimits({ MAX_EXERCISES_PER_DRAFT: "12" }).maxExercises).toBe(12);
+    expect(() => parseLimits({ ADD_QUESTIONS_PER_USER_PER_HOUR: "0" })).toThrow();
+    expect(() => parseLimits({ ADD_QUESTIONS_PER_USER_PER_HOUR: "10001" })).toThrow();
   });
 
   it("has the daily refresh settings (temporary beta perk, D-112) with defaults and bounds", () => {
@@ -60,7 +71,7 @@ describe("limits", () => {
       { DRAFT_TTL_DAYS: "1.5" },
       { DRAFT_TTL_DAYS: "soon" },
       { MAX_ACTIVE_DRAFTS_PER_USER: "0" },
-      { MAX_EXERCISES_PER_DRAFT: String(MAX_EXERCISES + 1) },
+      { MAX_EXERCISES_PER_DRAFT: String(MAX_WORKSHEET_QUESTIONS + 1) },
       { MAX_DRAFT_BYTES: String(MAX_DRAFT_BYTES_CEILING + 1) },
       { MAX_DRAFT_BYTES: String(DB_CONTENT_BACKSTOP_BYTES) },
       { MIN_EXERCISES: "9", MAX_EXERCISES_PER_DRAFT: "5" },

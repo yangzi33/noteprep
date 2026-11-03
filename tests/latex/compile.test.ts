@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { renderDocument, renderPackage } from "@/lib/latex/render";
 import { solutionText } from "@/lib/latex/math";
-import { buildPackage } from "@/lib/package/build";
+import { buildPackage, buildPackageWithMeta } from "@/lib/package/build";
+import { addQuestions, exerciseIds, type DraftState, type MetaMap } from "@/lib/package/draft-ops";
 import { validatePackage } from "@/lib/package/validate";
 import { suggestedTestContext, testPackage, testRequest } from "../fixtures/package";
 import { compiler, compileRaw, leftoverContainers, pdfText } from "./helpers";
@@ -121,5 +122,23 @@ describe("compiling a real lesson package in the sandbox", () => {
 
   it("leaves no container behind", async () => {
     expect(await leftoverContainers()).toEqual([]);
+  });
+});
+
+describe("a worksheet at the question cap (RIS-72)", () => {
+  it("compiles all three PDFs for 30 questions built by 25 + an add of 5, with every question on the worksheet and every answer in the key", async () => {
+    const { pkg: built, levels } = buildPackageWithMeta({ request: testRequest({ durationMinutes: 90 }), context: suggestedTestContext(), seed: "cap-30", exerciseCount: 25 });
+    const meta: MetaMap = Object.fromEntries(Object.entries(levels).map(([id, level]) => [id, { level, origin: "initial" as const }]));
+    const state: DraftState = { pkg: built, meta, nextSeq: exerciseIds(built).length + 1, history: [], changes: { replacedIds: [], removedIds: [], modifiedIds: [], addedIds: [] } };
+    const full = await addQuestions(state, { count: 5, versionSeed: built.seed }, { minExercises: 3, undoDepth: 10 }, new Date());
+    expect(exerciseIds(full.pkg)).toHaveLength(30);
+    expect(validatePackage(JSON.parse(JSON.stringify(full.pkg))).overall).toBe("verified");
+    const result = Object.fromEntries((await compiler().compile({ documents: docs(full.pkg) })).map((r) => [r.id, r]));
+    for (const r of Object.values(result)) expect(Buffer.from(r.pdf.subarray(0, 5)).toString()).toBe("%PDF-");
+    const worksheet = await pdfText(result.worksheet!.pdf);
+    const solutions = await pdfText(result.solutions!.pdf);
+    expect(worksheet.match(/Solve for x:/g)).toHaveLength(30);
+    expect(worksheet).not.toMatch(/Answer:|Solutions \/ Answer Key/);
+    expect(solutions.match(/Answer:/g)).toHaveLength(30);
   });
 });
