@@ -29,7 +29,6 @@ function copy(suffix: string, tweak: (d: Dataset) => void): Dataset {
 
 const CITED = copy("cited", (d) => {
   for (const r of [...d.structure.courses, ...d.structure.units, ...d.structure.topics]) Object.assign(r, CITE);
-  d.structure.courses[0]!.officialCode = undefined;
 });
 const PHYSICS = copy("physics", (d) => void (d.meta.curriculum.subject = "physics"));
 const ALIAS = DatasetSchema.parse(copy("alias", (d) => void ((d.meta.curriculum as { subject: string }).subject = "mathematics")));
@@ -47,10 +46,19 @@ describe("cited records and subjects through the loader and the picker", () => {
     const rows = async (v: string) =>
       (await admin.query(`SELECT (SELECT count(*)::int FROM curriculum_course WHERE version_id=$1) AS courses, (SELECT count(*)::int FROM curriculum_unit WHERE version_id=$1) AS units, (SELECT count(*)::int FROM curriculum_topic WHERE version_id=$1) AS topics`, [v])).rows[0];
     expect(await rows(CITED.meta.version.id)).toEqual(await rows(SUGGESTED.meta.version.id));
-    const steps = async (v: string) => await dal.getSelectionSteps(v);
-    const expected = await steps(SUGGESTED.meta.version.id);
-    expect(expected.length).toBeGreaterThan(0);
-    expect(await steps(CITED.meta.version.id)).toEqual(expected);
+    // the whole hideUnusable tree, with the version id masked, must be identical
+    const tree = async (v: string) => {
+      const mask = (x: unknown) => JSON.stringify(x).split(v).join("V");
+      const steps = await dal.getSelectionSteps(v);
+      const l1 = await dal.getSelectionOptions({ versionId: v }, { hideUnusable: true });
+      const course = l1.options[0]!;
+      const l2 = await dal.getSelectionOptions({ versionId: v, courseId: course.id }, { hideUnusable: true });
+      const l3 = await dal.getSelectionOptions({ versionId: v, courseId: course.id, unitId: l2.options[0]!.id }, { hideUnusable: true });
+      return mask({ steps, l1, l2, l3 });
+    };
+    const expected = await tree(SUGGESTED.meta.version.id);
+    expect(expected).toContain("topic");
+    expect(await tree(CITED.meta.version.id)).toBe(expected);
   });
 
   it("stores the subject as math whether the dataset says math or mathematics", async () => {

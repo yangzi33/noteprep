@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { Dataset as DatasetSchema, DatasetMeta, type Dataset } from "@/lib/curriculum/dataset-schema";
 import { findDatasetDirs, readDatasetDir } from "@/lib/curriculum/files";
-import { ACTIVE_SUBJECTS, isActiveSubject, SUBJECTS } from "@/lib/curriculum/subjects";
+import { ACTIVE_SUBJECTS, SUBJECTS } from "@/lib/curriculum/subjects";
 import { scaleBreadth, scaleDepth } from "@/lib/curriculum/synthetic-scale";
 import { crossJurisdictionDuplicates, provenanceReport, SIZE_BUDGET, sumCounts, validateCatalogue } from "@/lib/curriculum/validate-catalogue";
 import { datasetHash, validateDataset, type DatasetIssue } from "@/lib/curriculum/validate-dataset";
@@ -36,9 +36,6 @@ describe("subject dimension", () => {
   });
   it("only math is active", () => {
     expect([...ACTIVE_SUBJECTS]).toEqual(["math"]);
-    expect(isActiveSubject("math")).toBe(true);
-    expect(isActiveSubject("physics")).toBe(false);
-    expect(isActiveSubject("mathematics")).toBe(false);
   });
 });
 
@@ -125,6 +122,11 @@ describe("catalogue-wide checks", () => {
     b.meta.educationSystem.id = "other-system";
     b.meta.educationSystem.name = "Other";
     expect(validateCatalogue([a(), b]).map((i) => i.code)).not.toContain("CURRICULUM_DUPLICATE");
+  });
+  it("a version id that does not end in its version number is refused", () => {
+    const d = a();
+    d.meta.version.id = "suggested-fixture@beta";
+    expect(validateCatalogue([d]).map((i) => i.code)).toContain("VERSION_ID_UNORDERED");
   });
   it("a version over the size budget is refused", () => {
     const d = a();

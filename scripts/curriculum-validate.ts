@@ -16,11 +16,11 @@ function main() {
     process.exit(1);
   }
   let failed = 0;
-  const parsed: Dataset[] = [];
+  const parsed: { dir: string; dataset: Dataset }[] = [];
   for (const dir of dirs) {
     try {
       const dataset = readDatasetDir(dir);
-      parsed.push(dataset);
+      parsed.push({ dir, dataset });
       const issues = validateDataset(dataset);
       if (issues.length === 0) {
         console.log(`ok    ${dir}  (${dataset.meta.version.kind}, ${dataset.structure.topics.length} topics, ${datasetHash(dataset).slice(0, 19)})`);
@@ -35,7 +35,7 @@ function main() {
     }
   }
   // fixtures under tests/ are deliberately odd (and repeat ids on purpose), so the set-wide rules cover the data roots only
-  const dataset = parsed.filter((_, i) => !dirs[i]!.split("/").includes("tests"));
+  const dataset = parsed.filter((p) => !p.dir.split("/").includes("tests")).map((p) => p.dataset);
   for (const issue of validateCatalogue(dataset)) {
     failed++;
     console.log(`FAIL  catalogue: ${issue.code} at ${issue.where}${issue.detail ? ` (${issue.detail})` : ""}`);

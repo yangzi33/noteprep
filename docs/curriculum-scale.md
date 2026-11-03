@@ -32,7 +32,7 @@ Machine: developer laptop (WSL2), Postgres 17 (alpine) in Docker. Compare runs o
 | breadth, all selectable | x10 | 490 | 42,960 | - | - | - | 34 ms | 154 KB | 48 ms | - |
 | breadth, all selectable | x20 | 980 | 85,920 | - | - | - | 48 ms | 312 KB | 66 ms | - |
 | depth | x10 | 1 | 1,610 | - | - | - | - | - | ~65 ms | - |
-| depth | x20 | 1 | 3,220 | - | - | - | - | - | 122 ms before, 91 ms after the DAL change below | - |
+| depth | x20 | 1 | 3,220 | - | - | - | - | - | 91 ms (122 ms in a one-off run of the same script before the DAL change; that code path no longer exists on this branch) | - |
 
 Cells marked - were not recorded; rerun the command to fill them.
 

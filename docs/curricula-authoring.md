@@ -124,7 +124,7 @@ The Prepare page hides every country, curriculum, level and course that has no s
 
 ## 3a. Subject, sources and confidence (schema additions, RIS-60)
 
-All additions are optional, so every existing dataset and its hash stay valid and unchanged.
+All additions are optional, so every existing dataset and its hash stay valid and unchanged. The reverse also holds: adding citations (or an `officialCode`) to an already-published version changes its hash and is refused (`VERSION_CHANGED`), so a researched update is a new version. `mathematics` and `math` hash identically (the alias is normalised before hashing), so do not flip the spelling in a published dataset and expect a reload to notice.
 
 - `meta.curriculum.subject`: `math` (default and stored id), `physics`, `chemistry`, `biology` or `science`. `mathematics` is accepted and read as `math`. Only `math` is offered to tutors (D-116): the picker ignores curricula of any other subject, so such data can be loaded and validated without becoming visible.
 - On levels, courses, units and topics: `sourceUrl` (https only, at most 500 characters), `sourceSection` (at most 200), `confidence` (`high`, `medium` or `low`) and `retrievedAt` (ISO date). If any of them is present, `sourceUrl`, `confidence` and `retrievedAt` must all be present (`SOURCE_INCOMPLETE`).
@@ -134,9 +134,9 @@ All additions are optional, so every existing dataset and its hash stay valid an
 
 ## 3b. Checks across datasets and the citation report
 
-- `pnpm curriculum:validate` (CI) also runs `validateCatalogue`: duplicate version ids, one curriculum id described differently, the same education system, subject and name under two curriculum ids, and the size budget (see `docs/curriculum-scale.md`). These fail the run.
+- `pnpm curriculum:validate` (CI) also runs `validateCatalogue`: duplicate version ids, version ids that do not end in a version number, one curriculum id described differently, the same education system, subject and name under two curriculum ids, and the size budget (see `docs/curriculum-scale.md`). These fail the run.
 - Courses that appear with the same title and unit list in more than one curriculum are only a warning, because jurisdictions do share courses and today's suggested lists are generic. `pnpm curriculum:report --list-duplicates` names them.
-- `pnpm curriculum:report` counts cited and uncited records and lists low-confidence ones (`--json` for tooling, `--fail-on-low` to exit non-zero when any low-confidence record exists). Today every record is unsourced.
+- `pnpm curriculum:report` counts cited and uncited records and lists low-confidence ones (`--json` for tooling, `--list-unsourced` to name every uncited record, `--fail-on-low` to exit non-zero when any low-confidence record exists). Today every record is unsourced.
 
 ## 4. Changing a curriculum that is already loaded: new version required
 

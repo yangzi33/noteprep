@@ -4,7 +4,7 @@ import type { Confidence, Dataset } from "./dataset-schema";
 // citation report. Per-dataset rules live in validate-dataset.ts. Everything here is pure and works on parsed datasets.
 
 export interface CatalogueIssue {
-  code: "VERSION_ID_DUPLICATE" | "CURRICULUM_CONFLICT" | "CURRICULUM_DUPLICATE" | "VERSION_TOO_LARGE" | "CATALOGUE_TOO_LARGE";
+  code: "VERSION_ID_DUPLICATE" | "VERSION_ID_UNORDERED" | "CURRICULUM_CONFLICT" | "CURRICULUM_DUPLICATE" | "VERSION_TOO_LARGE" | "CATALOGUE_TOO_LARGE";
   where: string;
   detail?: string;
 }
@@ -44,6 +44,7 @@ export function validateCatalogue(datasets: Dataset[]): CatalogueIssue[] {
     const v = meta.version.id;
     if (versions.has(v)) add("VERSION_ID_DUPLICATE", v, "two dataset directories declare the same version id");
     versions.set(v, v);
+    if (!/\d$/.test(v)) add("VERSION_ID_UNORDERED", v, "a version id must end in its version number so the newest version can be told apart");
 
     // The loader refuses a curriculum or education system that reappears with different details; catch it before a load.
     const known = curricula.get(meta.curriculum.id);

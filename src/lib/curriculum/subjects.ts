@@ -8,7 +8,3 @@ export const SUBJECTS = ["math", "physics", "chemistry", "biology", "science"] a
 export type Subject = (typeof SUBJECTS)[number];
 
 export const ACTIVE_SUBJECTS: readonly Subject[] = ["math"];
-
-export function isActiveSubject(subject: string): boolean {
-  return (ACTIVE_SUBJECTS as readonly string[]).includes(subject);
-}
