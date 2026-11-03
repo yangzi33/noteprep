@@ -178,9 +178,13 @@ END $$;
 CREATE TRIGGER "ai_action_guard" BEFORE UPDATE ON "ai_action" FOR EACH ROW EXECUTE FUNCTION ai_action_guard();
 
 -- Separation (S1): a job that carries an AI Action never holds a lesson-pack allowance reservation, in either insert order.
+-- Both triggers take the job row lock before checking, so two concurrent writers on the same job serialize and the second sees the first
+-- (READ COMMITTED: the check is a new statement after the lock is granted).
 CREATE FUNCTION ai_action_no_allowance_on_action() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF NEW.job_id IS NOT NULL AND EXISTS (SELECT 1 FROM usage_reservation WHERE job_id = NEW.job_id) THEN
+  IF NEW.job_id IS NULL THEN RETURN NEW; END IF;
+  PERFORM 1 FROM generation_job WHERE id = NEW.job_id FOR UPDATE;
+  IF EXISTS (SELECT 1 FROM usage_reservation WHERE job_id = NEW.job_id) THEN
     RAISE EXCEPTION 'job % holds an allowance reservation and cannot carry an AI action', NEW.job_id USING ERRCODE = '23514';
   END IF;
   RETURN NEW;
@@ -189,6 +193,7 @@ CREATE TRIGGER "ai_action_no_allowance" BEFORE INSERT OR UPDATE OF job_id ON "ai
   FOR EACH ROW EXECUTE FUNCTION ai_action_no_allowance_on_action();
 CREATE FUNCTION ai_action_no_allowance_on_reservation() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
+  PERFORM 1 FROM generation_job WHERE id = NEW.job_id FOR UPDATE;
   IF EXISTS (SELECT 1 FROM ai_action WHERE job_id = NEW.job_id) THEN
     RAISE EXCEPTION 'job % carries an AI action and cannot hold an allowance reservation', NEW.job_id USING ERRCODE = '23514';
   END IF;

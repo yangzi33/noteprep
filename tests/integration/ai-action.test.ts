@@ -281,6 +281,27 @@ describe("separation from the generation allowance (S1-S4)", () => {
     expect(reservation).toBe("23514");
   });
 
+  it("the separation triggers serialize on the job row, so concurrent writers on one job cannot both pass (S1)", async () => {
+    const owner = await seedOwner(admin);
+    const job = await seedAiJob(admin, owner);
+    const holder = await admin.connect();
+    try {
+      await holder.query("BEGIN");
+      await holder.query(`SELECT 1 FROM generation_job WHERE id = $1 FOR UPDATE`, [job.jobId]);
+      let done = false;
+      const insert = admin
+        .query(`INSERT INTO ai_action (owner_id, request_key, kind, job_id, slot_hour) VALUES ($1, 'k-lock', 'initial', $2, date_trunc('hour', now()))`, [owner, job.jobId])
+        .then(() => (done = true));
+      await new Promise((r) => setTimeout(r, 300));
+      expect(done).toBe(false);
+      await holder.query("COMMIT");
+      await insert;
+      expect(done).toBe(true);
+    } finally {
+      holder.release();
+    }
+  });
+
   it("AI Actions, ledger calls and settlement never touch a usage bucket (S2, S3)", async () => {
     const owner = await seedOwner(admin);
     const bucket = await seedTrialBucket(admin, owner);
