@@ -34,7 +34,7 @@ Every character of an item reaches TeX and HTML through `mathTextToTex` / `mathT
 
 ## Export gate
 
-`confirmExport` accepts `verified` and `labelled`. It refuses a failed package (`EXPORT_NOT_VERIFIED`), an item the exporting owner flagged (`EXPORT_ITEM_FLAGGED`) and an item an administrator took down (`EXPORT_ITEM_TAKEN_DOWN`), all before anything is reserved. The flag and takedown stores belong to slice B-f; until then `ExportDeps.itemGate` defaults to empty sets and tests inject them. The export worker re-validates the frozen snapshot, and a labelled revision is recorded as `unverified` in `validation_status` (the enum has no `labelled`; the stored report keeps the exact state).
+`confirmExport` accepts `verified` and `labelled`. It refuses a failed package (`EXPORT_NOT_VERIFIED`), an item the exporting owner flagged (`EXPORT_ITEM_FLAGGED`) and an item an administrator took down (`EXPORT_ITEM_TAKEN_DOWN`), all before anything is reserved. The flag and takedown stores belong to slice B-f; until then `ExportDeps.itemGate` defaults to empty sets and tests inject them. The export worker re-validates the frozen snapshot, and a labelled revision is recorded as `unverified` in `validation_status` (the enum has no `labelled`; the stored report keeps the exact state, and the revision carries an `acknowledgement` of kind `labelled_items` because the schema requires one for any unverified final revision). Migration `20261103100000_export_snapshot_labelled` relaxes the `export_snapshot_verified` check to accept `labelled` as well as `verified`.
 
 ## Not in this slice
 
