@@ -238,7 +238,8 @@ export function createSettlementDal(db: Db) {
             content: snapshot.content as Prisma.InputJsonValue,
             contentHash: snapshot.packageHash,
             validationReport: snapshot.validationReport as Prisma.InputJsonValue,
-            validationStatus: "verified",
+            // the enum has no `labelled`: a package with model items that no exact check covers is recorded as not fully verified (the report keeps the exact state)
+            validationStatus: (snapshot.validationReport as { overall?: unknown } | null)?.overall === "labelled" ? "unverified" : "verified",
             templateVersion: spec.templateVersion,
             validatorVersion: snapshot.validatorVersion,
             generationMeta: {
