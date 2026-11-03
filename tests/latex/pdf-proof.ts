@@ -209,6 +209,10 @@ function blockFragments(block: Block, ctx: { n: number; compact: boolean; proble
         fragment(`${ctx.where} solution ${ctx.n} answer`, "Answer:", ...answerPieces(block.solution)),
       ];
     }
+    case "ai_question":
+    case "ai_worked_example":
+    case "ai_solution":
+      throw new Error("proof: model-written items are covered by tests/latex/ai-items.test.ts, not by this deterministic proof");
     case "alignment": {
       const name = `${block.curriculumName} (${block.versionLabel})`;
       if (block.claim === "aligned") {

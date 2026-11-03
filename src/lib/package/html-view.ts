@@ -1,9 +1,12 @@
 import type { DatasetKind } from "@/lib/curriculum/dataset-schema";
 import { equationTex, operationText, solutionText } from "@/lib/latex/math";
 import { DOCUMENT_TITLES } from "@/lib/latex/templates";
+import { tutorLabel, type TutorLabel } from "@/lib/content/ai-status";
+import { mathTextToInlineParts } from "@/lib/math-text";
 import { splitInlineMath, type InlineMathPart } from "@/lib/ui/math-html";
 import { effectiveSettings } from "./effective";
 import { documentView } from "./views";
+import type { MathTextDoc } from "@/lib/math-text";
 import type { DocumentKind, LessonPackage, Section } from "./schema";
 
 /**
@@ -23,6 +26,8 @@ export type HtmlBlock =
   | { type: "question"; number: number; questionId: string; tex: string }
   | { type: "worked"; number: number; questionId: string; problemTex: string; steps: ViewStep[]; answer: Inline[] }
   | { type: "solution"; number: number; questionId: string; problemTex: string; steps: ViewStep[]; answer: Inline[] }
+  | { type: "ai_question"; number: number; questionId: string; stem: Inline[]; label: TutorLabel }
+  | { type: "ai_worked" | "ai_solution"; number: number; questionId: string; stem: Inline[]; steps: Inline[][]; answer: Inline[]; label: TutorLabel }
   | {
       type: "alignment";
       claim: "aligned" | "none";
@@ -56,12 +61,22 @@ type SourceStep = Extract<Block, { type: "worked_example" }>["steps"][number];
 const viewSteps = (steps: SourceStep[]): ViewStep[] =>
   steps.map((s) => ({ parts: splitInlineMath(operationText(s.op)), resultTex: equationTex(s.result) }));
 
+/** Several answer documents (roots, a pair) read as one comma-separated line. */
+function answerParts(value: MathTextDoc | MathTextDoc[]): Inline[] {
+  const docs = Array.isArray(value) ? value : [value];
+  return docs.flatMap((d, i) => (i === 0 ? mathTextToInlineParts(d) : [{ kind: "text" as const, value: ", " }, ...mathTextToInlineParts(d)]));
+}
+
 export function htmlDocument(pkg: LessonPackage, id: DocumentKind): HtmlDocument {
   const view = documentView(pkg, id);
   const problems = new Map<string, string>();
+  const aiStems = new Map<string, Extract<Block, { type: "ai_question" }>>();
   for (const section of pkg.sections) {
     if (section.kind !== "exercises") continue;
-    for (const block of section.blocks) if (block.type === "question") problems.set(block.questionId, equationTex(block.problem.equation));
+    for (const block of section.blocks) {
+      if (block.type === "question") problems.set(block.questionId, equationTex(block.problem.equation));
+      else if (block.type === "ai_question") aiStems.set(block.questionId, block);
+    }
   }
 
   const sections = view.sections.map((section): HtmlSection => {
@@ -104,6 +119,34 @@ export function htmlDocument(pkg: LessonPackage, id: DocumentKind): HtmlDocument
             problemTex,
             steps: viewSteps(block.steps),
             answer: splitInlineMath(solutionText(block.solution)),
+          };
+        }
+        case "ai_question":
+          question++;
+          return { type: "ai_question", number: question, questionId: block.questionId, stem: mathTextToInlineParts(block.stem), label: tutorLabel(block.status) };
+        case "ai_worked_example":
+          question++;
+          return {
+            type: "ai_worked",
+            number: question,
+            questionId: block.questionId,
+            stem: mathTextToInlineParts(block.stem),
+            steps: block.steps.map(mathTextToInlineParts),
+            answer: answerParts(block.answer.value),
+            label: tutorLabel(block.status),
+          };
+        case "ai_solution": {
+          question++;
+          const asked = aiStems.get(block.questionId);
+          if (!asked || asked.itemHash !== block.itemHash) throw new RangeError("solution_without_question");
+          return {
+            type: "ai_solution",
+            number: question,
+            questionId: block.questionId,
+            stem: mathTextToInlineParts(asked.stem),
+            steps: block.steps.map(mathTextToInlineParts),
+            answer: answerParts(block.answer.value),
+            label: tutorLabel(block.status),
           };
         }
         case "alignment":

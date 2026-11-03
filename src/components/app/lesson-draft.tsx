@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import { noClaimOrigin } from "@/lib/curriculum/notice";
 import { Inlines, MathView } from "@/components/app/math";
+import { TUTOR_LABEL_TEXT, type TutorLabel } from "@/lib/content/ai-status";
 import type { HtmlBlock, HtmlDocument } from "@/lib/package/html-view";
 
 type Alignment = Extract<HtmlBlock, { type: "alignment" }>;
@@ -40,6 +41,34 @@ function Steps({ steps }: { steps: Extract<HtmlBlock, { type: "worked" }>["steps
           <div className="overflow-x-auto">
             <MathView tex={s.resultTex} mode="display" />
           </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** One of the two tutor-visible labels: text plus a glyph, never colour alone. */
+function ItemLabel({ label }: { label: TutorLabel }) {
+  const text = TUTOR_LABEL_TEXT[label];
+  return (
+    <span
+      data-testid="item-label"
+      data-label={label}
+      aria-label={text}
+      className="ml-2 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 align-middle text-xs font-normal text-neutral-700"
+    >
+      <span aria-hidden="true">{label === "checked" ? "\u2713" : "\u25CB"}</span>
+      {text}
+    </span>
+  );
+}
+
+function AiSteps({ steps }: { steps: Extract<HtmlBlock, { type: "ai_worked" | "ai_solution" }>["steps"] }) {
+  return (
+    <ol className="list-decimal space-y-1 pl-6">
+      {steps.map((parts, i) => (
+        <li key={i}>
+          <Inlines parts={parts} />
         </li>
       ))}
     </ol>
@@ -115,6 +144,27 @@ function Block({ block, compact }: { block: HtmlBlock; compact: boolean }) {
           </p>
         </div>
       );
+    case "ai_question":
+      return (
+        <p>
+          <strong>{block.number}.</strong> <Inlines parts={block.stem} />
+          <ItemLabel label={block.label} />
+        </p>
+      );
+    case "ai_worked":
+    case "ai_solution":
+      return (
+        <div className="space-y-2">
+          <p>
+            <strong>{block.type === "ai_worked" ? `Example ${block.number}.` : `${block.number}.`}</strong> <Inlines parts={block.stem} />
+            <ItemLabel label={block.label} />
+          </p>
+          <AiSteps steps={block.steps} />
+          <p className="font-medium">
+            <strong>Answer:</strong> <Inlines parts={block.answer} />
+          </p>
+        </div>
+      );
     case "alignment":
       return <AlignmentText block={block} compact={compact} />;
   }
@@ -147,7 +197,7 @@ export function LessonDraft({ doc, slots }: { doc: HtmlDocument; slots?: Questio
           {section.blocks.map((block, i) => (
             <Fragment key={i}>
               <Block block={block} compact={doc.document !== "notes"} />
-              {block.type === "question" ? slots?.afterQuestion?.(block) : block.type === "solution" ? slots?.afterSolution?.(block) : null}
+              {block.type === "question" || block.type === "ai_question" ? slots?.afterQuestion?.(block) : block.type === "solution" || block.type === "ai_solution" ? slots?.afterSolution?.(block) : null}
             </Fragment>
           ))}
         </section>
