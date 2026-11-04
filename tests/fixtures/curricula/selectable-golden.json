@@ -1,0 +1,472 @@
+[
+  {
+    "id": "uk-aqa-a-level",
+    "latestVersionId": "uk-aqa-a-level@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 7,
+    "topics": 25,
+    "supportedTopics": 4,
+    "sha256": "bd49f9ad4fcdab586617c4f7feb67b049ff98657fcd5e0e8e85a70c58778ed1f"
+  },
+  {
+    "id": "uk-aqa-gcse",
+    "latestVersionId": "uk-aqa-gcse@suggested-1",
+    "levels": 0,
+    "courses": 2,
+    "units": 11,
+    "topics": 80,
+    "supportedTopics": 8,
+    "sha256": "3f97f7d8a901730811471b635f4ee62c8f520a3bc462c615a924d5f1c40b9348"
+  },
+  {
+    "id": "alberta",
+    "latestVersionId": "alberta@suggested-2",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "7bb5079bf8bf6f78189ad60684653e23792f9f2790a32066ada53b253ea2ca49"
+  },
+  {
+    "id": "au-australian-curriculum",
+    "latestVersionId": "au-australian-curriculum@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "73acf78266f67fa6753072a9c92ad1000caf88a5ed49819ab253cd478ecba87d"
+  },
+  {
+    "id": "british-columbia",
+    "latestVersionId": "british-columbia@suggested-2",
+    "levels": 4,
+    "courses": 5,
+    "units": 23,
+    "topics": 99,
+    "supportedTopics": 20,
+    "sha256": "169d21103d50a619c9b437627a2006504fb69b0feec45644a431bfbcfd6b40ee"
+  },
+  {
+    "id": "in-cbse",
+    "latestVersionId": "in-cbse@suggested-1",
+    "levels": 4,
+    "courses": 5,
+    "units": 24,
+    "topics": 97,
+    "supportedTopics": 20,
+    "sha256": "edad472873a1fa5d5f018c7d295601cb465a7ed1b28db3b6929dfe805e48d9e0"
+  },
+  {
+    "id": "in-cisce",
+    "latestVersionId": "in-cisce@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "28e457374d1ff83e6335114d4e52778cf1450f64d8ab936dc761dad2d49217b3"
+  },
+  {
+    "id": "us-california",
+    "latestVersionId": "us-california@suggested-1",
+    "levels": 3,
+    "courses": 4,
+    "units": 18,
+    "topics": 79,
+    "supportedTopics": 16,
+    "sha256": "db5e06d7af4dd8fd6e874e32a6cde990e779bf7e9e478a6b418e9add1222ad4a"
+  },
+  {
+    "id": "cambridge-international",
+    "latestVersionId": "cambridge-international@suggested-1",
+    "levels": 0,
+    "courses": 3,
+    "units": 16,
+    "topics": 103,
+    "supportedTopics": 12,
+    "sha256": "259695907b402642718f3e9578997913f8673eed64aa9375df120090aac0607d"
+  },
+  {
+    "id": "us-common-core",
+    "latestVersionId": "us-common-core@suggested-1",
+    "levels": 3,
+    "courses": 3,
+    "units": 14,
+    "topics": 63,
+    "supportedTopics": 12,
+    "sha256": "664f33d4798a42c75ecc106b69d31037f36dca53ff66939fe0307b68b7c6f1f2"
+  },
+  {
+    "id": "uk-edexcel-a-level",
+    "latestVersionId": "uk-edexcel-a-level@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 7,
+    "topics": 25,
+    "supportedTopics": 4,
+    "sha256": "88d1fb9c047ac98d297edcc2c1c8c9c8789c197b3604ce8585184bc88cabae38"
+  },
+  {
+    "id": "uk-edexcel-gcse",
+    "latestVersionId": "uk-edexcel-gcse@suggested-1",
+    "levels": 0,
+    "courses": 2,
+    "units": 11,
+    "topics": 80,
+    "supportedTopics": 8,
+    "sha256": "6659dc0bd417244d2f35ff7b76fab0e3c8c0078b0faff364391466c4bf53017d"
+  },
+  {
+    "id": "edexcel-international",
+    "latestVersionId": "edexcel-international@suggested-1",
+    "levels": 0,
+    "courses": 2,
+    "units": 12,
+    "topics": 88,
+    "supportedTopics": 8,
+    "sha256": "31a5d12a4676c2079604f33ebfe824d996f0d4a51ad0dab64202eb203c39f775"
+  },
+  {
+    "id": "uk-england-national-curriculum",
+    "latestVersionId": "uk-england-national-curriculum@suggested-1",
+    "levels": 3,
+    "courses": 3,
+    "units": 14,
+    "topics": 62,
+    "supportedTopics": 12,
+    "sha256": "3d6b14e815157f482ce3c753dcf53c581977916aaa8fe30b08b806c3c407f0d7"
+  },
+  {
+    "id": "hk-dse",
+    "latestVersionId": "hk-dse@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 5,
+    "topics": 19,
+    "supportedTopics": 4,
+    "sha256": "31fcd58d9a878b3bc09e12f697d55f04752a94334eed1f2ef8bb830ff3e27612"
+  },
+  {
+    "id": "hk-edb",
+    "latestVersionId": "hk-edb@suggested-1",
+    "levels": 3,
+    "courses": 3,
+    "units": 14,
+    "topics": 62,
+    "supportedTopics": 12,
+    "sha256": "d83ac6c748c1f0c831eecc4fdc05df6e4014c83a3d6d9112fefb68056a80b700"
+  },
+  {
+    "id": "ib-myp",
+    "latestVersionId": "ib-myp@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "266e0154ef30464f363fbc2081d8dab0d7659a87a2aa9e088b2cff8dc09de614"
+  },
+  {
+    "id": "ie-junior-cycle",
+    "latestVersionId": "ie-junior-cycle@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 5,
+    "topics": 23,
+    "supportedTopics": 4,
+    "sha256": "1e9e330e90bf46f13dfe90878c0f4b278770e324d1d948cf221c648c181f08aa"
+  },
+  {
+    "id": "ie-leaving-certificate",
+    "latestVersionId": "ie-leaving-certificate@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 5,
+    "topics": 19,
+    "supportedTopics": 4,
+    "sha256": "30591d239c1a44ad90996f15abe1fb641bba77b22eec5d40fa92196915758dc0"
+  },
+  {
+    "id": "ph-matatag",
+    "latestVersionId": "ph-matatag@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "5140a91b5669ecbd7a0791583ada31b27ff9ed0ee618fde5e157a36ca2a8ee22"
+  },
+  {
+    "id": "manitoba",
+    "latestVersionId": "manitoba@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "29caa810be0e425448b4dc2a3b92c9ba37817ba6e1412615a1948322d44911ca"
+  },
+  {
+    "id": "nz-ncea",
+    "latestVersionId": "nz-ncea@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 5,
+    "topics": 19,
+    "supportedTopics": 4,
+    "sha256": "84c997068ec8e9d27510358d42abe1a2f39f7f2b2475c1bcaa933d761f01d584"
+  },
+  {
+    "id": "au-nsw-hsc",
+    "latestVersionId": "au-nsw-hsc@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 18,
+    "supportedTopics": 4,
+    "sha256": "210d2cddc99741dd9eb3e4bd19e07aada5aaad6b323cb91cbde3104337895179"
+  },
+  {
+    "id": "new-brunswick",
+    "latestVersionId": "new-brunswick@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "0854b24e301999dda0ec87377bdfecd684d98554d30ab370b849151892c18626"
+  },
+  {
+    "id": "nz-curriculum",
+    "latestVersionId": "nz-curriculum@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "f2a5c9d00759a855cf7ef45c0cdeb9c48f492377aa2bd2718de650ae950d3500"
+  },
+  {
+    "id": "newfoundland-and-labrador",
+    "latestVersionId": "newfoundland-and-labrador@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "fa1edc21de17bcfdc1c73eb0a8853f7a0e5011e809c7da0b03a552012d27e49f"
+  },
+  {
+    "id": "uk-ccea",
+    "latestVersionId": "uk-ccea@suggested-1",
+    "levels": 0,
+    "courses": 2,
+    "units": 13,
+    "topics": 69,
+    "supportedTopics": 8,
+    "sha256": "9cb0ac2e23efa3d1547097560915341c731005329ff1813a5d92c3aaaa28e18c"
+  },
+  {
+    "id": "northwest-territories",
+    "latestVersionId": "northwest-territories@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "82c821300a778a9843db5a736cc117afdc93417e8a67bfa334841b94afe0b939"
+  },
+  {
+    "id": "nova-scotia",
+    "latestVersionId": "nova-scotia@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "f818a39f14afee4f99c5629e21b5e1158eb14c1d7a15eb5ffbb2d083818366da"
+  },
+  {
+    "id": "nunavut",
+    "latestVersionId": "nunavut@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "a59f4d59e58c681b71988168ad0ca3a50cde6b1666f9322cfaef749c867f3b20"
+  },
+  {
+    "id": "uk-ocr-gcse",
+    "latestVersionId": "uk-ocr-gcse@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 6,
+    "topics": 44,
+    "supportedTopics": 4,
+    "sha256": "cb3ddecc70f5a26e82eb6bfb4335ae868070682adef3d9a468bce9deb598394f"
+  },
+  {
+    "id": "ontario",
+    "latestVersionId": "ontario@suggested-2",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 81,
+    "supportedTopics": 16,
+    "sha256": "5a4772264aac502599270a1cea762654be14e9fa223f6b72c6816ca106a63632"
+  },
+  {
+    "id": "prince-edward-island",
+    "latestVersionId": "prince-edward-island@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "8517e18410959c132eb8e72304207ddf11d3dd30c71516841503fdf74eefc549"
+  },
+  {
+    "id": "quebec",
+    "latestVersionId": "quebec@suggested-2",
+    "levels": 4,
+    "courses": 6,
+    "units": 29,
+    "topics": 121,
+    "supportedTopics": 24,
+    "sha256": "a8590fe0191c007e6dc1d4b46ddfe2608cf642987ba35fc060890b1dac920163"
+  },
+  {
+    "id": "au-qce",
+    "latestVersionId": "au-qce@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 18,
+    "supportedTopics": 4,
+    "sha256": "8e085e135232cb5cc84ef3f985738ffdb8bd23a845bca6b2ec50634b0ed56925"
+  },
+  {
+    "id": "saskatchewan",
+    "latestVersionId": "saskatchewan@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "42f6cdf36ca774b11fdced118e96005369ea24dea816de9be95705eb525bdad2"
+  },
+  {
+    "id": "uk-scotland-cfe",
+    "latestVersionId": "uk-scotland-cfe@suggested-1",
+    "levels": 0,
+    "courses": 3,
+    "units": 15,
+    "topics": 85,
+    "supportedTopics": 12,
+    "sha256": "98276a1d5358f01386a3f00b26e7887c8342fc79ff6de3fe86929033184fadef"
+  },
+  {
+    "id": "au-senior-secondary",
+    "latestVersionId": "au-senior-secondary@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 18,
+    "supportedTopics": 4,
+    "sha256": "4e3c725dbab65853446fa4492c36f0ee56658f4d8c067e249105986429c505c8"
+  },
+  {
+    "id": "sg-moe-secondary",
+    "latestVersionId": "sg-moe-secondary@suggested-1",
+    "levels": 0,
+    "courses": 3,
+    "units": 15,
+    "topics": 60,
+    "supportedTopics": 12,
+    "sha256": "f473efe75c22ce5494c201454784165f49f7f26b5ea296516fb9cec931c7b9f8"
+  },
+  {
+    "id": "sg-o-level",
+    "latestVersionId": "sg-o-level@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 6,
+    "topics": 44,
+    "supportedTopics": 4,
+    "sha256": "042012967cc9271a82cfaa48cffdfdfd3d7ceb02e52b4a5d2baa24511608d832"
+  },
+  {
+    "id": "sg-a-level",
+    "latestVersionId": "sg-a-level@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 16,
+    "supportedTopics": 4,
+    "sha256": "2cbcfd3cb4e477491da4ecf78235b743df70f707202029eeba4834f88e70d311"
+  },
+  {
+    "id": "za-caps",
+    "latestVersionId": "za-caps@suggested-1",
+    "levels": 3,
+    "courses": 3,
+    "units": 15,
+    "topics": 60,
+    "supportedTopics": 12,
+    "sha256": "71d5d7edee86fe53bea1d7e3f36fce3ce24a59e59b1294825257d01395cd7d21"
+  },
+  {
+    "id": "au-sace",
+    "latestVersionId": "au-sace@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 18,
+    "supportedTopics": 4,
+    "sha256": "8ccfeaf558f43283e029a5e4f06d3ca2aef4c625c61a778a99167465d6ab8779"
+  },
+  {
+    "id": "us-texas",
+    "latestVersionId": "us-texas@suggested-1",
+    "levels": 3,
+    "courses": 3,
+    "units": 14,
+    "topics": 63,
+    "supportedTopics": 12,
+    "sha256": "3394be6c40a36e88c0b33bbab707afbb23443a466b58a7abaf6b1dbb72187bbe"
+  },
+  {
+    "id": "au-vce",
+    "latestVersionId": "au-vce@suggested-1",
+    "levels": 0,
+    "courses": 1,
+    "units": 4,
+    "topics": 18,
+    "supportedTopics": 4,
+    "sha256": "9a3520d9bc43e74ca5d8e81036014c7cd61ce432a05e66e2f8b6edad3af139ac"
+  },
+  {
+    "id": "uk-wales",
+    "latestVersionId": "uk-wales@suggested-1",
+    "levels": 0,
+    "courses": 2,
+    "units": 11,
+    "topics": 62,
+    "supportedTopics": 8,
+    "sha256": "cf9dfcbcdad8405ee9ac1d285e6b646778b1070d73b16233ad012f7a8b035d3d"
+  },
+  {
+    "id": "yukon",
+    "latestVersionId": "yukon@suggested-1",
+    "levels": 4,
+    "courses": 4,
+    "units": 19,
+    "topics": 79,
+    "supportedTopics": 14,
+    "sha256": "04a930c5b0e22bd7b7464a28915b17631e4de6610913e1564492025145937d71"
+  }
+]
