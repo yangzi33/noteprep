@@ -1,6 +1,7 @@
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { isSupportedConcept } from "./capabilities";
-import { CONFIDENCE, isValidId, LIMITS, ORDINAL_MAX, type Dataset } from "./dataset-schema";
+import { CONFIDENCE, isValidId, LIMITS, ORDINAL_MAX, PLACEMENTS, type Dataset } from "./dataset-schema";
+import { findTopicSetDuplicates, labelInSource, normaliseTitle } from "./topic-sets";
 
 export interface DatasetIssue {
   code:
@@ -38,7 +39,22 @@ export interface DatasetIssue {
     | "SOURCE_REQUIRED"
     | "CONFIDENCE_INVALID"
     | "OFFICIAL_COURSE_CODE_DUPLICATE"
-    | "SUGGESTED_OFFICIAL_CODE";
+    | "SUGGESTED_OFFICIAL_CODE"
+    | "COURSE_TOPIC_SET_DUPLICATE"
+    | "COURSE_IDENTITY_DUPLICATE"
+    | "LEVEL_YEARS_INVALID"
+    | "LEVEL_YEARS_OVERLAP"
+    | "SOURCE_SECTION_REQUIRED"
+    | "SOURCE_SECTION_UNRESOLVABLE"
+    | "SOURCE_NAME_REQUIRED"
+    | "PLACEMENT_REQUIRED"
+    | "PLACEMENT_INVALID"
+    | "PLACEMENT_INFERRED_HIGH_CONFIDENCE"
+    | "INTERNAL_CODE_PREFIX"
+    | "OFFICIAL_CODE_IS_SLUG"
+    | "OFFICIAL_CODE_NOT_IN_SECTION"
+    | "OFFICIAL_CODE_UNSOURCED"
+    | "VARIANT_NOT_IN_SOURCE";
   where: string;
   detail?: string;
 }
@@ -55,6 +71,17 @@ export function isIsoDate(value: string): boolean {
   if (m[4] !== undefined && (Number(m[4]) > 23 || Number(m[5]) > 59 || (m[6] !== undefined && Number(m[6]) > 59))) return false;
   return !Number.isNaN(new Date(value).getTime());
 }
+
+/**
+ * A citation section a person can follow: it names a heading, document part or page in words. Internal labels such as
+ * "(S9)" or "tmp-7f3a" are not enough. This is a lint, not proof that the section exists.
+ */
+export function isResolvableSection(section: string): boolean {
+  // at least one plain word of four letters or more; "A-MATH-7357", "sect0004" and "tmp-7f3a" are labels, not words
+  return section.split(/\s+/).some((w) => /^\p{L}{4,}(?:-\p{L}+)*$/u.test(w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")));
+}
+
+const alnum = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /** Stable hash of the whole dataset; any content change gives a different hash. */
 export function datasetHash(dataset: Dataset): string {
@@ -117,6 +144,8 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   structure.courses.forEach((c, i) => {
     text(c.title, LIMITS.title, `courses[${i}].title`);
     text(c.code, LIMITS.title, `courses[${i}].code`);
+    text(c.tier, LIMITS.tier, `courses[${i}].tier`);
+    text(c.pathway, LIMITS.tier, `courses[${i}].pathway`);
   });
   structure.units.forEach((u, i) => {
     text(u.title, LIMITS.title, `units[${i}].title`);
@@ -137,8 +166,8 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   // ---- per-record citation (sourceUrl, sourceSection, confidence, retrievedAt) -------------------------------------
   // Optional for existing datasets; a record that carries any citation field must carry the required ones, and a
   // version that sets requireSources needs a complete citation on every course, unit and topic.
-  const cited: [string, { sourceUrl?: string; sourceSection?: string; confidence?: string; retrievedAt?: string; officialCode?: string }, boolean][] = [
-    ...structure.levels.map((x, i) => [`levels[${i}]`, x, false] as [string, typeof x, boolean]),
+  const cited: [string, { sourceName?: string; sourceUrl?: string; sourceSection?: string; confidence?: string; retrievedAt?: string; officialCode?: string }, boolean][] = [
+    ...structure.levels.map((x, i) => [`levels[${i}]`, x, true] as [string, typeof x, boolean]),
     ...structure.courses.map((x, i) => [`courses[${i}]`, x, true] as [string, typeof x, boolean]),
     ...structure.units.map((x, i) => [`units[${i}]`, x, true] as [string, typeof x, boolean]),
     ...structure.topics.map((x, i) => [`topics[${i}]`, x, true] as [string, typeof x, boolean]),
@@ -151,8 +180,15 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     } else if (meta.version.requireSources && requiredWhenAsked) {
       add("SOURCE_REQUIRED", where);
     }
+    // A researched dataset must let a person find the record in its source: a named section, not an internal label.
+    if (meta.version.requireSources && present) {
+      const section = (r.sourceSection ?? "").trim();
+      if (section === "") add("SOURCE_SECTION_REQUIRED", where);
+      else if (!isResolvableSection(section)) add("SOURCE_SECTION_UNRESOLVABLE", where, "name the heading, page or document part in words; internal labels cannot be followed");
+    }
     text(r.sourceUrl, LIMITS.sourceUrl, `${where}.sourceUrl`, false);
     text(r.sourceSection, LIMITS.sourceSection, `${where}.sourceSection`, false);
+    text(r.sourceName, LIMITS.sourceName, `${where}.sourceName`);
     if (r.sourceUrl !== undefined && r.sourceUrl.trim() !== "") {
       let https = false;
       try {
@@ -168,12 +204,40 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
   const officialCourseCodes = new Map<string, string>();
   structure.courses.forEach((c, i) => {
     if (c.officialCode === undefined) return;
-    text(c.officialCode, LIMITS.code, `courses[${i}].officialCode`);
-    if (meta.version.kind === "suggested") add("SUGGESTED_OFFICIAL_CODE", `courses[${i}].officialCode`, "a suggested dataset must not carry official codes (D-75)");
+    const at = `courses[${i}]`;
+    text(c.officialCode, LIMITS.code, `${at}.officialCode`);
+    // A suggested dataset carries no official codes (D-75) unless it is a researched one, where the code is provenance only:
+    // the loader and the data layer never read it, so it cannot reach the picker or a lesson.
+    if (meta.version.kind === "suggested" && !meta.version.requireSources) add("SUGGESTED_OFFICIAL_CODE", `${at}.officialCode`, "a suggested dataset must not carry official codes (D-75)");
     const key = c.officialCode.trim().toLowerCase();
-    if (key !== "" && officialCourseCodes.has(key)) add("OFFICIAL_COURSE_CODE_DUPLICATE", `courses[${i}].officialCode`, `${c.officialCode} (also ${officialCourseCodes.get(key)})`);
-    else officialCourseCodes.set(key, `courses[${i}]`);
+    if (key !== "" && officialCourseCodes.has(key)) add("OFFICIAL_COURSE_CODE_DUPLICATE", `${at}.officialCode`, `${c.officialCode} (also ${officialCourseCodes.get(key)})`);
+    else officialCourseCodes.set(key, at);
+    // An official code must be one the source prints: it needs a citation, and the cited section must contain it. A code that
+    // is only NotePrep's own slug in other clothes is an invented code.
+    // Outside researched datasets `code` may be the jurisdiction's own code, so only the NP- form is a certain slug there.
+    const slugs = meta.version.requireSources ? [c.code, c.code.replace(/^np-/i, ""), c.id.split("/").pop() ?? ""].map(alnum).filter((x) => x !== "") : [];
+    if (/^np-/i.test(c.officialCode.trim()) || slugs.includes(alnum(c.officialCode))) add("OFFICIAL_CODE_IS_SLUG", `${at}.officialCode`, `${c.officialCode} is a NotePrep slug, not a code the source prints`);
+    if ((c.sourceUrl ?? "").trim() === "" || (c.sourceSection ?? "").trim() === "") add("OFFICIAL_CODE_UNSOURCED", at, "an official code needs a sourceUrl and a sourceSection");
+    else if (alnum(c.officialCode) !== "" && !alnum(c.sourceSection ?? "").includes(alnum(c.officialCode))) add("OFFICIAL_CODE_NOT_IN_SECTION", `${at}.sourceSection`, `the cited section does not contain ${c.officialCode}`);
   });
+
+  // Researched datasets: a level or course must be findable in its source by the name (or code) the source uses, and say
+  // whether the source states its year or NotePrep inferred it. An inference is never "high" confidence.
+  if (meta.version.requireSources) {
+    const basis = (where: string, r: { sourceName?: string; placement?: string; confidence?: string }, hasOfficialCode: boolean) => {
+      if (!hasOfficialCode && (r.sourceName ?? "").trim() === "") add("SOURCE_NAME_REQUIRED", where, "give the name as the source prints it (or an official code)");
+      if ((r.placement ?? "").trim() === "") add("PLACEMENT_REQUIRED", where, `expected ${PLACEMENTS.join(" or ")}`);
+      else if (!(PLACEMENTS as readonly string[]).includes(r.placement as string)) add("PLACEMENT_INVALID", where, `expected ${PLACEMENTS.join(" or ")}`);
+      else if (r.placement === "inferred" && r.confidence === "high") add("PLACEMENT_INFERRED_HIGH_CONFIDENCE", where, "an inferred placement must be medium or low confidence");
+    };
+    structure.levels.forEach((l, i) => basis(`levels[${i}]`, l, false));
+    // a tier or pathway is how parallel courses of one level escape the duplicate check, so the source must print it
+    structure.courses.forEach((c, i) => {
+      if (c.tier !== undefined && c.tier.trim() !== "" && !labelInSource(c.tier, c)) add("VARIANT_NOT_IN_SOURCE", `courses[${i}].tier`, "the course's sourceName or sourceSection must contain the tier as the source prints it");
+      if (c.pathway !== undefined && c.pathway.trim() !== "" && !labelInSource(c.pathway, c)) add("VARIANT_NOT_IN_SOURCE", `courses[${i}].pathway`, "the course's sourceName or sourceSection must contain the pathway as the source prints it");
+    });
+    structure.courses.forEach((c, i) => basis(`courses[${i}]`, c, (c.officialCode ?? "").trim() !== ""));
+  }
 
   // ---- references -----------------------------------------------------------------------------------------
   const levelIds = new Set(structure.levels.map((l) => l.id));
@@ -215,6 +279,39 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     if (objectiveCodes.has(key)) add("OFFICIAL_CODE_DUPLICATE", `objectives[${i}].officialCode`, o.officialCode);
     objectiveCodes.add(key);
   });
+
+  // A level may be a band of school years. A band names both ends, they are whole years in order, and no school year
+  // belongs to two levels, so one body of content cannot be entered under a band and again under each of its years.
+  const YEAR_MAX = 20;
+  const banded: { index: number; from: number; to: number }[] = [];
+  structure.levels.forEach((l, i) => {
+    if (l.yearFrom === undefined && l.yearTo === undefined) return;
+    const ok = (n: number | undefined): n is number => n !== undefined && Number.isInteger(n) && n >= 0 && n <= YEAR_MAX;
+    if (!ok(l.yearFrom) || !ok(l.yearTo) || l.yearFrom > l.yearTo) {
+      add("LEVEL_YEARS_INVALID", `levels[${i}]`, `yearFrom and yearTo must both be whole years 0..${YEAR_MAX} with yearFrom <= yearTo`);
+      return;
+    }
+    const clash = banded.find((b) => l.yearFrom! <= b.to && b.from <= l.yearTo!);
+    if (clash) add("LEVEL_YEARS_OVERLAP", `levels[${i}]`, `years ${l.yearFrom}-${l.yearTo} overlap levels[${clash.index}] (${clash.from}-${clash.to})`);
+    banded.push({ index: i, from: l.yearFrom, to: l.yearTo });
+  });
+
+  // Several courses may share a level (tiers, pathways, qualifications), but not look like the same course twice.
+  const tierKey = (v: string | undefined) => normaliseTitle(v ?? "");
+  const identities = new Map<string, number>();
+  structure.courses.forEach((c, i) => {
+    const key = [c.levelId ?? "", normaliseTitle(c.title), tierKey(c.tier), tierKey(c.pathway)].join("|");
+    const first = identities.get(key);
+    if (first !== undefined) add("COURSE_IDENTITY_DUPLICATE", `courses[${i}]`, `same level, title, tier and pathway as courses[${first}]`);
+    else identities.set(key, i);
+  });
+  // Researched datasets only: the unsourced suggested lists shipped before this rule repeat content across years, and
+  // `curriculum-report` lists those as warnings until they are researched again.
+  if (meta.version.requireSources) {
+    for (const d of findTopicSetDuplicates(dataset)) {
+      add("COURSE_TOPIC_SET_DUPLICATE", `courses[${d.second}]`, `${Math.round(100 * d.similarity)}% of topic titles are shared with courses[${d.first}]; one list may have been copied into both`);
+    }
+  }
 
   // ---- ordinals must fit the database column and its CHECK ------------------------------------------------
   const ordinal = (value: number, where: string) => {
@@ -325,6 +422,14 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     // sample, synthetic and suggested data must announce themselves so they cannot pass for a real curriculum
     const word = v.kind === "sample" ? /sample/i : v.kind === "synthetic" ? /synthetic/i : /suggested/i;
     if (!word.test(v.label) || !word.test(meta.curriculum.name)) add("KIND_LABEL", "version.label", `${v.kind} datasets must say so in the version label and curriculum name`);
+  }
+  if (v.requireSources && v.kind !== "suggested") {
+    structure.courses.forEach((c, i) => {
+      if (!c.code.startsWith("NP-")) add("INTERNAL_CODE_PREFIX", `courses[${i}].code`, "a researched dataset's internal codes must start with NP- so they cannot pass for official codes");
+    });
+    structure.units.forEach((u, i) => {
+      if (u.code !== undefined && !u.code.startsWith("NP-")) add("INTERNAL_CODE_PREFIX", `units[${i}].code`, "a researched dataset's internal codes must start with NP-");
+    });
   }
   if (v.kind === "suggested") {
     // An unofficial suggestion never carries official objectives or codes, so it can never be traced to (or mistaken for) an alignment claim.

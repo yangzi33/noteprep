@@ -76,6 +76,7 @@
     "curricula:build": "tsx scripts/curricula-build.ts",
     "curriculum:validate": "tsx scripts/curriculum-validate.ts",
     "curriculum:report": "tsx scripts/curriculum-report.ts",
+    "curriculum:overlap-check": "tsx scripts/curriculum-overlap-check.ts",
     "curriculum:scale-check": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-scale-check.ts",
     "curriculum:load": "tsx --conditions=react-server --env-file-if-exists=.env scripts/curriculum-load.ts",
     "eval:prose": "tsx --conditions=react-server --env-file-if-exists=.env scripts/eval-prose.ts",
