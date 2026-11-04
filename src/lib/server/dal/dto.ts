@@ -1,6 +1,7 @@
 import "server-only";
 import type { GenerationJob } from "@/generated/prisma/client";
 import type { ChangeSummary, PendingCandidate, Slot } from "@/lib/package/draft-ops";
+import type { PracticeEstimate } from "@/lib/package/practice-time";
 import type { DocumentKind, LessonPackage } from "@/lib/package/schema";
 
 /** What callers may see of a job: no budgets, lease details or request hash. */
@@ -120,6 +121,12 @@ export interface DraftAdjustView {
   candidate: PendingCandidate | null;
   /** Remaining question count above which Remove is allowed (the effective minimum). */
   minExercises: number;
+  /** The most questions a worksheet may hold. */
+  maxExercises: number;
+  /** The most questions one add action appends. */
+  addMax: number;
+  /** Estimated practice time for the current question count against the lesson time. */
+  practice: PracticeEstimate;
 }
 
 /** What an adjustment returns: the version's new revision and content hash. */

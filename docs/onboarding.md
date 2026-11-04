@@ -4,7 +4,7 @@ Status: written 2026-11-02 against `origin/main` at ca766b9 (includes merged PR 
 
 ## 1. What the app is
 
-NotePrep is a Next.js web app plus a separate worker. A signed-in tutor selects a curriculum, level, course and topic, creates a free draft, previews it, applies predefined adjustments (replace or remove a question, new version), then confirms an export. The worker compiles genuinely compiled PDFs (Tutor Notes, Student Worksheet, Answer Key) from a frozen snapshot in a sandbox. One generation is consumed only when the complete requested PDF set is ready. The binding rules are in `CLAUDE.md`; the decision log is `docs/decisions.md`.
+NotePrep is a Next.js web app plus a separate worker. A signed-in tutor selects a curriculum, level, course and topic, creates a free draft, previews it, applies predefined adjustments (add 1-5 questions up to 30, replace or remove a question, undo, new version), then confirms an export. The worker compiles genuinely compiled PDFs (Tutor Notes, Student Worksheet, Answer Key) from a frozen snapshot in a sandbox. One generation is consumed only when the complete requested PDF set is ready. The binding rules are in `CLAUDE.md`; the decision log is `docs/decisions.md`.
 
 ## 2. Stack and versions (from `package.json`)
 

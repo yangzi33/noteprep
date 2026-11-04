@@ -7,6 +7,7 @@ import { GENERATOR_VERSION, type Difficulty, type GeneratedQuestion } from "@/li
 import { sectionContentHash, sectionInputsHash } from "./hash";
 import { PROSE_PROMPT_VERSION, type ProseDraft } from "./prose";
 import {
+  MAX_WORKSHEET_QUESTIONS,
   PACKAGE_SCHEMA_VERSION,
   DOCUMENT_SECTION_KINDS,
   SECTION_KINDS,
@@ -30,6 +31,11 @@ export interface BuildInput {
    * model can only ever improve the words of a package that is complete and verified without it.
    */
   prose?: { draft: ProseDraft; model: string | null };
+  /**
+   * How many exercises to draw, instead of the planner's count for the lesson time (a draft version that keeps the
+   * questions a tutor added). The request is unchanged, so `package.request` stays the stored draft request.
+   */
+  exerciseCount?: number;
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -131,15 +137,16 @@ export const ALIGNMENT_TITLE = "Curriculum information";
 export const sectionId = (kind: SectionKind) => `sec-${kind.replace("_", "-")}`;
 
 /** The package and the questions it was drawn from (their own metadata records the level each was drawn at). */
-function buildPackageCore({ request, context, seed, prose }: BuildInput): { pkg: LessonPackage; questions: GeneratedQuestion[] } {
+function buildPackageCore({ request, context, seed, prose, exerciseCount }: BuildInput): { pkg: LessonPackage; questions: GeneratedQuestion[] } {
   const concept = context.concepts.find((c) => c.id === LINEAR_CONCEPT_ID);
   if (!concept) throw new PackageBuildError("the selected topic has no concept the engine can generate");
   if (!concept.capability.difficulties.includes(request.difficulty)) throw new PackageBuildError("the engine does not support this difficulty for the selected concept");
 
   const plan = planOutline(request.durationMinutes);
+  if (exerciseCount !== undefined && (!Number.isInteger(exerciseCount) || exerciseCount < 1 || exerciseCount > MAX_WORKSHEET_QUESTIONS)) throw new PackageBuildError("the exercise count is out of range");
   const wantDegenerate = request.difficulty !== "basic" && concept.capability.outcomes.includes("no_solution");
   const bp = structuredClone(LINEAR_GENERAL); // packages never share arrays with the blueprint
-  const { examples, exercises } = composeLesson(bp, request, seed, { exampleCount: plan.exampleCount, exerciseCount: plan.exerciseCount, noSolutionExample: wantDegenerate });
+  const { examples, exercises } = composeLesson(bp, request, seed, { exampleCount: plan.exampleCount, exerciseCount: exerciseCount ?? plan.exerciseCount, noSolutionExample: wantDegenerate });
 
   // Sections whose words the model wrote say so; the rest of the package is identical with or without it.
   const llmMeta = prose ? ({ method: "llm", ...(prose.model ? { model: prose.model } : {}) } as const) : ({ method: "deterministic" } as const);

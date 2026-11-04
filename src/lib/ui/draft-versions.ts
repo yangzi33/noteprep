@@ -9,12 +9,14 @@ export function versionLimitNote(count: number, max: number): string | null {
   return count >= max ? `This draft has ${count} versions, the most allowed (${max}). Switch between them, or start a new draft.` : null;
 }
 
-/** Short badge for a version tab: "2 replaced", "1 removed", "2 replaced · 1 removed"; null when the version is unchanged. */
-export function changesBadge(summary: { replacedIds: readonly string[]; removedIds: readonly string[] }): string | null {
+/** Short badge for a version tab: "2 replaced", "1 removed", "2 added · 1 removed"; null when the version is unchanged. */
+export function changesBadge(summary: { replacedIds: readonly string[]; removedIds: readonly string[]; addedIds?: readonly string[] }): string | null {
   const replaced = summary.replacedIds.length;
   const removed = summary.removedIds.length;
-  if (replaced === 0 && removed === 0) return null;
-  return changesText(replaced, removed)
+  const added = summary.addedIds?.length ?? 0;
+  if (replaced === 0 && removed === 0 && added === 0) return null;
+  return changesText(replaced, removed, added)
+    .replace(/(\d+) questions? added/, "$1 added")
     .replace(/(\d+) questions? replaced/, "$1 replaced")
     .replace(/(\d+) questions? removed/, "$1 removed");
 }

@@ -62,7 +62,7 @@ export default async function ExportConfirmPage({ params, searchParams }: { para
       versionLabel={versionLabel(view.ordinal)}
       documents={view.documents}
       questionCount={view.adjust.slots.length}
-      changes={changesText(view.adjust.changes.replacedIds.length, view.adjust.changes.removedIds.length)}
+      changes={changesText(view.adjust.changes.replacedIds.length, view.adjust.changes.removedIds.length, view.adjust.changes.addedIds.length)}
       allowanceText={allowanceSentence(allowance)}
       remaining={allowance ? allowance.remaining : null}
       source={allowance ? allowance.source : null}

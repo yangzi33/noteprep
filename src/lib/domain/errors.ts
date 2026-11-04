@@ -207,6 +207,27 @@ export class DrawExhausted extends DomainError {
   }
 }
 
+/** Adding would take the worksheet past its cap of questions. The numbers are for the message only. */
+export class WorksheetFull extends DomainError {
+  constructor(readonly max: number, readonly current: number) {
+    super("WORKSHEET_FULL", "This worksheet has the maximum number of questions");
+  }
+}
+
+/** Fewer distinct questions are available than were asked for; nothing was added (all or nothing). */
+export class AddNotEnough extends DomainError {
+  constructor() {
+    super("ADD_NOT_ENOUGH", "Not enough different questions are available to add");
+  }
+}
+
+/** Too many add-question actions were made recently across the account. */
+export class AddRateLimited extends DomainError {
+  constructor() {
+    super("ADD_RATE_LIMITED", "Too many add-question actions recently");
+  }
+}
+
 /** The question id is not an exercise of this version (worked examples cannot be adjusted). */
 export class QuestionNotFound extends DomainError {
   constructor() {

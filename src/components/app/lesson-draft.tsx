@@ -177,6 +177,8 @@ const lineCount = (lines: number) => (Number.isFinite(lines) ? Math.min(Math.max
 export interface QuestionSlots {
   afterQuestion?: (question: { questionId: string; number: number }) => ReactNode;
   afterSolution?: (solution: { questionId: string; number: number }) => ReactNode;
+  /** After the last block of the exercises section (the worksheet's question list). */
+  afterExercises?: () => ReactNode;
 }
 
 export function LessonDraft({ doc, slots }: { doc: HtmlDocument; slots?: QuestionSlots }) {
@@ -200,6 +202,7 @@ export function LessonDraft({ doc, slots }: { doc: HtmlDocument; slots?: Questio
               {block.type === "question" || block.type === "ai_question" ? slots?.afterQuestion?.(block) : block.type === "solution" || block.type === "ai_solution" ? slots?.afterSolution?.(block) : null}
             </Fragment>
           ))}
+          {section.kind === "exercises" ? slots?.afterExercises?.() : null}
         </section>
       ))}
     </article>
