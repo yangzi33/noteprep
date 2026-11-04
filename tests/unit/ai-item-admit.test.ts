@@ -58,7 +58,7 @@ describe("admitAiItem: accepted items", () => {
     if (!r.ok) return;
     expect(r.item.status).toBe("code_checked");
     expect(r.item.itemHash).toMatch(/^[0-9a-f]{64}$/);
-    expect(r.item.genConfig).toMatchObject({ schemaVersion: "ai-items/1", provider: "fake", checkersVersion: "checkers/1", parserVersion: "mathtext/1" });
+    expect(r.item.genConfig).toMatchObject({ schemaVersion: "ai-items/1", provider: "fake", checkersVersion: "checkers/1", parserVersion: "mathtext/2" });
     expect(r.item.claim).toBeDefined();
     const again = admitAiItem(good, options);
     expect(again.ok && again.item.itemHash).toBe(r.item.itemHash);
