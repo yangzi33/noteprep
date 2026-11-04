@@ -27,11 +27,12 @@ interface Ctx {
 const MAX_DEPTH = 8;
 const MAX_EXP = 3;
 const LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const GREEK: Greek[] = ["alpha", "beta", "theta", "pi"];
-const FNS: FnName[] = ["sin", "cos", "tan", "log", "ln"];
-const ADD: BinOp[] = ["+", "-", "pm"];
-const MUL: BinOp[] = ["times", "cdot", "div", "/"];
-const REL: RelOp[] = ["=", "<", ">", "le", "ge", "neq"];
+const GREEK: Greek[] = ["alpha", "beta", "theta", "pi", "mu", "sigma", "lambda"];
+const FNS: FnName[] = ["sin", "cos", "tan", "log", "ln", "sec", "csc", "cot", "arcsin", "arccos", "arctan"];
+const ADD: BinOp[] = ["+", "-", "pm", "cup"];
+const MUL: BinOp[] = ["times", "cdot", "div", "/", "cap"];
+const REL: RelOp[] = ["=", "<", ">", "le", "ge", "neq", "to", "approx", "in", "mid"];
+const letter = (c: Ctx): string => LETTERS[int(c, LETTERS.length)] as string;
 
 const int = (c: Ctx, n: number): number => Math.floor(c.next() * n);
 const chance = (c: Ctx, p: number): boolean => c.next() < p;
@@ -55,15 +56,17 @@ function genNum(c: Ctx): MathNode {
 function genAtom(c: Ctx): MathNode {
   const r = int(c, 10);
   if (r < 3) return genNum(c);
-  if (r < 7) return { t: "var", name: LETTERS[int(c, LETTERS.length)] as string };
-  if (r < 9) return { t: "greek", name: GREEK[int(c, 4)] as Greek };
-  return { t: "ldots" };
+  if (r < 7) return { t: "var", name: letter(c) };
+  if (r < 9) return { t: "greek", name: GREEK[int(c, GREEK.length)] as Greek };
+  return chance(c, 0.5) ? { t: "ldots" } : { t: "infty" };
 }
 
 function genPrimary(c: Ctx): MathNode {
   if (!compound(c)) return genAtom(c);
-  const r = int(c, 6);
+  const r = int(c, 16);
   const room = (n: number): boolean => c.d + n <= MAX_DEPTH;
+  const bound = (): MathNode | undefined => (chance(c, 0.6) ? genList(sub(c)) : undefined);
+  const withBounds = <T extends object>(node: T, lo?: MathNode, hi?: MathNode): T => ({ ...node, ...(lo ? { lo } : {}), ...(hi ? { hi } : {}) });
   if (r <= 1 && room(1)) return { t: "group", open: c.idx || chance(c, 0.5) ? "(" : "[", body: genList(sub(c)) };
   if (r === 2 && room(1) && !c.abs) return { t: "abs", body: genExpr(sub(c, { abs: true })) };
   if (r === 3 && room(1)) return { t: "frac", num: genList(sub(c)), den: genList(sub(c)) };
@@ -71,12 +74,31 @@ function genPrimary(c: Ctx): MathNode {
     const body = genList(sub(c));
     return chance(c, 0.4) ? { t: "sqrt", index: genList(sub(c, { idx: true })), body } : { t: "sqrt", body };
   }
+  if (r === 6) return { t: "prime", name: letter(c), count: (1 + int(c, 3)) as 1 | 2 | 3 };
+  if (r === 7 && room(1)) return { t: "binom", n: genList(sub(c)), k: genList(sub(c)) };
+  if (r === 8) return { t: "accent", kind: chance(c, 0.5) ? "bar" : "hat", name: letter(c) };
+  if (r === 9 && room(1)) return { t: "lim", under: genRelation(sub(c)), arg: genOperand(sub(c)) };
+  if (r === 10 && room(1)) {
+    const lo = bound();
+    const hi = bound();
+    return withBounds({ t: "sum" as const, arg: genOperand(sub(c)) }, lo, hi);
+  }
+  if (r === 11 && room(1)) {
+    const lo = bound();
+    const hi = bound();
+    return withBounds({ t: "int" as const, body: genExpr(sub(c)), v: letter(c) }, lo, hi);
+  }
   return genAtom(c);
 }
 
 /** primary with optional scripts, degree and percent signs, exactly the shapes `parseScripted` can build. */
 function genScripted(c: Ctx): MathNode {
   const base = genPrimary(c);
+  // Primes and big operators take no scripts or percent signs; a factorial only follows a whole number, a variable or a group.
+  if (base.t === "prime" || base.t === "lim" || base.t === "sum" || base.t === "int") return base;
+  if ((base.t === "var" || base.t === "group" || (base.t === "num" && !base.v.includes("."))) && spend(c) && chance(c, 0.1)) {
+    return { t: "fact", arg: base };
+  }
   const canSup = c.exp < MAX_EXP && c.d + 1 <= MAX_DEPTH && spend(c);
   const canSub = c.d + 1 <= MAX_DEPTH && spend(c);
   const r = int(c, 12);
@@ -104,7 +126,7 @@ function genScripted(c: Ctx): MathNode {
 function genPostfix(c: Ctx): MathNode {
   const fns: { name: FnName; base?: MathNode }[] = [];
   while (fns.length < 2 && spend(c) && chance(c, 0.1)) {
-    const name = FNS[int(c, 5)] as FnName;
+    const name = FNS[int(c, FNS.length)] as FnName;
     if (name === "log" && chance(c, 0.5) && c.d + 1 <= MAX_DEPTH) fns.push({ name, base: genList(sub(c)) });
     else fns.push({ name });
   }
@@ -120,7 +142,7 @@ function genPostfix(c: Ctx): MathNode {
 const isNumLike = (n: MathNode): boolean => {
   switch (n.t) {
     case "num": return true;
-    case "unary": case "fn": return isNumLike(n.arg);
+    case "unary": case "fn": case "lim": case "sum": return isNumLike(n.arg);
     case "bin": return isNumLike(n.r);
     case "imp": case "list": return isNumLike(n.items[n.items.length - 1] as MathNode);
     case "rel": return isNumLike((n.rest[n.rest.length - 1] as { rhs: MathNode }).rhs);
@@ -135,10 +157,14 @@ const leadsWithAbs = (n: MathNode): boolean =>
 const endsWithAbs = (n: MathNode): boolean => n.t === "abs" || (n.t === "unary" && endsWithAbs(n.arg));
 // `\ldots` is only ever an operand start: the parser does not continue an implicit product with it.
 const leadsWithLdots = (n: MathNode): boolean =>
-  n.t === "ldots" || ((n.t === "sup" || n.t === "sub") && leadsWithLdots(n.base)) || ((n.t === "deg" || n.t === "pct") && leadsWithLdots(n.arg));
+  n.t === "ldots" || n.t === "infty" || ((n.t === "sup" || n.t === "sub") && leadsWithLdots(n.base)) || ((n.t === "deg" || n.t === "pct") && leadsWithLdots(n.arg));
 // The parser looks at the first token: `3^2` after `7` is still two numbers side by side.
 const startsWithNum = (n: MathNode): boolean =>
-  n.t === "num" || ((n.t === "sup" || n.t === "sub") && startsWithNum(n.base)) || ((n.t === "deg" || n.t === "pct") && startsWithNum(n.arg));
+  n.t === "num" || (n.t === "fact" && startsWithNum(n.arg)) || ((n.t === "sup" || n.t === "sub") && startsWithNum(n.base)) || ((n.t === "deg" || n.t === "pct") && startsWithNum(n.arg));
+
+// A big operator (or a sign or function wrapping one) swallows or seals the rest of its implicit product.
+const endsOpen = (n: MathNode): boolean =>
+  n.t === "lim" || n.t === "sum" || n.t === "int" || ((n.t === "unary" || n.t === "fn") && endsOpen(n.arg));
 
 function genUnary(c: Ctx): MathNode {
   if (c.d + 1 <= MAX_DEPTH && chance(c, 0.12)) {
@@ -154,24 +180,25 @@ function genOperand(c: Ctx): MathNode {
   const items = [first];
   const extra = 1 + int(c, 2);
   for (let i = 0; i < extra; i++) {
-    let item = genPostfix(c);
     const last = items[items.length - 1] as MathNode;
+    if (endsOpen(last)) break;
+    let item = genPostfix(c);
     // Parser refusals: two numbers side by side, and a bar directly after a bar.
     if (((startsWithNum(item) || startsWithFrac(item)) && isNumLike(last)) || (leadsWithAbs(item) && endsWithAbs(last)) || leadsWithLdots(item)) item = { t: "var", name: "x" };
     items.push(item);
   }
-  return { t: "imp", items };
+  return items.length === 1 ? first : { t: "imp", items };
 }
 
 function genTerm(c: Ctx): MathNode {
   let acc = genOperand(c);
-  while (spend(c) && chance(c, 0.2)) acc = { t: "bin", op: MUL[int(c, 4)] as BinOp, l: acc, r: genOperand(c) };
+  while (spend(c) && chance(c, 0.2)) acc = { t: "bin", op: MUL[int(c, MUL.length)] as BinOp, l: acc, r: genOperand(c) };
   return acc;
 }
 
 function genExpr(c: Ctx): MathNode {
   let acc = genTerm(c);
-  while (spend(c) && chance(c, 0.25)) acc = { t: "bin", op: ADD[int(c, 3)] as BinOp, l: acc, r: genTerm(c) };
+  while (spend(c) && chance(c, 0.25)) acc = { t: "bin", op: ADD[int(c, ADD.length)] as BinOp, l: acc, r: genTerm(c) };
   return acc;
 }
 
@@ -179,7 +206,7 @@ function genRelation(c: Ctx): MathNode {
   const first = genExpr(c);
   if (!(spend(c) && chance(c, 0.2))) return first;
   const rest: { op: RelOp; rhs: MathNode }[] = [];
-  do rest.push({ op: REL[int(c, 6)] as RelOp, rhs: genExpr(c) });
+  do rest.push({ op: REL[int(c, REL.length)] as RelOp, rhs: genExpr(c) });
   while (spend(c) && chance(c, 0.2));
   return { t: "rel", first, rest };
 }

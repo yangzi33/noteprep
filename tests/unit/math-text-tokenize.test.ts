@@ -16,11 +16,12 @@ describe("tokenizeMath", () => {
   it("adds the span offset to every token position and to errors", () => {
     expect(tokenizeMath("x+1", 10)).toEqual({ ok: true, tokens: [
       { k: "letter", v: "x", at: 10 }, { k: "op", v: "+", at: 11 }, { k: "num", v: "1", at: 12 }] });
-    expect(tokenizeMath("x ! y", 10)).toEqual({ ok: false, code: "math_bad_char", at: 12 });
+    expect(tokenizeMath("x ? y", 10)).toEqual({ ok: false, code: "math_bad_char", at: 12 });
   });
   it("tokenizes percent and every command name", () => {
     expect(tokenizeMath(String.raw`15\%`, 0)).toEqual({ ok: true, tokens: [{ k: "num", v: "15", at: 0 }, { k: "pct", at: 2 }] });
-    for (const c of ["alpha", "beta", "theta", "pi", "le", "ge", "neq", "pm", "times", "cdot", "div", "frac", "sqrt", "circ", "sin", "cos", "tan", "log", "ln", "ldots"])
+    for (const c of ["alpha", "beta", "theta", "pi", "le", "ge", "neq", "pm", "times", "cdot", "div", "frac", "sqrt", "circ", "sin", "cos", "tan", "log", "ln", "ldots",
+      "mu", "sigma", "lambda", "sec", "csc", "cot", "arcsin", "arccos", "arctan", "to", "approx", "in", "mid", "cup", "cap", "infty", "binom", "bar", "hat", "lim", "sum", "int"])
       expect(tokenizeMath(`\\${c}`, 0)).toEqual({ ok: true, tokens: [{ k: "cmd", v: c, at: 0 }] });
   });
   it.each([

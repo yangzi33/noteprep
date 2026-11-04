@@ -69,7 +69,7 @@ describe("parseMath", () => {
 // Shape check for accepted ASTs: the runtime guard in src (src/lib/math-text/guard.ts) is the single strict validator.
 function assertDoc(r: ReturnType<typeof parseMathText>): void {
   if (!r.ok) return;
-  expect(r.doc.v).toBe("mathtext/1");
+  expect(r.doc.v).toBe("mathtext/2");
   expect(isMathTextDoc(r.doc)).toBe(true);
   r.doc.parts.forEach((p, i) => {
     if (p.t === "text") expect(i === 0 || r.doc.parts[i - 1]!.t !== "text").toBe(true);
@@ -107,14 +107,14 @@ describe("parseMathText over the fixtures", () => {
   it("returns text and math parts with the parser version", () => {
     expect(parseMathText(String.raw`Solve \(x=1\).`)).toEqual({
       ok: true,
-      doc: { v: "mathtext/1", parts: [{ t: "text", s: "Solve " }, { t: "math", m: { t: "rel", first: { t: "var", name: "x" }, rest: [{ op: "=", rhs: { t: "num", v: "1" } }] } }, { t: "text", s: "." }] },
+      doc: { v: "mathtext/2", parts: [{ t: "text", s: "Solve " }, { t: "math", m: { t: "rel", first: { t: "var", name: "x" }, rest: [{ op: "=", rhs: { t: "num", v: "1" } }] } }, { t: "text", s: "." }] },
     });
   });
 });
 
 describe("shape validator", () => {
   it("is the src guard: it rejects extra or missing properties and accepts a real parse (more cases in math-text-guard.test.ts)", () => {
-    const wrap = (m: unknown) => ({ v: "mathtext/1", parts: [{ t: "math", m }] });
+    const wrap = (m: unknown) => ({ v: "mathtext/2", parts: [{ t: "math", m }] });
     expect(isMathTextDoc(wrap({ t: "var", name: "x", extra: 1 }))).toBe(false);
     expect(isMathTextDoc(wrap({ t: "frac", num: { t: "var", name: "x" } }))).toBe(false);
     expect(isMathTextDoc(wrap(ok(String.raw`\sqrt[3]{2}`)))).toBe(true);

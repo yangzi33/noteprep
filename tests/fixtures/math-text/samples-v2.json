@@ -1,0 +1,169 @@
+[
+  {
+    "id": "c01",
+    "course": "calculus",
+    "field": "stem",
+    "input": "Find \\(f'(x)\\) and \\(f''(x)\\) for \\(f(x) = x^3 - 3x\\).",
+    "expect": "accept",
+    "uses": [
+      "prime"
+    ]
+  },
+  {
+    "id": "c02",
+    "course": "calculus",
+    "field": "stem",
+    "input": "Evaluate \\(\\lim_{x \\to 2} \\frac{x^2 - 4}{x - 2}\\).",
+    "expect": "accept",
+    "uses": [
+      "lim",
+      "to"
+    ]
+  },
+  {
+    "id": "c03",
+    "course": "calculus",
+    "field": "stem",
+    "input": "Evaluate \\(\\int_{0}^{3} 2x\\,dx\\).",
+    "expect": "accept",
+    "uses": [
+      "int",
+      "thin"
+    ]
+  },
+  {
+    "id": "c04",
+    "course": "calculus",
+    "field": "answer",
+    "input": "\\(\\lim_{x \\to \\infty} \\frac{3x + 1}{x} = 3\\)",
+    "expect": "accept",
+    "uses": [
+      "lim",
+      "to",
+      "infty"
+    ]
+  },
+  {
+    "id": "c05",
+    "course": "calculus",
+    "field": "step",
+    "input": "Use a linear approximation: \\(f(2.1) \\approx f(2) + f'(2)(0.1)\\).",
+    "expect": "accept",
+    "uses": [
+      "approx",
+      "prime"
+    ]
+  },
+  {
+    "id": "s01",
+    "course": "statistics",
+    "field": "stem",
+    "input": "Four invented readings have mean \\(\\bar{x} = \\frac{1}{n} \\sum_{i=1}^{n} x_i\\). Compute it.",
+    "expect": "accept",
+    "uses": [
+      "bar",
+      "sum"
+    ]
+  },
+  {
+    "id": "s02",
+    "course": "statistics",
+    "field": "stem",
+    "input": "Scores have \\(\\mu = 70\\) and \\(\\sigma = 8\\). Find \\(z = \\frac{85 - \\mu}{\\sigma}\\).",
+    "expect": "accept",
+    "uses": [
+      "mu",
+      "sigma"
+    ]
+  },
+  {
+    "id": "s03",
+    "course": "statistics",
+    "field": "stem",
+    "input": "In how many ways can 2 of 5 invented students be chosen? Compute \\(\\binom{5}{2}\\) and \\(5!\\).",
+    "expect": "accept",
+    "uses": [
+      "binom",
+      "factorial"
+    ]
+  },
+  {
+    "id": "s04",
+    "course": "statistics",
+    "field": "stem",
+    "input": "Given \\(P(A \\cup B) = 0.7\\) and \\(P(A \\cap B) = 0.2\\), find \\(P(A \\mid B)\\) when \\(P(B) = 0.5\\).",
+    "expect": "accept",
+    "uses": [
+      "cup",
+      "cap",
+      "mid"
+    ]
+  },
+  {
+    "id": "s05",
+    "course": "statistics",
+    "field": "stem",
+    "input": "A Poisson count has \\(\\lambda = 3\\). A fitted line is \\(\\hat{y} = 2x + 1\\).",
+    "expect": "accept",
+    "uses": [
+      "lambda",
+      "hat"
+    ]
+  },
+  {
+    "id": "p01",
+    "course": "pre-calculus",
+    "field": "stem",
+    "input": "Find \\(\\sec \\theta\\), \\(\\csc \\theta\\) and \\(\\cot \\theta\\) when \\(\\tan \\theta = \\frac{3}{4}\\).",
+    "expect": "accept",
+    "uses": [
+      "sec",
+      "csc",
+      "cot"
+    ]
+  },
+  {
+    "id": "p02",
+    "course": "pre-calculus",
+    "field": "stem",
+    "input": "Find \\(\\arcsin \\frac{1}{2}\\), \\(\\arccos 0\\) and \\(\\arctan 1\\).",
+    "expect": "accept",
+    "uses": [
+      "arcsin",
+      "arccos",
+      "arctan"
+    ]
+  },
+  {
+    "id": "p03",
+    "course": "pre-calculus",
+    "field": "stem",
+    "input": "Find the sum \\(\\sum_{k=1}^{5} 2k\\).",
+    "expect": "accept",
+    "uses": [
+      "sum"
+    ]
+  },
+  {
+    "id": "p04",
+    "course": "pre-calculus",
+    "field": "answer",
+    "input": "The domain of \\(f(x) = \\ln(x - 1)\\) is \\(x \\in (1, \\infty)\\).",
+    "expect": "accept",
+    "uses": [
+      "in",
+      "infty"
+    ]
+  },
+  {
+    "id": "p05",
+    "course": "pre-calculus",
+    "field": "step",
+    "input": "As \\(x \\to \\infty\\), \\(\\frac{1}{x} \\to 0\\).",
+    "expect": "accept",
+    "uses": [
+      "to",
+      "infty"
+    ]
+  }
+]

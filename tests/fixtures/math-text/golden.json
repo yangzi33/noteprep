@@ -403,7 +403,7 @@
     "code": "math_bad_char"
   },
   {
-    "in": "\\(x!\\)",
+    "in": "\\(x?\\)",
     "ok": false,
     "code": "math_bad_char"
   },
@@ -853,5 +853,1034 @@
     "ok": true,
     "canonical": "A–B, C—D and it’s fine.",
     "tex": "A--B, C---D and it's fine."
+  },
+  {
+    "in": "\\(f'(x)\\)",
+    "ok": true,
+    "canonical": "\\(f'(x)\\)",
+    "tex": "$f'(x)$",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f''(x) = 6x\\)",
+    "ok": true,
+    "canonical": "\\(f''(x)=6x\\)",
+    "tex": "$f''(x)=6x$",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f'''(x)\\)",
+    "ok": true,
+    "canonical": "\\(f'''(x)\\)",
+    "tex": "$f'''(x)$",
+    "token": "prime"
+  },
+  {
+    "in": "\\(g'(2) + h'(3)\\)",
+    "ok": true,
+    "canonical": "\\(g'(2)+h'(3)\\)",
+    "tex": "$g'(2)+h'(3)$",
+    "token": "prime"
+  },
+  {
+    "in": "\\(n!\\)",
+    "ok": true,
+    "canonical": "\\(n!\\)",
+    "tex": "$n!$",
+    "token": "factorial"
+  },
+  {
+    "in": "\\((n - 1)!\\)",
+    "ok": true,
+    "canonical": "\\((n-1)!\\)",
+    "tex": "$(n-1)!$",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(5! = 120\\)",
+    "ok": true,
+    "canonical": "\\(5!=120\\)",
+    "tex": "$5!=120$",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(\\frac{n!}{k!(n - k)!}\\)",
+    "ok": true,
+    "canonical": "\\(\\frac{n!}{k!(n-k)!}\\)",
+    "tex": "$\\frac{n!}{k!(n-k)!}$",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(-n!\\)",
+    "ok": true,
+    "canonical": "\\(-n!\\)",
+    "tex": "$-n!$",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(\\binom{5}{2}\\)",
+    "ok": true,
+    "canonical": "\\(\\binom{5}{2}\\)",
+    "tex": "$\\binom{5}{2}$",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\binom{n}{k} p^k\\)",
+    "ok": true,
+    "canonical": "\\(\\binom{n}{k}p^{k}\\)",
+    "tex": "$\\binom{n}{k}p^{k}$",
+    "token": "binom"
+  },
+  {
+    "in": "\\(3\\binom{5}{2}\\)",
+    "ok": true,
+    "canonical": "\\(3\\binom{5}{2}\\)",
+    "tex": "$3\\binom{5}{2}$",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\binom{n}{k} = \\binom{n}{n - k}\\)",
+    "ok": true,
+    "canonical": "\\(\\binom{n}{k}=\\binom{n}{n-k}\\)",
+    "tex": "$\\binom{n}{k}=\\binom{n}{n-k}$",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\bar{x}\\)",
+    "ok": true,
+    "canonical": "\\(\\bar{x}\\)",
+    "tex": "$\\bar{x}$",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\bar{x}_1\\)",
+    "ok": true,
+    "canonical": "\\(\\bar{x}_{1}\\)",
+    "tex": "$\\bar{x}_{1}$",
+    "token": "bar"
+  },
+  {
+    "in": "\\(z = \\frac{x - \\bar{x}}{s}\\)",
+    "ok": true,
+    "canonical": "\\(z=\\frac{x-\\bar{x}}{s}\\)",
+    "tex": "$z=\\frac{x-\\bar{x}}{s}$",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\hat{y}\\)",
+    "ok": true,
+    "canonical": "\\(\\hat{y}\\)",
+    "tex": "$\\hat{y}$",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\hat{y} = 2x + 1\\)",
+    "ok": true,
+    "canonical": "\\(\\hat{y}=2x+1\\)",
+    "tex": "$\\hat{y}=2x+1$",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\hat{y}^2\\)",
+    "ok": true,
+    "canonical": "\\(\\hat{y}^{2}\\)",
+    "tex": "$\\hat{y}^{2}$",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\mu = 50\\)",
+    "ok": true,
+    "canonical": "\\(\\mu=50\\)",
+    "tex": "$\\mu=50$",
+    "token": "mu"
+  },
+  {
+    "in": "\\(z = \\frac{x - \\mu}{\\sigma}\\)",
+    "ok": true,
+    "canonical": "\\(z=\\frac{x-\\mu}{\\sigma}\\)",
+    "tex": "$z=\\frac{x-\\mu}{\\sigma}$",
+    "token": "mu"
+  },
+  {
+    "in": "\\(\\sigma^2\\)",
+    "ok": true,
+    "canonical": "\\(\\sigma^{2}\\)",
+    "tex": "$\\sigma^{2}$",
+    "token": "sigma"
+  },
+  {
+    "in": "\\(\\lambda x\\)",
+    "ok": true,
+    "canonical": "\\(\\lambda x\\)",
+    "tex": "$\\lambda x$",
+    "token": "lambda"
+  },
+  {
+    "in": "\\(\\lambda = 3\\)",
+    "ok": true,
+    "canonical": "\\(\\lambda=3\\)",
+    "tex": "$\\lambda=3$",
+    "token": "lambda"
+  },
+  {
+    "in": "\\(\\sec \\theta\\)",
+    "ok": true,
+    "canonical": "\\(\\sec \\theta\\)",
+    "tex": "$\\sec \\theta$",
+    "token": "sec"
+  },
+  {
+    "in": "\\(\\csc x\\)",
+    "ok": true,
+    "canonical": "\\(\\csc x\\)",
+    "tex": "$\\csc x$",
+    "token": "csc"
+  },
+  {
+    "in": "\\(\\cot x = \\frac{1}{\\tan x}\\)",
+    "ok": true,
+    "canonical": "\\(\\cot x=\\frac{1}{\\tan x}\\)",
+    "tex": "$\\cot x=\\frac{1}{\\tan x}$",
+    "token": "cot"
+  },
+  {
+    "in": "\\(\\arcsin \\frac{1}{2}\\)",
+    "ok": true,
+    "canonical": "\\(\\arcsin \\frac{1}{2}\\)",
+    "tex": "$\\arcsin \\frac{1}{2}$",
+    "token": "arcsin"
+  },
+  {
+    "in": "\\(\\arccos 0\\)",
+    "ok": true,
+    "canonical": "\\(\\arccos 0\\)",
+    "tex": "$\\arccos 0$",
+    "token": "arccos"
+  },
+  {
+    "in": "\\(\\arctan 1 = \\frac{\\pi}{4}\\)",
+    "ok": true,
+    "canonical": "\\(\\arctan 1=\\frac{\\pi}{4}\\)",
+    "tex": "$\\arctan 1=\\frac{\\pi}{4}$",
+    "token": "arctan"
+  },
+  {
+    "in": "\\(x \\to 2\\)",
+    "ok": true,
+    "canonical": "\\(x\\to2\\)",
+    "tex": "$x\\to2$",
+    "token": "to"
+  },
+  {
+    "in": "\\(\\frac{1}{x} \\to 0\\)",
+    "ok": true,
+    "canonical": "\\(\\frac{1}{x}\\to0\\)",
+    "tex": "$\\frac{1}{x}\\to0$",
+    "token": "to"
+  },
+  {
+    "in": "\\(\\sqrt{2} \\approx 1.414\\)",
+    "ok": true,
+    "canonical": "\\(\\sqrt{2}\\approx1.414\\)",
+    "tex": "$\\sqrt{2}\\approx1.414$",
+    "token": "approx"
+  },
+  {
+    "in": "\\(x \\approx a\\)",
+    "ok": true,
+    "canonical": "\\(x\\approx a\\)",
+    "tex": "$x\\approx a$",
+    "token": "approx"
+  },
+  {
+    "in": "\\(x \\in [1, 5]\\)",
+    "ok": true,
+    "canonical": "\\(x\\in[1, 5]\\)",
+    "tex": "$x\\in[1, 5]$",
+    "token": "in"
+  },
+  {
+    "in": "\\(x \\in (2, \\infty)\\)",
+    "ok": true,
+    "canonical": "\\(x\\in(2, \\infty)\\)",
+    "tex": "$x\\in(2, \\infty)$",
+    "token": "in"
+  },
+  {
+    "in": "\\(A \\mid B\\)",
+    "ok": true,
+    "canonical": "\\(A\\mid B\\)",
+    "tex": "$A\\mid B$",
+    "token": "mid"
+  },
+  {
+    "in": "\\(P(A \\mid B)\\)",
+    "ok": true,
+    "canonical": "\\(P(A\\mid B)\\)",
+    "tex": "$P(A\\mid B)$",
+    "token": "mid"
+  },
+  {
+    "in": "\\(A \\cup B\\)",
+    "ok": true,
+    "canonical": "\\(A\\cup B\\)",
+    "tex": "$A\\cup B$",
+    "token": "cup"
+  },
+  {
+    "in": "\\(A \\cap B\\)",
+    "ok": true,
+    "canonical": "\\(A\\cap B\\)",
+    "tex": "$A\\cap B$",
+    "token": "cap"
+  },
+  {
+    "in": "\\(A \\cup B \\cap C\\)",
+    "ok": true,
+    "canonical": "\\(A\\cup B\\cap C\\)",
+    "tex": "$A\\cup B\\cap C$",
+    "token": "cap"
+  },
+  {
+    "in": "\\(P(A \\cup B) = P(A) + P(B) - P(A \\cap B)\\)",
+    "ok": true,
+    "canonical": "\\(P(A\\cup B)=P(A)+P(B)-P(A\\cap B)\\)",
+    "tex": "$P(A\\cup B)=P(A)+P(B)-P(A\\cap B)$",
+    "token": "cup"
+  },
+  {
+    "in": "\\(\\infty\\)",
+    "ok": true,
+    "canonical": "\\(\\infty\\)",
+    "tex": "$\\infty$",
+    "token": "infty"
+  },
+  {
+    "in": "\\(-\\infty < x < \\infty\\)",
+    "ok": true,
+    "canonical": "\\(-\\infty<x<\\infty\\)",
+    "tex": "$-\\infty<x<\\infty$",
+    "token": "infty"
+  },
+  {
+    "in": "\\((2, \\infty)\\)",
+    "ok": true,
+    "canonical": "\\((2, \\infty)\\)",
+    "tex": "$(2, \\infty)$",
+    "token": "infty"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 2} \\frac{x^2 - 4}{x - 2}\\)",
+    "ok": true,
+    "canonical": "\\(\\lim_{x\\to2}\\frac{x^{2}-4}{x-2}\\)",
+    "tex": "$\\lim_{x\\to2}\\frac{x^{2}-4}{x-2}$",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to \\infty} \\frac{1}{x}\\)",
+    "ok": true,
+    "canonical": "\\(\\lim_{x\\to\\infty}\\frac{1}{x}\\)",
+    "tex": "$\\lim_{x\\to\\infty}\\frac{1}{x}$",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{h \\to 0} \\frac{f(x + h) - f(x)}{h} = f'(x)\\)",
+    "ok": true,
+    "canonical": "\\(\\lim_{h\\to0}\\frac{f(x+h)-f(x)}{h}=f'(x)\\)",
+    "tex": "$\\lim_{h\\to0}\\frac{f(x+h)-f(x)}{h}=f'(x)$",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 3} 2x + 1\\)",
+    "ok": true,
+    "canonical": "\\(\\lim_{x\\to3}2x+1\\)",
+    "tex": "$\\lim_{x\\to3}2x+1$",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 1} (x + 2)\\)",
+    "ok": true,
+    "canonical": "\\(\\lim_{x\\to1}(x+2)\\)",
+    "tex": "$\\lim_{x\\to1}(x+2)$",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\sum_{i=1}^{4} x_i\\)",
+    "ok": true,
+    "canonical": "\\(\\sum_{i=1}^{4}x_{i}\\)",
+    "tex": "$\\sum_{i=1}^{4}x_{i}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum x_i\\)",
+    "ok": true,
+    "canonical": "\\(\\sum x_{i}\\)",
+    "tex": "$\\sum x_{i}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{k=1}^{5} 2k\\)",
+    "ok": true,
+    "canonical": "\\(\\sum_{k=1}^{5}2k\\)",
+    "tex": "$\\sum_{k=1}^{5}2k$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{i=1}^{n} i = \\frac{n(n + 1)}{2}\\)",
+    "ok": true,
+    "canonical": "\\(\\sum_{i=1}^{n}i=\\frac{n(n+1)}{2}\\)",
+    "tex": "$\\sum_{i=1}^{n}i=\\frac{n(n+1)}{2}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\bar{x} = \\frac{1}{n} \\sum_{i=1}^{n} x_i\\)",
+    "ok": true,
+    "canonical": "\\(\\bar{x}=\\frac{1}{n}\\sum_{i=1}^{n}x_{i}\\)",
+    "tex": "$\\bar{x}=\\frac{1}{n}\\sum_{i=1}^{n}x_{i}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_i x_i\\)",
+    "ok": true,
+    "canonical": "\\(\\sum_{i}x_{i}\\)",
+    "tex": "$\\sum_{i}x_{i}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum (x_i - \\bar{x})^2\\)",
+    "ok": true,
+    "canonical": "\\(\\sum(x_{i}-\\bar{x})^{2}\\)",
+    "tex": "$\\sum(x_{i}-\\bar{x})^{2}$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum^5 x\\)",
+    "ok": true,
+    "canonical": "\\(\\sum^{5}x\\)",
+    "tex": "$\\sum^{5}x$",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\int_{0}^{3} 2x\\,dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{3}2x\\,dx\\)",
+    "tex": "$\\int_{0}^{3}2x\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x^2 \\, dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int x^{2}\\,dx\\)",
+    "tex": "$\\int x^{2}\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_0^1 (x^2 + 1)\\,dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{1}(x^{2}+1)\\,dx\\)",
+    "tex": "$\\int_{0}^{1}(x^{2}+1)\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_{0}^{\\infty} e^{-x}\\,dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{\\infty}e^{-x}\\,dx\\)",
+    "tex": "$\\int_{0}^{\\infty}e^{-x}\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int 3x^2\\,dx = x^3 + C\\)",
+    "ok": true,
+    "canonical": "\\(\\int3x^{2}\\,dx=x^{3}+C\\)",
+    "tex": "$\\int3x^{2}\\,dx=x^{3}+C$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_0^1 x\\,dx + \\int_1^2 x\\,dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{1}x\\,dx+\\int_{1}^{2}x\\,dx\\)",
+    "tex": "$\\int_{0}^{1}x\\,dx+\\int_{1}^{2}x\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_{0}^{1} \\int_{0}^{2} xy\\,dx\\,dy\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{1}\\int_{0}^{2}xy\\,dx\\,dy\\)",
+    "tex": "$\\int_{0}^{1}\\int_{0}^{2}xy\\,dx\\,dy$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_0^1 f'(x)\\,dx = f(1) - f(0)\\)",
+    "ok": true,
+    "canonical": "\\(\\int_{0}^{1}f'(x)\\,dx=f(1)-f(0)\\)",
+    "tex": "$\\int_{0}^{1}f'(x)\\,dx=f(1)-f(0)$",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int^{2} x\\,dx\\)",
+    "ok": true,
+    "canonical": "\\(\\int^{2}x\\,dx\\)",
+    "tex": "$\\int^{2}x\\,dx$",
+    "token": "int"
+  },
+  {
+    "in": "\\(2'\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\((x)'\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f''''(x)\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f'^2\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f'_1\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "prime"
+  },
+  {
+    "in": "\\(f'\\%\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\('x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\(\\pi'\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\(x_1'\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "prime"
+  },
+  {
+    "in": "\\(x^2!\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(2.5!\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(n!!\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(n!^2\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(!x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(|x|!\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(\\sqrt{x}!\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(n!\\%\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "factorial"
+  },
+  {
+    "in": "\\(\\binom{5}\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\binom 5 2\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\binom{5}{2}{3}\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\binom\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "binom"
+  },
+  {
+    "in": "\\(\\bar x\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\bar{xy}\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\bar{\\alpha}\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\bar{2}\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\bar{}\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "bar"
+  },
+  {
+    "in": "\\(\\hat\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\widehat{x}\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\hat{y\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "hat"
+  },
+  {
+    "in": "\\(\\nu\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "mu"
+  },
+  {
+    "in": "\\(\\Sigma\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "sigma"
+  },
+  {
+    "in": "\\(\\Lambda\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "lambda"
+  },
+  {
+    "in": "\\(\\lambdax\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "lambda"
+  },
+  {
+    "in": "\\(\\sec^2 x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "sec"
+  },
+  {
+    "in": "\\(\\sec_2 x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "sec"
+  },
+  {
+    "in": "\\(\\csc\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "csc"
+  },
+  {
+    "in": "\\(\\cot^{2} x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "cot"
+  },
+  {
+    "in": "\\(\\arcsin^{-1} x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "arcsin"
+  },
+  {
+    "in": "\\(\\arcsec x\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "arccos"
+  },
+  {
+    "in": "\\(\\sinh x\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "arctan"
+  },
+  {
+    "in": "\\(\\to\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "to"
+  },
+  {
+    "in": "\\(x \\to\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "to"
+  },
+  {
+    "in": "\\(\\rightarrow\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "to"
+  },
+  {
+    "in": "\\(x \\approx \\approx 1\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "approx"
+  },
+  {
+    "in": "\\(\\sim\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "approx"
+  },
+  {
+    "in": "\\(x \\in\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "in"
+  },
+  {
+    "in": "\\(x \\notin A\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "in"
+  },
+  {
+    "in": "\\(x \\in [1, 5)\\)",
+    "ok": false,
+    "code": "math_unbalanced",
+    "token": "in"
+  },
+  {
+    "in": "\\(a \\mid\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "mid"
+  },
+  {
+    "in": "\\(\\|x\\|\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "mid"
+  },
+  {
+    "in": "\\(\\cup A\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "cup"
+  },
+  {
+    "in": "\\(A \\cup\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "cup"
+  },
+  {
+    "in": "\\(A \\cap \\cup B\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "cap"
+  },
+  {
+    "in": "\\(A \\subset B\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "cap"
+  },
+  {
+    "in": "\\(2\\infty\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "infty"
+  },
+  {
+    "in": "\\(\\infty\\infty\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "infty"
+  },
+  {
+    "in": "\\(\\inf\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "infty"
+  },
+  {
+    "in": "\\(\\lim x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_x y\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 2}\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim^{2}_{x \\to 1} x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 2, 3} x\\)",
+    "ok": false,
+    "code": "math_brace_misuse",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{} x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\lim_{x \\to 2}^{3} x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "lim"
+  },
+  {
+    "in": "\\(\\sum_{i=1}^{n}\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{i=1}_{2} x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum^2^3 x\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{} x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{i=1}^{n} \\, x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\sum_{i=1}^{n} x^2^3\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "sum"
+  },
+  {
+    "in": "\\(\\int x\\,dx\\,dx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x dx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,dx^2\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,dx\\%\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,dx y\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,d\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,2x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,ex\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\,dxx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int\\,dx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int_{0}^{1}^{2} x\\,dx\\)",
+    "ok": false,
+    "code": "math_bad_script",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x = 2\\,dx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x, y\\,dx\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int (x\\,dx)\\)",
+    "ok": false,
+    "code": "math_unbalanced",
+    "token": "int"
+  },
+  {
+    "in": "\\(\\int x\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "int"
+  },
+  {
+    "in": "\\(x\\,y\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "thin"
+  },
+  {
+    "in": "\\(\\,\\)",
+    "ok": false,
+    "code": "math_unexpected_token",
+    "token": "thin"
+  },
+  {
+    "in": "\\(x\\;y\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "thin"
+  },
+  {
+    "in": "\\(x\\!y\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "thin"
+  },
+  {
+    "in": "\\(x\\ y\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "thin"
+  },
+  {
+    "in": "\\(\\\\,\\)",
+    "ok": false,
+    "code": "math_unknown_command",
+    "token": "thin"
+  },
+  {
+    "in": "Evaluate \\(\\lim_{x \\to 2} (3x + 1)\\), then find \\(f'(2)\\).",
+    "ok": true,
+    "canonical": "Evaluate \\(\\lim_{x\\to2}(3x+1)\\), then find \\(f'(2)\\).",
+    "tex": "Evaluate $\\lim_{x\\to2}(3x+1)$, then find $f'(2)$.",
+    "token": "prime"
+  },
+  {
+    "in": "Use \\(n!\\) and \\(\\binom{n}{k}\\) here.",
+    "ok": true,
+    "canonical": "Use \\(n!\\) and \\(\\binom{n}{k}\\) here.",
+    "tex": "Use $n!$ and $\\binom{n}{k}$ here.",
+    "token": "binom"
   }
 ]
