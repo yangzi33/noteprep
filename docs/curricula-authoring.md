@@ -128,7 +128,7 @@ All additions are optional, so every existing dataset and its hash stay valid an
 
 - `meta.curriculum.subject`: `math` (default and stored id), `physics`, `chemistry`, `biology` or `science`. `mathematics` is accepted and read as `math`. Only `math` is offered to tutors (D-116): the picker ignores curricula of any other subject, so such data can be loaded and validated without becoming visible.
 - On levels, courses, units and topics: `sourceUrl` (https only, at most 500 characters), `sourceSection` (at most 200), `confidence` (`high`, `medium` or `low`) and `retrievedAt` (ISO date). If any of them is present, `sourceUrl`, `confidence` and `retrievedAt` must all be present (`SOURCE_INCOMPLETE`).
-- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version and is refused for `suggested` datasets, which carry no official codes (D-75).
+- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version. A `suggested` dataset carries none (D-75) unless it sets `requireSources`, where the code is stored for provenance only (D-118; see `meta.version.requireSources` below).
 - `meta.version.requireSources: true` makes a complete citation mandatory on every course, unit and topic of that version (`SOURCE_REQUIRED`). Use it for researched datasets; leave it off for generic suggested ones.
 - The `pnpm curricula:build` generator does not emit these fields; they are written by hand or by the future research pipeline into dataset files.
 
