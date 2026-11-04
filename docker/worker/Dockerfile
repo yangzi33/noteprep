@@ -1,3 +1,4 @@
+Paperclip: GitHub capability_missing; continuing without managed credentials.
 # Worker image (D-53, docs/worker-host-runbook.md). Build context: repository root, platform linux/amd64.
 # Contains no secrets: configuration arrives at run time from /etc/noteprep/worker.env on the host.
 # Pins (linux/amd64 manifest digests, queried 2026-10-20 with `docker buildx imagetools inspect`):
@@ -34,6 +35,7 @@ COPY tests/latex ./tests/latex
 COPY tests/stubs ./tests/stubs
 COPY tests/fixtures/package.ts ./tests/fixtures/package.ts
 COPY tests/fixtures/ai-package.ts ./tests/fixtures/ai-package.ts
+COPY tests/fixtures/math-text/samples-v2.json ./tests/fixtures/math-text/samples-v2.json
 COPY docker/latex ./docker/latex
 COPY vitest.host.config.mts ./
 ENV HOME=/tmp DOCKER_CONFIG=/tmp/.docker DOCKER_HOST=unix:///run/noteprep-runner/docker.sock
