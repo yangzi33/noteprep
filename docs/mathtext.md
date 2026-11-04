@@ -1,4 +1,3 @@
-Paperclip: GitHub capability_missing; continuing without managed credentials.
 # MathText grammar (`mathtext/2`)
 
 MathText is intended to be the only way model-written math reaches a document. Our own hand-written parser turns a string into one typed AST (`src/lib/math-text/ast.ts`); the PDF (TeX) and the preview (HTML) are both rendered from that AST. Errors are codes, never text. Fixtures: `tests/fixtures/math-text/`.

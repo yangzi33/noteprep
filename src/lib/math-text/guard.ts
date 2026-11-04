@@ -6,12 +6,14 @@ const KEYS: Readonly<Record<string, readonly string[]>> = {
   list: ["t", "items"], unary: ["t", "op", "arg"], rel: ["t", "first", "rest"], group: ["t", "open", "body"], abs: ["t", "body"],
   frac: ["t", "num", "den"], sqrt: ["t", "body", "index?"], sup: ["t", "base", "exp"], sub: ["t", "base", "sub"],
   pct: ["t", "arg"], deg: ["t", "arg"], fn: ["t", "name", "arg", "base?"],
+  infty: ["t"], prime: ["t", "name", "count"], fact: ["t", "arg"], binom: ["t", "n", "k"], accent: ["t", "kind", "name"],
+  lim: ["t", "under", "arg"], sum: ["t", "arg", "lo?", "hi?"], int: ["t", "body", "v", "lo?", "hi?"],
 };
-const BIN_OPS: ReadonlySet<string> = new Set(["+", "-", "pm", "times", "cdot", "div", "/"]);
-const REL_OPS: ReadonlySet<string> = new Set(["=", "<", ">", "le", "ge", "neq"]);
+const BIN_OPS: ReadonlySet<string> = new Set(["+", "-", "pm", "times", "cdot", "div", "/", "cup", "cap"]);
+const REL_OPS: ReadonlySet<string> = new Set(["=", "<", ">", "le", "ge", "neq", "to", "approx", "in", "mid"]);
 const UNARY_OPS: ReadonlySet<string> = new Set(["-", "+", "pm"]);
-const GREEK: ReadonlySet<string> = new Set(["alpha", "beta", "theta", "pi"]);
-const FNS: ReadonlySet<string> = new Set(["sin", "cos", "tan", "log", "ln"]);
+const GREEK: ReadonlySet<string> = new Set(["alpha", "beta", "theta", "pi", "mu", "sigma", "lambda"]);
+const FNS: ReadonlySet<string> = new Set(["sin", "cos", "tan", "log", "ln", "sec", "csc", "cot", "arcsin", "arccos", "arctan"]);
 const NUM = /^(0|[1-9]\d{0,11})(\.\d{1,6})?$/;
 const VAR = /^[A-Za-z]$/;
 /**
@@ -83,6 +85,16 @@ function isNode(n: unknown, depth: number, budget: { left: number }): boolean {
     case "fn":
       return typeof n.name === "string" && FNS.has(n.name) && isNode(n.arg, d, budget) &&
         (!Object.hasOwn(n, "base") || (n.name === "log" && isNode(n.base, d, budget)));
+    case "infty": return true;
+    case "prime": return typeof n.name === "string" && VAR.test(n.name) && (n.count === 1 || n.count === 2 || n.count === 3);
+    case "fact": return isNode(n.arg, d, budget);
+    case "binom": return isNode(n.n, d, budget) && isNode(n.k, d, budget);
+    case "accent": return (n.kind === "bar" || n.kind === "hat") && typeof n.name === "string" && VAR.test(n.name);
+    case "lim": return isNode(n.under, d, budget) && isNode(n.arg, d, budget);
+    case "sum": return isNode(n.arg, d, budget) && (!Object.hasOwn(n, "lo") || isNode(n.lo, d, budget)) && (!Object.hasOwn(n, "hi") || isNode(n.hi, d, budget));
+    case "int":
+      return typeof n.v === "string" && VAR.test(n.v) && isNode(n.body, d, budget) &&
+        (!Object.hasOwn(n, "lo") || isNode(n.lo, d, budget)) && (!Object.hasOwn(n, "hi") || isNode(n.hi, d, budget));
     default: return false;
   }
 }

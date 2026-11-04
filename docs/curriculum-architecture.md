@@ -232,3 +232,7 @@ Rollback and known limitations of the `suggested` kind:
 - A published suggested version is immutable like every other kind; a correction is a new version.
 - Known limitation: the curriculum name is not frozen in the database for a kind, so a later version of the same curriculum id could carry a different kind. Not addressed in this slice.
 - Known limitation: fixture and sample datasets are not blocked from being loaded by file path; the loader's environment options are the only guard for sample and synthetic data, and `suggested` fixtures can be loaded anywhere. Not addressed in this slice.
+
+## 18. Subject, sources and scale (RIS-60, English note, added 2026-11-03)
+
+The dataset schema gained an optional subject dimension, per-record `sourceUrl`/`sourceSection`/`confidence`/`retrievedAt`, an optional course `officialCode` and `version.requireSources`; validators and the citation report are described in `docs/curricula-authoring.md` (3a, 3b). Provenance stays in the dataset files and is not projected into the database. The data access layer only serves subjects in `ACTIVE_SUBJECTS` (`src/lib/curriculum/subjects.ts`). Scale measurements, the size budget and the optional follow-up are in `docs/curriculum-scale.md`.

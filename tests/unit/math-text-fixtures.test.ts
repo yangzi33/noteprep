@@ -55,11 +55,19 @@ const NODE_PATTERNS: Record<string, RegExp> = {
   pct: /\\%/,
   deg: /\^\{\\circ\}/,
   fn: /\\(sin|cos|tan|log|ln) |\\log_/,
+  infty: /\\infty/,
+  prime: /[a-z]'/,
+  fact: /[\da-z)]!/,
+  binom: /\\binom\{/,
+  accent: /\\(bar|hat)\{/,
+  lim: /\\lim_\{/,
+  sum: /\\sum/,
+  int: /\\int.*\\,d[a-z]/,
 };
 it("every MathNode type appears in at least one accept row", () => {
   const spans = golden.filter((r) => r.ok).flatMap((r) => [...(r.canonical as string).matchAll(/\\\((.*?)\\\)/g)].map((m) => m[1] ?? ""));
   for (const [node, re] of Object.entries(NODE_PATTERNS)) expect(spans.some((m) => re.test(m)), node).toBe(true);
-  expect(Object.keys(NODE_PATTERNS)).toHaveLength(18);
+  expect(Object.keys(NODE_PATTERNS)).toHaveLength(26);
 });
 it("accept rows are normalized and pin both orders of a double script", () => {
   const canon = new Map(golden.filter((r) => r.ok).map((r) => [r.in, r.canonical]));

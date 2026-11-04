@@ -1,4 +1,3 @@
-Paperclip: GitHub capability_missing; continuing without managed credentials.
 # Worker image (D-53, docs/worker-host-runbook.md). Build context: repository root, platform linux/amd64.
 # Contains no secrets: configuration arrives at run time from /etc/noteprep/worker.env on the host.
 # Pins (linux/amd64 manifest digests, queried 2026-10-20 with `docker buildx imagetools inspect`):

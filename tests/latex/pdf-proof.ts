@@ -1,4 +1,3 @@
-Paperclip: GitHub capability_missing; continuing without managed credentials.
 import { noClaimOrigin } from "@/lib/curriculum/notice";
 import { effectiveSettings } from "@/lib/package/effective";
 import type { DocumentKind, LessonPackage, Section } from "@/lib/package/schema";

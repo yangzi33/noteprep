@@ -11,10 +11,12 @@ class Fail {
   constructor(readonly code: MathTextErrorCode, readonly at: number) {}
 }
 
-const GREEK: ReadonlySet<string> = new Set(["alpha", "beta", "theta", "pi"]);
-const FNS: ReadonlySet<string> = new Set(["sin", "cos", "tan", "log", "ln"]);
-const IMPLICIT_CMDS: ReadonlySet<string> = new Set([...GREEK, ...FNS, "frac", "sqrt"]);
-const MUL_OPS: Readonly<Record<string, BinOp>> = { times: "times", cdot: "cdot", div: "div" };
+const GREEK: ReadonlySet<string> = new Set(["alpha", "beta", "theta", "pi", "mu", "sigma", "lambda"]);
+const FNS: ReadonlySet<string> = new Set(["sin", "cos", "tan", "log", "ln", "sec", "csc", "cot", "arcsin", "arccos", "arctan"]);
+const REL_CMDS: ReadonlySet<string> = new Set(["le", "ge", "neq", "to", "approx", "in", "mid"]);
+// `infty` is deliberately absent: like `\ldots` it starts an operand but never follows one implicitly.
+const IMPLICIT_CMDS: ReadonlySet<string> = new Set([...GREEK, ...FNS, "frac", "sqrt", "binom", "bar", "hat", "lim", "sum", "int"]);
+const MUL_OPS: Readonly<Record<string, BinOp>> = { times: "times", cdot: "cdot", div: "div", cap: "cap" };
 
 type Script = { circ: true } | { circ: false; node: MathNode };
 
@@ -70,7 +72,7 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
 
   function relOp(t: Token | undefined): RelOp | null {
     if (t?.k === "op" && (t.v === "=" || t.v === "<" || t.v === ">")) return t.v;
-    if (t?.k === "cmd" && (t.v === "le" || t.v === "ge" || t.v === "neq")) return t.v;
+    if (t?.k === "cmd" && REL_CMDS.has(t.v)) return t.v as RelOp;
     return null;
   }
 
@@ -86,7 +88,8 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
 
   function addOp(t: Token | undefined): BinOp | null {
     if (t?.k === "op" && (t.v === "+" || t.v === "-")) return t.v;
-    return isCmd(t, "pm") ? "pm" : null;
+    if (isCmd(t, "pm")) return "pm";
+    return isCmd(t, "cup") ? "cup" : null;
   }
 
   function parseExpr(): MathNode {
@@ -129,7 +132,7 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
   function endsInNumber(n: MathNode): boolean {
     switch (n.t) {
       case "num": return true;
-      case "unary": case "fn": return endsInNumber(n.arg);
+      case "unary": case "fn": case "lim": case "sum": return endsInNumber(n.arg);
       case "bin": return endsInNumber(n.r);
       case "imp": case "list": return endsInNumber(n.items[n.items.length - 1] as MathNode);
       case "rel": return endsInNumber((n.rest[n.rest.length - 1] as { rhs: MathNode }).rhs);
@@ -137,10 +140,20 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     }
   }
 
+  // An integral ends with its differential, so nothing may follow it in an implicit product: `\int x\,dx y` would
+  // otherwise be ambiguous with a longer integrand once serialized.
+  function endsWithInt(n: MathNode): boolean {
+    switch (n.t) {
+      case "int": return true;
+      case "unary": case "fn": case "lim": case "sum": return endsWithInt(n.arg);
+      default: return false;
+    }
+  }
+
   function parseOperand(): MathNode {
     const first = parseUnary();
     const items = [first];
-    while (startsImplicit(peek())) {
+    while (startsImplicit(peek()) && !endsWithInt(items[items.length - 1] as MathNode)) {
       const t = peek() as Token;
       const last = items[items.length - 1] as MathNode;
       if ((t.k === "num" || isCmd(t, "frac")) && endsInNumber(last)) fail("math_adjacent_numbers", t);
@@ -193,6 +206,12 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
   // percent no further script is allowed.
   function parseScripted(): MathNode {
     let node = parsePrimary();
+    // Primes and the big operators take no scripts or percent sign afterwards.
+    if (node.t === "prime" || node.t === "lim" || node.t === "sum" || node.t === "int") {
+      const n = peek();
+      if (isOp(n, "^") || isOp(n, "_")) fail("math_bad_script", n);
+      return node;
+    }
     let sub: MathNode | undefined;
     let sup: MathNode | undefined;
     let blocked = false;
@@ -232,7 +251,48 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     }
     applySub();
     if (sup) node = { t: "sup", base: node, exp: sup };
+    const bang = peek();
+    if (isOp(bang, "!")) {
+      // Factorial of a whole number, a variable or a parenthesized expression only; never of a scripted or other base.
+      const okBase = node.t === "var" || node.t === "group" || (node.t === "num" && !node.v.includes("."));
+      if (!okBase) fail("math_unexpected_token", bang);
+      pos++;
+      node = { t: "fact", arg: node };
+      const n = peek();
+      if (isOp(n, "^") || isOp(n, "_")) fail("math_bad_script", n);
+    }
     return node;
+  }
+
+  // One bound of `\sum` or `\int`: a single digit, a letter or a braced list; no degree sign.
+  function parseBound(owner: Token): MathNode {
+    pos++;
+    const s = parseScript(false, owner);
+    if (s.circ) return fail("math_bad_script", owner);
+    return s.node;
+  }
+
+  function parseBounds(): { lo?: MathNode; hi?: MathNode } {
+    const out: { lo?: MathNode; hi?: MathNode } = {};
+    for (;;) {
+      const t = peek();
+      if (isOp(t, "_")) {
+        if (out.lo) fail("math_bad_script", t);
+        out.lo = parseBound(t as Token);
+      } else if (isOp(t, "^")) {
+        if (out.hi) fail("math_bad_script", t);
+        out.hi = parseBound(t as Token);
+      } else {
+        return out;
+      }
+    }
+  }
+
+  function withDepth<T>(t: Token, f: () => T): T {
+    if (++depth > MAX_DEPTH) fail("math_depth", t);
+    const r = f();
+    depth--;
+    return r;
   }
 
   // script := digit | letter | "{" math "}"; for "^" also \circ or {\circ}, which build `deg`.
@@ -297,9 +357,70 @@ function parseTokens(tokens: readonly Token[], eofAt: number): MathNode {
     }
     if (t.k === "letter") {
       pos++;
-      return { t: "var", name: t.v };
+      let count = 0;
+      while (count < 3 && isOp(peek(), "'")) {
+        pos++;
+        count++;
+      }
+      return count ? { t: "prime", name: t.v, count: count as 1 | 2 | 3 } : { t: "var", name: t.v };
     }
     if (t.k === "cmd") {
+      if (t.v === "infty") {
+        pos++;
+        return { t: "infty" };
+      }
+      if (t.v === "binom") {
+        pos++;
+        const n = parseBraced();
+        const k = parseBraced();
+        return { t: "binom", n, k };
+      }
+      if (t.v === "bar" || t.v === "hat") {
+        pos++;
+        const o = peek();
+        if (!isOp(o, "{")) fail("math_brace_misuse", o);
+        pos++;
+        const l = peek();
+        if (l?.k !== "letter") fail("math_unexpected_token", l);
+        pos++;
+        expectBrace();
+        return { t: "accent", kind: t.v, name: (l as { v: string }).v };
+      }
+      if (t.v === "lim") {
+        pos++;
+        const u = peek();
+        if (!isOp(u, "_")) fail("math_bad_script", u ?? t);
+        pos++;
+        const b = peek();
+        if (!isOp(b, "{")) fail("math_brace_misuse", b);
+        open(b, "{");
+        pos++;
+        const under = parseRelation();
+        expectBrace();
+        close();
+        return { t: "lim", under, arg: withDepth(t, parseOperand) };
+      }
+      if (t.v === "sum") {
+        pos++;
+        const { lo, hi } = parseBounds();
+        const arg = withDepth(t, parseOperand);
+        return { t: "sum", ...(lo ? { lo } : {}), ...(hi ? { hi } : {}), arg };
+      }
+      if (t.v === "int") {
+        pos++;
+        const { lo, hi } = parseBounds();
+        const body = withDepth(t, parseExpr);
+        const th = peek();
+        if (th?.k !== "thin") fail("math_unexpected_token", th);
+        pos++;
+        const d = peek();
+        if (d?.k !== "letter" || d.v !== "d") fail("math_unexpected_token", d);
+        pos++;
+        const v = peek();
+        if (v?.k !== "letter") fail("math_unexpected_token", v);
+        pos++;
+        return { t: "int", ...(lo ? { lo } : {}), ...(hi ? { hi } : {}), body, v: (v as { v: string }).v };
+      }
       if (GREEK.has(t.v)) {
         pos++;
         return { t: "greek", name: t.v as Greek };

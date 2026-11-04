@@ -84,6 +84,8 @@ describe("string fuzz: parse then check", () => {
     ",", ".", "%", " ", " ", "$", "#", "&", "~", "!", "'", "\\", "^^",
     "\\alpha", "\\pi", "\\theta", "\\beta", "\\frac", "\\sqrt", "\\sin", "\\cos", "\\tan", "\\log", "\\ln", "\\times", "\\cdot", "\\div",
     "\\pm", "\\le", "\\ge", "\\neq", "\\ldots", "\\circ", "\\%", "\\input", "\\def", "\\text", "\\left", "\\\\",
+    "\\mu", "\\sigma", "\\lambda", "\\sec", "\\csc", "\\cot", "\\arcsin", "\\arccos", "\\arctan", "\\to", "\\approx", "\\in", "\\mid",
+    "\\cup", "\\cap", "\\infty", "\\binom", "\\bar", "\\hat", "\\lim", "\\sum", "\\int", "\\,", "\\,d", "_{", "^{", "}{", "x!", "f'", "d",
   ];
   it("20000 random strings: typed reject or safe emitted TeX, seed " + SEED, () => {
     const next = rng(SEED);

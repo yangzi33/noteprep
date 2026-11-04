@@ -10,7 +10,7 @@ describe("isMathTextDoc", () => {
     for (const d of acceptedFixtureDocs()) expect(isMathTextDoc(d)).toBe(true);
   });
   it("rejects non-documents, wrong versions and extra or missing keys", () => {
-    for (const v of [null, undefined, 1, "x", [], {}, { v: "mathtext/1" }, { v: "mathtext/2", parts: [] }, { v: MATHTEXT_PARSER_VERSION, parts: [], extra: 1 },
+    for (const v of [null, undefined, 1, "x", [], {}, { v: "mathtext/2" }, { v: "mathtext/1", parts: [] }, { v: MATHTEXT_PARSER_VERSION, parts: [], extra: 1 },
       { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "text" }] }, { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "text", s: "a", z: 1 }] },
       { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "html", s: "<b>" }] }, { v: MATHTEXT_PARSER_VERSION, parts: [{ t: "text", s: 3 }] }]) {
       expect(isMathTextDoc(v), JSON.stringify(v)).toBe(false);
@@ -23,7 +23,7 @@ describe("isMathTextDoc", () => {
       { t: "var", name: "xy" }, { t: "var", name: "\\" }, { t: "greek", name: "gamma" }, { t: "raw", tex: "\\input{x}" },
       { t: "toString" }, { t: "__proto__" }, { t: "imp", items: [x] }, { t: "list", items: [] }, { t: "unary", op: "*", arg: x },
       { t: "rel", first: x, rest: [] }, { t: "rel", first: x, rest: [{ op: "~", rhs: x }] }, { t: "rel", first: x, rest: [{ op: "=", rhs: x, z: 1 }] },
-      { t: "group", open: "{", body: x }, { t: "fn", name: "sec", arg: x }, { t: "fn", name: "sin", base: x, arg: x },
+      { t: "group", open: "{", body: x }, { t: "fn", name: "sech", arg: x }, { t: "fn", name: "sin", base: x, arg: x },
       { t: "sqrt", body: x, index: undefined }, { t: "sup", base: x }, { t: "var", name: "x", extra: true },
     ];
     for (const n of bad) expect(isMathTextDoc(doc(n)), JSON.stringify(n)).toBe(false);
@@ -64,8 +64,8 @@ describe("isMathTextDoc", () => {
     expect(isMathTextDoc(setter)).toBe(false);
   });
   it("rejects a __proto__ key from JSON.parse and symbol keys; accepts a JSON round trip of a real doc", () => {
-    expect(isMathTextDoc(JSON.parse(`{"v":"mathtext/1","parts":[],"__proto__":{"x":1}}`))).toBe(false);
-    expect(isMathTextDoc(JSON.parse(`{"v":"mathtext/1","parts":[{"t":"math","m":{"t":"var","name":"x","__proto__":{}}}]}`))).toBe(false);
+    expect(isMathTextDoc(JSON.parse(`{"v":"mathtext/2","parts":[],"__proto__":{"x":1}}`))).toBe(false);
+    expect(isMathTextDoc(JSON.parse(`{"v":"mathtext/2","parts":[{"t":"math","m":{"t":"var","name":"x","__proto__":{}}}]}`))).toBe(false);
     expect(isMathTextDoc({ v: MATHTEXT_PARSER_VERSION, parts: [], [Symbol("s")]: 1 })).toBe(false);
     const r = parseMathText("Solve \\(x+1=2\\).");
     if (!r.ok) throw new Error("parse");
@@ -105,7 +105,7 @@ describe("checkMathTextRenders fails closed on a hand-built document", () => {
   });
   it("returns render_tex_disallowed for values that are not documents", () => {
     expect(checkMathTextRenders(null as unknown as MathTextDoc)).toBe("render_tex_disallowed");
-    expect(checkMathTextRenders({ v: "mathtext/1" } as unknown as MathTextDoc)).toBe("render_tex_disallowed");
+    expect(checkMathTextRenders({ v: "mathtext/2" } as unknown as MathTextDoc)).toBe("render_tex_disallowed");
   });
 });
 
