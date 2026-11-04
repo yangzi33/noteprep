@@ -76,12 +76,13 @@ describe("per-record citation fields", () => {
     expect(codes(d)).toContain(code);
   });
 
-  it("requireSources makes a missing citation on a course, unit or topic an error, and a complete one passes", () => {
+  it("requireSources makes a missing citation on a level, course, unit or topic an error, and a complete one passes", () => {
     const d = clone(load(SUGGESTED));
     d.meta.version.requireSources = true;
     const missing = validateDataset(d).filter((i) => i.code === "SOURCE_REQUIRED");
-    expect(missing.length).toBe(d.structure.courses.length + d.structure.units.length + d.structure.topics.length);
-    for (const r of [...d.structure.courses, ...d.structure.units, ...d.structure.topics]) Object.assign(r, CITE);
+    expect(missing.length).toBe(d.structure.levels.length + d.structure.courses.length + d.structure.units.length + d.structure.topics.length);
+    for (const r of [...d.structure.levels, ...d.structure.courses, ...d.structure.units, ...d.structure.topics]) Object.assign(r, CITE);
+    for (const r of [...d.structure.levels, ...d.structure.courses]) Object.assign(r, { sourceName: r.id, placement: "stated" });
     expect(validateDataset(d)).toEqual([]);
   });
 

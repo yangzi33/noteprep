@@ -34,6 +34,19 @@ const Provenance = {
   retrievedAt: z.string().optional(),
 };
 
+/**
+ * Optional description of how a level or course is supported by its source: `sourceName` is the name or code exactly as
+ * the source prints it, `placement` says whether the source itself states the grade or year ("stated") or NotePrep
+ * inferred it ("inferred"). Lenient strings so the validator can report every problem with a code.
+ */
+const Basis = {
+  sourceName: z.string().optional(),
+  placement: z.string().optional(),
+};
+
+export const PLACEMENTS = ["stated", "inferred"] as const;
+export type Placement = (typeof PLACEMENTS)[number];
+
 export const COVERAGE = ["full", "partial"] as const;
 export type Coverage = (typeof COVERAGE)[number];
 
@@ -64,9 +77,26 @@ export const DatasetMeta = z.object({
 });
 
 export const Structure = z.object({
-  levels: z.array(z.object({ id: Id, label: Text, kind: Text, ordinal: z.number().int(), ...Provenance })),
+  // A level is a grade, a year, or a band of years (a key stage, a two-year qualification); `yearFrom`/`yearTo` give the school
+  // years a band covers, so the data never has to copy one band's content into each of its years.
+  levels: z.array(
+    z.object({ id: Id, label: Text, kind: Text, ordinal: z.number().int(), yearFrom: z.number().optional(), yearTo: z.number().optional(), ...Basis, ...Provenance }),
+  ),
+  // `code` is NotePrep's internal slug; `officialCode` is the jurisdiction's own code, kept for provenance only. A level can
+  // hold any number of courses; `tier` and `pathway` tell parallel courses of one level apart.
   courses: z.array(
-    z.object({ id: Id, levelId: Id.optional(), code: Text, officialCode: Text.optional(), title: Text, ordinal: z.number().int(), ...Provenance }),
+    z.object({
+      id: Id,
+      levelId: Id.optional(),
+      code: Text,
+      officialCode: Text.optional(),
+      title: Text,
+      ordinal: z.number().int(),
+      tier: Text.optional(),
+      pathway: Text.optional(),
+      ...Basis,
+      ...Provenance,
+    }),
   ),
   units: z.array(z.object({ id: Id, courseId: Id, code: Text.optional(), title: Text, ordinal: z.number().int(), ...Provenance })),
   topics: z.array(z.object({ id: Id, unitId: Id, title: Text, summary: Text, ordinal: z.number().int(), ...Provenance })),
@@ -105,4 +135,6 @@ export const LIMITS = {
   code: 60, // unit code, level kind, official course code
   sourceUrl: 500,
   sourceSection: 200,
+  sourceName: 120,
+  tier: 60, // course tier and pathway labels
 } as const;
