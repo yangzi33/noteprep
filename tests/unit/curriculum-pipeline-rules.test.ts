@@ -228,6 +228,32 @@ describe("duplicate topic sets", () => {
     expect(codes(d)).toContain("COURSE_TOPIC_SET_DUPLICATE");
     expect(where(d, "VARIANT_NOT_IN_SOURCE")).toEqual(["courses[0].tier", "courses[1].tier"]);
   });
+  describe("a tier or pathway label cannot be used to excuse one list entered under several courses", () => {
+    const shared = topicTitles("kst", 20);
+    const ks4 = defaultLevels().filter((l) => l.key === "ks4");
+    const three = (labels: { tier?: string; pathway?: string }[], names: string[]) => {
+      const d = researched(labels.map((l, i) => ({ key: `c${i}`, level: "ks4", title: `Mathematics ${i}`, topics: shared, ...l })), ks4);
+      d.structure.courses.forEach((c, i) => (c.sourceName = names[i]!));
+      return d;
+    };
+    it("year or grade numbers are not tiers", () => {
+      const d = three([{ tier: "Year 7" }, { tier: "Year 8" }, { tier: "Year 9" }], ["Mathematics Year 7 programme of study", "Mathematics Year 8 programme of study", "Mathematics Year 9 programme of study"]);
+      expect(where(d, "COURSE_TOPIC_SET_DUPLICATE")).toHaveLength(3);
+    });
+    it("a label that every course's source prints does not tell them apart", () => {
+      const d = three([{ tier: "Mathematics" }, { tier: "programme" }], ["Mathematics programme of study", "Mathematics programme of study"]);
+      expect(where(d, "COURSE_TOPIC_SET_DUPLICATE")).toHaveLength(1);
+    });
+    it("a label one course merely adds to the other's does not tell them apart", () => {
+      const d = three([{ tier: "Higher" }, { tier: "Higher", pathway: "Applied" }], ["GCSE Higher", "GCSE Higher Applied"]);
+      expect(where(d, "COURSE_TOPIC_SET_DUPLICATE")).toHaveLength(1);
+    });
+    it("a label may carry a generic word the source leaves out", () => {
+      const d = three([{ tier: "Foundation tier" }, { tier: "Higher tier" }], ["GCSE Mathematics (Foundation)", "GCSE Mathematics (Higher)"]);
+      expect(codes(d)).not.toContain("VARIANT_NOT_IN_SOURCE");
+      expect(codes(d)).not.toContain("COURSE_TOPIC_SET_DUPLICATE");
+    });
+  });
   it("does not trip on the shipped data (existing valid datasets still pass)", () => {
     const dirs = findDatasetDirs(path.join(root, "data/curricula"));
     expect(dirs.length).toBeGreaterThan(40);

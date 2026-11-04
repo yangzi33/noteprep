@@ -27,15 +27,31 @@ export function overlap(a: Set<string>, b: Set<string>): { shared: number; union
 
 type Variantable = { tier?: string; pathway?: string; sourceName?: string; sourceSection?: string };
 
-/** Whether a tier or pathway label is one the course's own source name or cited section prints, as whole words. */
+/** Words that only say a label is a tier or a pathway; "Foundation tier" is found in a source that prints "Foundation". */
+const GENERIC = new Set(["tier", "pathway", "route", "option", "course"]);
+
+const sourceWords = (c: Variantable) => ` ${normaliseTitle(`${c.sourceName ?? ""} ${c.sourceSection ?? ""}`)} `;
+const labelWords = (label: string | undefined) => normaliseTitle(label ?? "").split(" ").filter((w) => w !== "" && !GENERIC.has(w));
+
+/** Whether every word of a tier or pathway label is printed, as a whole word, in the course's own source name or cited section. */
 export function labelInSource(label: string | undefined, c: Variantable): boolean {
-  const key = normaliseTitle(label ?? "");
-  return key !== "" && ` ${normaliseTitle(`${c.sourceName ?? ""} ${c.sourceSection ?? ""}`)} `.includes(` ${key} `);
+  const words = labelWords(label);
+  const text = sourceWords(c);
+  return words.length > 0 && words.every((w) => text.includes(` ${w} `));
 }
 
-/** The tier and pathway of a course that its source backs up. An unbacked label is free text and counts for nothing. */
-function sourcedVariant(c: Variantable): string {
-  return [c.tier, c.pathway].filter((l) => labelInSource(l, c)).map((l) => normaliseTitle(l!)).join("|");
+/**
+ * The tier and pathway labels of a course that can tell it apart from a sibling: the source prints them, and they are not
+ * year or grade designations (a digit), which would let "Year 7" and "Year 8" excuse one list entered twice.
+ */
+function usableLabels(c: Variantable): string[] {
+  return [c.tier, c.pathway].filter((l): l is string => l !== undefined && !/\d/.test(l) && labelInSource(l, c));
+}
+
+/** Two courses are told apart when each has a usable label that the other course's source does not print. */
+function toldApart(a: Variantable, b: Variantable): boolean {
+  const own = (x: Variantable, other: Variantable) => usableLabels(x).some((l) => !labelInSource(l, other));
+  return own(a, b) && own(b, a);
 }
 
 export interface TopicSetDuplicate {
@@ -48,9 +64,9 @@ export interface TopicSetDuplicate {
 
 /**
  * Pairs of courses of one dataset whose topic-title sets are the same content entered twice. Similarity is the shared
- * titles over the larger set, so a copy with a few retitled topics is still caught while a course that merely contains
- * another (a Higher tier over a Foundation tier) is not. Courses under TOPIC_SET_MIN titles are skipped. Parallel
- * variants of one level, each carrying a different tier or pathway that its source names, may legitimately overlap.
+ * titles over the larger set, so a copy with a few retitled topics is still caught while a course that is clearly larger
+ * than the one it contains (12 of 18 titles) is not. Courses under TOPIC_SET_MIN titles are skipped. Parallel
+ * variants of one level, each carrying a tier or pathway that its own source prints and the other's does not, may overlap.
  */
 export function findTopicSetDuplicates(dataset: Dataset): TopicSetDuplicate[] {
   const { courses } = dataset.structure;
@@ -64,8 +80,7 @@ export function findTopicSetDuplicates(dataset: Dataset): TopicSetDuplicate[] {
       const b = courses[j]!;
       const setB = sets.get(b.id) ?? new Set<string>();
       if (setB.size < TOPIC_SET_MIN) continue;
-      const [va, vb] = [sourcedVariant(a), sourcedVariant(b)];
-      if (a.levelId !== undefined && a.levelId === b.levelId && va !== "" && vb !== "" && va !== vb) continue;
+      if (a.levelId !== undefined && a.levelId === b.levelId && toldApart(a, b)) continue;
       const { shared } = overlap(setA, setB);
       const similarity = shared / Math.max(setA.size, setB.size);
       if (similarity >= TOPIC_SET_SIMILARITY) found.push({ first: i, second: j, similarity });
