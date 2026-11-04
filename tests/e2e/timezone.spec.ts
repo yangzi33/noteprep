@@ -53,6 +53,15 @@ test("times default to the browser zone, a saved zone overrides it, and Auto goe
   // Reopening with a chosen zone shows the whole list, and the active option exists.
   await keyboard.press("ArrowDown");
   expect(await page.getByRole("option").count()).toBeGreaterThan(100);
+  // Dragging the native list scrollbar must not dismiss the dropdown.
+  const listbox = page.getByRole("listbox");
+  const listboxBounds = await listbox.boundingBox();
+  expect(listboxBounds).not.toBeNull();
+  await page.mouse.move(listboxBounds!.x + listboxBounds!.width - 3, listboxBounds!.y + listboxBounds!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(listboxBounds!.x + listboxBounds!.width - 3, listboxBounds!.y + listboxBounds!.height - 8);
+  await expect(listbox).toBeVisible();
+  await page.mouse.up();
   const activeId = await keyboard.getAttribute("aria-activedescendant");
   await expect(page.locator(`[id="${activeId}"]`)).toHaveText("Asia/Tokyo");
   await keyboard.press("End");
