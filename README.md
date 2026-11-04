@@ -117,6 +117,11 @@ Rollback state "draft flow, export off": `FLOW_MODE=draft`, `EXPORT_ENABLED=0`. 
 | `LLM_PROVIDER` | `fake` | `fake` \| `anthropic` \| `openai`; with a real provider, `LLM_API_KEY` and `LLM_MODEL` are required and held by the worker alone |
 | `LESSON_PROSE` | `template` | `llm` asks the provider for prose wording |
 | `LLM_MAX_OUTPUT_TOKENS`, `LLM_PRICE_*`, `LLM_BASE_URL` | see file | Token, cost-accounting and endpoint settings |
+| `LLM_ITEMS_ENABLED` | `0` | Kill switch for AI requests (new requests refused, queued AI jobs failed). Lesson wording is not affected |
+| `AI_OPS_PER_USER_PER_HOUR` | `10` | User-initiated AI requests per user per UTC hour (retries, refills, polling and duplicate keys are not counted) |
+| `LLM_CALLS_PER_USER_PER_HOUR`, `LLM_MAX_CALLS_PER_JOB`, `LLM_MAX_TOKENS_PER_JOB`, `LLM_MAX_RETRIES_PER_JOB` | `60`, `8`, `200000`, `4` | Raw provider calls, tokens and retries (test values) |
+| `LLM_SPEND_PER_CALL_MICROS`, `LLM_SPEND_PER_PREVIEW_MICROS`, `LLM_SPEND_DAILY_MICROS_PER_USER`, `LLM_SPEND_LIFETIME_MICROS_PER_USER`, `LLM_SPEND_GLOBAL_MONTHLY_MICROS` | `100000`, `150000`, `3000000`, `25000000`, `100000000` | Spend caps in micro-units (test values, must be non-decreasing in this order); the global monthly cap alerts at `LLM_SPEND_ALERT_PERCENT` (70) and stops at 100 percent |
+| `LLM_STALE_RESERVATION_SECONDS` | `300` | A reservation with no settlement after this long is settled at its estimate |
 | `DOCKER_HOST`, `WORKER_LIVENESS_FILE` | unset | Set by the worker image on hosts; production requires the sandbox runner's unix socket, never the host's rootful `docker.sock` |
 
 ## Architecture

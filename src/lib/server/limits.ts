@@ -55,10 +55,29 @@ const SHAPE = {
   draftLockTimeoutMs: int("DRAFT_LOCK_TIMEOUT_MS", 5_000, 50, 60_000),
   purgeGraceDays: int("DRAFT_PURGE_GRACE_DAYS", 7, 0, 365),
   purgeBatchSize: int("DRAFT_PURGE_BATCH_SIZE", 100, 1, 10_000),
-  // Reserved for a future language-model item source (0 = no budget; nothing reads these yet)
-  llmMaxCallsPerDraft: int("LLM_MAX_CALLS_PER_DRAFT", 0, 0, 1_000),
-  llmMaxTokensPerDraft: int("LLM_MAX_TOKENS_PER_DRAFT", 0, 0, 10_000_000),
-  llmMaxCostMicrosPerDraft: int("LLM_MAX_COST_MICROS_PER_DRAFT", 0, 0, 1_000_000_000),
+  // Language-model spend and AI Actions (spec slice B, sections 5.5 and 5.5a). There is no per-draft model budget: the
+  // limits below are per request (job), per user and global; the ledger tables enforce them in one locked transaction.
+  // AI Actions (user-initiated AI requests) per user per UTC clock hour, key-free: counted over ai_action rows
+  aiOpsPerUserPerHour: int("AI_OPS_PER_USER_PER_HOUR", 10, 1, 10_000),
+  // Kill switch for the language-model item source: 0 refuses new AI work and fails queued AI jobs (off until the source ships)
+  llmItemsEnabled: int("LLM_ITEMS_ENABLED", 0, 0, 1),
+  // Raw provider calls per user per UTC clock hour (financial control, separate from AI Actions)
+  llmCallsPerUserPerHour: int("LLM_CALLS_PER_USER_PER_HOUR", 60, 1, 100_000),
+  // Per job (one request, all attempts together)
+  llmMaxCallsPerJob: int("LLM_MAX_CALLS_PER_JOB", 8, 1, 1_000),
+  llmMaxTokensPerJob: int("LLM_MAX_TOKENS_PER_JOB", 200_000, 1, 100_000_000),
+  llmMaxRetriesPerJob: int("LLM_MAX_RETRIES_PER_JOB", 4, 0, 1_000),
+  // Cost caps in micro-units (internal accounting, never a customer price): per call, per preview (job), per user per
+  // UTC day, per user lifetime, and global per UTC month. PLACEHOLDERS the owner tunes.
+  llmSpendPerCallMicros: int("LLM_SPEND_PER_CALL_MICROS", 100_000, 1, 1_000_000_000),
+  llmSpendPerPreviewMicros: int("LLM_SPEND_PER_PREVIEW_MICROS", 150_000, 1, 1_000_000_000),
+  llmSpendDailyMicrosPerUser: int("LLM_SPEND_DAILY_MICROS_PER_USER", 3_000_000, 1, 1_000_000_000_000),
+  llmSpendLifetimeMicrosPerUser: int("LLM_SPEND_LIFETIME_MICROS_PER_USER", 25_000_000, 1, 1_000_000_000_000),
+  llmSpendGlobalMonthlyMicros: int("LLM_SPEND_GLOBAL_MONTHLY_MICROS", 100_000_000, 1, 1_000_000_000_000),
+  // One alert event when settled global spend reaches this percent of the monthly cap; the stop is at 100 percent
+  llmSpendAlertPercent: int("LLM_SPEND_ALERT_PERCENT", 70, 1, 99),
+  // A reservation still open after this long (call timeout plus grace) belongs to a dead attempt and is settled at its estimate
+  llmStaleReservationSeconds: int("LLM_STALE_RESERVATION_SECONDS", 300, 30, 86_400),
 
   // Sign-in recovery emails (reset link, confirmation resend): per client IP and kind per hour, key auth:<kind>:ip: (placeholder)
   authEmailPerIpPerHour: int("AUTH_EMAIL_PER_IP_PER_HOUR", 10, 1, 1_000),
@@ -73,6 +92,10 @@ const SHAPE = {
 const LimitsSchema = z
   .object(Object.fromEntries(Object.entries(SHAPE).map(([key, { schema }]) => [key, schema])) as { [K in keyof typeof SHAPE]: (typeof SHAPE)[K]["schema"] })
   .refine((l) => l.draftMaxLifetimeDays >= l.draftTtlDays, { message: "DRAFT_MAX_LIFETIME_DAYS must not be below DRAFT_TTL_DAYS", path: ["draftMaxLifetimeDays"] })
+  .refine((l) => l.llmSpendPerCallMicros <= l.llmSpendPerPreviewMicros, { message: "LLM_SPEND_PER_CALL_MICROS must not exceed LLM_SPEND_PER_PREVIEW_MICROS", path: ["llmSpendPerCallMicros"] })
+  .refine((l) => l.llmSpendPerPreviewMicros <= l.llmSpendDailyMicrosPerUser, { message: "LLM_SPEND_PER_PREVIEW_MICROS must not exceed LLM_SPEND_DAILY_MICROS_PER_USER", path: ["llmSpendPerPreviewMicros"] })
+  .refine((l) => l.llmSpendDailyMicrosPerUser <= l.llmSpendLifetimeMicrosPerUser, { message: "LLM_SPEND_DAILY_MICROS_PER_USER must not exceed LLM_SPEND_LIFETIME_MICROS_PER_USER", path: ["llmSpendDailyMicrosPerUser"] })
+  .refine((l) => l.llmSpendLifetimeMicrosPerUser <= l.llmSpendGlobalMonthlyMicros, { message: "LLM_SPEND_LIFETIME_MICROS_PER_USER must not exceed LLM_SPEND_GLOBAL_MONTHLY_MICROS", path: ["llmSpendLifetimeMicrosPerUser"] })
   .refine((l) => l.minExercises <= l.maxExercises, { message: "MIN_EXERCISES must not exceed MAX_EXERCISES_PER_DRAFT", path: ["minExercises"] });
 
 export type Limits = z.infer<typeof LimitsSchema>;

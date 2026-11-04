@@ -4,11 +4,12 @@ import { makeAuthedCtx } from "@/lib/server/auth/context";
 import { createDb } from "@/lib/server/db";
 import { createWebDal } from "@/lib/server/dal";
 import { pgErrorCode, pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin, app, worker } = pools();
 const db = createDb(info.appUrl);
-const dal = createWebDal(db);
+const dal = createWebDal(db, { aiLimits: DEFAULT_AI_LIMITS });
 
 afterAll(async () => {
   await Promise.all([admin.end(), app.end(), worker.end(), db.$disconnect()]);

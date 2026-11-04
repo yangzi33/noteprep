@@ -121,12 +121,6 @@ export class AdjustmentInProgress extends DomainError {
   }
 }
 
-export class AdjustmentBudgetExhausted extends DomainError {
-  constructor() {
-    super("ADJUSTMENT_BUDGET_EXHAUSTED", "No adjustment budget remaining for this lesson");
-  }
-}
-
 /** The adjustment kind is switched off or its backend is unavailable in this environment. */
 export class AdjustmentUnavailable extends DomainError {
   constructor() {
@@ -273,6 +267,32 @@ export class VersionLimit extends DomainError {
 export class VersionRateLimited extends DomainError {
   constructor() {
     super("VERSION_RATE_LIMITED", "Too many versions created recently");
+  }
+}
+
+// --- AI Actions (slice B-d) -------------------------------------------------------------------------------------
+
+/** The account used all its AI Actions for this clock hour; nothing was recorded and no model was called. */
+export class AiActionLimited extends DomainError {
+  constructor(
+    /** Seconds until the next UTC clock hour, when the window resets. */
+    readonly retryAfterSeconds: number,
+  ) {
+    super("AI_ACTION_LIMITED", "Too many AI requests this hour");
+  }
+}
+
+/** The kill switch is off: AI work is not accepted. Never blames the user. */
+export class AiUnavailable extends DomainError {
+  constructor() {
+    super("AI_UNAVAILABLE", "AI features are not available right now");
+  }
+}
+
+/** The global monthly spend cap was reached: the automatic stop refuses everyone. Never blames the user. */
+export class AiStopped extends DomainError {
+  constructor() {
+    super("AI_STOPPED", "AI features are paused for now");
   }
 }
 

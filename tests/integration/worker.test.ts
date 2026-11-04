@@ -16,6 +16,7 @@ import { runOnce } from "../../worker/loop";
 import { processJob } from "../../worker/runner";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // The database is shared by every test file, and other files corrupt a bucket's counters on purpose (to test the
 // constraints and the drift view). Drift is therefore checked only for the accounts THIS file created.
@@ -32,7 +33,7 @@ const { admin, worker: workerPg } = pools();
 const appDb = createDb(info.appUrl);
 const workerDb = createDb(info.workerUrl);
 
-const web = createWebDal(appDb, {
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS,
   limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000 },
 });
 // Tiny backoff so retried jobs become runnable within milliseconds.

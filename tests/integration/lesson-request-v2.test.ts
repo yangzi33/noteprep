@@ -26,6 +26,7 @@ import { FsObjectStore } from "@/lib/storage/store";
 import { runOnce } from "../../worker/loop";
 import type { PipelineDeps } from "../../worker/pipeline";
 import { pgErrorCode, pools, seedRevision } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const flags = vi.hoisted(() => ({ forceInvalid: false, renderThrows: null as Error | null }));
 // Lets one test make the (real) package validator report a failure, to prove the job then fails and releases its allowance.
@@ -60,8 +61,8 @@ const TOPIC = `${base}/equations/both-sides`;
 const UNSUPPORTED_TOPIC = `${base}/shapes/areas`;
 
 const limits = { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 100, maxQueuedJobsGlobal: 100_000, rateLimitPerHourPerUser: 1000 };
-const web = createWebDal(appDb, { limits, curriculum: { allowSample: true } });
-const production = createWebDal(appDb, { limits }); // no sample data visible
+const web = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits, curriculum: { allowSample: true } });
+const production = createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, limits }); // no sample data visible
 const worker = createWorkerDal(workerDb, { backoff: { baseMs: 1, capMs: 5 } });
 
 let storeDir: string;
@@ -288,7 +289,7 @@ describe("enqueueing under connection-pool pressure", () => {
     // the transaction holds one, every connection would be taken by a waiting transaction and nothing could finish.
     const smallDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: info.appUrl, max: 3 }) });
     try {
-      const small = createWebDal(smallDb, { limits, curriculum: { allowSample: true } });
+      const small = createWebDal(smallDb, { aiLimits: DEFAULT_AI_LIMITS, limits, curriculum: { allowSample: true } });
       const ctxs = await Promise.all(Array.from({ length: 12 }, () => account()));
       const started = Date.now();
       const results = await Promise.allSettled(ctxs.map((c) => small.generation.createGeneration(c, request(), key())));

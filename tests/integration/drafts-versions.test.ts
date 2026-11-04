@@ -11,6 +11,7 @@ import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 // Slice S3: versions, switching, revision-safe updates across tabs, sliding expiry, limits. Real Postgres, separate connections.
 
@@ -24,7 +25,7 @@ const versionId = SAMPLE.meta.version.id;
 const TOPIC = `${versionId}/level-a/course-1/equations/both-sides`;
 
 const limitsWith = (over: Partial<Limits> = {}): Limits => ({ ...DEFAULT_LIMITS, ...over });
-const dal = (over: Partial<Limits> = {}) => createWebDal(appDb, { curriculum: { allowSample: true }, drafts: { limits: limitsWith(over) } });
+const dal = (over: Partial<Limits> = {}) => createWebDal(appDb, { aiLimits: DEFAULT_AI_LIMITS, curriculum: { allowSample: true }, drafts: { limits: limitsWith(over) } });
 const web = dal();
 
 beforeAll(async () => {

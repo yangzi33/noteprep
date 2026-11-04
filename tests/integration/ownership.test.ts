@@ -7,11 +7,12 @@ import { createDb } from "@/lib/server/db";
 import { createWebDal } from "@/lib/server/dal";
 import { inject } from "vitest";
 import { pools } from "./helpers";
+import { DEFAULT_LIMITS as DEFAULT_AI_LIMITS } from "@/lib/server/limits";
 
 const info = inject("testDb");
 const { admin, app, worker } = pools();
 const db = createDb(info.appUrl);
-const dal = createWebDal(db, { limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 50, rateLimitPerHourPerUser: 500 } });
+const dal = createWebDal(db, { aiLimits: DEFAULT_AI_LIMITS, limits: { ...DEV_DEFAULT_LIMITS, maxActiveJobsPerUser: 50, rateLimitPerHourPerUser: 500 } });
 
 afterAll(async () => {
   await Promise.all([admin.end(), app.end(), worker.end(), db.$disconnect()]);
@@ -47,7 +48,7 @@ const input = {
 
 describe("web data access layer: ownership", () => {
   it("exposes exactly the classified functions (guard against unreviewed additions)", () => {
-    expect(Object.keys(dal).sort()).toEqual(["account", "authRate", "curriculum", "drafts", "exports", "generation", "history", "lessonDelete", "lessons"]);
+    expect(Object.keys(dal).sort()).toEqual(["account", "aiActions", "authRate", "curriculum", "drafts", "exports", "generation", "history", "lessonDelete", "lessons"]);
     expect(Object.keys(dal.lessonDelete).sort()).toEqual(["deleteLesson"]); // foreign, missing and deleted lessons attacked in export-retire.test.ts
     expect(Object.keys(dal.generation).sort()).toEqual([...Object.keys(RESOURCE_FUNCTIONS), ...CALLER_ONLY_FUNCTIONS].sort());
     expect(Object.keys(dal.account).sort()).toEqual([...ACCOUNT_CALLER_ONLY_FUNCTIONS].sort());
@@ -56,6 +57,7 @@ describe("web data access layer: ownership", () => {
     expect(Object.keys(dal.drafts).sort()).toEqual(["acceptCandidate", "addQuestions", "createDraft", "createVersion", "getDraftSelection", "getDraftView", "keepOriginal", "listDrafts", "listVersions", "removeQuestion", "requestCandidate", "switchVersion", "tryAnother", "undo"]); // read paths attacked in drafts.test.ts (R17 part), adjustments in drafts-adjust.test.ts, adds in drafts-add-questions.test.ts, versions in drafts-versions.test.ts
     expect(Object.keys(dal.exports).sort()).toEqual(["cancelExport", "confirmExport", "findExportIdByJob", "getExportStatus"]); // attacked in export-security.test.ts and export-cancel.test.ts
     expect(Object.keys(dal.curriculum).sort()).toEqual([...CURRICULUM_PUBLIC_FUNCTIONS].sort());
+    expect(Object.keys(dal.aiActions).sort()).toEqual(["take"]); // the caller's own slot only; attacked in ai-action.test.ts
     expect(Object.keys(dal.authRate).sort()).toEqual([...AUTH_RATE_FUNCTIONS].sort());
   });
 
