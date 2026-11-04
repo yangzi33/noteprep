@@ -128,14 +128,35 @@ All additions are optional, so every existing dataset and its hash stay valid an
 
 - `meta.curriculum.subject`: `math` (default and stored id), `physics`, `chemistry`, `biology` or `science`. `mathematics` is accepted and read as `math`. Only `math` is offered to tutors (D-116): the picker ignores curricula of any other subject, so such data can be loaded and validated without becoming visible.
 - On levels, courses, units and topics: `sourceUrl` (https only, at most 500 characters), `sourceSection` (at most 200), `confidence` (`high`, `medium` or `low`) and `retrievedAt` (ISO date). If any of them is present, `sourceUrl`, `confidence` and `retrievedAt` must all be present (`SOURCE_INCOMPLETE`).
-- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version and is refused for `suggested` datasets, which carry no official codes (D-75).
-- `meta.version.requireSources: true` makes a complete citation mandatory on every course, unit and topic of that version (`SOURCE_REQUIRED`). Use it for researched datasets; leave it off for generic suggested ones.
+- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version. A `suggested` dataset carries none (D-75, `SUGGESTED_OFFICIAL_CODE`) unless it sets `requireSources` (see "Researched datasets" below).
+- `meta.version.requireSources: true` makes a complete citation mandatory on every level, course, unit and topic of that version (`SOURCE_REQUIRED`). Use it for researched datasets; leave it off for generic suggested ones.
 - The `pnpm curricula:build` generator does not emit these fields; they are written by hand or by the future research pipeline into dataset files.
+
+### Researched datasets: key stages, multi-year qualifications, tiers and pathways (RIS-91)
+
+The pipeline rules below exist because a first research pass copied one band's content into each of its years and cited sources by internal labels. They are additive: every field is optional, no existing dataset or hash changes, and the stricter rules apply only when `requireSources` is true unless stated.
+
+Structure (no rule forces one course per year):
+- A level is a grade, a year, or a band of years (a key stage, a two-year qualification). `yearFrom` and `yearTo` give the school years a band covers; set both or neither, whole numbers 0..20, `yearFrom <= yearTo` (`LEVEL_YEARS_INVALID`). No school year may belong to two levels (`LEVEL_YEARS_OVERLAP`), so a band cannot also be entered year by year. Systems with no levels at all stay valid.
+- Any number of courses may share a level. `tier` (Foundation, Higher) and `pathway` (Pure, Applied) tell parallel courses apart. Two courses with the same level, title, tier and pathway are one course entered twice (`COURSE_IDENTITY_DUPLICATE`).
+- Duplicate topic sets (`COURSE_TOPIC_SET_DUPLICATE`, `requireSources` only): two courses of one version with at least 5 topic titles each, and at least 80% of their distinct normalised titles (case and punctuation ignored) in common, are reported as one list entered twice. The exception is parallel tiers of the same level when both name a tier and the tiers differ. Courses with different titles do not escape the check. The shipped, unsourced lists contain such pairs (for example the three Mathematical Literacy years in `za-caps`), so the rule is not enforced for them; `pnpm curriculum:report --list-duplicates` lists them, and also lists identical topic lists that recur across curricula (a warning, never an error).
+
+Sourcing:
+- Each level and course needs `sourceName`, the name exactly as the source prints it (`SOURCE_NAME_REQUIRED`, at most 120 characters). A course with an `officialCode` may omit it.
+- Each level and course needs `placement`: `stated` when the source itself gives the year or grade, `inferred` when NotePrep placed it (`PLACEMENT_REQUIRED`, `PLACEMENT_INVALID`). An inferred placement cannot be `high` confidence (`PLACEMENT_INFERRED_HIGH_CONFIDENCE`).
+- Every cited record needs a `sourceSection` a person can follow: a heading, page or document part in words, with at least one word of four letters (`SOURCE_SECTION_REQUIRED`, `SOURCE_SECTION_UNRESOLVABLE`). Internal labels such as `(S9)` or `tmp-7f3a` fail. This is a lint; it cannot prove the section exists, so reviewers still open the source.
+
+Internal slugs versus official codes:
+- `code` is NotePrep's own slug and starts with `NP-` in every researched dataset, whatever its kind (`SUGGESTED_CODE_PREFIX` for suggested, `INTERNAL_CODE_PREFIX` otherwise).
+- `officialCode` is provenance only: the loader and the data layer never read it for courses, so it reaches neither the picker nor a lesson. In a `suggested` dataset it is allowed only with `requireSources`, which is a deliberate narrowing of the D-75 "no official codes" rule: the code is stored to show where a course came from, not displayed. For every dataset kind, an official code must not be a NotePrep slug in disguise (`OFFICIAL_CODE_IS_SLUG`), must carry `sourceUrl` and `sourceSection` (`OFFICIAL_CODE_UNSOURCED`), and the cited section must contain the code, ignoring case and punctuation (`OFFICIAL_CODE_NOT_IN_SECTION`). Never invent a code.
+
+Own wording (D-75):
+- `pnpm curriculum:overlap-check --sources <file-or-dir> [dataset-dir ...]` reads plain-text extracts of the source documents (kept outside the repository; `.txt` and `.md` files in a directory) and fails if any topic's title and summary, read together, repeat more than 5 consecutive words of one source (case, punctuation and hyphenation ignored; it never fetches anything). Run it on every researched dataset before review. It checks topics only, not unit or course titles.
 
 ## 3b. Checks across datasets and the citation report
 
 - `pnpm curriculum:validate` (CI) also runs `validateCatalogue`: duplicate version ids, version ids that do not end in a version number, one curriculum id described differently, the same education system, subject and name under two curriculum ids, and the size budget (see `docs/curriculum-scale.md`). These fail the run.
-- Courses that appear with the same title and unit list in more than one curriculum are only a warning, because jurisdictions do share courses and today's suggested lists are generic. `pnpm curriculum:report --list-duplicates` names them.
+- Courses that appear with the same title and unit list, or identical topic lists, in more than one curriculum are only a warning, because jurisdictions do share courses and today's suggested lists are generic. `pnpm curriculum:report --list-duplicates` names them.
 - `pnpm curriculum:report` counts cited and uncited records and lists low-confidence ones (`--json` for tooling, `--list-unsourced` to name every uncited record, `--fail-on-low` to exit non-zero when any low-confidence record exists). Today every record is unsourced.
 
 ## 4. Changing a curriculum that is already loaded: new version required
