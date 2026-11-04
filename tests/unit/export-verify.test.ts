@@ -7,6 +7,7 @@ import { validatePackage } from "@/lib/package/validate";
 import type { ExportInput } from "@/lib/server/dal/jobs";
 import { PipelineError } from "../../worker/pipeline";
 import { verifyExportInput } from "../../worker/export";
+import { aiTestPackage } from "../fixtures/ai-package";
 import { testPackage } from "../fixtures/package";
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -38,6 +39,15 @@ describe("verifyExportInput", () => {
     expect(out.rendered.map((d) => d.id)).toEqual(["notes", "worksheet", "solutions"]);
     const shas = prepareExport(pkg).texShas;
     for (const d of out.rendered) expect(sha256Hex(d.tex)).toBe(shas[d.id]);
+  });
+
+  it("accepts a faithful labelled snapshot and re-derives its statuses before rendering", () => {
+    const { pkg } = aiTestPackage();
+    const out = verifyExportInput(inputFor(pkg));
+    expect(out.rendered.map((d) => d.id)).toEqual(["notes", "worksheet", "solutions"]);
+    const tampered = clone(pkg);
+    for (const sec of tampered.sections) for (const b of sec.blocks as { type: string; questionId?: string; status?: string }[]) if (b.type === "ai_solution" && b.questionId === "ex-2") b.status = "code_checked";
+    expect(failure(() => verifyExportInput(inputFor(tampered)))).toMatchObject({ code: "validation_failed", retryable: false });
   });
 
   it("renders with the spec's page format: an a4 snapshot verifies, and an a4 spec over letter hashes is render_mismatch", () => {

@@ -12,6 +12,7 @@ import { createWebDal, createWorkerDal } from "@/lib/server/dal";
 import type { CommitExportInput } from "@/lib/server/dal";
 import { loadDataset } from "@/lib/server/curriculum/load";
 import { createDb } from "@/lib/server/db";
+import type { ItemGate } from "@/lib/server/dal/export";
 import { DEFAULT_LIMITS, type Limits } from "@/lib/server/limits";
 import { pools } from "./helpers";
 
@@ -61,6 +62,8 @@ export interface HarnessOptions {
   /** A fixed draft seed makes two drafts of one request byte-identical (same rendered source, different draft and version ids). */
   fixedSeed?: string;
   enabled?: boolean;
+  /** Flagged and taken-down item fingerprints (the stores arrive with the flag/takedown slice). */
+  itemGate?: ItemGate;
 }
 
 export async function createHarness(options: HarnessOptions = {}) {
@@ -78,7 +81,7 @@ export async function createHarness(options: HarnessOptions = {}) {
     ...(options.clock ? { clock: options.clock } : {}),
     curriculum: { allowSample: true },
     drafts: { limits, ...(options.fixedSeed ? { newSeed: () => options.fixedSeed! } : {}) },
-    exports: { enabled: options.enabled ?? true, limits },
+    exports: { enabled: options.enabled ?? true, limits, ...(options.itemGate ? { itemGate: options.itemGate } : {}) },
   });
   const worker = createWorkerDal(workerDb, { backoff: { baseMs: 1, capMs: 5 }, exportDeadlineGraceSeconds: 0 });
 

@@ -1,8 +1,13 @@
 import { z } from "zod";
 import { DATASET_KINDS } from "@/lib/curriculum/dataset-schema";
+import { ClaimSchema } from "@/lib/math/checkers/types";
 import { ProblemSchema, SolutionSchema, StepSchema } from "@/lib/math/schema";
+import { AI_LIMITS, AiStatusSchema, GenConfigSchema, ItemHashSchema, MathDoc, StoredAnswerSchema } from "@/lib/content/ai-item";
 
+/** Deterministic packages are built (and keep being built) as /1; /2 is the same shape plus the AI blocks below. */
 export const PACKAGE_SCHEMA_VERSION = "lesson-package/1" as const;
+export const PACKAGE_SCHEMA_VERSION_AI = "lesson-package/2" as const;
+export const PACKAGE_SCHEMA_VERSIONS = [PACKAGE_SCHEMA_VERSION, PACKAGE_SCHEMA_VERSION_AI] as const;
 /** `lesson_revision.schema_version` for this content model (1 is the Phase 1 skeleton content). */
 export const PACKAGE_REVISION_SCHEMA_VERSION = 2;
 
@@ -39,6 +44,45 @@ export const SolutionBlock = z.strictObject({
   solution: SolutionSchema,
   steps: z.array(StepSchema).min(1),
 });
+// --- AI blocks (lesson-package/2 only; validatePackage refuses them in /1) --------------------------------
+// Model-written items are stored as MathText ASTs, never as strings. A question and its answer share `questionId` and
+// `itemHash`; the status is recorded on both sides and re-derived by code before export.
+
+const AiDifficulty = z.enum(["basic", "mixed", "challenge"]);
+/** An exercise statement from the model item source: the stem only, never the answer. */
+export const AiQuestionBlock = z.strictObject({
+  type: z.literal("ai_question"),
+  questionId: Id,
+  itemHash: ItemHashSchema,
+  difficulty: AiDifficulty,
+  stem: MathDoc,
+  status: AiStatusSchema,
+});
+/** A worked example from the model item source: statement, answer and steps together (notes only). */
+export const AiWorkedExampleBlock = z.strictObject({
+  type: z.literal("ai_worked_example"),
+  questionId: Id,
+  itemHash: ItemHashSchema,
+  difficulty: AiDifficulty,
+  stem: MathDoc,
+  answer: StoredAnswerSchema,
+  steps: z.array(MathDoc).min(1).max(AI_LIMITS.steps),
+  claim: ClaimSchema.optional(),
+  status: AiStatusSchema,
+  genConfig: GenConfigSchema,
+});
+/** The answer and steps of a model exercise (answer-key edition only). */
+export const AiSolutionBlock = z.strictObject({
+  type: z.literal("ai_solution"),
+  questionId: Id,
+  itemHash: ItemHashSchema,
+  answer: StoredAnswerSchema,
+  steps: z.array(MathDoc).min(1).max(AI_LIMITS.steps),
+  claim: ClaimSchema.optional(),
+  status: AiStatusSchema,
+  genConfig: GenConfigSchema,
+});
+
 /** Where the dataset's statement about this lesson goes; the renderer turns it into text. Never model-written. */
 export const AlignmentBlock = z.strictObject({
   type: z.literal("alignment"),
@@ -86,11 +130,11 @@ export const ObjectivesSection = section("objectives", z.discriminatedUnion("typ
 export const PrerequisitesSection = section("prerequisites", z.discriminatedUnion("type", [ParagraphBlock, ListBlock]));
 export const ExplanationSection = section("explanation", ProseBlocks);
 export const DerivationSection = section("derivation", ProseBlocks);
-export const WorkedExamplesSection = section("worked_examples", z.discriminatedUnion("type", [ParagraphBlock, WorkedExampleBlock, NoteBlock]));
+export const WorkedExamplesSection = section("worked_examples", z.discriminatedUnion("type", [ParagraphBlock, WorkedExampleBlock, AiWorkedExampleBlock, NoteBlock]));
 export const TeachingSequenceSection = section("teaching_sequence", z.discriminatedUnion("type", [ListBlock, TimingBlock, ParagraphBlock]));
 export const CommonMistakesSection = section("common_mistakes", z.discriminatedUnion("type", [ListBlock, ParagraphBlock, NoteBlock]));
-export const ExercisesSection = section("exercises", z.discriminatedUnion("type", [ParagraphBlock, QuestionBlock, WritingSpaceBlock]));
-export const SolutionsSection = section("solutions", z.discriminatedUnion("type", [ParagraphBlock, SolutionBlock]));
+export const ExercisesSection = section("exercises", z.discriminatedUnion("type", [ParagraphBlock, QuestionBlock, AiQuestionBlock, WritingSpaceBlock]));
+export const SolutionsSection = section("solutions", z.discriminatedUnion("type", [ParagraphBlock, SolutionBlock, AiSolutionBlock]));
 export const AlignmentSection = section("alignment", AlignmentBlock);
 
 export const SectionSchema = z.discriminatedUnion("kind", [
@@ -106,6 +150,9 @@ export const SectionSchema = z.discriminatedUnion("kind", [
   AlignmentSection,
 ]);
 export type Section = z.infer<typeof SectionSchema>;
+export type AiQuestion = z.infer<typeof AiQuestionBlock>;
+export type AiWorkedExample = z.infer<typeof AiWorkedExampleBlock>;
+export type AiSolution = z.infer<typeof AiSolutionBlock>;
 export type SectionKind = Section["kind"];
 export type SolutionsSection = z.infer<typeof SolutionsSection>;
 export type ExercisesSection = z.infer<typeof ExercisesSection>;
@@ -126,7 +173,7 @@ export const DOCUMENT_SECTION_KINDS = {
 } as const satisfies Record<DocumentKind, readonly SectionKind[]>;
 
 export const PackageSchema = z.strictObject({
-  schemaVersion: z.literal(PACKAGE_SCHEMA_VERSION),
+  schemaVersion: z.enum(PACKAGE_SCHEMA_VERSIONS),
   /** The request that produced it and the immutable curriculum snapshot (validated by the context hash). */
   request: z.unknown(),
   context: z.unknown(),

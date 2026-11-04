@@ -30,6 +30,8 @@ const GENERATION_ERRORS: Record<string, string> = {
   PACKAGE_BUILD_FAILED: "We could not build this lesson from the selected topic.",
   EXPORT_CONFLICT: "This draft changed after you opened the confirmation page. Review it again before you export. Nothing was used.",
   EXPORT_NOT_VERIFIED: "This draft is not fully checked, so it cannot be exported. Nothing was used.",
+  EXPORT_ITEM_FLAGGED: "You flagged a question in this draft. Replace it before you export. Nothing was used.",
+  EXPORT_ITEM_TAKEN_DOWN: "A question in this draft has been withdrawn. Replace it before you export. Nothing was used.",
   EXPORT_RENDER_FAILED: "We could not lay out these documents. Nothing was used.",
   EXPORT_BUSY: "An export of this draft is being stopped or finished. Please try again in a moment.",
   EXPORT_UNAVAILABLE: "This export failed several times and cannot be retried. Nothing was used. Try changing the draft.",

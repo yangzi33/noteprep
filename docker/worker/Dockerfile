@@ -33,6 +33,7 @@ COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker
 COPY tests/latex ./tests/latex
 COPY tests/stubs ./tests/stubs
 COPY tests/fixtures/package.ts ./tests/fixtures/package.ts
+COPY tests/fixtures/ai-package.ts ./tests/fixtures/ai-package.ts
 COPY tests/fixtures/math-text/samples-v2.json ./tests/fixtures/math-text/samples-v2.json
 COPY docker/latex ./docker/latex
 COPY vitest.host.config.mts ./
