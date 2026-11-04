@@ -1,8 +1,9 @@
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import { noClaimOrigin } from "@/lib/curriculum/notice";
-import type { LessonPackage, Section } from "@/lib/package/schema";
+import type { AiQuestion, LessonPackage, Section } from "@/lib/package/schema";
 import { effectiveSettings } from "@/lib/package/effective";
 import { documentView, type DocumentView } from "@/lib/package/views";
+import { aiLegendTex, aiQuestionTex, aiSolutionTex, aiWorkedExampleTex, isMarked } from "./ai-render";
 import type { DocumentKind } from "@/lib/package/schema";
 import { equationTex, operationText, solutionText } from "./math";
 import { firstDisallowedControlSequence, firstUnsafeTexConstruct } from "./allowlist";
@@ -48,7 +49,7 @@ function alignmentTex(block: Extract<Block, { type: "alignment" }>, compact: boo
   return compact ? "No curriculum alignment is claimed." : `No curriculum alignment is claimed for this material.${origin}`;
 }
 
-function blockTex(block: Block, ctx: { question: number; compact: boolean; problems: Map<string, string> }): string {
+function blockTex(block: Block, ctx: { question: number; compact: boolean; problems: Map<string, string>; aiQuestions: Map<string, AiQuestion> }): string {
   switch (block.type) {
     case "paragraph":
       return `${t(block.text)}\n`;
@@ -94,9 +95,23 @@ function blockTex(block: Block, ctx: { question: number; compact: boolean; probl
         "",
       ].join("\n");
     }
+    case "ai_question":
+      ctx.question++;
+      return aiQuestionTex(ctx.question, block);
+    case "ai_worked_example":
+      ctx.question++;
+      return aiWorkedExampleTex(ctx.question, block);
+    case "ai_solution":
+      ctx.question++;
+      return aiSolutionTex(ctx.question, block, ctx.aiQuestions.get(block.questionId));
     case "alignment":
       return alignmentTex(block, ctx.compact);
   }
+}
+
+/** True when the document shows at least one model item that is not checked by code (the legend is only worth a line then). */
+function hasMarkedItem(view: DocumentView): boolean {
+  return view.sections.some((s) => (s.blocks as Block[]).some((b) => (b.type === "ai_worked_example" || b.type === "ai_solution") && isMarked(b.status)));
 }
 
 function headerTex(view: DocumentView, pkg: LessonPackage): string {
@@ -107,6 +122,7 @@ function headerTex(view: DocumentView, pkg: LessonPackage): string {
   else lines.push("\\smallskip", `${Math.trunc(effective.durationMinutes)} minutes \\quad ${t(DIFFICULTY_LABEL[effective.difficulty])}`);
   lines.push("\\end{center}", "");
   if (view.document !== "worksheet") lines.push("\\textit{AI-assisted material. Review it before teaching.}", "");
+  if (view.document !== "worksheet" && hasMarkedItem(view)) lines.push("", aiLegendTex(), "");
   return lines.join("\n");
 }
 
@@ -135,13 +151,17 @@ export function assertTexIsSafe(tex: string, document: DocumentKind, runningTitl
 export function renderDocument(pkg: LessonPackage, id: DocumentKind, pageFormat: PageFormat = "letter"): RenderedDocument {
   const view = documentView(pkg, id);
   const problems = new Map<string, string>();
+  const aiQuestions = new Map<string, AiQuestion>();
   for (const section of pkg.sections) {
     if (section.kind !== "exercises") continue;
-    for (const block of section.blocks) if (block.type === "question") problems.set(block.questionId, equationTex(block.problem.equation));
+    for (const block of section.blocks) {
+      if (block.type === "question") problems.set(block.questionId, equationTex(block.problem.equation));
+      else if (block.type === "ai_question") aiQuestions.set(block.questionId, block);
+    }
   }
   const compactAlignment = id !== "notes";
   const sections = view.sections.map((section) => {
-    const ctx = { question: 0, compact: compactAlignment, problems };
+    const ctx = { question: 0, compact: compactAlignment, problems, aiQuestions };
     const heading = section.kind === "alignment" ? "" : `\\section*{${t(section.title)}}\n`;
     // A question and its writing space form one unbreakable box (a minipage; samepage still allows breaks at glue).
     const blocks = section.blocks as Block[];
@@ -149,7 +169,7 @@ export function renderDocument(pkg: LessonPackage, id: DocumentKind, pageFormat:
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i]!;
       const next = blocks[i + 1];
-      if (block.type === "question" && next?.type === "writing_space") {
+      if ((block.type === "question" || block.type === "ai_question") && next?.type === "writing_space") {
         parts.push(["\\begin{minipage}{\\linewidth}", blockTex(block, ctx), blockTex(next, ctx), "\\end{minipage}", ""].join("\n"));
         i++;
       } else parts.push(blockTex(block, ctx));

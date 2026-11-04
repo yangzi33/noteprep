@@ -2,14 +2,17 @@ import { MATHTEXT_LIMITS, type MathTextErrorCode } from "@/lib/math-text/ast";
 
 export type CmdName =
   | "alpha" | "beta" | "theta" | "pi" | "le" | "ge" | "neq" | "pm" | "times" | "cdot" | "div" | "frac" | "sqrt" | "circ"
-  | "sin" | "cos" | "tan" | "log" | "ln" | "ldots";
-export type OpChar = "+" | "-" | "=" | "<" | ">" | "/" | "," | "^" | "_" | "|" | "(" | ")" | "[" | "]" | "{" | "}";
+  | "sin" | "cos" | "tan" | "log" | "ln" | "ldots"
+  | "mu" | "sigma" | "lambda" | "sec" | "csc" | "cot" | "arcsin" | "arccos" | "arctan" | "to" | "approx" | "in" | "mid" | "cup" | "cap"
+  | "infty" | "binom" | "bar" | "hat" | "lim" | "sum" | "int";
+export type OpChar = "+" | "-" | "=" | "<" | ">" | "/" | "," | "^" | "_" | "|" | "(" | ")" | "[" | "]" | "{" | "}" | "'" | "!";
 
 export type Token =
   | { k: "num"; v: string; at: number }
   | { k: "letter"; v: string; at: number }
   | { k: "cmd"; v: CmdName; at: number }
   | { k: "pct"; at: number }
+  | { k: "thin"; at: number } // `\,`, only meaningful before an integral's differential
   | { k: "op"; v: OpChar; at: number };
 
 export type TokenizeResult = { ok: true; tokens: Token[] } | { ok: false; code: MathTextErrorCode; at: number };
@@ -17,8 +20,10 @@ export type TokenizeResult = { ok: true; tokens: Token[] } | { ok: false; code: 
 const CMD_NAMES: ReadonlySet<string> = new Set<CmdName>([
   "alpha", "beta", "theta", "pi", "le", "ge", "neq", "pm", "times", "cdot", "div", "frac", "sqrt", "circ",
   "sin", "cos", "tan", "log", "ln", "ldots",
+  "mu", "sigma", "lambda", "sec", "csc", "cot", "arcsin", "arccos", "arctan", "to", "approx", "in", "mid", "cup", "cap",
+  "infty", "binom", "bar", "hat", "lim", "sum", "int",
 ]);
-const OP_CHARS: ReadonlySet<string> = new Set<OpChar>(["+", "-", "=", "<", ">", "/", ",", "^", "_", "|", "(", ")", "[", "]", "{", "}"]);
+const OP_CHARS: ReadonlySet<string> = new Set<OpChar>(["+", "-", "=", "<", ">", "/", ",", "^", "_", "|", "(", ")", "[", "]", "{", "}", "'", "!"]);
 
 const isDigit = (c: number): boolean => c >= 0x30 && c <= 0x39;
 const isLetter = (c: number): boolean => (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
@@ -60,6 +65,9 @@ export function tokenizeMath(src: string, offset: number): TokenizeResult {
       if (next < 0) return fail("math_bad_char", i);
       if (next === 0x25) {
         tokens.push({ k: "pct", at: offset + i });
+        i += 2;
+      } else if (next === 0x2c) {
+        tokens.push({ k: "thin", at: offset + i });
         i += 2;
       } else if (isLetter(next)) {
         let j = i + 1;

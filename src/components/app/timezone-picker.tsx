@@ -20,6 +20,8 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
   const hintId = hint ? `${id}-hint` : undefined;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
+  const pickerRef = React.useRef<HTMLDivElement>(null);
+  const pointerInsideRef = React.useRef(false);
   const [open, setOpen] = React.useState(false);
   // Filter only after the tutor types; opening with a chosen zone shows the full list so they can browse.
   const [query, setQuery] = React.useState<string | null>(null);
@@ -36,6 +38,24 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
     // optionId is derived from id, which is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!pickerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onPointerUp = () => {
+      pointerInsideRef.current = false;
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [open]);
 
   const choose = (zone: string) => {
     if (inputRef.current) inputRef.current.value = zone;
@@ -83,7 +103,9 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
   };
 
   const onBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+    // Native scrollbar drags blur the input with no relatedTarget. Keep the list
+    // open while that pointer interaction is still happening inside the picker.
+    if (!pointerInsideRef.current && !e.currentTarget.contains(e.relatedTarget)) setOpen(false);
   };
 
   return (
@@ -91,7 +113,14 @@ export function TimeZonePicker({ label, name, zones, defaultValue = "", placehol
       <label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </label>
-      <div className="relative" onBlur={onBlur}>
+      <div
+        ref={pickerRef}
+        className="relative"
+        onBlur={onBlur}
+        onPointerDownCapture={() => {
+          pointerInsideRef.current = true;
+        }}
+      >
         <input
           ref={inputRef}
           id={id}

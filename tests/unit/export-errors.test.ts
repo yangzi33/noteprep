@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { DeadlineExceeded, domainErrorCode, ExportBusy, ExportConflict, ExportDisabled, ExportNotVerified, ExportRenderFailed, ExportUnavailable } from "@/lib/domain/errors";
+import { DeadlineExceeded, domainErrorCode, ExportBusy, ExportConflict, ExportDisabled, ExportItemFlagged, ExportItemTakenDown, ExportNotVerified, ExportRenderFailed, ExportUnavailable } from "@/lib/domain/errors";
 import { EXPORT_FAILURE_MEMO_THRESHOLD, NON_RETRYABLE_EXPORT_FAILURES } from "@/lib/domain/export-spec";
 import { CONFIRM_REDIRECT_CODES, confirmErrorTarget, confirmSuccessHref } from "@/lib/ui/export-confirm";
 import { describeOutcome, FAILURE_REASONS, generationErrorMessage } from "@/lib/ui/messages";
 
 describe("export errors and messages", () => {
   it("each typed error carries its stable code and has its own user message", () => {
-    const errors = [new ExportConflict(), new ExportNotVerified(), new ExportRenderFailed("x"), new ExportBusy(), new ExportUnavailable(), new ExportDisabled()];
+    const errors = [new ExportConflict(), new ExportNotVerified(), new ExportRenderFailed("x"), new ExportBusy(), new ExportUnavailable(), new ExportDisabled(), new ExportItemFlagged(), new ExportItemTakenDown()];
     for (const error of errors) {
       const c = domainErrorCode(error)!;
       expect(c).toMatch(/^EXPORT_/);
@@ -55,6 +55,8 @@ describe("every confirm error code (exhaustive table)", () => {
     EXPORT_UNAVAILABLE: { message: /failed several times/, notUsed: true, to: "confirm" },
     EXPORT_DISABLED: { message: /export is paused/, notUsed: false, to: "confirm" },
     EXPORT_NOT_VERIFIED: { message: /not fully checked/, notUsed: true, to: "confirm" },
+    EXPORT_ITEM_FLAGGED: { message: /You flagged a question/, notUsed: true, to: "confirm" },
+    EXPORT_ITEM_TAKEN_DOWN: { message: /has been withdrawn/, notUsed: true, to: "confirm" },
     EXPORT_RENDER_FAILED: { message: /could not lay out/, notUsed: true, to: "confirm" },
     IDEMPOTENCY_KEY_REUSED: { message: /already submitted with different details/, notUsed: false, to: "confirm" },
     ACCOUNT_NOT_ACTIVE: { message: /cannot create new lessons/, notUsed: false, to: "confirm" },

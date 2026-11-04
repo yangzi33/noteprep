@@ -13,6 +13,8 @@
 !tests/latex/
 !tests/stubs/
 !tests/fixtures/package.ts
+!tests/fixtures/ai-package.ts
+!tests/fixtures/math-text/samples-v2.json
 !docker/latex/
 !vitest.host.config.mts
 src/generated/

@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import pg from "pg";
@@ -149,4 +150,61 @@ describe("hiding options with nothing usable below them", () => {
     const topic = (await dal.getSelectionOptions({ versionId, levelId: dead.id, courseId: course.id, unitId: unit.id })).options[0]!;
     await expect(dal.resolveCurriculumContext({ versionId, topicId: topic.id })).rejects.toBeInstanceOf(TopicUnsupported);
   });
+});
+
+// "No visible change" guard: everything a tutor can reach in the picker (the selectable curricula and, inside them, every
+// step the page loads with hideUnusable) is compared with a committed golden file. Adding courses, units, topics or
+// provenance fields to the data must leave this output byte-identical until a topic gains a capability. After an
+// intended change run with UPDATE_SELECTABLE_GOLDEN=1 and review the diff.
+const goldenFile = path.join(root, "tests/fixtures/curricula/selectable-golden.json");
+
+async function selectableOutput() {
+  const curricula = await dal.listCurricula({ selectableOnly: true });
+  const out = [];
+  for (const c of curricula) {
+    const versionId = c.latestVersionId;
+    const steps = await dal.getSelectionSteps(versionId);
+    const levels = steps.includes("level") ? (await dal.getSelectionOptions({ versionId }, { hideUnusable: true })).options : [];
+    const levelIds: (string | undefined)[] = steps.includes("level") ? levels.map((l) => l.id) : [undefined];
+    const tree = [];
+    for (const levelId of levelIds) {
+      const courses = (await dal.getSelectionOptions({ versionId, levelId }, { hideUnusable: true })).options;
+      const courseTree = [];
+      for (const course of courses) {
+        const units = (await dal.getSelectionOptions({ versionId, levelId, courseId: course.id }, { hideUnusable: true })).options;
+        const unitTree = [];
+        for (const unit of units) {
+          const topics = (await dal.getSelectionOptions({ versionId, levelId, courseId: course.id, unitId: unit.id }, { hideUnusable: true })).options;
+          unitTree.push({ unit, topics });
+        }
+        courseTree.push({ course, units: unitTree });
+      }
+      tree.push({ levelId: levelId ?? null, level: levels.find((l) => l.id === levelId) ?? null, courses: courseTree });
+    }
+    out.push({ curriculum: JSON.parse(JSON.stringify(c)), steps, tree });
+  }
+  return out;
+}
+
+describe("selectable picker output is unchanged", () => {
+  it("matches the committed golden file", async () => {
+    // One entry per selectable curriculum: counts for a readable failure and a hash of everything the picker can show.
+    const actual = (await selectableOutput()).map((entry) => {
+      const courses = entry.tree.flatMap((l) => l.courses);
+      const units = courses.flatMap((c) => c.units);
+      const topics = units.flatMap((u) => u.topics);
+      return {
+        id: entry.curriculum.id,
+        latestVersionId: entry.curriculum.latestVersionId,
+        levels: entry.tree.filter((l) => l.level !== null).length,
+        courses: courses.length,
+        units: units.length,
+        topics: topics.length,
+        supportedTopics: topics.filter((t) => t.supported).length,
+        sha256: createHash("sha256").update(JSON.stringify(entry)).digest("hex"),
+      };
+    });
+    if (process.env.UPDATE_SELECTABLE_GOLDEN === "1") writeFileSync(goldenFile, `${JSON.stringify(actual, null, 2)}\n`);
+    expect(actual).toEqual(JSON.parse(readFileSync(goldenFile, "utf8")));
+  }, 60_000);
 });

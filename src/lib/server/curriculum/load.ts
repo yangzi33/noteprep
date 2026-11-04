@@ -91,7 +91,7 @@ export async function loadDataset(db: Db, dataset: Dataset, options: LoadOptions
       const curriculum = await tx.curriculum.findUnique({ where: { id: meta.curriculum.id } });
       if (!curriculum) {
         await tx.curriculum.create({ data: { id: meta.curriculum.id, educationSystemId: meta.educationSystem.id, subject: meta.curriculum.subject, name: meta.curriculum.name } });
-      } else if (curriculum.name !== meta.curriculum.name || curriculum.educationSystemId !== meta.educationSystem.id) {
+      } else if (curriculum.name !== meta.curriculum.name || curriculum.subject !== meta.curriculum.subject || curriculum.educationSystemId !== meta.educationSystem.id) {
         throw new DatasetRejected("REFERENCE_MISMATCH", `curriculum ${curriculum.id} already exists with different details`);
       }
 
@@ -123,10 +123,10 @@ export async function loadDataset(db: Db, dataset: Dataset, options: LoadOptions
           reviewScope: v.review?.scope ?? null,
         },
       });
-      await tx.curriculumLevel.createMany({ data: structure.levels.map((l) => ({ ...l, versionId })) });
-      await tx.curriculumCourse.createMany({ data: structure.courses.map((c) => ({ ...c, levelId: c.levelId ?? null, versionId })) });
-      await tx.curriculumUnit.createMany({ data: structure.units.map((u) => ({ ...u, code: u.code ?? null, versionId })) });
-      await tx.curriculumTopic.createMany({ data: structure.topics.map((t) => ({ ...t, versionId })) });
+      await tx.curriculumLevel.createMany({ data: structure.levels.map((l) => ({ id: l.id, label: l.label, kind: l.kind, ordinal: l.ordinal, versionId })) });
+      await tx.curriculumCourse.createMany({ data: structure.courses.map((c) => ({ id: c.id, levelId: c.levelId ?? null, code: c.code, title: c.title, ordinal: c.ordinal, versionId })) });
+      await tx.curriculumUnit.createMany({ data: structure.units.map((u) => ({ id: u.id, courseId: u.courseId, code: u.code ?? null, title: u.title, ordinal: u.ordinal, versionId })) });
+      await tx.curriculumTopic.createMany({ data: structure.topics.map((t) => ({ id: t.id, unitId: t.unitId, title: t.title, summary: t.summary, ordinal: t.ordinal, versionId })) });
       await tx.curriculumObjective.createMany({ data: objectives.objectives.map((o) => ({ ...o, sourcePage: o.sourcePage ?? null, versionId })) });
       await tx.topicObjective.createMany({ data: mappings.topicObjectives.map((m) => ({ ...m, note: m.note ?? null, versionId })) });
       await tx.topicConcept.createMany({ data: mappings.topicConcepts.map((m) => ({ ...m, note: m.note ?? null, versionId })) });

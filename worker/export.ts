@@ -64,7 +64,10 @@ export function verifyExportInput(input: ExportInput, env: VerifyEnv & { jobId?:
     throw new PipelineError("snapshot_invalid", false);
   }
 
-  if (validatePackage(pkg).overall !== "verified") throw new PipelineError("validation_failed", false);
+  // TODO(B-f): the worker has no item gate yet; a takedown recorded after confirmExport is not seen here (see docs/ai-items.md).
+  // the worker re-derives every status: `labelled` passes only when the same checks that ran at confirmation still pass
+  const overall = validatePackage(pkg).overall;
+  if (overall !== "verified" && overall !== "labelled") throw new PipelineError("validation_failed", false);
 
   const rendered: RenderedDocument[] = [];
   for (const doc of spec.documents) {

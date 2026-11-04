@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SUBJECTS } from "./subjects";
 
 /** Ids are stable, lowercase, and safe to use in URLs and file names. */
 export const ID_PATTERN = /^[a-z0-9][a-z0-9@._/-]{0,199}$/;
@@ -16,6 +17,23 @@ const Text = z.string();
 export const DATASET_KINDS = ["real", "sample", "synthetic", "suggested"] as const;
 export type DatasetKind = (typeof DATASET_KINDS)[number];
 
+export const CONFIDENCE = ["high", "medium", "low"] as const;
+export type Confidence = (typeof CONFIDENCE)[number];
+
+/** `mathematics` is accepted as an alias of the stored id `math`, so research output maps directly. */
+const SubjectField = z.enum(SUBJECTS).or(z.literal("mathematics").transform(() => "math" as const));
+
+/**
+ * Optional citation carried by levels, courses, units and topics. All fields are plain strings here so the validator can
+ * report every problem with a code; a record that carries any of them must carry the required ones (see validate-dataset).
+ */
+const Provenance = {
+  sourceUrl: z.string().optional(),
+  sourceSection: z.string().optional(),
+  confidence: z.string().optional(),
+  retrievedAt: z.string().optional(),
+};
+
 export const COVERAGE = ["full", "partial"] as const;
 export type Coverage = (typeof COVERAGE)[number];
 
@@ -25,7 +43,7 @@ export type Coverage = (typeof COVERAGE)[number];
 export const DatasetMeta = z.object({
   schemaVersion: z.literal(1),
   educationSystem: z.object({ id: Id, name: Text, regionCode: Text }),
-  curriculum: z.object({ id: Id, name: Text, subject: z.literal("math") }),
+  curriculum: z.object({ id: Id, name: Text, subject: SubjectField }),
   version: z.object({
     id: Id,
     label: Text,
@@ -39,15 +57,19 @@ export const DatasetMeta = z.object({
     }),
     licenseNote: Text,
     supersedes: Id.optional(),
+    /** When true every course, unit and topic must carry a citation (new researched datasets set this). */
+    requireSources: z.boolean().optional(),
     review: z.object({ by: Text, at: z.string(), scope: Text }).optional(),
   }),
 });
 
 export const Structure = z.object({
-  levels: z.array(z.object({ id: Id, label: Text, kind: Text, ordinal: z.number().int() })),
-  courses: z.array(z.object({ id: Id, levelId: Id.optional(), code: Text, title: Text, ordinal: z.number().int() })),
-  units: z.array(z.object({ id: Id, courseId: Id, code: Text.optional(), title: Text, ordinal: z.number().int() })),
-  topics: z.array(z.object({ id: Id, unitId: Id, title: Text, summary: Text, ordinal: z.number().int() })),
+  levels: z.array(z.object({ id: Id, label: Text, kind: Text, ordinal: z.number().int(), ...Provenance })),
+  courses: z.array(
+    z.object({ id: Id, levelId: Id.optional(), code: Text, officialCode: Text.optional(), title: Text, ordinal: z.number().int(), ...Provenance }),
+  ),
+  units: z.array(z.object({ id: Id, courseId: Id, code: Text.optional(), title: Text, ordinal: z.number().int(), ...Provenance })),
+  topics: z.array(z.object({ id: Id, unitId: Id, title: Text, summary: Text, ordinal: z.number().int(), ...Provenance })),
 });
 
 export const Objectives = z.object({
@@ -80,5 +102,7 @@ export const LIMITS = {
   name: 200, // version label, curriculum / education system name, source title / publisher
   licenseNote: 500,
   scope: 300, // review scope
-  code: 60, // unit code, level kind
+  code: 60, // unit code, level kind, official course code
+  sourceUrl: 500,
+  sourceSection: 200,
 } as const;

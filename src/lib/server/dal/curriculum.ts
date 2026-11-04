@@ -2,6 +2,7 @@ import "server-only";
 import { CAPABILITIES, capabilityFor } from "@/lib/curriculum/capabilities";
 import { alignmentClaimsAllowedFor, withContextHash, type CurriculumContext } from "@/lib/curriculum/context";
 import type { Coverage, DatasetKind } from "@/lib/curriculum/dataset-schema";
+import { ACTIVE_SUBJECTS } from "@/lib/curriculum/subjects";
 import { CurriculumNotFound, InvalidSelection, TopicUnsupported } from "@/lib/domain/errors";
 import type { Db } from "../db";
 import type { Tx } from "./tx";
@@ -74,7 +75,7 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
 
   async function loadTree(versionId: string, db: CurriculumClient = defaultDb) {
     const version = await db.curriculumVersion.findFirst({
-      where: { id: versionId, status: "published", datasetKind: { in: kinds } },
+      where: { id: versionId, status: "published", datasetKind: { in: kinds }, curriculum: { subject: { in: [...ACTIVE_SUBJECTS] } } },
       include: { curriculum: { include: { educationSystem: true } } },
     });
     if (!version) throw new CurriculumNotFound();
@@ -116,7 +117,7 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
     /** Published curricula visible here, with their versions (latest first). */
     async listCurricula(listOptions: { selectableOnly?: boolean } = {}): Promise<CurriculumSummary[]> {
       const curricula = await defaultDb.curriculum.findMany({
-        where: { versions: { some: { status: "published", datasetKind: { in: kinds } } } },
+        where: { subject: { in: [...ACTIVE_SUBJECTS] }, versions: { some: { status: "published", datasetKind: { in: kinds } } } },
         include: {
           educationSystem: true,
           versions: { where: { status: "published", datasetKind: { in: kinds } }, orderBy: { publishedAt: "desc" } },
@@ -188,17 +189,20 @@ export function createCurriculumDal(defaultDb: Db, options: CurriculumDalOptions
     async getSelectionOptions(input: SelectionInput, selectionOptions: { hideUnusable?: boolean } = {}): Promise<SelectionOptions> {
       const tree = await loadTree(input.versionId);
       const hasLevels = tree.levels.length > 0;
-      const topicSupported = (topicId: string) => tree.supportedConcepts.has(topicId);
-      const unitSupported = (unitId: string) => tree.topics.some((t) => t.unitId === unitId && topicSupported(t.id));
-      const courseSupported = (courseId: string) => tree.units.some((u) => u.courseId === courseId && unitSupported(u.id));
+      // One pass over the rows instead of a scan per option: with many courses and topics the repeated scans grow quadratically.
+      const supportedUnits = new Set(tree.topics.filter((t) => tree.supportedConcepts.has(t.id)).map((t) => t.unitId));
+      const supportedCourses = new Set(tree.units.filter((u) => supportedUnits.has(u.id)).map((u) => u.courseId));
+      const unitSupported = (unitId: string) => supportedUnits.has(unitId);
+      const courseSupported = (courseId: string) => supportedCourses.has(courseId);
 
+      const levelsWithSupport = new Set(tree.courses.filter((c) => c.levelId !== null && courseSupported(c.id)).map((c) => c.levelId));
       const { level, course, unit } = resolveChain(tree, input);
       if (hasLevels && !level) {
         return {
           versionId: input.versionId,
           step: "level",
           options: tree.levels
-            .map((l) => ({ id: l.id, label: l.label, supported: tree.courses.some((c) => c.levelId === l.id && courseSupported(c.id)) }))
+            .map((l) => ({ id: l.id, label: l.label, supported: levelsWithSupport.has(l.id) }))
             .filter((o) => !selectionOptions.hideUnusable || o.supported),
         };
       }

@@ -14,7 +14,7 @@ import { probe } from "./helpers";
  * What it proves: every expected fragment is present, in document order, and a few strings occur exactly as often as the
  * package says. What it does NOT prove: that the PDF holds nothing else (full-text equality). Extra text could pass the
  * ordered-fragment check; the exact counts and the worksheet leak check narrow that, they do not close it.
- * It must not import from tests/ outside tests/latex: the host test image copies only tests/latex and tests/fixtures/package.ts.
+ * It must not import from tests/ outside tests/latex: the host test image copies only tests/latex, tests/fixtures/package.ts and tests/fixtures/math-text/samples-v2.json (see the hosttest stage in docker/worker/Dockerfile).
  */
 
 type Piece = string | { frac: [string, string] };
@@ -209,6 +209,10 @@ function blockFragments(block: Block, ctx: { n: number; compact: boolean; proble
         fragment(`${ctx.where} solution ${ctx.n} answer`, "Answer:", ...answerPieces(block.solution)),
       ];
     }
+    case "ai_question":
+    case "ai_worked_example":
+    case "ai_solution":
+      throw new Error("proof: model-written items are covered by tests/latex/ai-items.test.ts, not by this deterministic proof");
     case "alignment": {
       const name = `${block.curriculumName} (${block.versionLabel})`;
       if (block.claim === "aligned") {

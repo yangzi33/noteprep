@@ -109,8 +109,8 @@ describe("the worker image", () => {
       // Only what .dockerignore allows: no env files, VCS data, docs, host node_modules or the host-generated Prisma client.
       expect(entries.filter((e) => /(^|\/)\.env/.test(e) || /(^|\/)\.git(\/|$)/.test(e))).toEqual([]);
       const top = [...new Set(entries.map((e) => e.split("/")[0]!))].sort();
-      // tests/ is limited to what the hosttest image needs: the sandbox tests, the server-only stub and one fixture module.
-      expect(entries.filter((e) => e.startsWith("tests/") && !/^tests\/(latex\/|stubs\/|fixtures\/package\.ts$)/.test(e))).toEqual([]);
+      // tests/ is limited to what the hosttest image needs: the sandbox tests, the server-only stub, two fixture modules (the lesson and AI packages) and the MathText v2 samples fixture.
+      expect(entries.filter((e) => e.startsWith("tests/") && !/^tests\/(latex\/|stubs\/|fixtures\/(ai-)?package\.ts$|fixtures\/math-text\/samples-v2\.json$)/.test(e))).toEqual([]);
       expect(entries.some((e) => e.startsWith("tests/latex/")) && entries.includes("tests/stubs/server-only.ts")).toBe(true);
       expect(top).toEqual([".npmrc", "docker", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "prisma", "prisma7.config.ts", "scripts", "src", "tests", "tsconfig.json", "vitest.host.config.mts", "worker"]);
       expect(entries.some((e) => e.startsWith("src/generated"))).toBe(false);

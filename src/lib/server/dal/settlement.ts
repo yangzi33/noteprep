@@ -227,6 +227,7 @@ export function createSettlementDal(db: Db) {
           if (doc.tex.sha256 !== texShas[doc.document]) throw new ManifestIncomplete(`${doc.document} was not rendered from the confirmed snapshot`);
         }
 
+        const labelled = (snapshot.validationReport as { overall?: unknown } | null)?.overall === "labelled";
         await tx.lessonRevision.create({
           data: {
             id: input.revisionId,
@@ -238,7 +239,10 @@ export function createSettlementDal(db: Db) {
             content: snapshot.content as Prisma.InputJsonValue,
             contentHash: snapshot.packageHash,
             validationReport: snapshot.validationReport as Prisma.InputJsonValue,
-            validationStatus: "verified",
+            // the enum has no `labelled`: a package with model items that no exact check covers is recorded as not fully verified (the report keeps the exact state)
+            validationStatus: labelled ? "unverified" : "verified",
+            // the schema requires an acknowledgement for any unverified final revision: the tutor confirmed this export knowing the labels
+            ...(labelled ? { acknowledgement: { kind: "labelled_items", via: "export_confirmation", exportId: exportRow.id } as Prisma.InputJsonValue } : {}),
             templateVersion: spec.templateVersion,
             validatorVersion: snapshot.validatorVersion,
             generationMeta: {

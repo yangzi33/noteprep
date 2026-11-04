@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { Dataset, DatasetMeta, Mappings, Objectives, Structure } from "./dataset-schema";
 
@@ -36,4 +36,15 @@ export function readDatasetDir(dir: string): Dataset {
     objectives: readJson(dir, "objectives.json", Objectives),
     mappings: readJson(dir, "mappings.json", Mappings),
   } satisfies Dataset;
+}
+
+/** Every directory under the given roots that holds a dataset (a `dataset.json`), sorted by path. */
+export function findDatasetDirs(root: string): string[] {
+  if (!existsSync(root)) return [];
+  if (existsSync(path.join(root, "dataset.json"))) return [root];
+  return readdirSync(root)
+    .sort()
+    .map((name) => path.join(root, name))
+    .filter((p) => statSync(p).isDirectory())
+    .flatMap(findDatasetDirs);
 }

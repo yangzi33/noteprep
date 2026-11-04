@@ -9,6 +9,8 @@ import {
   ExportBusy,
   ExportConflict,
   ExportDisabled,
+  ExportItemFlagged,
+  ExportItemTakenDown,
   ExportNotVerified,
   ExportRenderFailed,
   ExportUnavailable,
@@ -37,6 +39,7 @@ import type { LessonRequestV2 } from "@/lib/domain/lesson-request";
 import type { CurriculumContext } from "@/lib/curriculum/context";
 import { Prisma } from "@/generated/prisma/client";
 import { packageContentHash } from "@/lib/package/adjust";
+import { aiFingerprints } from "@/lib/package/ai-blocks";
 import { validatePackage } from "@/lib/package/validate";
 import type { AuthedCtx } from "../auth/context";
 import type { Db } from "../db";
@@ -62,7 +65,20 @@ import { hasSqlState, inTransaction, type Tx } from "./tx";
 export const EXPORT_CONFIRM_OPERATION = "export.confirm";
 const EXPORT_CONFIRM_VERSION = 1;
 
+/**
+ * Item fingerprints the export must refuse (spec 5.6). `flagged` is the exporting owner's own flags only; `takenDown` is the
+ * administrator list that applies to everyone. The stores behind them arrive with the flag and takedown slice; until then the
+ * default gate is empty.
+ */
+export interface ItemGate {
+  flagged(ownerId: string): Promise<ReadonlySet<string>>;
+  takenDown(): Promise<ReadonlySet<string>>;
+}
+const EMPTY_GATE: ItemGate = { flagged: async () => new Set(), takenDown: async () => new Set() };
+
 export interface ExportDeps {
+  /** Flagged and taken-down model items; defaults to none. */
+  itemGate?: ItemGate;
   /** EXPORT_ENABLED. Off: confirmExport refuses with EXPORT_DISABLED before touching anything. */
   enabled?: boolean;
   limits?: Limits;
@@ -85,7 +101,7 @@ export interface ConfirmExportInput {
 
 const uuid = z.uuid();
 /** Errors of the pre-transaction phase that a REPLAY of an earlier identical request may outlive (the draft expired, was purged or changed). */
-const DEFERRABLE = new Set(["NOT_FOUND", "DRAFT_EXPIRED", "EXPORT_CONFLICT", "EXPORT_NOT_VERIFIED", "EXPORT_RENDER_FAILED"]);
+const DEFERRABLE = new Set(["NOT_FOUND", "DRAFT_EXPIRED", "EXPORT_CONFLICT", "EXPORT_NOT_VERIFIED", "EXPORT_ITEM_FLAGGED", "EXPORT_ITEM_TAKEN_DOWN", "EXPORT_RENDER_FAILED"]);
 
 interface Prepared {
   pkg: ReturnType<typeof stateOf>["pkg"];
@@ -108,6 +124,7 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
   const enabled = deps.enabled ?? false;
   const limits = deps.limits ?? DEFAULT_LIMITS;
   const genLimits = deps.generationLimits ?? DEV_DEFAULT_LIMITS;
+  const itemGate = deps.itemGate ?? EMPTY_GATE;
   const clock = deps.clock ?? (() => new Date());
   const allowancePolicy = deps.allowancePolicy ?? DEFAULT_ALLOWANCE_POLICY;
 
@@ -126,7 +143,14 @@ export function createExportDal(db: Db, deps: ExportDeps = {}) {
     // The snapshot stores the PARSED package, so that is what must carry the hash the tutor saw.
     if (packageContentHash(state.pkg) !== version.contentHash) throw new InvariantViolation("the parsed draft content does not match its hash");
     const report = validatePackage(state.pkg);
-    if (report.overall !== "verified") throw new ExportNotVerified();
+    // `labelled` (model items shown with their labels) exports; anything a check could run and failed does not.
+    if (report.overall !== "verified" && report.overall !== "labelled") throw new ExportNotVerified();
+    if (report.overall === "labelled") {
+      const fingerprints = aiFingerprints(state.pkg);
+      const [mine, withdrawn] = await Promise.all([itemGate.flagged(ownerId), itemGate.takenDown()]);
+      if (fingerprints.some((f) => withdrawn.has(f))) throw new ExportItemTakenDown();
+      if (fingerprints.some((f) => mine.has(f))) throw new ExportItemFlagged();
+    }
     let prepared: ReturnType<typeof prepareExport>;
     try {
       prepared = prepareExport(state.pkg, pageFormat);

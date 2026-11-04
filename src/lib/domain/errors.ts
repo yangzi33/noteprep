@@ -285,10 +285,24 @@ export class ExportConflict extends DomainError {
   }
 }
 
-/** The package did not validate as verified: it can never be exported. */
+/** The package failed a check we can run (or has no passing validation): it can never be exported. Items that are only labelled do not cause this. */
 export class ExportNotVerified extends DomainError {
   constructor() {
     super("EXPORT_NOT_VERIFIED", "This draft is not fully verified");
+  }
+}
+
+/** The exporting owner flagged an item of this draft: it cannot be exported until the item is replaced. Nothing was reserved. */
+export class ExportItemFlagged extends DomainError {
+  constructor() {
+    super("EXPORT_ITEM_FLAGGED", "An item in this draft was flagged by you");
+  }
+}
+
+/** An administrator took an item of this draft down: it cannot be exported anywhere. Nothing was reserved. */
+export class ExportItemTakenDown extends DomainError {
+  constructor() {
+    super("EXPORT_ITEM_TAKEN_DOWN", "An item in this draft was withdrawn");
   }
 }
 

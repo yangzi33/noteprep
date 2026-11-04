@@ -1,5 +1,5 @@
 /** Version of the MathText grammar. Bump on any deliberate grammar change (see docs/mathtext.md). */
-export const MATHTEXT_PARSER_VERSION = "mathtext/1";
+export const MATHTEXT_PARSER_VERSION = "mathtext/2";
 
 export const MATHTEXT_LIMITS = {
   maxInputChars: 2000,
@@ -22,10 +22,10 @@ export const MATH_TEXT_ERROR_CODES = [
 ] as const;
 export type MathTextErrorCode = (typeof MATH_TEXT_ERROR_CODES)[number];
 
-export type Greek = "alpha" | "beta" | "theta" | "pi";
-export type FnName = "sin" | "cos" | "tan" | "log" | "ln";
-export type BinOp = "+" | "-" | "pm" | "times" | "cdot" | "div" | "/";
-export type RelOp = "=" | "<" | ">" | "le" | "ge" | "neq";
+export type Greek = "alpha" | "beta" | "theta" | "pi" | "mu" | "sigma" | "lambda";
+export type FnName = "sin" | "cos" | "tan" | "log" | "ln" | "sec" | "csc" | "cot" | "arcsin" | "arccos" | "arctan";
+export type BinOp = "+" | "-" | "pm" | "times" | "cdot" | "div" | "/" | "cup" | "cap";
+export type RelOp = "=" | "<" | ">" | "le" | "ge" | "neq" | "to" | "approx" | "in" | "mid";
 
 export type MathNode =
   | { t: "num"; v: string } // literal digits as written (canonical: no leading zeros)
@@ -45,7 +45,15 @@ export type MathNode =
   | { t: "sub"; base: MathNode; sub: MathNode }
   | { t: "pct"; arg: MathNode }
   | { t: "deg"; arg: MathNode }
-  | { t: "fn"; name: FnName; base?: MathNode; arg: MathNode }; // base only for log
+  | { t: "fn"; name: FnName; base?: MathNode; arg: MathNode } // base only for log
+  | { t: "infty" }
+  | { t: "prime"; name: string; count: 1 | 2 | 3 } // `f'(x)`: one ASCII letter and its primes, no scripts after
+  | { t: "fact"; arg: MathNode } // `n!`: arg is a non-decimal number, a variable or a group
+  | { t: "binom"; n: MathNode; k: MathNode }
+  | { t: "accent"; kind: "bar" | "hat"; name: string } // `\bar{x}`: one ASCII letter
+  | { t: "lim"; under: MathNode; arg: MathNode } // `\lim_{under} arg`: arg is the rest of the implicit product
+  | { t: "sum"; lo?: MathNode; hi?: MathNode; arg: MathNode } // `\sum_{lo}^{hi} arg`: arg is the rest of the implicit product
+  | { t: "int"; lo?: MathNode; hi?: MathNode; body: MathNode; v: string }; // `\int_{lo}^{hi} body\,dv`: v is one ASCII letter
 
 export type MathTextPart = { t: "text"; s: string } | { t: "math"; m: MathNode };
 export interface MathTextDoc {

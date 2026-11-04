@@ -2,9 +2,11 @@ import type { BinOp, MathNode, MathTextDoc, RelOp } from "@/lib/math-text/ast";
 import { escapeTextFragment } from "@/lib/latex/escape";
 
 const BIN_TEX: Readonly<Record<BinOp, string>> = {
-  "+": "+", "-": "-", pm: "\\pm", times: "\\times", cdot: "\\cdot", div: "\\div", "/": "/",
+  "+": "+", "-": "-", pm: "\\pm", times: "\\times", cdot: "\\cdot", div: "\\div", "/": "/", cup: "\\cup", cap: "\\cap",
 };
-const REL_TEX: Readonly<Record<RelOp, string>> = { "=": "=", "<": "<", ">": ">", le: "\\le", ge: "\\ge", neq: "\\neq" };
+const REL_TEX: Readonly<Record<RelOp, string>> = {
+  "=": "=", "<": "<", ">": ">", le: "\\le", ge: "\\ge", neq: "\\neq", to: "\\to", approx: "\\approx", in: "\\in", mid: "\\mid",
+};
 
 /**
  * Joins two emitted pieces. A control word must not run into a following ASCII letter (`\times` + `x`), and two digit
@@ -20,8 +22,8 @@ function cat(a: string, b: string): string {
   const ac = a.charCodeAt(n - 1);
   if (bDigit && ac >= 48 && ac <= 57) return `${a} ${b}`;
   if (bLetter) {
-    // Ends with a control word? Look back over at most the longest control word (5 letters) plus the backslash.
-    for (let k = 1; k <= 6 && k <= n; k++) {
+    // Ends with a control word? Look back over at most the longest control word (6 letters) plus the backslash.
+    for (let k = 1; k <= 7 && k <= n; k++) {
       const c = a.charCodeAt(n - k);
       if (c === 92) return k > 1 ? `${a} ${b}` : a + b;
       if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) break;
@@ -29,6 +31,9 @@ function cat(a: string, b: string): string {
   }
   return a + b;
 }
+const bounds = (lo: MathNode | undefined, hi: MathNode | undefined): string =>
+  `${lo ? `_{${mathToTex(lo)}}` : ""}${hi ? `^{${mathToTex(hi)}}` : ""}`;
+
 /**
  * The ONLY producer of math TeX for model content, and at the same time the canonical MathText math serializer
  * (docs/mathtext.md, "Canonical form"): whatever it emits is accepted by `parseMath` and yields the same AST, for
@@ -55,6 +60,14 @@ export function mathToTex(node: MathNode): string {
     case "pct": return `${mathToTex(node.arg)}\\%`;
     case "deg": return `${mathToTex(node.arg)}^{\\circ}`;
     case "fn": return cat(`\\${node.name}${node.base ? `_{${mathToTex(node.base)}}` : " "}`, mathToTex(node.arg));
+    case "infty": return "\\infty";
+    case "prime": return `${node.name}${"'".repeat(node.count)}`;
+    case "fact": return `${mathToTex(node.arg)}!`;
+    case "binom": return `\\binom{${mathToTex(node.n)}}{${mathToTex(node.k)}}`;
+    case "accent": return `\\${node.kind}{${node.name}}`;
+    case "lim": return cat(`\\lim_{${mathToTex(node.under)}}`, mathToTex(node.arg));
+    case "sum": return cat(`\\sum${bounds(node.lo, node.hi)}`, mathToTex(node.arg));
+    case "int": return `${cat(`\\int${bounds(node.lo, node.hi)}`, mathToTex(node.body))}\\,d${node.v}`;
   }
 }
 
