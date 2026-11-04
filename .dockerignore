@@ -13,6 +13,7 @@
 !tests/latex/
 !tests/stubs/
 !tests/fixtures/package.ts
+!tests/fixtures/ai-package.ts
 !docker/latex/
 !vitest.host.config.mts
 src/generated/
