@@ -1,7 +1,7 @@
 import { canonicalJson, sha256Hex } from "@/lib/domain/hash";
 import { isSupportedConcept } from "./capabilities";
 import { CONFIDENCE, isValidId, LIMITS, ORDINAL_MAX, PLACEMENTS, type Dataset } from "./dataset-schema";
-import { findTopicSetDuplicates, normaliseTitle } from "./topic-sets";
+import { findTopicSetDuplicates, labelInSource, normaliseTitle } from "./topic-sets";
 
 export interface DatasetIssue {
   code:
@@ -53,7 +53,8 @@ export interface DatasetIssue {
     | "INTERNAL_CODE_PREFIX"
     | "OFFICIAL_CODE_IS_SLUG"
     | "OFFICIAL_CODE_NOT_IN_SECTION"
-    | "OFFICIAL_CODE_UNSOURCED";
+    | "OFFICIAL_CODE_UNSOURCED"
+    | "VARIANT_NOT_IN_SOURCE";
   where: string;
   detail?: string;
 }
@@ -76,7 +77,8 @@ export function isIsoDate(value: string): boolean {
  * "(S9)" or "tmp-7f3a" are not enough. This is a lint, not proof that the section exists.
  */
 export function isResolvableSection(section: string): boolean {
-  return /\p{L}{4,}/u.test(section);
+  // at least one plain word of four letters or more; "A-MATH-7357", "sect0004" and "tmp-7f3a" are labels, not words
+  return section.split(/\s+/).some((w) => /^\p{L}{4,}(?:-\p{L}+)*$/u.test(w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")));
 }
 
 const alnum = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -182,7 +184,7 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     if (meta.version.requireSources && present) {
       const section = (r.sourceSection ?? "").trim();
       if (section === "") add("SOURCE_SECTION_REQUIRED", where);
-      else if (!isResolvableSection(section)) add("SOURCE_SECTION_UNRESOLVABLE", where, "name the heading, page or document part; internal labels cannot be followed");
+      else if (!isResolvableSection(section)) add("SOURCE_SECTION_UNRESOLVABLE", where, "name the heading, page or document part in words; internal labels cannot be followed");
     }
     text(r.sourceUrl, LIMITS.sourceUrl, `${where}.sourceUrl`, false);
     text(r.sourceSection, LIMITS.sourceSection, `${where}.sourceSection`, false);
@@ -212,7 +214,8 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
     else officialCourseCodes.set(key, at);
     // An official code must be one the source prints: it needs a citation, and the cited section must contain it. A code that
     // is only NotePrep's own slug in other clothes is an invented code.
-    const slugs = [c.code, c.code.replace(/^np-/i, ""), c.id.split("/").pop() ?? ""].map(alnum).filter((x) => x !== "");
+    // Outside researched datasets `code` may be the jurisdiction's own code, so only the NP- form is a certain slug there.
+    const slugs = meta.version.requireSources ? [c.code, c.code.replace(/^np-/i, ""), c.id.split("/").pop() ?? ""].map(alnum).filter((x) => x !== "") : [];
     if (/^np-/i.test(c.officialCode.trim()) || slugs.includes(alnum(c.officialCode))) add("OFFICIAL_CODE_IS_SLUG", `${at}.officialCode`, `${c.officialCode} is a NotePrep slug, not a code the source prints`);
     if ((c.sourceUrl ?? "").trim() === "" || (c.sourceSection ?? "").trim() === "") add("OFFICIAL_CODE_UNSOURCED", at, "an official code needs a sourceUrl and a sourceSection");
     else if (alnum(c.officialCode) !== "" && !alnum(c.sourceSection ?? "").includes(alnum(c.officialCode))) add("OFFICIAL_CODE_NOT_IN_SECTION", `${at}.sourceSection`, `the cited section does not contain ${c.officialCode}`);
@@ -228,6 +231,11 @@ export function validateDataset(dataset: Dataset): DatasetIssue[] {
       else if (r.placement === "inferred" && r.confidence === "high") add("PLACEMENT_INFERRED_HIGH_CONFIDENCE", where, "an inferred placement must be medium or low confidence");
     };
     structure.levels.forEach((l, i) => basis(`levels[${i}]`, l, false));
+    // a tier or pathway is how parallel courses of one level escape the duplicate check, so the source must print it
+    structure.courses.forEach((c, i) => {
+      if (c.tier !== undefined && c.tier.trim() !== "" && !labelInSource(c.tier, c)) add("VARIANT_NOT_IN_SOURCE", `courses[${i}].tier`, "the course's sourceName or sourceSection must contain the tier as the source prints it");
+      if (c.pathway !== undefined && c.pathway.trim() !== "" && !labelInSource(c.pathway, c)) add("VARIANT_NOT_IN_SOURCE", `courses[${i}].pathway`, "the course's sourceName or sourceSection must contain the pathway as the source prints it");
+    });
     structure.courses.forEach((c, i) => basis(`courses[${i}]`, c, (c.officialCode ?? "").trim() !== ""));
   }
 

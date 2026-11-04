@@ -34,10 +34,11 @@ function main() {
   const repeatedInside = datasets.flatMap((d) =>
     findTopicSetDuplicates(d).map((x) => ({ versionId: d.meta.version.id, first: d.structure.courses[x.first]!.title, second: d.structure.courses[x.second]!.title, similarity: x.similarity })),
   );
+  const citedWithoutRequire = datasets.filter((d) => !d.meta.version.requireSources && provenanceReport(d).records.sourced > 0).map((d) => d.meta.version.id);
   const low = reports.flatMap((r) => r.lowConfidence.map((l) => ({ versionId: r.versionId, ...l })));
 
   if (json) {
-    console.log(JSON.stringify({ totals, perVersion: reports.map((r) => ({ versionId: r.versionId, ...r.records })), lowConfidence: low, duplicateCourses: duplicates, duplicateTopicSets: topicSetGroups, repeatedTopicSetsWithinVersion: repeatedInside }, null, 2));
+    console.log(JSON.stringify({ totals, perVersion: reports.map((r) => ({ versionId: r.versionId, ...r.records })), lowConfidence: low, duplicateCourses: duplicates, duplicateTopicSets: topicSetGroups, repeatedTopicSetsWithinVersion: repeatedInside, citedWithoutRequireSources: citedWithoutRequire }, null, 2));
   } else {
     console.log(`datasets: ${datasets.length}`);
     console.log(`records: ${totals.total} (sourced ${totals.sourced}, unsourced ${totals.unsourced})`);
@@ -54,6 +55,8 @@ function main() {
     }
     console.log(`courses repeated identically across curricula: ${duplicates.length}`);
     if (listDuplicates) for (const d of duplicates) console.log(`dup   ${d.curricula.join(", ")}  |  ${d.fingerprint.split("#")[0]}`);
+    console.log(`versions with citations but without requireSources (the researched-data rules are off for them): ${citedWithoutRequire.length}`);
+    for (const id of citedWithoutRequire) console.log(`norq  ${id}`);
     console.log(`topic lists repeated identically across curricula: ${topicSetGroups.length}`);
     if (listDuplicates) for (const g of topicSetGroups) console.log(`dupts ${g.curricula.join(", ")}  |  ${g.fingerprint.split(";").length} topics`);
     console.log(`course pairs inside one version sharing 80%+ of topic titles: ${repeatedInside.length} (enforced for requireSources datasets only)`);

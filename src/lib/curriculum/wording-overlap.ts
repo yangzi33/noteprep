@@ -24,7 +24,8 @@ export function tokenize(text: string): string[] {
 export function buildSourceIndex(texts: string[]): SourceIndex {
   const tokens: string[] = [];
   for (const text of texts) {
-    tokens.push(...tokenize(text), SEPARATOR);
+    for (const token of tokenize(text)) tokens.push(token); // not push(...spread): a long source would overflow the call stack
+    tokens.push(SEPARATOR);
   }
   const seeds = new Map<string, number[]>();
   for (let i = 0; i + SEED <= tokens.length; i++) {

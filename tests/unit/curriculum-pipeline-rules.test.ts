@@ -85,9 +85,9 @@ function researched(courses: CourseSpec[], levels: LevelSpec[] = defaultLevels()
       ordinal,
       ...(c.tier ? { tier: c.tier } : {}),
       ...(c.pathway ? { pathway: c.pathway } : {}),
-      ...(c.officialCode ? { officialCode: c.officialCode } : { sourceName: c.title }),
+      ...(c.officialCode ? { officialCode: c.officialCode } : { sourceName: [c.title, c.tier, c.pathway].filter(Boolean).join(" ") }),
       placement: c.placement ?? "stated",
-      ...cite(c.officialCode ? `Subject content ${c.officialCode}` : `${c.title} subject content`, c.confidence ?? "high"),
+      ...cite(c.officialCode ? `Subject content ${c.officialCode} ${[c.tier, c.pathway].filter(Boolean).join(" ")}` : `${c.title} subject content`, c.confidence ?? "high"),
     });
     const unitId = `${courseId}/u1`;
     d.structure.units.push({ id: unitId, courseId, title: "Main strand", ordinal: 1, ...cite("Subject content, main strand") });
@@ -189,6 +189,44 @@ describe("duplicate topic sets", () => {
     expect(codes(d)).toContain("COURSE_IDENTITY_DUPLICATE");
     d.structure.courses[1]!.pathway = "Applied";
     expect(codes(d)).not.toContain("COURSE_IDENTITY_DUPLICATE");
+  });
+  it("catches a copy with a few retitled topics, but not a course that merely contains another", () => {
+    const base = topicTitles("base", 20);
+    const reworded = base.map((t, i) => (i < 3 ? `reworded ${i}` : t)); // 17 shared of 20 = 85%
+    const copy = researched([
+      { key: "a", level: "ks3", title: "Course A", topics: base },
+      { key: "b", level: "ks4", title: "Course B", topics: reworded },
+    ]);
+    expect(where(copy, "COURSE_TOPIC_SET_DUPLICATE")).toEqual(["courses[1]"]);
+    const superset = researched([
+      { key: "a", level: "ks3", title: "Course A", topics: topicTitles("base", 12) },
+      { key: "b", level: "ks4", title: "Course B", topics: [...topicTitles("base", 12), ...topicTitles("more", 6)] }, // 12 of 18 = 67%
+    ]);
+    expect(codes(superset)).not.toContain("COURSE_TOPIC_SET_DUPLICATE");
+  });
+  it("lets parallel pathways overlap when the source prints each pathway, and not when the label is invented", () => {
+    const shared = topicTitles("ib", 11);
+    const sl = { key: "sl", level: "ks5", title: "Mathematics analysis", pathway: "SL", topics: shared };
+    const hl = { key: "hl", level: "ks5", title: "Mathematics analysis", pathway: "HL", topics: [...shared.slice(0, 10), "one more idea"] }; // 10 of 11 = 91%
+    const only = (c: typeof sl[]) => researched(c, defaultLevels().filter((l) => l.key === "ks5"));
+    expect(validateDataset(only([sl, hl]))).toEqual([]);
+    const invented = only([sl, hl]);
+    invented.structure.courses[1]!.pathway = "Extended";
+    expect(where(invented, "VARIANT_NOT_IN_SOURCE")).toEqual(["courses[1].pathway"]);
+    expect(where(invented, "COURSE_TOPIC_SET_DUPLICATE")).toEqual(["courses[1]"]);
+  });
+  it("a tier that the source does not print cannot excuse identical lists", () => {
+    const shared = topicTitles("same", 10);
+    const d = researched(
+      [
+        { key: "a", level: "ks4", title: "GCSE mathematics", tier: "Standard", topics: shared },
+        { key: "b", level: "ks4", title: "GCSE mathematics", tier: "Enhanced", topics: shared },
+      ],
+      defaultLevels().filter((l) => l.key === "ks4"),
+    );
+    d.structure.courses.forEach((c) => (c.sourceName = "GCSE mathematics")); // neither tier is in the source
+    expect(codes(d)).toContain("COURSE_TOPIC_SET_DUPLICATE");
+    expect(where(d, "VARIANT_NOT_IN_SOURCE")).toEqual(["courses[0].tier", "courses[1].tier"]);
   });
   it("does not trip on the shipped data (existing valid datasets still pass)", () => {
     const dirs = findDatasetDirs(path.join(root, "data/curricula"));
@@ -343,6 +381,16 @@ describe("internal slugs versus official codes", () => {
     for (const k of ["sourceUrl", "sourceSection", "confidence", "retrievedAt", "placement"] as const) delete c[k];
     expect(codes(d)).toContain("OFFICIAL_CODE_UNSOURCED");
   });
+  it("outside requireSources an official code equal to the code is fine (a real dataset's own code)", () => {
+    const d = researched(goodCourses());
+    delete d.meta.version.requireSources;
+    d.meta.version.kind = "sample";
+    d.meta.version.label = "Sample";
+    d.meta.curriculum.name = "Sample curriculum";
+    const c = d.structure.courses.find((x) => x.officialCode)!;
+    c.code = c.officialCode!;
+    expect(codes(d)).not.toContain("OFFICIAL_CODE_IS_SLUG");
+  });
   it("an official code needs a citation even outside requireSources", () => {
     const d = researched(goodCourses());
     delete d.meta.version.requireSources;
@@ -366,7 +414,7 @@ describe("human-resolvable source sections", () => {
     expect(where(section(undefined), "SOURCE_SECTION_REQUIRED")).toEqual(["topics[0]"]);
     expect(where(section("  "), "SOURCE_SECTION_REQUIRED")).toEqual(["topics[0]"]);
   });
-  it.each(["(S9)", "S3", "[S2]", "(s12)", "§4", "x", "12", "tmp-7f3a"])("rejects the internal label %s", (value) => {
+  it.each(["(S9)", "S3", "[S2]", "(s12)", "§4", "x", "12", "tmp-7f3a", "sect0004", "doc-abcd-12", "A-MATH-7357"])("rejects the internal label %s", (value) => {
     expect(where(section(value), "SOURCE_SECTION_UNRESOLVABLE")).toEqual(["topics[0]"]);
   });
   it.each(["Key stage 3 programme of study, Number", "GCE AS and A level subject content, section C: algebra", "Outcome N1, page 12", "Section 2"])("accepts %s", (value) => {
@@ -414,9 +462,31 @@ describe("combined title and summary wording overlap", () => {
     const joined = buildSourceIndex(["alpha beta gamma", "delta epsilon zeta"]);
     expect(longestSharedRun("alpha beta gamma delta epsilon zeta", joined)).toBe(3); // sources do not run into each other
   });
+  it("indexes a very large source without overflowing the call stack", () => {
+    const big = Array.from({ length: 300_000 }, (_, i) => `w${i}`).join(" ");
+    expect(longestSharedRun("w10 w11 w12 w13", buildSourceIndex([big]))).toBe(4);
+  });
   it("handles empty sources and empty text", () => {
     expect(longestSharedRun("", buildSourceIndex([source]))).toBe(0);
     expect(longestSharedRun("anything at all goes here today", buildSourceIndex([]))).toBe(0);
+  });
+});
+
+describe("researched dataset read from files", () => {
+  it("round-trips the new fields through the zod schema and validates the same", () => {
+    const d = researched(goodCourses());
+    const dir = mkdtempSync(path.join(tmpdir(), "researched-"));
+    writeFileSync(path.join(dir, "dataset.json"), JSON.stringify(d.meta));
+    writeFileSync(path.join(dir, "structure.json"), JSON.stringify(d.structure));
+    writeFileSync(path.join(dir, "objectives.json"), JSON.stringify(d.objectives));
+    writeFileSync(path.join(dir, "mappings.json"), JSON.stringify(d.mappings));
+    const read = readDatasetDir(dir);
+    expect(read.structure.levels[0]).toMatchObject({ yearFrom: 7, yearTo: 9, placement: "stated" });
+    expect(read.structure.courses[1]).toMatchObject({ tier: "Foundation" });
+    expect(validateDataset(read)).toEqual([]);
+    const england = researched(goodCourses().map((c) => ({ ...c, topics: topicTitles("ks", 10) })));
+    writeFileSync(path.join(dir, "structure.json"), JSON.stringify(england.structure));
+    expect(validateDataset(readDatasetDir(dir)).some((i) => i.code === "COURSE_TOPIC_SET_DUPLICATE")).toBe(true);
   });
 });
 
