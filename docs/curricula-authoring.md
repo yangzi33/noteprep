@@ -14,7 +14,7 @@ Run `pnpm curricula:build` after every edit and commit the generated files toget
 
 ## Rules of wording (D-75)
 
-- Titles and summaries are NotePrep's own generic wording. Never paste text from a syllabus and never use official course codes or logos.
+- Titles and summaries are NotePrep's own generic wording. Never paste text from a syllabus and never use logos, and never show official course codes to tutors or students. A researched suggested dataset (`requireSources`) may store a course's official code for provenance only (D-118).
 - Course names are used only to describe the course (for example "IB Mathematics: Analysis and Approaches SL").
 - Never write "aligned", "aligns with" or "official". The word "suggested" is added for you.
 - Grade placement is an unofficial NotePrep estimate; the generated dataset says so.
