@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "educationSystem": {
+    "id": "united-kingdom",
+    "name": "United Kingdom",
+    "regionCode": "GB"
+  },
+  "curriculum": {
+    "id": "uk-wales",
+    "name": "Wales Curriculum (suggested topics)",
+    "subject": "math"
+  },
+  "version": {
+    "id": "uk-wales@suggested-2",
+    "label": "Wales Curriculum suggested topics v2 (unofficial, researched)",
+    "kind": "suggested",
+    "source": {
+      "title": "Researched by NotePrep from Hwb, Qualifications Wales and WJEC publications, retrieved 2026-11-06; topic wording is NotePrep's own",
+      "retrievedAt": "2026-11-06"
+    },
+    "licenseNote": "NotePrep's own unofficial mapping. Qualification names are used only to describe the courses and official codes only record where a course was found; no official text, logos or syllabus wording is included. Year placement is a NotePrep estimate unless marked stated: tutors must check it against their own course outline.",
+    "supersedes": "uk-wales@suggested-1",
+    "requireSources": true
+  }
+}
