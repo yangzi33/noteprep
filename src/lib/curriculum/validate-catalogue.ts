@@ -1,4 +1,5 @@
 import type { Confidence, Dataset } from "./dataset-schema";
+import { courseTopicSets, normaliseTitle, TOPIC_SET_MIN } from "./topic-sets";
 
 // Checks that need more than one dataset: identity across jurisdictions, duplicated content, the size budget, and the
 // citation report. Per-dataset rules live in validate-dataset.ts. Everything here is pure and works on parsed datasets.
@@ -18,7 +19,7 @@ export const SIZE_BUDGET = {
   topicsInCatalogue: 120_000,
 } as const;
 
-const normalise = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const normalise = normaliseTitle;
 
 /** Only the newest version of each curriculum is live in the picker; older ones are kept for lessons that reference them. */
 function latestPerCurriculum(datasets: Dataset[]): Dataset[] {
@@ -85,8 +86,8 @@ export function validateCatalogue(datasets: Dataset[]): CatalogueIssue[] {
 }
 
 export interface DuplicateGroup {
-  kind: "course";
-  /** Normalised course title plus its sorted unit titles. */
+  kind: "course" | "topicSet";
+  /** Normalised course title plus its sorted unit titles, or (topicSet) the sorted topic titles. */
   fingerprint: string;
   /** Curriculum ids (newest version of each) that carry an identical course. */
   curricula: string[];
@@ -110,6 +111,25 @@ export function crossJurisdictionDuplicates(datasets: Dataset[]): DuplicateGroup
   return [...groups]
     .filter(([, ids]) => ids.size > 1)
     .map(([fingerprint, ids]) => ({ kind: "course" as const, fingerprint, curricula: [...ids].sort() }))
+    .sort((a, b) => a.fingerprint.localeCompare(b.fingerprint));
+}
+
+/**
+ * Courses of different curricula whose topic-title lists are identical, whatever the courses are called. A warning: a list
+ * that recurs across jurisdictions is either shared by them or copied from one to the other, and a person has to decide.
+ */
+export function crossJurisdictionTopicSets(datasets: Dataset[]): DuplicateGroup[] {
+  const groups = new Map<string, Set<string>>();
+  for (const d of latestPerCurriculum(datasets)) {
+    for (const titles of courseTopicSets(d).values()) {
+      if (titles.size < TOPIC_SET_MIN) continue;
+      const fingerprint = [...titles].sort().join(";");
+      groups.set(fingerprint, (groups.get(fingerprint) ?? new Set()).add(d.meta.curriculum.id));
+    }
+  }
+  return [...groups]
+    .filter(([, ids]) => ids.size > 1)
+    .map(([fingerprint, ids]) => ({ kind: "topicSet" as const, fingerprint, curricula: [...ids].sort() }))
     .sort((a, b) => a.fingerprint.localeCompare(b.fingerprint));
 }
 

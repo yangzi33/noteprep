@@ -47,7 +47,7 @@ export function scaleDepth(base: Dataset, factor: number, curriculumId = "depth-
     const unitIds = new Set(first.structure.units.map((u) => u.id));
     const map = (id: string) => (id.startsWith(`${versionId}/`) ? `${id}${suffix}` : id);
     for (const c of first.structure.courses) {
-      structure.courses.push({ ...c, id: map(c.id), code: `${c.code}${suffix}`, ordinal: c.ordinal + k * (perLevel.get(c.levelId ?? "") ?? 0) });
+      structure.courses.push({ ...c, id: map(c.id), code: `${c.code}${suffix}`, ...(k > 0 ? { title: `${c.title} (copy ${k + 1})` } : {}), ordinal: c.ordinal + k * (perLevel.get(c.levelId ?? "") ?? 0) });
     }
     for (const u of first.structure.units) {
       if (!courseIds.has(u.courseId)) continue;
