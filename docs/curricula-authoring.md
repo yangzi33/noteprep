@@ -14,7 +14,7 @@ Run `pnpm curricula:build` after every edit and commit the generated files toget
 
 ## Rules of wording (D-75)
 
-- Titles and summaries are NotePrep's own generic wording. Never paste text from a syllabus and never use official course codes or logos.
+- Titles and summaries are NotePrep's own generic wording. Never paste text from a syllabus and never use logos, and never show official course codes to tutors or students. A researched suggested dataset (`requireSources`) may store a course's official code for provenance only (D-118).
 - Course names are used only to describe the course (for example "IB Mathematics: Analysis and Approaches SL").
 - Never write "aligned", "aligns with" or "official". The word "suggested" is added for you.
 - Grade placement is an unofficial NotePrep estimate; the generated dataset says so.
@@ -128,7 +128,7 @@ All additions are optional, so every existing dataset and its hash stay valid an
 
 - `meta.curriculum.subject`: `math` (default and stored id), `physics`, `chemistry`, `biology` or `science`. `mathematics` is accepted and read as `math`. Only `math` is offered to tutors (D-116): the picker ignores curricula of any other subject, so such data can be loaded and validated without becoming visible.
 - On levels, courses, units and topics: `sourceUrl` (https only, at most 500 characters), `sourceSection` (at most 200), `confidence` (`high`, `medium` or `low`) and `retrievedAt` (ISO date). If any of them is present, `sourceUrl`, `confidence` and `retrievedAt` must all be present (`SOURCE_INCOMPLETE`).
-- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version. A `suggested` dataset carries none (D-75, `SUGGESTED_OFFICIAL_CODE`) unless it sets `requireSources` (see "Researched datasets" below).
+- On courses: `officialCode` (the course code the jurisdiction uses). It must be unique within a version. A `suggested` dataset carries none (D-75, `SUGGESTED_OFFICIAL_CODE`) unless it sets `requireSources`, where the code is stored for provenance only (D-118; see "Researched datasets" below).
 - `meta.version.requireSources: true` makes a complete citation mandatory on every level, course, unit and topic of that version (`SOURCE_REQUIRED`). Use it for researched datasets; leave it off for generic suggested ones.
 - The `pnpm curricula:build` generator does not emit these fields; they are written by hand or by the future research pipeline into dataset files.
 
